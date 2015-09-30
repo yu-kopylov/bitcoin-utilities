@@ -1,0 +1,26 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2012
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BitcoinUtilities", "BitcoinUtilities\BitcoinUtilities.csproj", "{36C6CCB9-5611-40F7-95B5-47FC25EC3B63}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Test.BitcoinUtilities", "Test.BitcoinUtilities\Test.BitcoinUtilities.csproj", "{CBF88519-4383-4B85-8DC3-AB04EB88302A}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{36C6CCB9-5611-40F7-95B5-47FC25EC3B63}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{36C6CCB9-5611-40F7-95B5-47FC25EC3B63}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{36C6CCB9-5611-40F7-95B5-47FC25EC3B63}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{36C6CCB9-5611-40F7-95B5-47FC25EC3B63}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CBF88519-4383-4B85-8DC3-AB04EB88302A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CBF88519-4383-4B85-8DC3-AB04EB88302A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CBF88519-4383-4B85-8DC3-AB04EB88302A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CBF88519-4383-4B85-8DC3-AB04EB88302A}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
