@@ -1,0 +1,38 @@
+# Batch files
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# .NET project files
+*.config text eol=crlf
+*.cs text eol=crlf
+*.csproj text eol=crlf
+*.sln text eol=crlf
+
+# XML-files
+*.xml text eol=crlf
+*.xsd text eol=crlf
+
+# Text files
+*.txt text eol=crlf
+
+# Bitmap Images
+*.ico -text !eol
+*.png -text !eol
+
+# Vector Images
+*.svg text eol=crlf
+
+# Fonts
+*.woff -text !eol
+
+# WEB-files
+*.css text eol=crlf
+*.html text eol=crlf
+*.js text eol=crlf
+*.min.css -text !eol
+*.min.js -text !eol
+
+# External Packages
+packages/**/*.* -text !eol
+Lib/**/*.* -text !eol
+
