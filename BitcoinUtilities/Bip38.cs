@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Diagnostics.Contracts;
-using System.Numerics;
 using System.Security.Cryptography;
 using System.Text;
 using CryptSharp.Utility;
@@ -12,7 +11,7 @@ namespace BitcoinUtilities
     /// </summary>
     public static class Bip38
     {
-        public static byte[] Encode(string address, byte[] privateKey, string password, bool useEcMultiplication, bool hasLotAndSequence, bool compressed)
+        public static string Encode(string address, byte[] privateKey, string password, bool useEcMultiplication, bool hasLotAndSequence, bool compressed)
         {
             //todo: check key range: from 0x1 to 0xFFFF FFFF FFFF FFFF FFFF FFFF FFFF FFFE BAAE DCE6 AF48 A03B BFD2 5E8C D036 4140 (source https://en.bitcoin.it/wiki/Private_key)
             //todo: get address from key (see https://en.bitcoin.it/wiki/Technical_background_of_version_1_Bitcoin_addresses)
@@ -30,7 +29,7 @@ namespace BitcoinUtilities
             byte[] result = new byte[39];
             result[0] = 1;
             result[1] = useEcMultiplication ? (byte) 0x43 : (byte) 0x42;
-            
+
             byte flagByte = 0;
             if (!useEcMultiplication)
             {
@@ -52,8 +51,8 @@ namespace BitcoinUtilities
             using (SHA256 sha256Alg = SHA256.Create())
             {
                 byte[] addressHashFull = sha256Alg.ComputeHash(sha256Alg.ComputeHash(addressBytes));
-                Array.Copy(addressHashFull, 0, addressHash, 0, addressHash.Length);
-                Array.Copy(addressHashFull, 0, result, 3, addressHash.Length);
+                Array.Copy(addressHashFull, 0, addressHash, 0, 4);
+                Array.Copy(addressHashFull, 0, result, 3, 4);
             }
 
             byte[] derivedKey = SCrypt.ComputeDerivedKey(passwordBytes, addressHash, 16384, 8, 8, null, 64);
@@ -74,7 +73,7 @@ namespace BitcoinUtilities
                 }
             }
 
-            return result;
+            return Base58Check.Encode(result);
         }
     }
 }
