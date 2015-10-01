@@ -11,10 +11,9 @@ namespace BitcoinUtilities
     /// </summary>
     public static class Bip38
     {
-        public static string Encode(string address, byte[] privateKey, string password, bool useEcMultiplication, bool hasLotAndSequence, bool compressed)
+        public static string Encode(byte[] privateKey, string password, bool useEcMultiplication, bool hasLotAndSequence, bool compressed)
         {
             //todo: check key range: from 0x1 to 0xFFFF FFFF FFFF FFFF FFFF FFFF FFFF FFFE BAAE DCE6 AF48 A03B BFD2 5E8C D036 4140 (source https://en.bitcoin.it/wiki/Private_key)
-            //todo: get address from key (see https://en.bitcoin.it/wiki/Technical_background_of_version_1_Bitcoin_addresses)
             //todo: support useEcMultiplication, hasLotAndSequence and compressed modes
 
             if (useEcMultiplication || hasLotAndSequence || compressed)
@@ -45,6 +44,7 @@ namespace BitcoinUtilities
             }
             result[2] = flagByte;
 
+            string address = BitcoinAddress.FromPrivateKey(privateKey);
             byte[] addressBytes = Encoding.ASCII.GetBytes(address);
 
             byte[] addressHash = new byte[4];
