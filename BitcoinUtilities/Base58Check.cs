@@ -46,6 +46,49 @@ namespace BitcoinUtilities
         }
 
         /// <summary>
+        /// Decodes the given Base58 string into the array of bytes.<br/>
+        /// Validates the check code.
+        /// Result includes the version byte.
+        /// </summary>
+        /// <param name="str">The string to decode.</param>
+        /// <param name="result">The result of decoding.</param>
+        /// <returns>true if the given string was converted successfully; otherwise, false.</returns>
+        public static bool TryDecode(string str, out byte[] result)
+        {
+            byte[] buf;
+            if (!TryDecodeNoCheck(str, out buf))
+            {
+                result = null;
+                return false;
+            }
+
+            if (buf.Length < 4)
+            {
+                result = null;
+                return false;
+            }
+
+            byte[] data = new byte[buf.Length - 4];
+            Array.Copy(buf, 0, data, 0, buf.Length - 4);
+
+            using (SHA256 sha256Alg = SHA256.Create())
+            {
+                byte[] hash = sha256Alg.ComputeHash(sha256Alg.ComputeHash(data));
+                for (int i = 0; i < 4; i++)
+                {
+                    if (hash[i] != buf[data.Length + i])
+                    {
+                        result = null;
+                        return false;
+                    }
+                }
+            }
+
+            result = data;
+            return true;
+        }
+
+        /// <summary>
         /// Encodes the given bytes using the Base58Check encoding.<br/>
         /// Does not include a check code.
         /// </summary>
