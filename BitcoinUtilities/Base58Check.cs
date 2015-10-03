@@ -10,6 +10,7 @@ namespace BitcoinUtilities
     public static class Base58Check
     {
         private const string Alphabet = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
+        private static readonly BigInteger Base58Pow8 = BigInteger.Pow(58, 8);
 
         /// <summary>
         /// Encodes the given bytes using the Base58Check encoding.<br/>
@@ -27,7 +28,8 @@ namespace BitcoinUtilities
                 byte[] hash = sha256Alg.ComputeHash(sha256Alg.ComputeHash(data));
                 Array.Copy(hash, 0, buf, data.Length, 4);
             }
-            return EncodeNoCheckcode(buf);
+
+            return EncodeNoCheck(buf);
         }
 
         /// <summary>
@@ -36,22 +38,29 @@ namespace BitcoinUtilities
         /// </summary>
         /// <param name="data">Bytes to encode.</param>
         /// <returns>Results of encodung.</returns>
-        internal static string EncodeNoCheckcode(byte[] data)
+        internal static string EncodeNoCheck(byte[] data)
         {
-            byte[] unsignedData = new byte[(data.Length + 7)*8/5];
+            byte[] unsignedData = new byte[data.Length + 1];
             Array.Copy(data, 0, unsignedData, 0, data.Length);
             Array.Reverse(unsignedData, 0, data.Length);
             BigInteger value = new BigInteger(unsignedData);
 
-            int maxResultLength = data.Length*5 + 1;
+            int maxResultLength = 1 + data.Length*7/5; // Log(256, 58) = 1.365658237
             char[] res = new char[maxResultLength];
             int firstCharOfs = maxResultLength;
 
             while (value != 0)
             {
-                --firstCharOfs;
-                res[firstCharOfs] = Alphabet[(int) (value%58)];
-                value /= 58;
+                BigInteger bigReminder;
+                value = BigInteger.DivRem(value, Base58Pow8, out bigReminder);
+                ulong reminder = (ulong) bigReminder;
+                res[--firstCharOfs] = Alphabet[(int) (reminder%58)];
+                reminder /= 58;
+                for (int i = 0; reminder != 0 || (!value.IsZero && i < 7); i++)
+                {
+                    res[--firstCharOfs] = Alphabet[(int) (reminder%58)];
+                    reminder /= 58;
+                }
             }
 
             for (int leadingZeros = 0; leadingZeros < data.Length && data[leadingZeros] == 0; leadingZeros++)
