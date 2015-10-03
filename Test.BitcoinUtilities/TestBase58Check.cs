@@ -9,49 +9,92 @@ namespace Test.BitcoinUtilities
     public class TestBase58Check
     {
         [Test]
-        public void TestEncodeNoCheck()
+        public void TestEncodeDecodeNoCheck()
         {
-            Assert.That(Base58Check.EncodeNoCheck(new byte[] {}), Is.EqualTo(""));
-            Assert.That(Base58Check.EncodeNoCheck(new byte[] {0x00}), Is.EqualTo("1"));
-            Assert.That(Base58Check.EncodeNoCheck(new byte[] {0x00, 0x00}), Is.EqualTo("11"));
-            Assert.That(Base58Check.EncodeNoCheck(new byte[] {0x00, 0x00, 0x00, 0x00, 0x00}), Is.EqualTo("11111"));
-            Assert.That(Base58Check.EncodeNoCheck(new byte[] {0x01, 0xFF}), Is.EqualTo("9p"));
-            Assert.That(Base58Check.EncodeNoCheck(new byte[] {0xFF, 0x01}), Is.EqualTo("LQY"));
-            Assert.That(Base58Check.EncodeNoCheck(new byte[] {0x00, 0x00, 0x00, 0x01, 0xFF}), Is.EqualTo("1119p"));
-            Assert.That(Base58Check.EncodeNoCheck(new byte[] {0x00, 0x00, 0x00, 0xFF, 0x01}), Is.EqualTo("111LQY"));
+            TestEncodeDecodeNoCheck(new byte[] {}, "");
+            TestEncodeDecodeNoCheck(new byte[] {0x00}, "1");
+            TestEncodeDecodeNoCheck(new byte[] {0x00, 0x00}, "11");
+            TestEncodeDecodeNoCheck(new byte[] {0x00, 0x00, 0x00, 0x00, 0x00}, "11111");
+            TestEncodeDecodeNoCheck(new byte[] {0x01, 0xFF}, "9p");
+            TestEncodeDecodeNoCheck(new byte[] {0xFF, 0x01}, "LQY");
+            TestEncodeDecodeNoCheck(new byte[] {0x00, 0x00, 0x00, 0x01, 0xFF}, "1119p");
+            TestEncodeDecodeNoCheck(new byte[] {0x00, 0x00, 0x00, 0xFF, 0x01}, "111LQY");
         }
 
         [Test]
-        public void TestEncodeNoCheck58Pow()
+        public void TestEncodeDecodeNoCheck58Pow()
         {
             for (int i = 1; i < 128; i++)
             {
                 string str = "2".PadRight(i + 1, '1');
                 BigInteger val = BigInteger.Pow(58, i);
-                Assert.That(Base58Check.EncodeNoCheck(ToByteArray(val)), Is.EqualTo(str), "i = " + i);
+                byte[] bytes = ToByteArray(val);
+                TestEncodeDecodeNoCheck(bytes, str, "i = " + i);
             }
         }
 
         [Test]
-        public void TestEncodeNoCheck58PowMinus1()
+        public void TestEncodeDecodeNoCheck58PowMinus1()
         {
             for (int i = 1; i < 128; i++)
             {
                 string str = "".PadRight(i, 'z');
                 BigInteger val = BigInteger.Pow(58, i) - 1;
-                Assert.That(Base58Check.EncodeNoCheck(ToByteArray(val)), Is.EqualTo(str), "i = " + i);
+                byte[] bytes = ToByteArray(val);
+                TestEncodeDecodeNoCheck(bytes, str, "i = " + i);
             }
         }
 
         [Test]
-        public void TestEncodeNoCheck58PowPlus1()
+        public void TestEncodeDecodeNoCheck58PowPlus1()
         {
             for (int i = 1; i < 128; i++)
             {
                 string str = "2".PadRight(i, '1') + "2";
                 BigInteger val = BigInteger.Pow(58, i) + 1;
-                Assert.That(Base58Check.EncodeNoCheck(ToByteArray(val)), Is.EqualTo(str), "i = " + i);
+                byte[] bytes = ToByteArray(val);
+                TestEncodeDecodeNoCheck(bytes, str, "i = " + i);
             }
+        }
+
+        [Test]
+        public void TestDecodeNoCheckValidation()
+        {
+            byte[] bytes;
+            Assert.That(Base58Check.TryDecodeNoCheck("", out bytes), Is.True);
+            Assert.That(Base58Check.TryDecodeNoCheck("*", out bytes), Is.False);
+            Assert.That(Base58Check.TryDecodeNoCheck("\u0000", out bytes), Is.False);
+            Assert.That(Base58Check.TryDecodeNoCheck("\u7FFF", out bytes), Is.False);
+            Assert.That(Base58Check.TryDecodeNoCheck("\u8000", out bytes), Is.False);
+            Assert.That(Base58Check.TryDecodeNoCheck("\uFFFF", out bytes), Is.False);
+
+            Assert.That(Base58Check.TryDecodeNoCheck("\u0041", out bytes), Is.True);
+            Assert.That(Base58Check.TryDecodeNoCheck("\u0141", out bytes), Is.False);
+            Assert.That(Base58Check.TryDecodeNoCheck("\u4100", out bytes), Is.False);
+            Assert.That(Base58Check.TryDecodeNoCheck("\u4141", out bytes), Is.False);
+            Assert.That(Base58Check.TryDecodeNoCheck("\u7F41", out bytes), Is.False);
+            Assert.That(Base58Check.TryDecodeNoCheck("\u8041", out bytes), Is.False);
+            Assert.That(Base58Check.TryDecodeNoCheck("\u7F41", out bytes), Is.False);
+            Assert.That(Base58Check.TryDecodeNoCheck("\uFF41", out bytes), Is.False);
+
+            Assert.That(Base58Check.TryDecodeNoCheck("11", out bytes), Is.True);
+            Assert.That(Base58Check.TryDecodeNoCheck("*11", out bytes), Is.False);
+            Assert.That(Base58Check.TryDecodeNoCheck("1*1", out bytes), Is.False);
+            Assert.That(Base58Check.TryDecodeNoCheck("11*", out bytes), Is.False);
+
+            Assert.That(Base58Check.TryDecodeNoCheck("AA", out bytes), Is.True);
+            Assert.That(Base58Check.TryDecodeNoCheck("*AA", out bytes), Is.False);
+            Assert.That(Base58Check.TryDecodeNoCheck("A*A", out bytes), Is.False);
+            Assert.That(Base58Check.TryDecodeNoCheck("AA*", out bytes), Is.False);
+        }
+
+        private void TestEncodeDecodeNoCheck(byte[] bytes, string str, string label = null)
+        {
+            Assert.That(Base58Check.EncodeNoCheck(bytes), Is.EqualTo(str), "(encode) " + label);
+
+            byte[] decodedBytes;
+            Assert.That(Base58Check.TryDecodeNoCheck(str, out decodedBytes), Is.True, "(decode) " + label);
+            Assert.That(decodedBytes, Is.EqualTo(bytes), "(decode) " + label);
         }
 
         private static byte[] ToByteArray(BigInteger value)
@@ -104,6 +147,17 @@ namespace Test.BitcoinUtilities
                 privateKey[2] = (byte) i;
                 privateKey[3] = (byte) (i/256);
                 Base58Check.Encode(privateKey);
+            }
+        }
+
+        [Test]
+        public void TestDecodePerformance()
+        {
+            string str = "5Jajm8eQ22H3pGWLEVCXyvND8dQZhiQhoLJNKjYXk9roUFTMSZ4";
+            for (int i = 0; i < 400000; i++)
+            {
+                byte[] bytes;
+                Base58Check.TryDecodeNoCheck(str, out bytes);
             }
         }
     }
