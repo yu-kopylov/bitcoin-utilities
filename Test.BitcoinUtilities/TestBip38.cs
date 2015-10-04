@@ -26,6 +26,21 @@ namespace Test.BitcoinUtilities
                                }, "\u03D2\u0301\u0000\U00010400\U0001F4A9", false, "6PRW5o9FLp4gJDDVqJQKJFTpMvdsSGJxMYHtHaQBF3ooa8mwD69bapcDQn");
         }
 
+        [Test]
+        public void TestCompressionNoEcMultiply()
+        {
+            TestEncryptDecrypt(new byte[]
+                               {
+                                   0xCB, 0xF4, 0xB9, 0xF7, 0x04, 0x70, 0x85, 0x6B, 0xB4, 0xF4, 0x0F, 0x80, 0xB8, 0x7E, 0xDB, 0x90,
+                                   0x86, 0x59, 0x97, 0xFF, 0xEE, 0x6D, 0xF3, 0x15, 0xAB, 0x16, 0x6D, 0x71, 0x3A, 0xF4, 0x33, 0xA5
+                               }, "TestingOneTwoThree", true, "6PYNKZ1EAgYgmQfmNVamxyXVWHzK5s6DGhwP4J5o44cvXdoY7sRzhtpUeo");
+            TestEncryptDecrypt(new byte[]
+                               {
+                                   0x09, 0xC2, 0x68, 0x68, 0x80, 0x09, 0x5B, 0x1A, 0x4C, 0x24, 0x9E, 0xE3, 0xAC, 0x4E, 0xEA, 0x8A,
+                                   0x01, 0x4F, 0x11, 0xE6, 0xF9, 0x86, 0xD0, 0xB5, 0x02, 0x5A, 0xC1, 0xF3, 0x9A, 0xFB, 0xD9, 0xAE
+                               }, "Satoshi", true, "6PYLtMnXvfG3oJde97zRyLYFZCYizPU5T3LwgdYJz1fRhh16bU7u6PPmY7");
+        }
+
         private void TestEncryptDecrypt(byte[] privateKey, string password, bool compressed, string encryptedKey)
         {
             string calculatedEncryptedKey = Bip38.Encrypt(privateKey, password, compressed);

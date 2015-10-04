@@ -15,19 +15,13 @@ namespace BitcoinUtilities
         private const byte FlagCompressed = 0x20;
         private const byte FlagHasLotAndSequence = 0x04;
 
-        public static string Encrypt(byte[] privateKey, string password, bool compressed)
+        public static string Encrypt(byte[] privateKey, string password, bool useCompressedPublicKey)
         {
             //todo: check key range: from 0x1 to 0xFFFF FFFF FFFF FFFF FFFF FFFF FFFF FFFE BAAE DCE6 AF48 A03B BFD2 5E8C D036 4140 (source https://en.bitcoin.it/wiki/Private_key)
-            //todo: support compressed modes
 
             if (privateKey.Length != 32)
             {
                 throw new ArgumentException("Thr private key should have length of 32 bytes.", "privateKey");
-            }
-
-            if (compressed)
-            {
-                throw new ArgumentException("Compresed addresses are not implemented yet.");
             }
 
             password = password.Normalize(NormalizationForm.FormC);
@@ -39,13 +33,13 @@ namespace BitcoinUtilities
             result[1] = 0x42;
 
             byte flagByte = FlagNonEc;
-            if (compressed)
+            if (useCompressedPublicKey)
             {
                 flagByte |= FlagCompressed;
             }
             result[2] = flagByte;
 
-            string address = BitcoinAddress.FromPrivateKey(privateKey);
+            string address = BitcoinAddress.FromPrivateKey(privateKey, useCompressedPublicKey);
             byte[] addressBytes = Encoding.ASCII.GetBytes(address);
 
             byte[] addressHash = new byte[4];
@@ -102,6 +96,15 @@ namespace BitcoinUtilities
                 return false;
             }
 
+            if (encryptedKeyBytes[1] != 0x42)
+            {
+                //todo: is this a correct result?
+                privateKey = null;
+                return false;
+            }
+
+            bool useCompressedPublicKey = (encryptedKeyBytes[2] & FlagCompressed) == FlagCompressed;
+
             password = password.Normalize(NormalizationForm.FormC);
             Encoding utf8Encoding = new UTF8Encoding(false);
             byte[] passwordBytes = utf8Encoding.GetBytes(password);
@@ -135,7 +138,7 @@ namespace BitcoinUtilities
                 result[i] ^= derivedKey[i];
             }
 
-            string address = BitcoinAddress.FromPrivateKey(result);
+            string address = BitcoinAddress.FromPrivateKey(result, useCompressedPublicKey);
             byte[] addressBytes = Encoding.ASCII.GetBytes(address);
 
             using (SHA256 sha256Alg = SHA256.Create())
