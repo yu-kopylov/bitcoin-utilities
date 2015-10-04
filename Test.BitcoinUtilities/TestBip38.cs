@@ -7,18 +7,33 @@ namespace Test.BitcoinUtilities
     public class TestBip38
     {
         [Test]
-        public void TestEncode()
+        public void TestNoCompressionNoEcMultiply()
         {
-            byte[] privateKey = new byte[]
-                                {
-                                    0x64, 0xEE, 0xAB, 0x5F, 0x9B, 0xE2, 0xA0, 0x1A, 0x83, 0x65, 0xA5, 0x79, 0x51, 0x1E, 0xB3, 0x37,
-                                    0x3C, 0x87, 0xC4, 0x0D, 0xA6, 0xD2, 0xA2, 0x5F, 0x05, 0xBD, 0xA6, 0x8F, 0xE0, 0x77, 0xB6, 0x6E
-                                };
-            string password = "\u03D2\u0301\u0000\U00010400\U0001F4A9";
-            string expectedEncryptedKey = "6PRW5o9FLp4gJDDVqJQKJFTpMvdsSGJxMYHtHaQBF3ooa8mwD69bapcDQn";
+            TestEncryptDecrypt(new byte[]
+                               {
+                                   0xCB, 0xF4, 0xB9, 0xF7, 0x04, 0x70, 0x85, 0x6B, 0xB4, 0xF4, 0x0F, 0x80, 0xB8, 0x7E, 0xDB, 0x90,
+                                   0x86, 0x59, 0x97, 0xFF, 0xEE, 0x6D, 0xF3, 0x15, 0xAB, 0x16, 0x6D, 0x71, 0x3A, 0xF4, 0x33, 0xA5
+                               }, "TestingOneTwoThree", false, "6PRVWUbkzzsbcVac2qwfssoUJAN1Xhrg6bNk8J7Nzm5H7kxEbn2Nh2ZoGg");
+            TestEncryptDecrypt(new byte[]
+                               {
+                                   0x09, 0xC2, 0x68, 0x68, 0x80, 0x09, 0x5B, 0x1A, 0x4C, 0x24, 0x9E, 0xE3, 0xAC, 0x4E, 0xEA, 0x8A,
+                                   0x01, 0x4F, 0x11, 0xE6, 0xF9, 0x86, 0xD0, 0xB5, 0x02, 0x5A, 0xC1, 0xF3, 0x9A, 0xFB, 0xD9, 0xAE
+                               }, "Satoshi", false, "6PRNFFkZc2NZ6dJqFfhRoFNMR9Lnyj7dYGrzdgXXVMXcxoKTePPX1dWByq");
+            TestEncryptDecrypt(new byte[]
+                               {
+                                   0x64, 0xEE, 0xAB, 0x5F, 0x9B, 0xE2, 0xA0, 0x1A, 0x83, 0x65, 0xA5, 0x79, 0x51, 0x1E, 0xB3, 0x37,
+                                   0x3C, 0x87, 0xC4, 0x0D, 0xA6, 0xD2, 0xA2, 0x5F, 0x05, 0xBD, 0xA6, 0x8F, 0xE0, 0x77, 0xB6, 0x6E
+                               }, "\u03D2\u0301\u0000\U00010400\U0001F4A9", false, "6PRW5o9FLp4gJDDVqJQKJFTpMvdsSGJxMYHtHaQBF3ooa8mwD69bapcDQn");
+        }
 
-            string encryptedPrivateKey = Bip38.Encode(privateKey, password, false, false, false);
-            Assert.That(encryptedPrivateKey, Is.EquivalentTo(expectedEncryptedKey));
+        private void TestEncryptDecrypt(byte[] privateKey, string password, bool compressed, string encryptedKey)
+        {
+            string calculatedEncryptedKey = Bip38.Encrypt(privateKey, password, compressed);
+            Assert.That(calculatedEncryptedKey, Is.EquivalentTo(encryptedKey));
+
+            byte[] calculatedPrivateKey;
+            Assert.That(Bip38.TryDecrypt(encryptedKey, password, out calculatedPrivateKey), Is.True);
+            Assert.That(calculatedPrivateKey, Is.EqualTo(privateKey));
         }
     }
 }
