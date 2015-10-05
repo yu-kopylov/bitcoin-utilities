@@ -58,9 +58,16 @@ namespace Test.BitcoinUtilities
         }
 
         [Test]
+        public void TestEncodeNoCheckValidation()
+        {
+            Assert.Throws<ArgumentException>(() => Base58Check.EncodeNoCheck(null));
+        }
+
+        [Test]
         public void TestDecodeNoCheckValidation()
         {
             byte[] bytes;
+            Assert.That(Base58Check.TryDecodeNoCheck(null, out bytes), Is.False);
             Assert.That(Base58Check.TryDecodeNoCheck("", out bytes), Is.True);
             Assert.That(Base58Check.TryDecodeNoCheck("*", out bytes), Is.False);
             Assert.That(Base58Check.TryDecodeNoCheck("\u0000", out bytes), Is.False);
@@ -137,9 +144,16 @@ namespace Test.BitcoinUtilities
         }
 
         [Test]
+        public void TestEncodeValidation()
+        {
+            Assert.Throws<ArgumentException>(() => Base58Check.Encode(null));
+        }
+
+        [Test]
         public void TestDecodeValidation()
         {
             byte[] bytes;
+            Assert.That(Base58Check.TryDecode(null, out bytes), Is.False);
             Assert.That(Base58Check.TryDecode("", out bytes), Is.False);
             Assert.That(Base58Check.TryDecode("1", out bytes), Is.False);
             Assert.That(Base58Check.TryDecode("1111", out bytes), Is.False);

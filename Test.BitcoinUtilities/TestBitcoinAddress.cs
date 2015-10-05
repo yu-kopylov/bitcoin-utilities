@@ -1,4 +1,5 @@
-﻿using BitcoinUtilities;
+﻿using System;
+using BitcoinUtilities;
 using NUnit.Framework;
 
 namespace Test.BitcoinUtilities
@@ -53,6 +54,13 @@ namespace Test.BitcoinUtilities
                                                           0x09, 0xC2, 0x68, 0x68, 0x80, 0x09, 0x5B, 0x1A, 0x4C, 0x24, 0x9E, 0xE3, 0xAC, 0x4E, 0xEA, 0x8A,
                                                           0x01, 0x4F, 0x11, 0xE6, 0xF9, 0x86, 0xD0, 0xB5, 0x02, 0x5A, 0xC1, 0xF3, 0x9A, 0xFB, 0xD9, 0xAE
                                                       }, true), Is.EqualTo("1HmPbwsvG5qJ3KJfxzsZRZWhbm1xBMuS8B"));
+        }
+
+        [Test]
+        public void TestValidation()
+        {
+            Assert.Throws<ArgumentException>(() => BitcoinAddress.FromPrivateKey(null, true));
+            Assert.Throws<ArgumentException>(() => BitcoinAddress.FromPrivateKey(new byte[32], true));
         }
     }
 }

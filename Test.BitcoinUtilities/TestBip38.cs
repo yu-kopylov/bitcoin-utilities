@@ -1,4 +1,5 @@
-﻿using BitcoinUtilities;
+﻿using System;
+using BitcoinUtilities;
 using NUnit.Framework;
 
 namespace Test.BitcoinUtilities
@@ -41,14 +42,51 @@ namespace Test.BitcoinUtilities
                                }, "Satoshi", true, "6PYLtMnXvfG3oJde97zRyLYFZCYizPU5T3LwgdYJz1fRhh16bU7u6PPmY7");
         }
 
-        private void TestEncryptDecrypt(byte[] privateKey, string password, bool compressed, string encryptedKey)
+        [Test]
+        public void TestEncryptValidation()
         {
-            string calculatedEncryptedKey = Bip38.Encrypt(privateKey, password, compressed);
+            //invalid input private key
+            Assert.Throws<ArgumentException>(() => Bip38.Encrypt(null, "test", false));
+            Assert.Throws<ArgumentException>(() => Bip38.Encrypt(new byte[] {1}, "test", false));
+
+            //invalid password
+            Assert.Throws<ArgumentException>(() => Bip38.Encrypt(new byte[]
+                                                                 {
+                                                                     0xCB, 0xF4, 0xB9, 0xF7, 0x04, 0x70, 0x85, 0x6B, 0xB4, 0xF4, 0x0F, 0x80, 0xB8, 0x7E, 0xDB, 0x90,
+                                                                     0x86, 0x59, 0x97, 0xFF, 0xEE, 0x6D, 0xF3, 0x15, 0xAB, 0x16, 0x6D, 0x71, 0x3A, 0xF4, 0x33, 0xA5
+                                                                 }, null, false));
+        }
+
+        [Test]
+        public void TestDecryptValidation()
+        {
+            byte[] privateKey;
+            bool useCompressedPublicKey;
+
+            //invalid encrypted key
+            Assert.That(Bip38.TryDecrypt(null, "test", out privateKey, out useCompressedPublicKey), Is.False);
+            Assert.That(Bip38.TryDecrypt("1111", "test", out privateKey, out useCompressedPublicKey), Is.False);
+
+            //invalid password
+            Assert.Throws<ArgumentException>(() => Bip38.TryDecrypt("6PYNKZ1EAgYgmQfmNVamxyXVWHzK5s6DGhwP4J5o44cvXdoY7sRzhtpUeo", null, out privateKey, out useCompressedPublicKey));
+
+            //invalid private key
+            Assert.That(Bip38.TryDecrypt("6PRWPsu2b2SG8t4TwvriL3GdTUkHtmJz7j3yuuba5NnbaTdpMcSx5C5Dr2", "test", out privateKey, out useCompressedPublicKey), Is.False);
+
+            //corrupted hash
+            Assert.That(Bip38.TryDecrypt("6PYNKZf6c6v11hV7uh3FMd6tYunsJYoShheWUPktXRsDDsW345WjefLxh7", "TestingOneTwoThree", out privateKey, out useCompressedPublicKey), Is.False);
+        }
+
+        private void TestEncryptDecrypt(byte[] privateKey, string password, bool useCompressedPublicKey, string encryptedKey)
+        {
+            string calculatedEncryptedKey = Bip38.Encrypt(privateKey, password, useCompressedPublicKey);
             Assert.That(calculatedEncryptedKey, Is.EquivalentTo(encryptedKey));
 
             byte[] calculatedPrivateKey;
-            Assert.That(Bip38.TryDecrypt(encryptedKey, password, out calculatedPrivateKey), Is.True);
+            bool calculatedUseCompressedPublicKey;
+            Assert.That(Bip38.TryDecrypt(encryptedKey, password, out calculatedPrivateKey, out calculatedUseCompressedPublicKey), Is.True);
             Assert.That(calculatedPrivateKey, Is.EqualTo(privateKey));
+            Assert.That(calculatedUseCompressedPublicKey, Is.EqualTo(useCompressedPublicKey));
         }
     }
 }

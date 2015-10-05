@@ -49,6 +49,7 @@
     <Compile Include="Base58Check.cs" />
     <Compile Include="Bip38.cs" />
     <Compile Include="BitcoinAddress.cs" />
+    <Compile Include="BitcoinPrivateKey.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

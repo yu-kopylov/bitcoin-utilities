@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Security.Cryptography;
-using System.Text;
 using Org.BouncyCastle.Asn1.Sec;
 using Org.BouncyCastle.Asn1.X9;
 using Org.BouncyCastle.Math;
@@ -16,15 +15,18 @@ namespace BitcoinUtilities
         private static readonly X9ECParameters CurveParameters = SecNamedCurves.GetByName("secp256k1");
 
         /// <summary>
-        /// Creates a bitcoin address for Main Network from private key.
+        /// Creates a bitcoin address for Main Network from the private key.
         /// </summary>
-        /// <param name="privateKey">a private key</param>
+        /// <param name="privateKey">The array of 32 bytes of the private key.</param>
         /// <param name="useCompressedPublicKey">true to specify that the public key should have the compressed format; otherwise, false.</param>
-        /// <returns></returns>
+        /// <exception cref="ArgumentException">The private key is invalid.</exception>
+        /// <returns>Bitcoin address in Base58Check encoding.</returns>
         public static string FromPrivateKey(byte[] privateKey, bool useCompressedPublicKey)
         {
-            //todo: check format (32 bytes vs 33 bytes)
-            //todo: check key range: from 0x1 to 0xFFFF FFFF FFFF FFFF FFFF FFFF FFFF FFFE BAAE DCE6 AF48 A03B BFD2 5E8C D036 4140 (source https://en.bitcoin.it/wiki/Private_key)
+            if (!BitcoinPrivateKey.IsValid(privateKey))
+            {
+                throw new ArgumentException("The private key is invalid.", "privateKey");
+            }
 
             ECPoint publicKeyPoint = CurveParameters.G.Multiply(new BigInteger(1, privateKey));
 

@@ -31,9 +31,15 @@ namespace BitcoinUtilities
         /// Assumes that a version byte is already included.
         /// </summary>
         /// <param name="data">The array of bytes to encode including the version byte.</param>
+        /// <exception cref="ArgumentException">The given array is null.</exception>
         /// <returns>The result of encoding.</returns>
         public static string Encode(byte[] data)
         {
+            if (data == null)
+            {
+                throw new ArgumentException("The given array is null.");
+            }
+
             byte[] buf = new byte[data.Length + 4];
             Array.Copy(data, 0, buf, 0, data.Length);
             using (SHA256 sha256Alg = SHA256.Create())
@@ -93,9 +99,15 @@ namespace BitcoinUtilities
         /// Does not include a check code.
         /// </summary>
         /// <param name="data">The array of bytes to encode.</param>
+        /// <exception cref="ArgumentException">The given array is null.</exception>
         /// <returns>The result of encoding.</returns>
         internal static string EncodeNoCheck(byte[] data)
         {
+            if (data == null)
+            {
+                throw new ArgumentException("The given array is null.");
+            }
+
             byte[] unsignedData = new byte[data.Length + 1];
             Array.Copy(data, 0, unsignedData, 0, data.Length);
             Array.Reverse(unsignedData, 0, data.Length);
@@ -137,6 +149,12 @@ namespace BitcoinUtilities
         /// <returns>true if the given string was converted successfully; otherwise, false.</returns>
         internal static bool TryDecodeNoCheck(string str, out byte[] result)
         {
+            if (str == null)
+            {
+                result = null;
+                return false;
+            }
+
             int leadingZeroes = 0;
             while (leadingZeroes < str.Length && str[leadingZeroes] == Alphabet[0])
             {
