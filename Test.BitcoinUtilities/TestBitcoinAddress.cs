@@ -10,7 +10,7 @@ namespace Test.BitcoinUtilities
         [Test]
         public void TestFromPrivateKeyUncompressed()
         {
-            // Reference example
+            // reference example
             Assert.That(BitcoinAddress.FromPrivateKey(new byte[]
                                                       {
                                                           0x18, 0xE1, 0x4A, 0x7B, 0x6A, 0x30, 0x7F, 0x42, 0x6A, 0x94, 0xF8, 0x11, 0x47, 0x01, 0xE7, 0xC8,

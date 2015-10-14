@@ -5,7 +5,7 @@
     /// </summary>
     public static class BitcoinPrivateKey
     {
-        private const int KeyLength = 32;
+        public const int KeyLength = 32;
 
         private static readonly byte[] MinValue = new byte[]
                                                   {

@@ -51,6 +51,7 @@
     <Compile Include="BitcoinAddress.cs" />
     <Compile Include="BitcoinPrivateKey.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Wif.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

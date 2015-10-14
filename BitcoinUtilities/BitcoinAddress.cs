@@ -12,7 +12,7 @@ namespace BitcoinUtilities
     /// </summary>
     public static class BitcoinAddress
     {
-        private static readonly X9ECParameters CurveParameters = SecNamedCurves.GetByName("secp256k1");
+        private static readonly X9ECParameters curveParameters = SecNamedCurves.GetByName("secp256k1");
 
         /// <summary>
         /// Creates a bitcoin address for Main Network from the private key.
@@ -28,7 +28,7 @@ namespace BitcoinUtilities
                 throw new ArgumentException("The private key is invalid.", "privateKey");
             }
 
-            ECPoint publicKeyPoint = CurveParameters.G.Multiply(new BigInteger(1, privateKey));
+            ECPoint publicKeyPoint = curveParameters.G.Multiply(new BigInteger(1, privateKey));
 
             // Compressed and uncopressed formats are defined in "SEC 1: Elliptic Curve Cryptography" in section "2.3.3 Elliptic-Curve-Point-to-Octet-String Conversion".
             // see: http://www.secg.org/sec1-v2.pdf
