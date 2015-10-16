@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Net;
 using System.Net.Sockets;
 using System.Security.Cryptography;
 using System.Text;
@@ -16,6 +17,7 @@ namespace BitcoinUtilities.P2P
     public class BitcoinConnection : IDisposable
     {
         private const int MessageHeaderLength = 24;
+        private const int MaxCommandLength = 12;
 
         private const int MaxPayloadLength = 16*1024*1024;
 
@@ -50,15 +52,53 @@ namespace BitcoinUtilities.P2P
 
         public void Connect(string host, int port)
         {
+            if (client != null)
+            {
+                throw new Exception("A connection was already established.");
+            }
+            
             client = new TcpClient(host, port);
             stream = client.GetStream();
         }
 
+        public IPEndPoint LocalEndPoint
+        {
+            get
+            {
+                if (client == null)
+                {
+                    return null;
+                }
+                return client.Client.LocalEndPoint as IPEndPoint;
+            }
+        }
+
+        public IPEndPoint RemoteEndPoint
+        {
+            get
+            {
+                if (client == null)
+                {
+                    return null;
+                }
+                return client.Client.RemoteEndPoint as IPEndPoint;
+            }
+        }
+
         public void WriteMessage(BitcoinMessage message)
         {
-            byte[] header = new byte[24];
+            byte[] commandBytes = Encoding.ASCII.GetBytes(message.Command);
+            if (commandBytes.Length > MaxCommandLength)
+            {
+                //todo: handle correctly
+                throw new Exception(string.Format("Command length ({0}) exeeds maximum command length ({1}).", commandBytes.Length, MaxCommandLength));
+            }
+
+            byte[] header = new byte[MessageHeaderLength];
+            
             Array.Copy(magicBytes, 0, header, 0, 4);
-            Encoding.ASCII.GetBytes(message.Command, 0, message.Command.Length, header, 4);
+            Array.Copy(commandBytes, 0, header, 4, commandBytes.Length);
+
             byte[] payloadLengthBytes = BitConverter.GetBytes(message.Payload.Length);
             Array.Copy(payloadLengthBytes, 0, header, 16, 4);
 

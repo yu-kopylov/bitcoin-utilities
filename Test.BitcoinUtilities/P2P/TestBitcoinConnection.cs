@@ -1,5 +1,4 @@
-﻿using System;
-using BitcoinUtilities.P2P;
+﻿using BitcoinUtilities.P2P;
 using NUnit.Framework;
 
 namespace Test.BitcoinUtilities.P2P
@@ -28,25 +27,15 @@ namespace Test.BitcoinUtilities.P2P
                 conn.WriteMessage(new BitcoinMessage("version", hello));
 
                 BitcoinMessage incVersionMessage = conn.ReadMessage();
-                //todo: move to const
-                if (incVersionMessage.Command != "version")
-                {
-                    //todo: handle correctly
-                    throw new Exception("Handshake should start with Version message.");
-                }
+                Assert.That(incVersionMessage.Command, Is.EqualTo(BitcoinCommands.Version));
 
-                conn.WriteMessage(new BitcoinMessage("verack", new byte[0]));
+                conn.WriteMessage(new BitcoinMessage(BitcoinCommands.VerAck, new byte[0]));
 
                 BitcoinMessage incVerAckMessage = conn.ReadMessage();
-                //todo: move to const
-                if (incVerAckMessage.Command != "verack")
-                {
-                    //todo: handle correctly
-                    throw new Exception("Version message should be followed by VerAck message.");
-                }
+                Assert.That(incVerAckMessage.Command, Is.EqualTo(BitcoinCommands.VerAck));
 
-                BitcoinMessage message = conn.ReadMessage();
-                Console.WriteLine(message.Command);
+                BitcoinMessage incPing = conn.ReadMessage();
+                Assert.That(incPing.Command, Is.EqualTo(BitcoinCommands.Ping));
             }
         }
     }

@@ -44,6 +44,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="P2P\TestBitcoinEndpoint.cs" />
+    <Compile Include="P2P\TestBitcoinMessageUtils.cs" />
     <Compile Include="TestBase58Check.cs" />
     <Compile Include="TestBip38.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
