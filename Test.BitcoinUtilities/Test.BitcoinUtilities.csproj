@@ -44,14 +44,17 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="P2P\Messages\TestInvMessage.cs" />
     <Compile Include="P2P\TestBitcoinEndpoint.cs" />
     <Compile Include="P2P\TestBitcoinMessageUtils.cs" />
+    <Compile Include="P2P\TestBitcoinStreamReader.cs" />
     <Compile Include="TestBase58Check.cs" />
     <Compile Include="TestBip38.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="TestBitcoinAddress.cs" />
     <Compile Include="P2P\TestBitcoinConnection.cs" />
     <Compile Include="TestBitcoinPrivateKey.cs" />
+    <Compile Include="TestNumberUtils.cs" />
     <Compile Include="TestWif.cs" />
   </ItemGroup>
   <ItemGroup>

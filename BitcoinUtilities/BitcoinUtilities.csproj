@@ -50,10 +50,15 @@
     <Compile Include="Bip38.cs" />
     <Compile Include="BitcoinAddress.cs" />
     <Compile Include="BitcoinPrivateKey.cs" />
+    <Compile Include="NumberUtils.cs" />
     <Compile Include="P2P\BitcoinConnection.cs" />
     <Compile Include="P2P\BitcoinEndpoint.cs" />
     <Compile Include="P2P\BitcoinMessage.cs" />
     <Compile Include="P2P\BitcoinMessageUtils.cs" />
+    <Compile Include="P2P\BitcoinStreamReader.cs" />
+    <Compile Include="P2P\Messages\InvMessage.cs" />
+    <Compile Include="P2P\Primitives\InventoryVector.cs" />
+    <Compile Include="P2P\Primitives\InventoryVectorType.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Wif.cs" />
   </ItemGroup>
