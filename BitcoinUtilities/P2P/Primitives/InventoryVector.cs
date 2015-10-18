@@ -32,10 +32,10 @@ namespace BitcoinUtilities.P2P.Primitives
             get { return hash; }
         }
 
-        public void Write(MemoryStream stream)
+        public void Write(BitcoinStreamWriter writer)
         {
-            BitcoinMessageUtils.AppendInt32LittleEndian(stream, (int) type);
-            stream.Write(hash, 0, 32);
+            writer.Write((int) type);
+            writer.Write(hash);
         }
 
         public static InventoryVector Read(BitcoinStreamReader reader)

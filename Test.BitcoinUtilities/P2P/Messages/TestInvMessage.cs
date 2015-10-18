@@ -38,7 +38,10 @@ namespace Test.BitcoinUtilities.P2P.Messages
             Assert.That(message.Inventory[1].Hash.Length, Is.EqualTo(32));
 
             MemoryStream outStream = new MemoryStream();
-            message.Write(outStream);
+            using (BitcoinStreamWriter writer = new BitcoinStreamWriter(outStream))
+            {
+                message.Write(writer);
+            }
 
             byte[] outBytes = outStream.ToArray();
             Assert.That(outBytes, Is.EqualTo(inBytes));

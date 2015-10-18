@@ -1,8 +1,8 @@
 ﻿using System;
 using System.IO;
 using System.Net;
+using System.Net.Sockets;
 using System.Threading;
-using BitcoinUtilities.P2P.Messages;
 
 namespace BitcoinUtilities.P2P
 {
@@ -25,9 +25,9 @@ namespace BitcoinUtilities.P2P
         private const int StartHeight = 0;
         private const ulong Nonce = 0; // todo: support Nonce
 
-        private readonly BitcoinConnection conn = new BitcoinConnection();
         private readonly BitcoinMessageHandler messageHandler;
 
+        private BitcoinConnection conn;
         private Thread thread;
         private volatile bool running;
 
@@ -40,7 +40,10 @@ namespace BitcoinUtilities.P2P
         {
             //todo: shutdown gracefully
             running = false;
-            conn.Dispose();
+            if (conn != null)
+            {
+                conn.Dispose();
+            }
         }
 
         public int ProtocolVersion
@@ -50,8 +53,31 @@ namespace BitcoinUtilities.P2P
 
         public void Connect(string host, int port)
         {
+            if (conn != null)
+            {
+                throw new Exception("Connection is already established.");
+            }
+
+            conn = new BitcoinConnection();
             conn.Connect(host, port);
 
+            Start();
+        }
+
+        public void Connect(BitcoinConnection connection)
+        {
+            if (conn != null)
+            {
+                throw new Exception("Connection is already established.");
+            }
+
+            conn = connection;
+
+            Start();
+        }
+
+        private void Start()
+        {
             BitcoinMessage outVersionMessage = CreateVersionMessage();
             conn.WriteMessage(outVersionMessage);
 
@@ -92,10 +118,18 @@ namespace BitcoinUtilities.P2P
             }
         }
 
-        public void WriteMessage(BitcoinMessage message)
+        public void WriteMessage(IBitcoinMessage message)
         {
+            MemoryStream mem = new MemoryStream();
+            using (BitcoinStreamWriter writer = new BitcoinStreamWriter(mem))
+            {
+                message.Write(writer);
+            }
+
+            BitcoinMessage rawMessage = new BitcoinMessage(message.Command, mem.ToArray());
+
             //todo: add lock
-            conn.WriteMessage(message);
+            conn.WriteMessage(rawMessage);
         }
 
         private void HandleMessage(BitcoinMessage message)
@@ -119,7 +153,15 @@ namespace BitcoinUtilities.P2P
                 return;
             }
 
-            if (messageHandler == null || !messageHandler(this, message))
+            IBitcoinMessage parsedMessage = BitcoinMessageParser.Parse(message);
+
+            if (parsedMessage == null)
+            {
+                //todo: this is a misuse of the interface
+                parsedMessage = message;
+            }
+
+            if (messageHandler == null || !messageHandler(this, parsedMessage))
             {
                 conn.WriteMessage(CreateRejectMessage(message, BitcoinMessageRejectReason.Malformed, "Unknown command."));
             }
@@ -178,7 +220,7 @@ namespace BitcoinUtilities.P2P
     /// <param name="endpoint">The endpoint that received the message.</param>
     /// <param name="message">The message from the remote endpoint.</param>
     /// <returns>true if the given message is supported; otherwise, false.</returns>
-    public delegate bool BitcoinMessageHandler(BitcoinEndpoint endpoint, BitcoinMessage message);
+    public delegate bool BitcoinMessageHandler(BitcoinEndpoint endpoint, IBitcoinMessage message);
 
     public enum BitcoinMessageRejectReason
     {

@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using System.Text;
 
 namespace BitcoinUtilities.P2P
@@ -38,6 +39,28 @@ namespace BitcoinUtilities.P2P
             }
 
             return ReadUInt64();
+        }
+
+        public T[] ReadArray<T>(int maxElements, Func<BitcoinStreamReader, T> readMethod)
+        {
+            ulong elementCountLong = ReadUInt64Compact();
+            if (elementCountLong > int.MaxValue)
+            {
+                //todo: handle correctly
+                throw new Exception("Too many elements in array.");
+            }
+            int elementCount = (int) elementCountLong;
+            if (elementCount > maxElements)
+            {
+                //todo: handle correctly
+                throw new Exception("Too many elements in array.");
+            }
+            T[] result = new T[elementCount];
+            for (int i = 0; i < elementCount; i++)
+            {
+                result[i] = readMethod(this);
+            }
+            return result;
         }
     }
 }

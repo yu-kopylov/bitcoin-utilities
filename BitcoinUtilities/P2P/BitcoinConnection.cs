@@ -35,6 +35,12 @@ namespace BitcoinUtilities.P2P
             sha256WriterAlg = SHA256.Create();
         }
 
+        public BitcoinConnection(TcpClient client) : this()
+        {
+            this.client = client;
+            this.stream = client.GetStream();
+        }
+
         public void Dispose()
         {
             sha256ReaderAlg.Dispose();
@@ -58,6 +64,7 @@ namespace BitcoinUtilities.P2P
             }
             
             client = new TcpClient(host, port);
+
             stream = client.GetStream();
         }
 

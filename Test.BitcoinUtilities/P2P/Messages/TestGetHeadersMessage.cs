@@ -6,7 +6,7 @@ using NUnit.Framework;
 namespace Test.BitcoinUtilities.P2P.Messages
 {
     [TestFixture]
-    public class TestGetBlocksMessage
+    public class TestGetHeadersMessage
     {
         [Test]
         public void Test()
@@ -21,12 +21,12 @@ namespace Test.BitcoinUtilities.P2P.Messages
                                  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
                              };
 
-            GetBlocksMessage message;
+            GetHeadersMessage message;
 
             MemoryStream inStream = new MemoryStream(inBytes);
             using (BitcoinStreamReader reader = new BitcoinStreamReader(inStream))
             {
-                message = GetBlocksMessage.Read(reader);
+                message = GetHeadersMessage.Read(reader);
             }
 
             Assert.That(message.ProtocolVersion, Is.EqualTo(70001));

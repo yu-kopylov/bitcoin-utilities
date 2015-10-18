@@ -1,3 +1,4 @@
+using System;
 using System.IO;
 using System.Text;
 
@@ -32,6 +33,15 @@ namespace BitcoinUtilities.P2P
             {
                 Write((byte) 0xFF);
                 Write(value);
+            }
+        }
+
+        public void WriteArray<T>(T[] values, Action<BitcoinStreamWriter, T> writeMethod)
+        {
+            WriteCompact((ulong)values.Length);
+            foreach (T value in values)
+            {
+                writeMethod(this, value);
             }
         }
     }

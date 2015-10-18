@@ -44,6 +44,11 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="P2P\Messages\TestTxMessage.cs" />
+    <Compile Include="P2P\Messages\TestBlockMessage.cs" />
+    <Compile Include="P2P\Messages\TestGetDataMessage.cs" />
+    <Compile Include="P2P\Messages\TestMerkleBlockMessage.cs" />
+    <Compile Include="P2P\Messages\TestGetHeadersMessage.cs" />
     <Compile Include="P2P\Messages\TestGetBlocksMessage.cs" />
     <Compile Include="P2P\Messages\TestInvMessage.cs" />
     <Compile Include="P2P\TestBitcoinEndpoint.cs" />
