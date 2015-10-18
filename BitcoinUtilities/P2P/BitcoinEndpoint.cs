@@ -2,6 +2,7 @@
 using System.IO;
 using System.Net;
 using System.Threading;
+using BitcoinUtilities.P2P.Messages;
 
 namespace BitcoinUtilities.P2P
 {
@@ -18,7 +19,7 @@ namespace BitcoinUtilities.P2P
         private static readonly DateTime unixEpoch = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
 
         private const string UserAgent = "/BitcoinUtilities:0.0.1/";
-        private const int ProtocolVersion = 70002;
+        private readonly int protocolVersion = 70002;
         private const ulong Services = 0;
         private const bool AcceptBroadcasts = false;
         private const int StartHeight = 0;
@@ -40,6 +41,11 @@ namespace BitcoinUtilities.P2P
             //todo: shutdown gracefully
             running = false;
             conn.Dispose();
+        }
+
+        public int ProtocolVersion
+        {
+            get { return protocolVersion; }
         }
 
         public void Connect(string host, int port)
@@ -86,6 +92,12 @@ namespace BitcoinUtilities.P2P
             }
         }
 
+        public void WriteMessage(BitcoinMessage message)
+        {
+            //todo: add lock
+            conn.WriteMessage(message);
+        }
+
         private void HandleMessage(BitcoinMessage message)
         {
             if (message.Command == BitcoinCommands.Ping)
@@ -128,7 +140,7 @@ namespace BitcoinUtilities.P2P
         {
             MemoryStream mem = new MemoryStream();
 
-            BitcoinMessageUtils.AppendInt32LittleEndian(mem, ProtocolVersion);
+            BitcoinMessageUtils.AppendInt32LittleEndian(mem, protocolVersion);
             BitcoinMessageUtils.AppendUInt64LittleEndian(mem, Services);
             BitcoinMessageUtils.AppendInt64LittleEndian(mem, GetUnixTimestamp());
 

@@ -7,6 +7,7 @@ namespace Test.BitcoinUtilities.P2P
     public class TestBitcoinConnection
     {
         [Test]
+        [Explicit]
         public void Test()
         {
             byte[] hello = new byte[]

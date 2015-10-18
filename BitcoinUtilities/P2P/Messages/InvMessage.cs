@@ -1,11 +1,12 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using BitcoinUtilities.P2P.Primitives;
 
 namespace BitcoinUtilities.P2P.Messages
 {
     /// <summary>
-    /// Allows a node to advertise its knowledge of one or more objects. It can be received unsolicited, or in reply to <see cref="GetBlocks"/>.
+    /// Allows a node to advertise its knowledge of one or more objects. It can be received unsolicited, or in reply to <see cref="GetBlocksMessage"/>.
     /// </summary>
     public class InvMessage
     {
@@ -38,6 +39,13 @@ namespace BitcoinUtilities.P2P.Messages
         public static InvMessage Read(BitcoinStreamReader reader)
         {
             ulong count = reader.ReadUInt64Compact();
+
+            if (count > 10000)
+            {
+                //todo: handle correctly
+                throw new Exception("Too many inventory vectors.");
+            }
+
             InventoryVector[] values = new InventoryVector[count];
             for (ulong i = 0; i < count; i++)
             {

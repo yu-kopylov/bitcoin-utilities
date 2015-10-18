@@ -19,7 +19,7 @@ namespace BitcoinUtilities.P2P
         private const int MessageHeaderLength = 24;
         private const int MaxCommandLength = 12;
 
-        private const int MaxPayloadLength = 16*1024*1024;
+        private const int MaxPayloadLength = 32*1024*1024;
 
         private readonly byte[] magicBytes = new byte[] {0xF9, 0xBE, 0xB4, 0xD9};
 

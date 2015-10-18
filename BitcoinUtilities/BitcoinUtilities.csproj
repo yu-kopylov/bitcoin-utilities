@@ -56,6 +56,8 @@
     <Compile Include="P2P\BitcoinMessage.cs" />
     <Compile Include="P2P\BitcoinMessageUtils.cs" />
     <Compile Include="P2P\BitcoinStreamReader.cs" />
+    <Compile Include="P2P\BitcoinStreamWriter.cs" />
+    <Compile Include="P2P\Messages\GetBlocksMessage.cs" />
     <Compile Include="P2P\Messages\InvMessage.cs" />
     <Compile Include="P2P\Primitives\InventoryVector.cs" />
     <Compile Include="P2P\Primitives\InventoryVectorType.cs" />
