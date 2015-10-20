@@ -15,6 +15,9 @@
 # Text files
 *.txt text eol=crlf
 
+# SQL-files
+*.sql text eol=crlf
+
 # Bitmap Images
 *.ico -text !eol
 *.png -text !eol
@@ -35,4 +38,3 @@
 # External Packages
 packages/**/*.* -text !eol
 Lib/**/*.* -text !eol
-
