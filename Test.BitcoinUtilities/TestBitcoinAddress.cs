@@ -57,6 +57,24 @@ namespace Test.BitcoinUtilities
         }
 
         [Test]
+        public void TestFromPublicKey()
+        {
+            Assert.That(BitcoinAddress.FromPublicKey(null), Is.Null);
+            Assert.That(BitcoinAddress.FromPublicKey(new byte[0]), Is.EqualTo("1HT7xU2Ngenf7D4yocz2SAcnNLW7rK8d4E"));
+
+            //public key from the block 1 output
+            byte[] block1OutPubKey = new byte[]
+                            {
+                                0x04,
+                                0x96, 0xB5, 0x38, 0xE8, 0x53, 0x51, 0x9C, 0x72, 0x6A, 0x2C, 0x91, 0xE6, 0x1E, 0xC1, 0x16, 0x00,
+                                0xAE, 0x13, 0x90, 0x81, 0x3A, 0x62, 0x7C, 0x66, 0xFB, 0x8B, 0xE7, 0x94, 0x7B, 0xE6, 0x3C, 0x52,
+                                0xDA, 0x75, 0x89, 0x37, 0x95, 0x15, 0xD4, 0xE0, 0xA6, 0x04, 0xF8, 0x14, 0x17, 0x81, 0xE6, 0x22,
+                                0x94, 0x72, 0x11, 0x66, 0xBF, 0x62, 0x1E, 0x73, 0xA8, 0x2C, 0xBF, 0x23, 0x42, 0xC8, 0x58, 0xEE
+                            };
+            Assert.That(BitcoinAddress.FromPublicKey(block1OutPubKey), Is.EqualTo("12c6DSiU4Rq3P4ZxziKxzrL5LmMBrzjrJX"));
+        }
+
+        [Test]
         public void TestValidation()
         {
             Assert.Throws<ArgumentException>(() => BitcoinAddress.FromPrivateKey(null, true));
