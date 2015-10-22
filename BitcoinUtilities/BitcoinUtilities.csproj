@@ -59,6 +59,7 @@
     <Compile Include="P2P\BitcoinMessageUtils.cs" />
     <Compile Include="P2P\BitcoinStreamReader.cs" />
     <Compile Include="P2P\BitcoinStreamWriter.cs" />
+    <Compile Include="P2P\GenesisBlock.cs" />
     <Compile Include="P2P\Messages\BlockMessage.cs" />
     <Compile Include="P2P\Messages\TxMessage.cs" />
     <Compile Include="P2P\Primitives\Tx.cs" />

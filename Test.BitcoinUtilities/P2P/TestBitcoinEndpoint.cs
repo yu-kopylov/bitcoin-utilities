@@ -60,11 +60,14 @@ namespace Test.BitcoinUtilities.P2P
         [Explicit]
         public void TestClient()
         {
+            //todo: test ping deadlock
+
             using (BitcoinEndpoint endpoint = new BitcoinEndpoint(LoggingMessageHandler))
             {
                 endpoint.Connect("localhost", 8333);
 
-                endpoint.WriteMessage(new GetBlocksMessage(endpoint.ProtocolVersion, new byte[][] {blockHash0}, blockHash2));
+                //endpoint.WriteMessage(new GetBlocksMessage(endpoint.ProtocolVersion, new byte[][] {blockHash0}, blockHash2));
+                endpoint.WriteMessage(new GetBlocksMessage(endpoint.ProtocolVersion, new byte[][] {new byte[32]}, new byte[32]));
                 Thread.Sleep(500);
                 endpoint.WriteMessage(new GetDataMessage(new InventoryVector[] {new InventoryVector(InventoryVectorType.MsgBlock, blockHash1)}));
 

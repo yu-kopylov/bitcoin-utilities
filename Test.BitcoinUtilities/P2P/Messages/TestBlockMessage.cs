@@ -45,13 +45,7 @@ namespace Test.BitcoinUtilities.P2P.Messages
             Assert.That(message.Transactions[0].Outputs.Length, Is.EqualTo(1));
             Assert.That(message.Transactions[0].Outputs[0].Value, Is.EqualTo(5000000000));
 
-            MemoryStream outStream = new MemoryStream();
-            using (BitcoinStreamWriter writer = new BitcoinStreamWriter(outStream))
-            {
-                message.Write(writer);
-            }
-
-            byte[] outBytes = outStream.ToArray();
+            byte[] outBytes = BitcoinStreamWriter.GetBytes(message.Write);
             Assert.That(outBytes, Is.EqualTo(inBytes));
         }
     }

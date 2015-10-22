@@ -36,13 +36,7 @@ namespace Test.BitcoinUtilities.P2P.Messages
                                                                   0x14, 0x41, 0x6F, 0xD7, 0x51, 0x59, 0xAB, 0x86, 0x68, 0x8E, 0x9A, 0x83, 0x00, 0x00, 0x00, 0x00
                                                               }));
 
-            MemoryStream outStream = new MemoryStream();
-            using (BitcoinStreamWriter writer = new BitcoinStreamWriter(outStream))
-            {
-                message.Write(writer);
-            }
-
-            byte[] outBytes = outStream.ToArray();
+            byte[] outBytes = BitcoinStreamWriter.GetBytes(message.Write);
             Assert.That(outBytes, Is.EqualTo(inBytes));
         }
     }

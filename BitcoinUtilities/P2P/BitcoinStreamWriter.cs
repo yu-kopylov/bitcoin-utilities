@@ -44,5 +44,15 @@ namespace BitcoinUtilities.P2P
                 writeMethod(this, value);
             }
         }
+
+        public static byte[] GetBytes(Action<BitcoinStreamWriter> writeMethod)
+        {
+            MemoryStream stream = new MemoryStream();
+            using (BitcoinStreamWriter writer = new BitcoinStreamWriter(stream))
+            {
+                writeMethod(writer);
+            }
+            return stream.ToArray();
+        }
     }
 }

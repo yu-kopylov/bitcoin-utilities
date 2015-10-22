@@ -43,7 +43,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="TestStorage.cs" />
+    <Compile Include="Converters\TestBlockConverter.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -53,6 +53,10 @@
     <ProjectReference Include="..\BitcoinUtilities.Storage\BitcoinUtilities.Storage.csproj">
       <Project>{c40e8b76-3f0e-4b16-aa34-136122b985d6}</Project>
       <Name>BitcoinUtilities.Storage</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\BitcoinUtilities\BitcoinUtilities.csproj">
+      <Project>{36C6CCB9-5611-40F7-95B5-47FC25EC3B63}</Project>
+      <Name>BitcoinUtilities</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

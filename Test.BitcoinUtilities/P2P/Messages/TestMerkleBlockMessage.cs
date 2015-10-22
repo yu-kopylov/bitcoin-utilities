@@ -50,13 +50,7 @@ namespace Test.BitcoinUtilities.P2P.Messages
             Assert.That(message.Hashes.Count, Is.EqualTo(4));
             Assert.That(message.Flags, Is.EqualTo(new byte[] {0x1D}));
 
-            MemoryStream outStream = new MemoryStream();
-            using (BitcoinStreamWriter writer = new BitcoinStreamWriter(outStream))
-            {
-                message.Write(writer);
-            }
-
-            byte[] outBytes = outStream.ToArray();
+            byte[] outBytes = BitcoinStreamWriter.GetBytes(message.Write);
             Assert.That(outBytes, Is.EqualTo(inBytes));
         }
     }

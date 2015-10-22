@@ -1,7 +1,6 @@
 ﻿using System;
 using System.IO;
 using System.Net;
-using System.Net.Sockets;
 using System.Threading;
 
 namespace BitcoinUtilities.P2P
@@ -120,14 +119,7 @@ namespace BitcoinUtilities.P2P
 
         public void WriteMessage(IBitcoinMessage message)
         {
-            MemoryStream mem = new MemoryStream();
-            using (BitcoinStreamWriter writer = new BitcoinStreamWriter(mem))
-            {
-                message.Write(writer);
-            }
-
-            BitcoinMessage rawMessage = new BitcoinMessage(message.Command, mem.ToArray());
-
+            BitcoinMessage rawMessage = new BitcoinMessage(message.Command, BitcoinStreamWriter.GetBytes(message.Write));
             //todo: add lock
             conn.WriteMessage(rawMessage);
         }

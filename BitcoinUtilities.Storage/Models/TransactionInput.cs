@@ -6,10 +6,16 @@ namespace BitcoinUtilities.Storage.Models
 
         public Transaction Transaction { get; set; }
 
+        public int NumberInTransaction { get; set; }
+
         public byte[] SignatureScript { get; set; }
 
         public uint Sequence { get; set; }
-        
-        public TransactionOutput OutPoint { get; set; }
+
+        public byte[] SourceHash { get; set; }
+
+        public uint SourceIndex { get; set; }
+
+        public TransactionOutput Source { get; set; }
     }
 }

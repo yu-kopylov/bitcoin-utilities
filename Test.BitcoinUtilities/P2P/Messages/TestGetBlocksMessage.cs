@@ -43,13 +43,7 @@ namespace Test.BitcoinUtilities.P2P.Messages
                                                      }));
             Assert.That(message.HashStop, Is.Not.Null);
 
-            MemoryStream outStream = new MemoryStream();
-            using (BitcoinStreamWriter writer = new BitcoinStreamWriter(outStream))
-            {
-                message.Write(writer);
-            }
-
-            byte[] outBytes = outStream.ToArray();
+            byte[] outBytes = BitcoinStreamWriter.GetBytes(message.Write);
             Assert.That(outBytes, Is.EqualTo(inBytes));
         }
     }

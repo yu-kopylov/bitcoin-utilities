@@ -6,6 +6,8 @@ namespace BitcoinUtilities.Storage.Models
 
         public Transaction Transaction { get; set; }
 
+        public int NumberInTransaction { get; set; }
+
         public ulong Value { get; set; }
 
         public PubkeyScriptType ScriptType { get; set; }
