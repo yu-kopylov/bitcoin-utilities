@@ -55,7 +55,7 @@ namespace BitcoinUtilities.Storage.Converters
             }
 
             transaction.Outputs = new List<TransactionOutput>(transactionMessage.Outputs.Length);
-            for (int i = 0; i < transactionMessage.Inputs.Length; i++)
+            for (int i = 0; i < transactionMessage.Outputs.Length; i++)
             {
                 TxOut outputMessage = transactionMessage.Outputs[i];
                 TransactionOutput output = FromMessage(outputMessage);

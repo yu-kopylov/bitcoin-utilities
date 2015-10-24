@@ -50,6 +50,7 @@
     <Compile Include="Bip38.cs" />
     <Compile Include="BitcoinAddress.cs" />
     <Compile Include="BitcoinPrivateKey.cs" />
+    <Compile Include="ByteArrayComparer.cs" />
     <Compile Include="NumberUtils.cs" />
     <Compile Include="P2P\BitcoinConnection.cs" />
     <Compile Include="P2P\BitcoinConnectionListener.cs" />
