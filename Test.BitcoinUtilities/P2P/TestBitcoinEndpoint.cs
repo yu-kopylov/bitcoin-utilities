@@ -160,5 +160,65 @@ namespace Test.BitcoinUtilities.P2P
 
             return true;
         }
+
+        [Test]
+        public void TestDeadlock()
+        {
+            AutoResetEvent finishedEvent = new AutoResetEvent(false);
+            using (BitcoinConnectionListener server = new BitcoinConnectionListener(IPAddress.Loopback, 28333, DeadlockTestConnectionHandler))
+            {
+                server.Start();
+                Thread thread = new Thread(() =>
+                {
+                    using (BitcoinEndpoint client = new BitcoinEndpoint(DeadlockTestMessageHandler))
+                    {
+                        client.Connect("localhost", 28333);
+                        SendDeadlockTestSequence(client);
+                        finishedEvent.Set();
+                    }
+                });
+                thread.IsBackground = true;
+                thread.Start();
+                Assert.That(finishedEvent.WaitOne(5000), Is.True);
+            }
+        }
+
+        private void SendDeadlockTestSequence(BitcoinEndpoint client)
+        {
+            byte[][] locatorHashes = new byte[256][];
+            for (int i = 0; i < locatorHashes.Length; i++)
+            {
+                locatorHashes[i] = new byte[32];
+            }
+
+            IBitcoinMessage pingMessage = new BitcoinMessage(BitcoinCommands.Ping, new byte[8]);
+
+            IBitcoinMessage bigMessage = new GetBlocksMessage(client.ProtocolVersion, locatorHashes, new byte[32]);
+            byte[] messageText = BitcoinStreamWriter.GetBytes(bigMessage.Write);
+            Console.WriteLine(">message length: {0}", messageText.Length);
+
+            for (int i = 0; i < 8; i++)
+            {
+                client.WriteMessage(bigMessage);
+                Console.WriteLine(">sent: {0}", bigMessage.Command);
+                client.WriteMessage(pingMessage);
+                Console.WriteLine(">sent: {0}", pingMessage.Command);
+            }
+        }
+
+        private void DeadlockTestConnectionHandler(BitcoinConnection connection)
+        {
+            BitcoinEndpoint endpoint = new BitcoinEndpoint(DeadlockTestMessageHandler);
+            endpoint.Connect(connection);
+
+            SendDeadlockTestSequence(endpoint);
+        }
+
+        private bool DeadlockTestMessageHandler(BitcoinEndpoint endpoint, IBitcoinMessage message)
+        {
+            Console.WriteLine(">received: {0}", message.Command);
+            Thread.Sleep(100);
+            return true;
+        }
     }
 }

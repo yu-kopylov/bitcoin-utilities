@@ -18,7 +18,7 @@ namespace BitcoinUtilities.P2P.Messages
         private readonly List<byte[]> hashes;
         private readonly byte[] flags;
 
-        private MerkleBlockMessage(BlockHeader blockHeader, uint totalTransactions, byte[][] hashes, byte[] flags)
+        public MerkleBlockMessage(BlockHeader blockHeader, uint totalTransactions, byte[][] hashes, byte[] flags)
         {
             this.blockHeader = blockHeader;
             this.totalTransactions = totalTransactions;

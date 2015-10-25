@@ -15,7 +15,7 @@ namespace BitcoinUtilities.P2P.Messages
         //todo: decide on list vs array
         private readonly Tx[] transactions;
 
-        private BlockMessage(BlockHeader blockHeader, Tx[] transactions)
+        public BlockMessage(BlockHeader blockHeader, Tx[] transactions)
         {
             this.blockHeader = blockHeader;
             this.transactions = transactions;

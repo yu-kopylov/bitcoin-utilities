@@ -11,7 +11,7 @@ namespace BitcoinUtilities.P2P.Messages
 
         private readonly Tx transaction;
 
-        private TxMessage(Tx transaction)
+        public TxMessage(Tx transaction)
         {
             this.transaction = transaction;
         }
