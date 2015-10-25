@@ -93,8 +93,6 @@ namespace BitcoinUtilities.P2P
             conn.WriteMessage(outVerAckMessage);
 
             BitcoinMessage incVerAckMessage = conn.ReadMessage();
-            conn.WriteMessage(outVerAckMessage);
-
             if (incVerAckMessage.Command != BitcoinCommands.VerAck)
             {
                 //todo: handle correctly
