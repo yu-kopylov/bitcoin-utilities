@@ -118,7 +118,6 @@ namespace BitcoinUtilities.P2P
         public void WriteMessage(IBitcoinMessage message)
         {
             BitcoinMessage rawMessage = new BitcoinMessage(message.Command, BitcoinStreamWriter.GetBytes(message.Write));
-            //todo: add lock
             conn.WriteMessage(rawMessage);
         }
 

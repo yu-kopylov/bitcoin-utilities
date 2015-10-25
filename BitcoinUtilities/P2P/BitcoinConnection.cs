@@ -23,6 +23,8 @@ namespace BitcoinUtilities.P2P
 
         private readonly byte[] magicBytes = new byte[] {0xF9, 0xBE, 0xB4, 0xD9};
 
+        private readonly object writeLock = new object();
+
         private readonly SHA256 sha256ReaderAlg;
         private readonly SHA256 sha256WriterAlg;
 
@@ -92,28 +94,37 @@ namespace BitcoinUtilities.P2P
             }
         }
 
+        /// <summary>
+        /// Sends the message to the connected peer.
+        /// <para/>
+        /// Method is thread-safe.
+        /// </summary>
+        /// <param name="message">The message to send.</param>
         public void WriteMessage(BitcoinMessage message)
         {
-            byte[] commandBytes = Encoding.ASCII.GetBytes(message.Command);
-            if (commandBytes.Length > MaxCommandLength)
+            lock (writeLock)
             {
-                //todo: handle correctly
-                throw new Exception(string.Format("Command length ({0}) exeeds maximum command length ({1}).", commandBytes.Length, MaxCommandLength));
+                byte[] commandBytes = Encoding.ASCII.GetBytes(message.Command);
+                if (commandBytes.Length > MaxCommandLength)
+                {
+                    //todo: handle correctly
+                    throw new Exception(string.Format("Command length ({0}) exeeds maximum command length ({1}).", commandBytes.Length, MaxCommandLength));
+                }
+
+                byte[] header = new byte[MessageHeaderLength];
+
+                Array.Copy(magicBytes, 0, header, 0, 4);
+                Array.Copy(commandBytes, 0, header, 4, commandBytes.Length);
+
+                byte[] payloadLengthBytes = BitConverter.GetBytes(message.Payload.Length);
+                Array.Copy(payloadLengthBytes, 0, header, 16, 4);
+
+                byte[] checksum = sha256WriterAlg.ComputeHash(sha256WriterAlg.ComputeHash(message.Payload));
+                Array.Copy(checksum, 0, header, 20, 4);
+
+                stream.Write(header, 0, header.Length);
+                stream.Write(message.Payload, 0, message.Payload.Length);
             }
-
-            byte[] header = new byte[MessageHeaderLength];
-            
-            Array.Copy(magicBytes, 0, header, 0, 4);
-            Array.Copy(commandBytes, 0, header, 4, commandBytes.Length);
-
-            byte[] payloadLengthBytes = BitConverter.GetBytes(message.Payload.Length);
-            Array.Copy(payloadLengthBytes, 0, header, 16, 4);
-
-            byte[] checksum = sha256WriterAlg.ComputeHash(sha256WriterAlg.ComputeHash(message.Payload));
-            Array.Copy(checksum, 0, header, 20, 4);
-
-            stream.Write(header, 0, header.Length);
-            stream.Write(message.Payload, 0, message.Payload.Length);
         }
 
         public BitcoinMessage ReadMessage()
