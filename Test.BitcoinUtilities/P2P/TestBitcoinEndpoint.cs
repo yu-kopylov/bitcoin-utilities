@@ -49,11 +49,13 @@ namespace Test.BitcoinUtilities.P2P
 
         private void ConnectionHandler(BitcoinConnection connection)
         {
-            BitcoinEndpoint endpoint = new BitcoinEndpoint(LoggingMessageHandler);
-            endpoint.Connect(connection);
+            using (BitcoinEndpoint endpoint = new BitcoinEndpoint(LoggingMessageHandler))
+            {
+                endpoint.Connect(connection);
 
-            Thread.Sleep(1000);
-            endpoint.WriteMessage(new BitcoinMessage(InvMessage.Command, new byte[0]));
+                Thread.Sleep(1000);
+                endpoint.WriteMessage(new BitcoinMessage(InvMessage.Command, new byte[0]));
+            }
         }
 
         [Test]
@@ -168,22 +170,39 @@ namespace Test.BitcoinUtilities.P2P
             using (BitcoinConnectionListener server = new BitcoinConnectionListener(IPAddress.Loopback, 28333, DeadlockTestConnectionHandler))
             {
                 server.Start();
+
+                Exception threadException = null;
+
                 Thread thread = new Thread(() =>
                 {
-                    using (BitcoinEndpoint client = new BitcoinEndpoint(DeadlockTestMessageHandler))
+                    try
                     {
-                        client.Connect("localhost", 28333);
-                        SendDeadlockTestSequence(client);
+                        using (BitcoinEndpoint client = new BitcoinEndpoint(DeadlockTestMessageHandler))
+                        {
+                            client.Connect("localhost", 28333);
+                            SendDeadlockTestSequence(client, "client");
+                            //let other peer to send remaining data
+                            Thread.Sleep(1000);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        threadException = ex;
+                    }
+                    finally
+                    {
                         finishedEvent.Set();
                     }
                 });
+                thread.Name = "Test Sending Thread";
                 thread.IsBackground = true;
                 thread.Start();
                 Assert.That(finishedEvent.WaitOne(5000), Is.True);
+                Assert.That(threadException, Is.Null);
             }
         }
 
-        private void SendDeadlockTestSequence(BitcoinEndpoint client)
+        private void SendDeadlockTestSequence(BitcoinEndpoint client, string peerName)
         {
             byte[][] locatorHashes = new byte[256][];
             for (int i = 0; i < locatorHashes.Length; i++)
@@ -195,28 +214,32 @@ namespace Test.BitcoinUtilities.P2P
 
             IBitcoinMessage bigMessage = new GetBlocksMessage(client.ProtocolVersion, locatorHashes, new byte[32]);
             byte[] messageText = BitcoinStreamWriter.GetBytes(bigMessage.Write);
-            Console.WriteLine(">message length: {0}", messageText.Length);
+            Console.WriteLine("{0}: message length is {1}", peerName, messageText.Length);
 
-            for (int i = 0; i < 8; i++)
+            Console.WriteLine("{0}: sequence started", peerName);
+            for (int i = 0; i < 16; i++)
             {
                 client.WriteMessage(bigMessage);
-                Console.WriteLine(">sent: {0}", bigMessage.Command);
                 client.WriteMessage(pingMessage);
-                Console.WriteLine(">sent: {0}", pingMessage.Command);
             }
+            Console.WriteLine("{0}: sequence finished", peerName);
         }
 
         private void DeadlockTestConnectionHandler(BitcoinConnection connection)
         {
-            BitcoinEndpoint endpoint = new BitcoinEndpoint(DeadlockTestMessageHandler);
-            endpoint.Connect(connection);
+            using (BitcoinEndpoint endpoint = new BitcoinEndpoint(DeadlockTestMessageHandler))
+            {
+                endpoint.Connect(connection);
 
-            SendDeadlockTestSequence(endpoint);
+                SendDeadlockTestSequence(endpoint, "server");
+
+                //let other peer to send remaining data
+                Thread.Sleep(1000);
+            }
         }
 
         private bool DeadlockTestMessageHandler(BitcoinEndpoint endpoint, IBitcoinMessage message)
         {
-            Console.WriteLine(">received: {0}", message.Command);
             Thread.Sleep(100);
             return true;
         }
