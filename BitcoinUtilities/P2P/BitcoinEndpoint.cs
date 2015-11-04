@@ -2,6 +2,7 @@
 using System.IO;
 using System.Net;
 using System.Threading;
+using BitcoinUtilities.Threading;
 
 namespace BitcoinUtilities.P2P
 {
@@ -26,8 +27,12 @@ namespace BitcoinUtilities.P2P
 
         private readonly BitcoinMessageHandler messageHandler;
 
+        private const int MessageProcessingThreadsCount = 4;
+        private const int MessageProcessingStartTimeout = 300000;
+
         private BitcoinConnection conn;
-        private Thread thread;
+        private Thread listenerThread;
+        private BlockingThreadPool threadPool;
         private volatile bool running;
 
         public BitcoinEndpoint(BitcoinMessageHandler messageHandler)
@@ -43,6 +48,10 @@ namespace BitcoinUtilities.P2P
             {
                 conn.Dispose();
             }
+            if (threadPool != null)
+            {
+                threadPool.Stop();
+            }
         }
 
         public int ProtocolVersion
@@ -54,7 +63,7 @@ namespace BitcoinUtilities.P2P
         {
             if (conn != null)
             {
-                throw new Exception("Connection is already established.");
+                throw new Exception("Connection was already established.");
             }
 
             conn = new BitcoinConnection();
@@ -67,7 +76,7 @@ namespace BitcoinUtilities.P2P
         {
             if (conn != null)
             {
-                throw new Exception("Connection is already established.");
+                throw new Exception("Connection was already established.");
             }
 
             conn = connection;
@@ -101,17 +110,37 @@ namespace BitcoinUtilities.P2P
 
             running = true;
 
-            thread = new Thread(Listen);
-            thread.IsBackground = true; //todo: ??? should it be background?
-            thread.Start();
+            threadPool = new BlockingThreadPool(MessageProcessingThreadsCount);
+
+            listenerThread = new Thread(Listen);
+            listenerThread.Name = "Endpoint Listener";
+            listenerThread.IsBackground = true; //todo: ??? should it be background?
+            listenerThread.Start();
         }
 
         private void Listen()
         {
             while (running)
             {
-                BitcoinMessage message = conn.ReadMessage();
-                HandleMessage(message);
+                BitcoinMessage message;
+                try
+                {
+                    message = conn.ReadMessage();
+                }
+                catch (ObjectDisposedException)
+                {
+                    //todo: this happens when endpoint is disposed, can it happen for other reasons?
+                    return;
+                }
+                catch (IOException)
+                {
+                    //todo: this happens when endpoint is disposed, can it happen for other reasons?
+                    return;
+                }
+                if (!threadPool.Execute(() => HandleMessage(message), MessageProcessingStartTimeout))
+                {
+                    //todo: terminate connection?
+                }
             }
         }
 
