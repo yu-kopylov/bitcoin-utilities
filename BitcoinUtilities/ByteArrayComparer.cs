@@ -2,6 +2,7 @@
 
 namespace BitcoinUtilities
 {
+    //todo: write test
     public class ByteArrayComparer : IEqualityComparer<byte[]>
     {
         private static readonly ByteArrayComparer instance = new ByteArrayComparer();
