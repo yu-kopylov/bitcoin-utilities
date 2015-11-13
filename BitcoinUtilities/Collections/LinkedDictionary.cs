@@ -64,6 +64,16 @@ namespace BitcoinUtilities.Collections
         }
 
         /// <summary>
+        /// Checks if the dictionary contains the specified key.
+        /// </summary>
+        /// <param name="key">The key to look in the dictionary.</param>
+        /// <returns>true if the dictionary contains an element with the specified key; otherwise, false.</returns>
+        public bool ContainsKey(TKey key)
+        {
+            return dict.ContainsKey(key);
+        }
+
+        /// <summary>
         /// Adds the specified key and value to the dictionary.
         /// </summary>
         /// <param name="key">The key of the element to add.</param>

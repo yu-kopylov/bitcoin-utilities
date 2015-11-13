@@ -92,6 +92,20 @@ namespace Test.BitcoinUtilities.Collections
             Assert.That(dict[2], Is.EqualTo("12"));
             Assert.That(dict[3], Is.EqualTo("13"));
             Assert.That(dict[4], Is.EqualTo("14"));
+
+            Assert.False(dict.ContainsKey(0));
+            Assert.True(dict.ContainsKey(1));
+            Assert.True(dict.ContainsKey(2));
+            Assert.True(dict.ContainsKey(3));
+            Assert.True(dict.ContainsKey(4));
+            Assert.False(dict.ContainsKey(5));
+
+            Assert.False(dict.ContainsKey(100));
+            Assert.True(dict.ContainsKey(101));
+            Assert.True(dict.ContainsKey(102));
+            Assert.True(dict.ContainsKey(103));
+            Assert.True(dict.ContainsKey(104));
+            Assert.False(dict.ContainsKey(105));
         }
 
         [Test]
@@ -110,6 +124,8 @@ namespace Test.BitcoinUtilities.Collections
 
             Assert.Throws<ArgumentNullException>(() => Console.WriteLine(dict[null]));
             Assert.Throws<KeyNotFoundException>(() => Console.WriteLine(dict["b"]));
+
+            Assert.Throws<ArgumentNullException>(() => dict.ContainsKey(null));
         }
 
         private class ModComparer : IEqualityComparer<int>
