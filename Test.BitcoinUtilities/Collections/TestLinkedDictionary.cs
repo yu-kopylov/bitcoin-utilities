@@ -82,6 +82,16 @@ namespace Test.BitcoinUtilities.Collections
             Assert.That(dict[1], Is.EqualTo("1"));
             Assert.That(dict[2], Is.EqualTo("12"));
             Assert.That(dict[3], Is.EqualTo("13"));
+
+            dict[14] = "14";
+            Assert.That(dict.Count, Is.EqualTo(4));
+            Assert.That(dict.Select(p => p.Key).ToList(), Is.EqualTo(new int[] {11, 13, 12, 14}));
+            Assert.That(dict.Select(p => p.Value).ToList(), Is.EqualTo(new string[] {"1", "13", "12", "14"}));
+
+            Assert.That(dict[1], Is.EqualTo("1"));
+            Assert.That(dict[2], Is.EqualTo("12"));
+            Assert.That(dict[3], Is.EqualTo("13"));
+            Assert.That(dict[4], Is.EqualTo("14"));
         }
 
         [Test]

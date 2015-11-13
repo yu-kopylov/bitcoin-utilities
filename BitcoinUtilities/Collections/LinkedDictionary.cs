@@ -52,8 +52,14 @@ namespace BitcoinUtilities.Collections
             get { return dict[key].Value.Value; }
             set
             {
-                LinkedListNode<KeyValuePair<TKey, TValue>> node = dict[key];
-                node.Value = new KeyValuePair<TKey, TValue>(node.Value.Key, value);
+                LinkedListNode<KeyValuePair<TKey, TValue>> node;
+                if (dict.TryGetValue(key, out node))
+                {
+                    node.Value = new KeyValuePair<TKey, TValue>(node.Value.Key, value);
+                    return;
+                }
+                node = list.AddLast(new KeyValuePair<TKey, TValue>(key, value));
+                dict.Add(key, node);
             }
         }
 
