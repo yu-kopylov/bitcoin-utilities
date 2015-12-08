@@ -3,6 +3,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Security.Cryptography;
 using System.Text;
+using NLog;
 
 namespace BitcoinUtilities.P2P
 {
@@ -16,6 +17,8 @@ namespace BitcoinUtilities.P2P
     /// </remarks>
     public class BitcoinConnection : IDisposable
     {
+        private static readonly Logger logger = LogManager.GetCurrentClassLogger();
+
         private const int MessageHeaderLength = 24;
         private const int MaxCommandLength = 12;
 
@@ -64,12 +67,12 @@ namespace BitcoinUtilities.P2P
             {
                 throw new Exception("A connection was already established.");
             }
-            
+
             client = new TcpClient(host, port);
 
             //todo: also implement this in BitcoinConnectionListener
-            client.Client.ReceiveBufferSize = 32 * 1024 * 1024;
-            client.Client.SendBufferSize = 32 * 1024 * 1024;
+            client.Client.ReceiveBufferSize = 32*1024*1024;
+            client.Client.SendBufferSize = 32*1024*1024;
 
             stream = client.GetStream();
         }
@@ -129,6 +132,11 @@ namespace BitcoinUtilities.P2P
                 stream.Write(header, 0, header.Length);
                 stream.Write(message.Payload, 0, message.Payload.Length);
             }
+
+            if (logger.IsTraceEnabled)
+            {
+                logger.Trace("Sent message: {0} [{1} byte(s)]", message.Command, message.Payload.Length);
+            }
         }
 
         public BitcoinMessage ReadMessage()
@@ -180,7 +188,14 @@ namespace BitcoinUtilities.P2P
                 }
             }
 
-            return new BitcoinMessage(command, payload);
+            BitcoinMessage message = new BitcoinMessage(command, payload);
+
+            if (logger.IsTraceEnabled)
+            {
+                logger.Trace("Recieved message: {0} [{1} byte(s)]", message.Command, message.Payload.Length);
+            }
+
+            return message;
         }
 
         private byte[] ReadBytes(int count)
