@@ -52,6 +52,7 @@
     <Compile Include="BitcoinPrivateKey.cs" />
     <Compile Include="ByteArrayComparer.cs" />
     <Compile Include="Collections\LinkedDictionary.cs" />
+    <Compile Include="CryptoUtils.cs" />
     <Compile Include="NumberUtils.cs" />
     <Compile Include="P2P\BitcoinConnection.cs" />
     <Compile Include="P2P\BitcoinConnectionListener.cs" />

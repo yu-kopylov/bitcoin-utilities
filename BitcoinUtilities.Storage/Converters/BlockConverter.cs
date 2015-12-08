@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Security.Cryptography;
+﻿using System.Collections.Generic;
 using BitcoinUtilities.P2P;
 using BitcoinUtilities.P2P.Messages;
 using BitcoinUtilities.P2P.Primitives;
@@ -8,22 +6,15 @@ using BitcoinUtilities.Storage.Models;
 
 namespace BitcoinUtilities.Storage.Converters
 {
-    public class BlockConverter : IDisposable
+    public class BlockConverter
     {
-        private readonly SHA256 sha256Alg = SHA256.Create();
-
-        public void Dispose()
-        {
-            sha256Alg.Dispose();
-        }
-
         public Block FromMessage(BlockMessage blockMessage)
         {
             Block block = new Block();
 
             byte[] rawBlockHeader = BitcoinStreamWriter.GetBytes(blockMessage.BlockHeader.Write);
             block.Header = rawBlockHeader;
-            block.Hash = sha256Alg.ComputeHash(sha256Alg.ComputeHash(rawBlockHeader));
+            block.Hash = CryptoUtils.DoubleSha256(rawBlockHeader);
             block.Transactions = new List<Transaction>(blockMessage.Transactions.Length);
             for (int i = 0; i < blockMessage.Transactions.Length; i++)
             {
@@ -42,7 +33,7 @@ namespace BitcoinUtilities.Storage.Converters
             Transaction transaction = new Transaction();
 
             byte[] rawTransaction = BitcoinStreamWriter.GetBytes(transactionMessage.Write);
-            transaction.Hash = sha256Alg.ComputeHash(sha256Alg.ComputeHash(rawTransaction));
+            transaction.Hash = CryptoUtils.DoubleSha256(rawTransaction);
 
             transaction.Inputs = new List<TransactionInput>(transactionMessage.Inputs.Length);
             for (int i = 0; i < transactionMessage.Inputs.Length; i++)
