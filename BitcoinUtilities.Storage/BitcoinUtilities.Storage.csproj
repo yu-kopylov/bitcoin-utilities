@@ -45,6 +45,7 @@
     <Compile Include="Models\Transaction.cs" />
     <Compile Include="Models\TransactionInput.cs" />
     <Compile Include="Models\TransactionOutput.cs" />
+    <Compile Include="P2P\BlockRequestThread.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

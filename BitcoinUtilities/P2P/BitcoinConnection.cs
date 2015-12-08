@@ -67,6 +67,10 @@ namespace BitcoinUtilities.P2P
             
             client = new TcpClient(host, port);
 
+            //todo: also implement this in BitcoinConnectionListener
+            client.Client.ReceiveBufferSize = 32 * 1024 * 1024;
+            client.Client.SendBufferSize = 32 * 1024 * 1024;
+
             stream = client.GetStream();
         }
 

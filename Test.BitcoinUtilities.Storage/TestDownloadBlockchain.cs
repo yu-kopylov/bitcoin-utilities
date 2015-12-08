@@ -10,6 +10,7 @@ using BitcoinUtilities.P2P.Messages;
 using BitcoinUtilities.P2P.Primitives;
 using BitcoinUtilities.Storage.Converters;
 using BitcoinUtilities.Storage.Models;
+using BitcoinUtilities.Storage.P2P;
 using NUnit.Framework;
 
 namespace Test.BitcoinUtilities.Storage
@@ -19,16 +20,20 @@ namespace Test.BitcoinUtilities.Storage
     {
         private readonly BlockConverter blockConverter = new BlockConverter();
         private readonly ConcurrentDictionary<byte[], Block> knownBlocks = new ConcurrentDictionary<byte[], Block>(ByteArrayComparer.Instance);
-        private readonly ConcurrentDictionary<byte[], bool> requestedBlocks = new ConcurrentDictionary<byte[], bool>(ByteArrayComparer.Instance);
         private readonly ConcurrentDictionary<byte[], Block> blockPool = new ConcurrentDictionary<byte[], Block>(ByteArrayComparer.Instance);
 
-        private volatile Block lastSavedBlock;
+        //todo: split to more granular locks
+        private readonly object dataLock = new object();
+
+        private volatile Queue<Block> lastSavedBlocks = new Queue<Block>();
         private volatile byte[] lastRequestedBlockHash;
 
         private long originalBlockchainBytes;
 
         private readonly AutoResetEvent requestBlockListEvent = new AutoResetEvent(false);
         private readonly AutoResetEvent saveBlocksEvent = new AutoResetEvent(false);
+
+        private BlockRequestThread blockRequestThread;
 
         [Test]
         [Explicit]
@@ -38,7 +43,7 @@ namespace Test.BitcoinUtilities.Storage
             using (BitcoinStreamReader reader = new BitcoinStreamReader(mem))
             {
                 BlockMessage blockMessage = BlockMessage.Read(reader);
-                lastSavedBlock = blockConverter.FromMessage(blockMessage);
+                lastSavedBlocks.Enqueue(blockConverter.FromMessage(blockMessage));
             }
 
             Thread saveThread = new Thread(SaveThreadLoop);
@@ -49,48 +54,82 @@ namespace Test.BitcoinUtilities.Storage
             {
                 endpoint.Connect("localhost", 8333);
 
+                blockRequestThread = new BlockRequestThread(endpoint);
+
+                {
+                    Thread thread = new Thread(blockRequestThread.MainLoop);
+                    thread.IsBackground = true;
+                    thread.Start();
+                }
+
                 originalBlockchainBytes = 0;
                 lastRequestedBlockHash = new byte[32];
                 requestBlockListEvent.Set();
 
                 int idleSeconds = 0;
-                while (idleSeconds < 60 && lastSavedBlock.Height < 10000)
+                while (idleSeconds < 60)// && lastSavedBlock.Height < 30000)
                 {
-                    if (!requestBlockListEvent.WaitOne(1000))
+                    if (!requestBlockListEvent.WaitOne(5000))
                     {
-                        idleSeconds++;
+                        idleSeconds += 5;
                     }
-                    byte[] hash = lastSavedBlock.Hash;
-                    if (!hash.SequenceEqual(lastRequestedBlockHash) && requestedBlocks.Count < 400)
+                    byte[][] hashes = lastSavedBlocks.Select(b => b.Hash).ToArray();
+                    //todo: suboptimal
+                    Block lastBlock = lastSavedBlocks.Last();
+                    byte[] lastHash = lastBlock.Hash;
+                    int lastHeight = lastBlock.Height;
+                    if (blockRequestThread.RequestsCount < 50)
                     {
-                        idleSeconds = 0;
-                        endpoint.WriteMessage(new GetBlocksMessage(endpoint.ProtocolVersion, new byte[][] {hash}, new byte[32]));
-                        lastRequestedBlockHash = hash;
-                        Console.WriteLine("> requested block list starting from: {0}", BitConverter.ToString(hash));
+                        if (!lastHash.SequenceEqual(lastRequestedBlockHash))
+                        {
+                            idleSeconds = 0;
+                        }
+                        //blockRequestThread.CancelRequests();
+                        endpoint.WriteMessage(new GetBlocksMessage(endpoint.ProtocolVersion, hashes, new byte[32]));
+                        lastRequestedBlockHash = lastHash;
+                        Console.WriteLine("> requested block list starting from: {0} (height: {1})", BitConverter.ToString(lastHash), lastHeight);
                     }
                 }
+
+                blockRequestThread.Stop();
+                Thread.Sleep(100);
             }
-            Console.WriteLine("> {0} bytes of block chain processed, height = {1}", originalBlockchainBytes, lastSavedBlock.Height);
+
+            {
+                Block lastBlock = lastSavedBlocks.Last();
+                Console.WriteLine("> {0} bytes of block chain processed, height = {1}", originalBlockchainBytes, lastBlock.Height);
+            }
+
+            using (StreamWriter writer = new StreamWriter(@"D:\Temp\blockchain.txt"))
+            {
+                foreach (Block block in knownBlocks.Values.Where(b => b.Height > 0).OrderBy(b => b.Height))
+                {
+                    writer.WriteLine("{0:D6}:\t{1}", block.Height, BitConverter.ToString(block.Hash));
+                }
+            }
         }
 
         private bool MessageHandler(BitcoinEndpoint endpoint, IBitcoinMessage message)
         {
+            //Console.WriteLine(">> received: " + message.Command);
+
+            blockRequestThread.ProcessMessage(message);
+
             if (message is InvMessage)
             {
                 InvMessage invMessage = (InvMessage) message;
                 List<byte[]> blocksToRequest = new List<byte[]>();
+                Console.WriteLine("> got invite ({0} entries)", invMessage.Inventory.Count);
                 foreach (InventoryVector vector in invMessage.Inventory.Where(v => v.Type == InventoryVectorType.MsgBlock))
                 {
-                    if (!knownBlocks.ContainsKey(vector.Hash))
+                    //if (!knownBlocks.ContainsKey(vector.Hash))
                     {
                         blocksToRequest.Add(vector.Hash);
-                        requestedBlocks[vector.Hash] = true;
                     }
                 }
                 if (blocksToRequest.Any())
                 {
-                    InventoryVector[] inventory = blocksToRequest.Select(h => new InventoryVector(InventoryVectorType.MsgBlock, h)).ToArray();
-                    endpoint.WriteMessage(new GetDataMessage(inventory));
+                    blockRequestThread.Request(blocksToRequest);
                     Console.WriteLine("> requested {0} blocks from: {1} to {2}", blocksToRequest.Count, BitConverter.ToString(blocksToRequest.First()), BitConverter.ToString(blocksToRequest.Last()));
                 }
             }
@@ -99,10 +138,23 @@ namespace Test.BitcoinUtilities.Storage
                 BlockMessage blockMessage = (BlockMessage) message;
                 Block block = blockConverter.FromMessage(blockMessage);
                 blockPool[blockMessage.BlockHeader.PrevBlock] = block;
+
+                byte[] prevBlockHash = new byte[32];
+                Array.Copy(blockMessage.BlockHeader.PrevBlock, prevBlockHash, 32);
+                Array.Reverse(prevBlockHash);
+
+                //Console.WriteLine(">> received block (hash={0}, prevBlock={1})", BitConverter.ToString(block.Hash), BitConverter.ToString(prevBlockHash).Replace("-", ""));
+
+                if (block.Hash[31] != 0)
+                {
+                    Console.WriteLine(">> suspicious block (hash={0}, prevBlock={1})", BitConverter.ToString(block.Hash), BitConverter.ToString(prevBlockHash).Replace("-", ""));
+                }
+
                 knownBlocks[block.Hash] = block;
-                bool tmp;
-                requestedBlocks.TryRemove(block.Hash, out tmp);
-                originalBlockchainBytes += BitcoinStreamWriter.GetBytes(blockMessage.Write).Length;
+                lock (dataLock)
+                {
+                    originalBlockchainBytes += BitcoinStreamWriter.GetBytes(blockMessage.Write).Length;
+                }
                 saveBlocksEvent.Set();
                 //requestBlockListEvent.Set();
             }
@@ -113,9 +165,11 @@ namespace Test.BitcoinUtilities.Storage
         {
             while (true)
             {
-                bool saveRequested = saveBlocksEvent.WaitOne(1000);
-                if (!saveRequested || blockPool.Count > 400)
+                bool saveRequested = saveBlocksEvent.WaitOne(5000);
+                if (saveRequested)
                 {
+                    //wait a little for other incoming blocks
+                    Thread.Sleep(100);
                     SavePoolBlocks();
                 }
             }
@@ -124,7 +178,7 @@ namespace Test.BitcoinUtilities.Storage
         private void SavePoolBlocks()
         {
             List<Block> blocksToSave = new List<Block>();
-            Block currentBlock = lastSavedBlock;
+            Block currentBlock = lastSavedBlocks.Last();
             Block nextBlock;
             while (blockPool.TryRemove(currentBlock.Hash, out nextBlock))
             {
@@ -135,11 +189,18 @@ namespace Test.BitcoinUtilities.Storage
             if (blocksToSave.Any())
             {
                 //Console.WriteLine("> saving {0} blocks from: {1} to {2} (from {3} to {4})", blocksToSave.Count, blocksToSave.First().Height, blocksToSave.Last().Height, BitConverter.ToString(blocksToSave.First().Hash), BitConverter.ToString(blocksToSave.Last().Hash));
-                foreach (Block block in blocksToSave)
+                lock (dataLock)
                 {
-                    block.Transactions = null;
+                    foreach (Block block in blocksToSave)
+                    {
+                        block.Transactions = null;
+                        lastSavedBlocks.Enqueue(block);
+                    }
+                    while (lastSavedBlocks.Count > 12)
+                    {
+                        lastSavedBlocks.Dequeue();
+                    }
                 }
-                lastSavedBlock = blocksToSave.Last();
                 requestBlockListEvent.Set();
             }
         }
