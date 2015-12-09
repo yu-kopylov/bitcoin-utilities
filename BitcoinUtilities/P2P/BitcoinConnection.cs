@@ -212,7 +212,7 @@ namespace BitcoinUtilities.P2P
         private string FormatForLog(BitcoinMessage message)
         {
             StringBuilder sb = new StringBuilder();
-            BitcoinMessageFormatter formatter = new BitcoinMessageFormatter("\n\t");
+            BitcoinMessageFormatter formatter = new BitcoinMessageFormatter("\t");
             sb.AppendFormat("{0} [{1} byte(s)]", message.Command, message.Payload.Length);
             try
             {
