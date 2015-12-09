@@ -62,6 +62,7 @@
     <Compile Include="P2P\BitcoinConnectionListener.cs" />
     <Compile Include="P2P\BitcoinEndpoint.cs" />
     <Compile Include="P2P\BitcoinMessage.cs" />
+    <Compile Include="P2P\BitcoinMessageFormatter.cs" />
     <Compile Include="P2P\BitcoinMessageParser.cs" />
     <Compile Include="P2P\BitcoinMessageUtils.cs" />
     <Compile Include="P2P\BitcoinStreamReader.cs" />

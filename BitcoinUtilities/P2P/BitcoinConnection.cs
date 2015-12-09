@@ -135,7 +135,7 @@ namespace BitcoinUtilities.P2P
 
             if (logger.IsTraceEnabled)
             {
-                logger.Trace("Sent message: {0} [{1} byte(s)]", message.Command, message.Payload.Length);
+                logger.Trace("Sent message: {0}", FormatForLog(message));
             }
         }
 
@@ -192,7 +192,7 @@ namespace BitcoinUtilities.P2P
 
             if (logger.IsTraceEnabled)
             {
-                logger.Trace("Recieved message: {0} [{1} byte(s)]", message.Command, message.Payload.Length);
+                logger.Trace("Recieved message: {0}", FormatForLog(message));
             }
 
             return message;
@@ -207,6 +207,27 @@ namespace BitcoinUtilities.P2P
                 bytesRead += stream.Read(res, bytesRead, count - bytesRead);
             }
             return res;
+        }
+
+        private string FormatForLog(BitcoinMessage message)
+        {
+            StringBuilder sb = new StringBuilder();
+            BitcoinMessageFormatter formatter = new BitcoinMessageFormatter("\n\t");
+            sb.AppendFormat("{0} [{1} byte(s)]", message.Command, message.Payload.Length);
+            try
+            {
+                IBitcoinMessage parsedMessage = BitcoinMessageParser.Parse(message);
+                if (parsedMessage != null)
+                {
+                    sb.Append("\n");
+                    sb.Append(formatter.Format(parsedMessage));
+                }
+            }
+            catch (Exception e)
+            {
+                sb.AppendFormat("\n\tUnable to parse message: {0}", e.Message);
+            }
+            return sb.ToString();
         }
     }
 }

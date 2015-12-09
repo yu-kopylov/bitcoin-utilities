@@ -53,6 +53,7 @@
     <Compile Include="P2P\Messages\TestGetBlocksMessage.cs" />
     <Compile Include="P2P\Messages\TestInvMessage.cs" />
     <Compile Include="P2P\TestBitcoinEndpoint.cs" />
+    <Compile Include="P2P\TestBitcoinMessageFormatter.cs" />
     <Compile Include="P2P\TestBitcoinMessageUtils.cs" />
     <Compile Include="P2P\TestBitcoinStreamReader.cs" />
     <Compile Include="P2P\TestBitcoinStreamWriter.cs" />
