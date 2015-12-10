@@ -66,6 +66,7 @@
     <Compile Include="TestCryptoUtils.cs" />
     <Compile Include="TestNumberUtils.cs" />
     <Compile Include="TestWif.cs" />
+    <Compile Include="Threading\TestBlockingThreadPool.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

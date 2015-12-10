@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading;
+using NLog;
 
 namespace BitcoinUtilities.Threading
 {
@@ -11,6 +12,8 @@ namespace BitcoinUtilities.Threading
     /// </summary>
     public class BlockingThreadPool
     {
+        private static readonly Logger logger = LogManager.GetCurrentClassLogger();
+
         private readonly Thread[] threads;
         private volatile bool running;
 
@@ -57,17 +60,24 @@ namespace BitcoinUtilities.Threading
             {
                 return true;
             }
+            logger.Info("Task waiting for thread.");
             if (!threadAvailableEvent.WaitOne(timeout))
             {
                 return false;
             }
+            logger.Info("Task received signal.");
             if (!running)
             {
                 //Signal other threads to stop waiting.
                 threadAvailableEvent.Set();
                 return false;
             }
-            return EnqueueTask(task);
+            if (!EnqueueTask(task))
+            {
+                logger.Error("Something is wrong with a BlockingThreadPool. A task that should have been accepted got rejected.");
+                return false;
+            }
+            return true;
         }
 
         /// <summary>
@@ -114,10 +124,14 @@ namespace BitcoinUtilities.Threading
                 {
                     taskQueue.Enqueue(task);
                     taskAvailableEvent.Set();
+                    logger.Info("Task enqueued.");
                     return true;
                 }
+                
+                //todo: review this
+                threadAvailableEvent.Reset();
+                return false;
             }
-            return false;
         }
 
         private bool TryDequeueTask(out Action task)
@@ -131,6 +145,7 @@ namespace BitcoinUtilities.Threading
                 }
                 availableThreads--;
                 task = taskQueue.Dequeue();
+                logger.Info("Task dequeued.");
                 return true;
             }
         }
@@ -140,6 +155,7 @@ namespace BitcoinUtilities.Threading
             lock (taskQueueLock)
             {
                 availableThreads++;
+                logger.Info("Thread released.");
                 threadAvailableEvent.Set();
             }
         }
@@ -150,9 +166,10 @@ namespace BitcoinUtilities.Threading
             {
                 task();
             }
-            catch (Exception)
+            catch (Exception e)
             {
                 // error handling is not a responsibility of the worker thread
+                logger.Error(e, "Task in a BlockingThreadPool failed with exception.");
             }
         }
     }
