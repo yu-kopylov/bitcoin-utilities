@@ -122,7 +122,7 @@ namespace Test.BitcoinUtilities.Storage
                 Console.WriteLine("> got invite ({0} entries)", invMessage.Inventory.Count);
                 foreach (InventoryVector vector in invMessage.Inventory.Where(v => v.Type == InventoryVectorType.MsgBlock))
                 {
-                    //if (!knownBlocks.ContainsKey(vector.Hash))
+                    if (!knownBlocks.ContainsKey(vector.Hash))
                     {
                         blocksToRequest.Add(vector.Hash);
                     }
