@@ -40,12 +40,12 @@ namespace BitcoinUtilities.P2P
             else if (message is GetDataMessage)
             {
                 GetDataMessage typedMessage = (GetDataMessage) message;
-                FormatCollection("inventory items", typedMessage.Inventory, v => string.Format("{0}\t{1}", v.Type, BitConverter.ToString(v.Hash)));
+                FormatFullCollection("inventory items", typedMessage.Inventory, v => string.Format("{0}\t{1}", v.Type, BitConverter.ToString(v.Hash)));
             }
             else if (message is InvMessage)
             {
                 InvMessage typedMessage = (InvMessage) message;
-                FormatCollection("inventory items", typedMessage.Inventory, v => string.Format("{0}\t{1}", v.Type, BitConverter.ToString(v.Hash)));
+                FormatFullCollection("inventory items", typedMessage.Inventory, v => string.Format("{0}\t{1}", v.Type, BitConverter.ToString(v.Hash)));
             }
             else if (message is BlockMessage)
             {
@@ -96,6 +96,27 @@ namespace BitcoinUtilities.P2P
             if (items.Count > 1)
             {
                 T item = items.Last();
+                AppendLine("\t{0}", item == null ? "<null>" : format(item));
+            }
+        }
+        
+        private void FormatFullCollection<T>(string collectionName, ICollection<T> items, Func<T, string> format)
+        {
+            if (items.Count == 0)
+            {
+                AppendLine("{0} [0 items]", collectionName);
+            }
+            else if (items.Count == 1)
+            {
+                AppendLine("{0} [1 item]:", collectionName);
+            }
+            else
+            {
+                AppendLine("{0} [{1} items]:", collectionName, items.Count);
+            }
+
+            foreach (T item in items)
+            {
                 AppendLine("\t{0}", item == null ? "<null>" : format(item));
             }
         }

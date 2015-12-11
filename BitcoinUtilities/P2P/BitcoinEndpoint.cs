@@ -3,6 +3,7 @@ using System.IO;
 using System.Net;
 using System.Threading;
 using BitcoinUtilities.Threading;
+using NLog;
 
 namespace BitcoinUtilities.P2P
 {
@@ -16,6 +17,8 @@ namespace BitcoinUtilities.P2P
     /// </remarks>
     public class BitcoinEndpoint : IDisposable
     {
+        private static readonly Logger logger = LogManager.GetCurrentClassLogger();
+
         private static readonly DateTime unixEpoch = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
 
         private const string UserAgent = "/BitcoinUtilities:0.0.1/";
@@ -140,6 +143,7 @@ namespace BitcoinUtilities.P2P
                 if (!threadPool.Execute(() => HandleMessage(message), MessageProcessingStartTimeout))
                 {
                     //todo: terminate connection?
+                    logger.Warn("Message was ignored because all threads were busy (command: {0}, payload: {1} byte(s)).", message.Command, message.Payload.Length);
                 }
             }
         }
