@@ -178,6 +178,55 @@ namespace Test.BitcoinUtilities.Threading
             }
         }
 
+        [Test]
+        public void TestPerformance()
+        {
+            const int poolThreadCount = 100;
+            BlockingThreadPool threadPool = new BlockingThreadPool(poolThreadCount);
+
+            object lockObject = new object();
+
+            long executedTasks = 0;
+            long increments = 0;
+            int threadCount = 0;
+            int maxThreadCount = 0;
+
+            Stopwatch sw = Stopwatch.StartNew();
+
+            while (sw.ElapsedMilliseconds < 1000)
+            {
+                for (int i = 0; i < 1000; i++)
+                {
+                    threadPool.Execute(() =>
+                                       {
+                                           int newCount = Interlocked.Increment(ref threadCount);
+                                           lock (lockObject)
+                                           {
+                                               if (newCount > maxThreadCount)
+                                               {
+                                                   maxThreadCount = newCount;
+                                               }
+                                           }
+                                           Interlocked.CompareExchange(ref maxThreadCount, newCount, newCount);
+
+                                           Interlocked.Increment(ref executedTasks);
+                                           Thread.Sleep(10);
+                                           for (int j = 0; j < 10; j++)
+                                           {
+                                               Interlocked.Increment(ref increments);
+                                           }
+                                           Interlocked.Decrement(ref threadCount);
+                                       }, 10);
+                }
+            }
+
+            Console.WriteLine("executedTasks:\t{0}", executedTasks);
+            Console.WriteLine("increments:\t{0}", increments);
+            Console.WriteLine("maxThreadCount:\t{0}", maxThreadCount);
+
+            Assert.That(maxThreadCount, Is.EqualTo(poolThreadCount));
+        }
+
         private class MessageLog
         {
             private readonly object logLock = new StringBuilder();

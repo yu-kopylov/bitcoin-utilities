@@ -19,10 +19,9 @@ namespace BitcoinUtilities.Threading
 
         private readonly object taskQueueLock = new object();
         private readonly Queue<Action> taskQueue;
-        private int availableThreads;
 
-        private readonly AutoResetEvent taskAvailableEvent = new AutoResetEvent(false);
-        private readonly AutoResetEvent threadAvailableEvent = new AutoResetEvent(false);
+        private readonly Semaphore taskQueueSemaphore;
+        private readonly Semaphore workerSemaphore;
 
         /// <summary>
         /// Initializes the a new instance of the pool. 
@@ -30,8 +29,10 @@ namespace BitcoinUtilities.Threading
         /// <param name="threadCount">The number of threads in the pool.</param>
         public BlockingThreadPool(int threadCount)
         {
+            //todo: separate threadCount and queueSize
             taskQueue = new Queue<Action>(threadCount);
-            availableThreads = threadCount;
+            taskQueueSemaphore = new Semaphore(threadCount, threadCount);
+            workerSemaphore = new Semaphore(0, threadCount);
             running = true;
             threads = new Thread[threadCount];
             for (int i = 0; i < threadCount; i++)
@@ -52,31 +53,22 @@ namespace BitcoinUtilities.Threading
         /// Blocks until there is an available thead.
         /// </summary>
         /// <param name="task">The task to execute.</param>
-        /// <param name="timeout">Time in milliseconds to wait for an available thread.</param>
+        /// <param name="timeout">Time in milliseconds to wait for an available thread, or -1 to wait indefinitely.</param>
         /// <returns>true if the task was scheduled for execution; otherwise, false.</returns>
         public bool Execute(Action task, int timeout)
         {
-            if (EnqueueTask(task))
-            {
-                return true;
-            }
-            logger.Info("Task waiting for thread.");
-            if (!threadAvailableEvent.WaitOne(timeout))
+            //todo: add tests for infinite wait(-1) or remove this option
+            if (!taskQueueSemaphore.WaitOne(timeout))
             {
                 return false;
             }
-            logger.Info("Task received signal.");
             if (!running)
             {
                 //Signal other threads to stop waiting.
-                threadAvailableEvent.Set();
+                taskQueueSemaphore.Release();
                 return false;
             }
-            if (!EnqueueTask(task))
-            {
-                logger.Error("Something is wrong with a BlockingThreadPool. A task that should have been accepted got rejected.");
-                return false;
-            }
+            EnqueueTask(task);
             return true;
         }
 
@@ -86,77 +78,43 @@ namespace BitcoinUtilities.Threading
         public void Stop()
         {
             //todo: shutdown completely using Interrupt and Abort
-            //todo: write tests
+            //todo: write tests for Stop method
             running = false;
-            taskAvailableEvent.Set();
-            threadAvailableEvent.Set();
+            //todo: SemaphoreFullException is possible here
+            taskQueueSemaphore.Release();
+            workerSemaphore.Release();
         }
 
         private void WorkerThreadLoop()
         {
             while (running)
             {
-                Action task;
-                if (TryDequeueTask(out task))
+                workerSemaphore.WaitOne(-1);
+                if (!running)
                 {
-                    ExecuteTask(task);
-                    ReleaseThread();
+                    //Signal other threads to stop waiting.
+                    workerSemaphore.Release();
+                    return;
                 }
-                else
-                {
-                    if (taskAvailableEvent.WaitOne(60000))
-                    {
-                        if (!running)
-                        {
-                            //Signal other threads to stop waiting.
-                            taskAvailableEvent.Set();
-                        }
-                    }
-                }
+                Action task = DequeueTask();
+                ExecuteTask(task);
             }
         }
 
-        private bool EnqueueTask(Action task)
+        private void EnqueueTask(Action task)
         {
             lock (taskQueueLock)
             {
-                if (taskQueue.Count < availableThreads)
-                {
-                    taskQueue.Enqueue(task);
-                    taskAvailableEvent.Set();
-                    logger.Info("Task enqueued.");
-                    return true;
-                }
-                
-                //todo: review this
-                threadAvailableEvent.Reset();
-                return false;
+                taskQueue.Enqueue(task);
+                workerSemaphore.Release();
             }
         }
 
-        private bool TryDequeueTask(out Action task)
+        private Action DequeueTask()
         {
             lock (taskQueueLock)
             {
-                if (taskQueue.Count == 0)
-                {
-                    task = null;
-                    return false;
-                }
-                availableThreads--;
-                task = taskQueue.Dequeue();
-                logger.Info("Task dequeued.");
-                return true;
-            }
-        }
-
-        private void ReleaseThread()
-        {
-            lock (taskQueueLock)
-            {
-                availableThreads++;
-                logger.Info("Thread released.");
-                threadAvailableEvent.Set();
+                return taskQueue.Dequeue();
             }
         }
 
@@ -169,7 +127,12 @@ namespace BitcoinUtilities.Threading
             catch (Exception e)
             {
                 // error handling is not a responsibility of the worker thread
-                logger.Error(e, "Task in a BlockingThreadPool failed with exception.");
+                logger.Error(e, "Task in a BlockingThreadPool failed with an exception.");
+            }
+            finally
+            {
+                taskQueueSemaphore.Release();
+                Thread.Yield();
             }
         }
     }
