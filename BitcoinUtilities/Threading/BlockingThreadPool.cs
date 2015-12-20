@@ -6,9 +6,9 @@ using NLog;
 namespace BitcoinUtilities.Threading
 {
     /// <summary>
-    /// A thread pool with fixed number of threads.
+    /// A thread pool with a fixed number of threads and a limited number of tasks that can be accepted simultaneously.
     /// <para/>
-    /// If all threads are busy a caller of <see cref="Execute"/> method will be delayed.
+    /// If there is no space in the pool for a new task then a caller of <see cref="Execute"/> method will be delayed.
     /// </summary>
     public class BlockingThreadPool
     {
@@ -20,19 +20,28 @@ namespace BitcoinUtilities.Threading
         private readonly object taskQueueLock = new object();
         private readonly Queue<Action> taskQueue;
 
-        private readonly Semaphore taskQueueSemaphore;
-        private readonly Semaphore workerSemaphore;
+        private readonly Semaphore enqueSemaphore;
+        private readonly Semaphore dequeSemaphore;
 
         /// <summary>
         /// Initializes the a new instance of the pool. 
         /// </summary>
         /// <param name="threadCount">The number of threads in the pool.</param>
-        public BlockingThreadPool(int threadCount)
+        /// <param name="taskCountLimit">The maximal number of tasks that can be accepted simultaneously.</param>
+        public BlockingThreadPool(int threadCount, int taskCountLimit)
         {
-            //todo: separate threadCount and queueSize
-            taskQueue = new Queue<Action>(threadCount);
-            taskQueueSemaphore = new Semaphore(threadCount, threadCount);
-            workerSemaphore = new Semaphore(0, threadCount);
+            if (threadCount <= 0)
+            {
+                throw new ArgumentException("Parameter threadCount should be greater than zero.", "threadCount");
+            }
+            if (taskCountLimit < threadCount)
+            {
+                throw new ArgumentException("Parameter taskCountLimit should be greater or equal to threadCount.", "taskCountLimit");
+            }
+
+            taskQueue = new Queue<Action>(taskCountLimit);
+            enqueSemaphore = new Semaphore(taskCountLimit, taskCountLimit);
+            dequeSemaphore = new Semaphore(0, taskCountLimit);
             running = true;
             threads = new Thread[threadCount];
             for (int i = 0; i < threadCount; i++)
@@ -41,7 +50,7 @@ namespace BitcoinUtilities.Threading
                 threads[i] = thread;
 
                 thread.Name = "Thread#" + i;
-                thread.IsBackground = true; // todo: should it be background?
+                thread.IsBackground = true;
 
                 thread.Start();
             }
@@ -50,22 +59,22 @@ namespace BitcoinUtilities.Threading
         /// <summary>
         /// Shedules the task for execution.
         /// <para/>
-        /// Blocks until there is an available thead.
+        /// Blocks until there is a space in the pool.
         /// </summary>
         /// <param name="task">The task to execute.</param>
-        /// <param name="timeout">Time in milliseconds to wait for an available thread, or -1 to wait indefinitely.</param>
+        /// <param name="timeout">Time in milliseconds to wait for an available space, or -1 to wait indefinitely.</param>
         /// <returns>true if the task was scheduled for execution; otherwise, false.</returns>
         public bool Execute(Action task, int timeout)
         {
             //todo: add tests for infinite wait(-1) or remove this option
-            if (!taskQueueSemaphore.WaitOne(timeout))
+            if (!enqueSemaphore.WaitOne(timeout))
             {
                 return false;
             }
             if (!running)
             {
                 //Signal other threads to stop waiting.
-                taskQueueSemaphore.Release();
+                enqueSemaphore.Release();
                 return false;
             }
             EnqueueTask(task);
@@ -78,22 +87,35 @@ namespace BitcoinUtilities.Threading
         public void Stop()
         {
             //todo: shutdown completely using Interrupt and Abort
-            //todo: write tests for Stop method
+            //todo: write better tests
             running = false;
-            //todo: SemaphoreFullException is possible here
-            taskQueueSemaphore.Release();
-            workerSemaphore.Release();
+            try
+            {
+                enqueSemaphore.Release();
+            }
+            catch (SemaphoreFullException)
+            {
+                //semaphore was completely released already
+            }
+            try
+            {
+                dequeSemaphore.Release();
+            }
+            catch (SemaphoreFullException)
+            {
+                //semaphore was completely released already
+            }
         }
 
         private void WorkerThreadLoop()
         {
             while (running)
             {
-                workerSemaphore.WaitOne(-1);
+                dequeSemaphore.WaitOne(-1);
                 if (!running)
                 {
                     //Signal other threads to stop waiting.
-                    workerSemaphore.Release();
+                    dequeSemaphore.Release();
                     return;
                 }
                 Action task = DequeueTask();
@@ -106,7 +128,7 @@ namespace BitcoinUtilities.Threading
             lock (taskQueueLock)
             {
                 taskQueue.Enqueue(task);
-                workerSemaphore.Release();
+                dequeSemaphore.Release();
             }
         }
 
@@ -131,7 +153,7 @@ namespace BitcoinUtilities.Threading
             }
             finally
             {
-                taskQueueSemaphore.Release();
+                enqueSemaphore.Release();
                 Thread.Yield();
             }
         }

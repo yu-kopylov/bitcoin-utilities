@@ -16,7 +16,7 @@ namespace Test.BitcoinUtilities.Threading
         {
             MessageLog log = new MessageLog();
 
-            BlockingThreadPool threadPool = new BlockingThreadPool(2);
+            BlockingThreadPool threadPool = new BlockingThreadPool(2, 2);
 
             for (int i = 0; i < 2; i++)
             {
@@ -59,7 +59,7 @@ namespace Test.BitcoinUtilities.Threading
         {
             MessageLog log = new MessageLog();
 
-            BlockingThreadPool threadPool = new BlockingThreadPool(2);
+            BlockingThreadPool threadPool = new BlockingThreadPool(2, 2);
 
             for (int i = 0; i < 2; i++)
             {
@@ -116,11 +116,92 @@ namespace Test.BitcoinUtilities.Threading
         }
 
         [Test]
+        public void TestQueuedTasks()
+        {
+            BlockingThreadPool threadPool = new BlockingThreadPool(2, 3);
+            MessageLog log = new MessageLog();
+
+            for (int i = 0; i < 2; i++)
+            {
+                log.Clear();
+
+                Assert.That(threadPool.Execute(() =>
+                                               {
+                                                   log.Log("task 1: started"); // T = 0
+                                                   Thread.Sleep(100);
+                                                   log.Log("task 1: finished"); // T = 100
+                                               }, 10), Is.True);
+
+                Thread.Sleep(10); // T = 10 
+
+                Assert.That(threadPool.Execute(() =>
+                                               {
+                                                   log.Log("task 2: started"); // T = 10
+                                                   Thread.Sleep(200);
+                                                   log.Log("task 2: finished"); // T = 210
+                                               }, 10), Is.True);
+
+                Thread.Sleep(10); // T = 20 
+
+                Assert.That(threadPool.Execute(() =>
+                                               {
+                                                   log.Log("task 3: started"); // T = 100
+                                                   Thread.Sleep(200);
+                                                   log.Log("task 3: finished"); // T = 300
+                                               }, 10), Is.True);
+
+                Thread.Sleep(10); // T = 30 
+
+                Assert.That(threadPool.Execute(() => { log.Log("task 4: executed"); }, 10), Is.False); //T = 40
+
+                Thread.Sleep(100); // T = 140
+
+                Assert.That(threadPool.Execute(() =>
+                                               {
+                                                   log.Log("task 5: started"); // T = 210
+                                                   Thread.Sleep(100);
+                                                   log.Log("task 5: finished"); // T = 310
+                                               }, 10), Is.True);
+
+                Thread.Sleep(10); // T = 150 
+
+                Assert.That(threadPool.Execute(() => { log.Log("task 6: executed"); }, 10), Is.False); //T = 160
+
+                Thread.Sleep(10);
+                log.Log("main: wait started"); // T = 170
+                Thread.Sleep(200);
+                log.Log("main: wait finished"); // T = 370
+
+
+                Assert.That(log.GetLog(), Is.EqualTo(new string[]
+                                                     {
+                                                         "task 1: started",
+                                                         "task 2: started",
+                                                         "task 1: finished",
+                                                         "task 3: started",
+                                                         "main: wait started",
+                                                         "task 2: finished",
+                                                         "task 5: started",
+                                                         "task 3: finished",
+                                                         "task 5: finished",
+                                                         "main: wait finished"
+                                                     }));
+            }
+        }
+
+        [Test]
+        public void TestStop()
+        {
+            BlockingThreadPool threadPool = new BlockingThreadPool(2, 2);
+            threadPool.Stop();
+        }
+
+        [Test]
         public void TestNoBlockThenBlock()
         {
             MessageLog log = new MessageLog();
 
-            BlockingThreadPool threadPool = new BlockingThreadPool(2);
+            BlockingThreadPool threadPool = new BlockingThreadPool(2, 2);
 
             for (int i = 0; i < 2; i++)
             {
@@ -181,57 +262,62 @@ namespace Test.BitcoinUtilities.Threading
         [Test]
         public void TestPerformance()
         {
+            GC.Collect();
+
             const int poolThreadCount = 100;
-            BlockingThreadPool threadPool = new BlockingThreadPool(poolThreadCount);
+            const int taskDelay = 10;
+
+            BlockingThreadPool threadPool = new BlockingThreadPool(poolThreadCount, poolThreadCount*2);
 
             object lockObject = new object();
 
             long executedTasks = 0;
-            long increments = 0;
+            long rejectedTasks = 0;
             int threadCount = 0;
             int maxThreadCount = 0;
 
-            Stopwatch sw = Stopwatch.StartNew();
+            Action task = () =>
+                          {
+                              var newThreadCount = Interlocked.Increment(ref threadCount);
+                              lock (lockObject)
+                              {
+                                  if (newThreadCount > maxThreadCount)
+                                  {
+                                      maxThreadCount = newThreadCount;
+                                  }
+                              }
 
+                              Thread.Sleep(taskDelay);
+
+                              Interlocked.Increment(ref executedTasks);
+                              Interlocked.Decrement(ref threadCount);
+                          };
+
+            Stopwatch sw = Stopwatch.StartNew();
             while (sw.ElapsedMilliseconds < 1000)
             {
                 for (int i = 0; i < 1000; i++)
                 {
-                    threadPool.Execute(() =>
-                                       {
-                                           int newCount = Interlocked.Increment(ref threadCount);
-                                           lock (lockObject)
-                                           {
-                                               if (newCount > maxThreadCount)
-                                               {
-                                                   maxThreadCount = newCount;
-                                               }
-                                           }
-                                           Interlocked.CompareExchange(ref maxThreadCount, newCount, newCount);
-
-                                           Interlocked.Increment(ref executedTasks);
-                                           Thread.Sleep(10);
-                                           for (int j = 0; j < 10; j++)
-                                           {
-                                               Interlocked.Increment(ref increments);
-                                           }
-                                           Interlocked.Decrement(ref threadCount);
-                                       }, 10);
+                    if (!threadPool.Execute(task, taskDelay + 20))
+                    {
+                        rejectedTasks++;
+                    }
                 }
             }
 
             Console.WriteLine("executedTasks:\t{0}", executedTasks);
-            Console.WriteLine("increments:\t{0}", increments);
+            Console.WriteLine("rejectedTasks:\t{0}", rejectedTasks);
             Console.WriteLine("maxThreadCount:\t{0}", maxThreadCount);
 
             Assert.That(maxThreadCount, Is.EqualTo(poolThreadCount));
+            Assert.That(rejectedTasks, Is.EqualTo(0));
         }
 
         private class MessageLog
         {
             private readonly object logLock = new StringBuilder();
             private readonly List<string> log = new List<string>();
-            private readonly Stopwatch timer = new Stopwatch();
+            private readonly Stopwatch timer = Stopwatch.StartNew();
 
             public string[] GetLog()
             {

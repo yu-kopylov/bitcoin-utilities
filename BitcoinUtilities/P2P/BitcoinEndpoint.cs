@@ -31,6 +31,7 @@ namespace BitcoinUtilities.P2P
         private readonly BitcoinMessageHandler messageHandler;
 
         private const int MessageProcessingThreadsCount = 4;
+        private const int MessageProcessingTasksCount = 5;
         private const int MessageProcessingStartTimeout = 300000;
 
         private BitcoinConnection conn;
@@ -113,7 +114,7 @@ namespace BitcoinUtilities.P2P
 
             running = true;
 
-            threadPool = new BlockingThreadPool(MessageProcessingThreadsCount);
+            threadPool = new BlockingThreadPool(MessageProcessingThreadsCount, MessageProcessingTasksCount);
 
             listenerThread = new Thread(Listen);
             listenerThread.Name = "Endpoint Listener";
