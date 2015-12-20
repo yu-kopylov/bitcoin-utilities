@@ -78,7 +78,10 @@ namespace BitcoinUtilities.Threading
                 enqueSemaphore.Release();
                 return false;
             }
+
             EnqueueTask(task);
+            dequeSemaphore.Release();
+            
             return true;
         }
 
@@ -135,8 +138,12 @@ namespace BitcoinUtilities.Threading
                     dequeSemaphore.Release();
                     return;
                 }
+
                 Action task = DequeueTask();
                 ExecuteTask(task);
+
+                enqueSemaphore.Release();
+                Thread.Yield();
             }
         }
 
@@ -145,7 +152,6 @@ namespace BitcoinUtilities.Threading
             lock (taskQueueLock)
             {
                 taskQueue.Enqueue(task);
-                dequeSemaphore.Release();
             }
         }
 
@@ -165,13 +171,7 @@ namespace BitcoinUtilities.Threading
             }
             catch (Exception e)
             {
-                // error handling is not a responsibility of the worker thread
                 logger.Error(e, "Task in a BlockingThreadPool failed with an exception.");
-            }
-            finally
-            {
-                enqueSemaphore.Release();
-                Thread.Yield();
             }
         }
     }

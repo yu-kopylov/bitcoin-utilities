@@ -357,7 +357,7 @@ namespace Test.BitcoinUtilities.Threading
         [Test]
         public void TestPerformance()
         {
-            const int poolThreadCount = 1000;
+            const int poolThreadCount = 100;
             const int taskDelay = 10;
 
             BlockingThreadPool threadPool = new BlockingThreadPool(poolThreadCount, poolThreadCount*2);
@@ -366,6 +366,7 @@ namespace Test.BitcoinUtilities.Threading
 
             long executedTasks = 0;
             long rejectedTasks = 0;
+            long loopIterations = 0;
             int threadCount = 0;
             int maxThreadCount = 0;
 
@@ -387,9 +388,10 @@ namespace Test.BitcoinUtilities.Threading
                           };
 
             Stopwatch sw = Stopwatch.StartNew();
-            while (sw.ElapsedMilliseconds < 10000)
+            while (sw.ElapsedMilliseconds < 1000)
             {
-                for (int i = 0; i < 1000; i++)
+                loopIterations++;
+                for (int i = 0; i < 100; i++)
                 {
                     if (!threadPool.Execute(task, taskDelay + 100))
                     {
@@ -403,6 +405,7 @@ namespace Test.BitcoinUtilities.Threading
             Console.WriteLine("executedTasks:\t{0}", executedTasks);
             Console.WriteLine("rejectedTasks:\t{0}", rejectedTasks);
             Console.WriteLine("maxThreadCount:\t{0}", maxThreadCount);
+            Console.WriteLine("loopIterations:\t{0}", loopIterations);
 
             Assert.That(maxThreadCount, Is.EqualTo(poolThreadCount));
             Assert.That(rejectedTasks, Is.EqualTo(0));
