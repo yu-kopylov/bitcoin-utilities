@@ -11,12 +11,24 @@ namespace Test.BitcoinUtilities.Threading
     [TestFixture]
     public class TestBlockingThreadPool
     {
+        [TestFixtureSetUp]
+        public void WarmUp()
+        {
+            //the first thread creation can take considerable time
+            Stopwatch sw = Stopwatch.StartNew();
+            AutoResetEvent ev = new AutoResetEvent(false);
+            BlockingThreadPool threadPool = new BlockingThreadPool(1, 1);
+            Assume.That(threadPool.Execute(() => ev.Set(), 10), Is.True);
+            ev.WaitOne();
+            threadPool.Stop();
+            Console.WriteLine("WarmUp: {0}ms", sw.ElapsedMilliseconds);
+        }
+
         [Test]
         public void TestNoBlock()
         {
-            MessageLog log = new MessageLog();
-
             BlockingThreadPool threadPool = new BlockingThreadPool(2, 2);
+            MessageLog log = new MessageLog();
 
             for (int i = 0; i < 2; i++)
             {
@@ -57,9 +69,8 @@ namespace Test.BitcoinUtilities.Threading
         [Test]
         public void TestWithBlock()
         {
-            MessageLog log = new MessageLog();
-
             BlockingThreadPool threadPool = new BlockingThreadPool(2, 2);
+            MessageLog log = new MessageLog();
 
             for (int i = 0; i < 2; i++)
             {
