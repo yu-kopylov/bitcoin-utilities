@@ -271,10 +271,87 @@ namespace Test.BitcoinUtilities.Threading
         }
 
         [Test]
-        public void TestStop()
+        public void TestStopIdle()
         {
             BlockingThreadPool threadPool = new BlockingThreadPool(2, 2);
-            Assert.That(threadPool.Stop(1000), Is.True);
+            Thread.Sleep(50);
+            Assert.That(threadPool.Stop(50), Is.True);
+        }
+
+        [Test]
+        public void TestStopBusy()
+        {
+            MessageLog log = new MessageLog();
+
+            for (int i = 0; i < TestIterationsCount; i++)
+            {
+                BlockingThreadPool threadPool = new BlockingThreadPool(3, 3);
+                log.Clear();
+
+                threadPool.Execute(() =>
+                {
+                    log.Log("task 1: started"); // T = 0
+                    try
+                    {
+                        // finally block is required to ignore Thread.Interrupt and Thread.Abort
+                    }
+                    finally
+                    {
+                        Thread.Sleep(200);
+                    }
+                    log.Log("task 1: finished"); // T = 200
+                }, 100);
+
+                Thread.Sleep(50); // T = 50
+
+                threadPool.Execute(() =>
+                {
+                    log.Log("task 2: started"); // T = 50
+                    try
+                    {
+                        // finally block is required to ignore Thread.Interrupt and Thread.Abort
+                    }
+                    finally
+                    {
+                        Thread.Sleep(250);
+                    }
+                    log.Log("task 2: finished"); // T = 300
+                }, 100);
+
+                Thread.Sleep(50); // T = 50
+
+                threadPool.Execute(() =>
+                {
+                    log.Log("task 3: started"); // T = 100
+                    log.Log(string.Format("task 4 queued: {0}", threadPool.Execute(() => { }, 300))); // T = 150
+                    log.Log("task 3: finished"); // T = 150
+                }, 100);
+
+                Thread.Sleep(50); // T = 150
+
+                Stopwatch sw = Stopwatch.StartNew();
+                Assert.That(threadPool.Stop(100), Is.False); // T = 250
+                Assert.That(sw.ElapsedMilliseconds, Is.GreaterThan(75).And.LessThan(125));
+
+                sw.Restart();
+                Assert.That(threadPool.Execute(() => { }, 100), Is.False);
+                Assert.That(sw.ElapsedMilliseconds, Is.LessThan(25));
+
+                sw.Restart();
+                Assert.That(threadPool.Stop(100), Is.True); // T = 300
+                Assert.That(sw.ElapsedMilliseconds, Is.GreaterThan(25).And.LessThan(75));
+
+                Assert.That(log.GetLog(), Is.EqualTo(new string[]
+                                                 {
+                                                     "task 1: started",
+                                                     "task 2: started",
+                                                     "task 3: started",
+                                                     "task 4 queued: False",
+                                                     "task 3: finished",
+                                                     "task 1: finished",
+                                                     "task 2: finished"
+                                                 }));
+            }
         }
 
         [Test]
@@ -314,7 +391,7 @@ namespace Test.BitcoinUtilities.Threading
             {
                 for (int i = 0; i < 1000; i++)
                 {
-                    if (!threadPool.Execute(task, taskDelay + 20))
+                    if (!threadPool.Execute(task, taskDelay + 100))
                     {
                         rejectedTasks++;
                     }

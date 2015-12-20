@@ -90,8 +90,7 @@ namespace BitcoinUtilities.Threading
         public bool Stop(int timeout)
         {
             //todo: allow infinite timeout?
-            //todo: shutdown completely using Interrupt and Abort
-            //todo: write better tests
+            //todo: shutdown completely using Interrupt and Abort ?
             running = false;
             try
             {
@@ -109,7 +108,7 @@ namespace BitcoinUtilities.Threading
             {
                 //semaphore was completely released already
             }
-            Stopwatch sw = new Stopwatch();
+            Stopwatch sw = Stopwatch.StartNew();
             foreach (Thread thread in threads)
             {
                 long remainingTimeout = timeout - sw.ElapsedMilliseconds;

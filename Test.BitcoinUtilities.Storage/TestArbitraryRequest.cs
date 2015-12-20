@@ -130,6 +130,7 @@ namespace Test.BitcoinUtilities.Storage
         }
 
         [Test]
+        [Explicit]
         public void Test()
         {
             using (BitcoinEndpoint ep = new BitcoinEndpoint(LogMessage))
