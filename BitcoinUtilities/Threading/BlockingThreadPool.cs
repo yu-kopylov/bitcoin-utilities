@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Threading;
 using NLog;
 
@@ -84,8 +85,11 @@ namespace BitcoinUtilities.Threading
         /// <summary>
         /// Signals pool to stop.
         /// </summary>
-        public void Stop()
+        /// <param name="timeout">Time in milliseconds to wait for worker threads to stop.</param>
+        /// <returns>true if all worker threads was stopped; otherwise, false.</returns>
+        public bool Stop(int timeout)
         {
+            //todo: allow infinite timeout?
             //todo: shutdown completely using Interrupt and Abort
             //todo: write better tests
             running = false;
@@ -105,6 +109,20 @@ namespace BitcoinUtilities.Threading
             {
                 //semaphore was completely released already
             }
+            Stopwatch sw = new Stopwatch();
+            foreach (Thread thread in threads)
+            {
+                long remainingTimeout = timeout - sw.ElapsedMilliseconds;
+                if (remainingTimeout < 0)
+                {
+                    remainingTimeout = 0;
+                }
+                if (!thread.Join((int) remainingTimeout))
+                {
+                    return false;
+                }
+            }
+            return true;
         }
 
         private void WorkerThreadLoop()

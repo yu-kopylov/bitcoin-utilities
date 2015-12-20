@@ -11,6 +11,8 @@ namespace Test.BitcoinUtilities.Threading
     [TestFixture]
     public class TestBlockingThreadPool
     {
+        private const int TestIterationsCount = 3;
+
         [TestFixtureSetUp]
         public void WarmUp()
         {
@@ -18,9 +20,9 @@ namespace Test.BitcoinUtilities.Threading
             Stopwatch sw = Stopwatch.StartNew();
             AutoResetEvent ev = new AutoResetEvent(false);
             BlockingThreadPool threadPool = new BlockingThreadPool(1, 1);
-            Assume.That(threadPool.Execute(() => ev.Set(), 10), Is.True);
+            Assume.That(threadPool.Execute(() => ev.Set(), 100), Is.True);
             ev.WaitOne();
-            threadPool.Stop();
+            Assert.That(threadPool.Stop(1000), Is.True);
             Console.WriteLine("WarmUp: {0}ms", sw.ElapsedMilliseconds);
         }
 
@@ -30,29 +32,30 @@ namespace Test.BitcoinUtilities.Threading
             BlockingThreadPool threadPool = new BlockingThreadPool(2, 2);
             MessageLog log = new MessageLog();
 
-            for (int i = 0; i < 2; i++)
+            for (int i = 0; i < TestIterationsCount; i++)
             {
                 log.Clear();
 
                 Assert.That(threadPool.Execute(() =>
                                                {
                                                    log.Log("task 1: started"); // T = 0
-                                                   Thread.Sleep(100);
-                                                   log.Log("task 1: finished"); // T = 100
+                                                   Thread.Sleep(200);
+                                                   log.Log("task 1: finished"); // T = 200
                                                }, 100), Is.True);
 
-                Thread.Sleep(10);
+                Thread.Sleep(50); // T = 50
+
                 Assert.That(threadPool.Execute(() =>
                                                {
-                                                   log.Log("task 2: started"); // T = 10
-                                                   Thread.Sleep(100);
-                                                   log.Log("task 2: finished"); // T = 110
+                                                   log.Log("task 2: started"); // T = 50
+                                                   Thread.Sleep(200);
+                                                   log.Log("task 2: finished"); // T = 250
                                                }, 100), Is.True);
 
-                Thread.Sleep(10);
-                log.Log("main: wait started"); // T = 20
-                Thread.Sleep(100);
-                log.Log("main: wait finished"); // T = 120
+                Thread.Sleep(50);
+                log.Log("main: wait started"); // T = 100
+                Thread.Sleep(200);
+                log.Log("main: wait finished"); // T = 300
 
                 Assert.That(log.GetLog(), Is.EqualTo(new string[]
                                                      {
@@ -64,6 +67,8 @@ namespace Test.BitcoinUtilities.Threading
                                                          "main: wait finished"
                                                      }));
             }
+
+            Assert.That(threadPool.Stop(1000), Is.True);
         }
 
         [Test]
@@ -72,45 +77,41 @@ namespace Test.BitcoinUtilities.Threading
             BlockingThreadPool threadPool = new BlockingThreadPool(2, 2);
             MessageLog log = new MessageLog();
 
-            for (int i = 0; i < 2; i++)
+            for (int i = 0; i < TestIterationsCount; i++)
             {
                 log.Clear();
 
                 Assert.That(threadPool.Execute(() =>
                                                {
                                                    log.Log("task 1: started"); // T = 0
-                                                   Thread.Sleep(100);
-                                                   log.Log("task 1: finished"); // T = 100
+                                                   Thread.Sleep(250);
+                                                   log.Log("task 1: finished"); // T = 250
                                                }, 100), Is.True);
 
-                Thread.Sleep(10);
+                Thread.Sleep(50); // T = 50
+
                 Assert.That(threadPool.Execute(() =>
                                                {
-                                                   log.Log("task 2: started"); // T = 10
-                                                   Thread.Sleep(200);
-                                                   log.Log("task 2: finished"); // T = 210
+                                                   log.Log("task 2: started"); // T = 50
+                                                   Thread.Sleep(350);
+                                                   log.Log("task 2: finished"); // T = 400
                                                }, 100), Is.True);
 
-                Thread.Sleep(10);
+                Thread.Sleep(50); // T = 100
+
+                Assert.That(threadPool.Execute(() => { log.Log("task 3: excuted"); }, 100), Is.False); // T = 200
+
                 Assert.That(threadPool.Execute(() =>
                                                {
-                                                   log.Log("task 3: started");
+                                                   log.Log("task 4: started"); // T = 250
                                                    Thread.Sleep(100);
-                                                   log.Log("task 3: finished");
-                                               }, 10), Is.False);
+                                                   log.Log("task 4: finished"); // T = 350
+                                               }, 100), Is.True); // T = 250
 
-                Thread.Sleep(10);
-                Assert.That(threadPool.Execute(() =>
-                                               {
-                                                   log.Log("task 4: started"); // T = 100
-                                                   Thread.Sleep(100);
-                                                   log.Log("task 4: finished"); // T = 200
-                                               }, 100), Is.True);
-
-                Thread.Sleep(10);
-                log.Log("main: wait started"); // T = 110
-                Thread.Sleep(200);
-                log.Log("main: wait finished"); // T = 310
+                Thread.Sleep(50);
+                log.Log("main: wait started"); // T = 300
+                Thread.Sleep(150);
+                log.Log("main: wait finished"); // T = 450
 
                 Assert.That(log.GetLog(), Is.EqualTo(new string[]
                                                      {
@@ -124,6 +125,8 @@ namespace Test.BitcoinUtilities.Threading
                                                          "main: wait finished"
                                                      }));
             }
+
+            Assert.That(threadPool.Stop(1000), Is.True);
         }
 
         [Test]
@@ -132,56 +135,54 @@ namespace Test.BitcoinUtilities.Threading
             BlockingThreadPool threadPool = new BlockingThreadPool(2, 3);
             MessageLog log = new MessageLog();
 
-            for (int i = 0; i < 2; i++)
+            for (int i = 0; i < TestIterationsCount; i++)
             {
                 log.Clear();
 
                 Assert.That(threadPool.Execute(() =>
                                                {
                                                    log.Log("task 1: started"); // T = 0
+                                                   Thread.Sleep(300);
+                                                   log.Log("task 1: finished"); // T = 300
+                                               }, 100), Is.True);
+
+                Thread.Sleep(50); // T = 50 
+
+                Assert.That(threadPool.Execute(() =>
+                                               {
+                                                   log.Log("task 2: started"); // T = 50
+                                                   Thread.Sleep(500);
+                                                   log.Log("task 2: finished"); // T = 550
+                                               }, 100), Is.True);
+
+                Thread.Sleep(50); // T = 100 
+
+                Assert.That(threadPool.Execute(() =>
+                                               {
+                                                   log.Log("task 3: started"); // T = 300
+                                                   Thread.Sleep(300);
+                                                   log.Log("task 3: finished"); // T = 600
+                                               }, 100), Is.True);
+
+                Thread.Sleep(50); // T = 150 
+
+                Assert.That(threadPool.Execute(() => { log.Log("task 4: executed"); }, 100), Is.False); // T = 250
+
+                Assert.That(threadPool.Execute(() =>
+                                               {
+                                                   log.Log("task 5: started"); // T = 550
                                                    Thread.Sleep(100);
-                                                   log.Log("task 1: finished"); // T = 100
-                                               }, 10), Is.True);
+                                                   log.Log("task 5: finished"); // T = 650
+                                               }, 100), Is.True); // T = 300
 
-                Thread.Sleep(10); // T = 10 
+                Thread.Sleep(50); // T = 350 
 
-                Assert.That(threadPool.Execute(() =>
-                                               {
-                                                   log.Log("task 2: started"); // T = 10
-                                                   Thread.Sleep(200);
-                                                   log.Log("task 2: finished"); // T = 210
-                                               }, 10), Is.True);
+                Assert.That(threadPool.Execute(() => { log.Log("task 6: executed"); }, 100), Is.False); // T = 450
 
-                Thread.Sleep(10); // T = 20 
-
-                Assert.That(threadPool.Execute(() =>
-                                               {
-                                                   log.Log("task 3: started"); // T = 100
-                                                   Thread.Sleep(200);
-                                                   log.Log("task 3: finished"); // T = 300
-                                               }, 10), Is.True);
-
-                Thread.Sleep(10); // T = 30 
-
-                Assert.That(threadPool.Execute(() => { log.Log("task 4: executed"); }, 10), Is.False); //T = 40
-
-                Thread.Sleep(100); // T = 140
-
-                Assert.That(threadPool.Execute(() =>
-                                               {
-                                                   log.Log("task 5: started"); // T = 210
-                                                   Thread.Sleep(100);
-                                                   log.Log("task 5: finished"); // T = 310
-                                               }, 10), Is.True);
-
-                Thread.Sleep(10); // T = 150 
-
-                Assert.That(threadPool.Execute(() => { log.Log("task 6: executed"); }, 10), Is.False); //T = 160
-
-                Thread.Sleep(10);
-                log.Log("main: wait started"); // T = 170
+                Thread.Sleep(50);
+                log.Log("main: wait started"); // T = 500
                 Thread.Sleep(200);
-                log.Log("main: wait finished"); // T = 370
+                log.Log("main: wait finished"); // T = 700
 
 
                 Assert.That(log.GetLog(), Is.EqualTo(new string[]
@@ -198,23 +199,17 @@ namespace Test.BitcoinUtilities.Threading
                                                          "main: wait finished"
                                                      }));
             }
-        }
 
-        [Test]
-        public void TestStop()
-        {
-            BlockingThreadPool threadPool = new BlockingThreadPool(2, 2);
-            threadPool.Stop();
+            Assert.That(threadPool.Stop(1000), Is.True);
         }
 
         [Test]
         public void TestNoBlockThenBlock()
         {
+            BlockingThreadPool threadPool = new BlockingThreadPool(2, 2);
             MessageLog log = new MessageLog();
 
-            BlockingThreadPool threadPool = new BlockingThreadPool(2, 2);
-
-            for (int i = 0; i < 2; i++)
+            for (int i = 0; i < TestIterationsCount; i++)
             {
                 log.Clear();
 
@@ -225,34 +220,37 @@ namespace Test.BitcoinUtilities.Threading
                                                    log.Log("task 1: finished"); // T = 100
                                                }, 100), Is.True);
 
-                Thread.Sleep(10);
+                Thread.Sleep(50); // T = 50
+
                 Assert.That(threadPool.Execute(() =>
                                                {
-                                                   log.Log("task 2: started"); // T = 10
+                                                   log.Log("task 2: started"); // T = 50
                                                    Thread.Sleep(200);
-                                                   log.Log("task 2: finished"); // T = 210
+                                                   log.Log("task 2: finished"); // T = 250
                                                }, 100), Is.True);
 
-                Thread.Sleep(110);
-                Assert.That(threadPool.Execute(() =>
-                                               {
-                                                   log.Log("task 3: started"); // T = 120
-                                                   Thread.Sleep(200);
-                                                   log.Log("task 3: finished"); // T = 320
-                                               }, 10), Is.True);
+                Thread.Sleep(100); // T = 150
 
-                Thread.Sleep(10);
                 Assert.That(threadPool.Execute(() =>
                                                {
-                                                   log.Log("task 4: started"); // T = 210
+                                                   log.Log("task 3: started"); // T = 150
+                                                   Thread.Sleep(250);
+                                                   log.Log("task 3: finished"); // T = 400
+                                               }, 100), Is.True);
+
+                Thread.Sleep(50); // T = 200
+
+                Assert.That(threadPool.Execute(() =>
+                                               {
+                                                   log.Log("task 4: started"); // T = 250
                                                    Thread.Sleep(100);
-                                                   log.Log("task 4: finished"); // T = 310
-                                               }, 100), Is.True);
+                                                   log.Log("task 4: finished"); // T = 350
+                                               }, 100), Is.True); // T = 250
 
-                Thread.Sleep(10);
-                log.Log("main: wait started"); // T = 220
-                Thread.Sleep(200);
-                log.Log("main: wait finished"); // T = 420
+                Thread.Sleep(50);
+                log.Log("main: wait started"); // T = 300
+                Thread.Sleep(150);
+                log.Log("main: wait finished"); // T = 450
 
                 Assert.That(log.GetLog(), Is.EqualTo(new string[]
                                                      {
@@ -268,14 +266,21 @@ namespace Test.BitcoinUtilities.Threading
                                                          "main: wait finished"
                                                      }));
             }
+
+            Assert.That(threadPool.Stop(1000), Is.True);
+        }
+
+        [Test]
+        public void TestStop()
+        {
+            BlockingThreadPool threadPool = new BlockingThreadPool(2, 2);
+            Assert.That(threadPool.Stop(1000), Is.True);
         }
 
         [Test]
         public void TestPerformance()
         {
-            GC.Collect();
-
-            const int poolThreadCount = 100;
+            const int poolThreadCount = 1000;
             const int taskDelay = 10;
 
             BlockingThreadPool threadPool = new BlockingThreadPool(poolThreadCount, poolThreadCount*2);
@@ -305,7 +310,7 @@ namespace Test.BitcoinUtilities.Threading
                           };
 
             Stopwatch sw = Stopwatch.StartNew();
-            while (sw.ElapsedMilliseconds < 1000)
+            while (sw.ElapsedMilliseconds < 10000)
             {
                 for (int i = 0; i < 1000; i++)
                 {
@@ -315,6 +320,8 @@ namespace Test.BitcoinUtilities.Threading
                     }
                 }
             }
+
+            Assert.That(threadPool.Stop(1000), Is.True);
 
             Console.WriteLine("executedTasks:\t{0}", executedTasks);
             Console.WriteLine("rejectedTasks:\t{0}", rejectedTasks);

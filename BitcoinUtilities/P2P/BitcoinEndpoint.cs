@@ -54,7 +54,8 @@ namespace BitcoinUtilities.P2P
             }
             if (threadPool != null)
             {
-                threadPool.Stop();
+                //todo: set better value?
+                threadPool.Stop(10000);
             }
         }
 
