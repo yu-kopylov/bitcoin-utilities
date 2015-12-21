@@ -276,6 +276,8 @@ namespace Test.BitcoinUtilities.Threading
             BlockingThreadPool threadPool = new BlockingThreadPool(2, 2);
             Thread.Sleep(50);
             Assert.That(threadPool.Stop(50), Is.True);
+            //check that Stop does not fail on a stopped pool
+            Assert.That(threadPool.Stop(50), Is.True);
         }
 
         [Test]
@@ -289,43 +291,43 @@ namespace Test.BitcoinUtilities.Threading
                 log.Clear();
 
                 threadPool.Execute(() =>
-                {
-                    log.Log("task 1: started"); // T = 0
-                    try
-                    {
-                        // finally block is required to ignore Thread.Interrupt and Thread.Abort
-                    }
-                    finally
-                    {
-                        Thread.Sleep(200);
-                    }
-                    log.Log("task 1: finished"); // T = 200
-                }, 100);
+                                   {
+                                       log.Log("task 1: started"); // T = 0
+                                       try
+                                       {
+                                           // finally block is required to ignore Thread.Interrupt and Thread.Abort
+                                       }
+                                       finally
+                                       {
+                                           Thread.Sleep(200);
+                                       }
+                                       log.Log("task 1: finished"); // T = 200
+                                   }, 100);
 
                 Thread.Sleep(50); // T = 50
 
                 threadPool.Execute(() =>
-                {
-                    log.Log("task 2: started"); // T = 50
-                    try
-                    {
-                        // finally block is required to ignore Thread.Interrupt and Thread.Abort
-                    }
-                    finally
-                    {
-                        Thread.Sleep(250);
-                    }
-                    log.Log("task 2: finished"); // T = 300
-                }, 100);
+                                   {
+                                       log.Log("task 2: started"); // T = 50
+                                       try
+                                       {
+                                           // finally block is required to ignore Thread.Interrupt and Thread.Abort
+                                       }
+                                       finally
+                                       {
+                                           Thread.Sleep(250);
+                                       }
+                                       log.Log("task 2: finished"); // T = 300
+                                   }, 100);
 
                 Thread.Sleep(50); // T = 50
 
                 threadPool.Execute(() =>
-                {
-                    log.Log("task 3: started"); // T = 100
-                    log.Log(string.Format("task 4 queued: {0}", threadPool.Execute(() => { }, 300))); // T = 150
-                    log.Log("task 3: finished"); // T = 150
-                }, 100);
+                                   {
+                                       log.Log("task 3: started"); // T = 100
+                                       log.Log(string.Format("task 4 queued: {0}", threadPool.Execute(() => { }, 300))); // T = 150
+                                       log.Log("task 3: finished"); // T = 150
+                                   }, 100);
 
                 Thread.Sleep(50); // T = 150
 
@@ -341,16 +343,21 @@ namespace Test.BitcoinUtilities.Threading
                 Assert.That(threadPool.Stop(100), Is.True); // T = 300
                 Assert.That(sw.ElapsedMilliseconds, Is.GreaterThan(25).And.LessThan(75));
 
+                //check that Stop does not fail on a stopped pool
+                sw.Restart();
+                Assert.That(threadPool.Stop(100), Is.True); // T = 300
+                Assert.That(sw.ElapsedMilliseconds, Is.LessThan(25));
+
                 Assert.That(log.GetLog(), Is.EqualTo(new string[]
-                                                 {
-                                                     "task 1: started",
-                                                     "task 2: started",
-                                                     "task 3: started",
-                                                     "task 4 queued: False",
-                                                     "task 3: finished",
-                                                     "task 1: finished",
-                                                     "task 2: finished"
-                                                 }));
+                                                     {
+                                                         "task 1: started",
+                                                         "task 2: started",
+                                                         "task 3: started",
+                                                         "task 4 queued: False",
+                                                         "task 3: finished",
+                                                         "task 1: finished",
+                                                         "task 2: finished"
+                                                     }));
             }
         }
 

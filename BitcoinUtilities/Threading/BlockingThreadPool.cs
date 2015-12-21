@@ -17,6 +17,9 @@ namespace BitcoinUtilities.Threading
 
         private readonly Thread[] threads;
         private volatile bool running;
+        private volatile bool disposed;
+
+        private readonly object managementLock = new object();
 
         private readonly object taskQueueLock = new object();
         private readonly Queue<Action> taskQueue;
@@ -41,9 +44,10 @@ namespace BitcoinUtilities.Threading
             }
 
             taskQueue = new Queue<Action>(taskCountLimit);
-            enqueSemaphore = new Semaphore(taskCountLimit, taskCountLimit);
-            dequeSemaphore = new Semaphore(0, taskCountLimit);
+            enqueSemaphore = new Semaphore(taskCountLimit, taskCountLimit + 1);
+            dequeSemaphore = new Semaphore(0, taskCountLimit + 1);
             running = true;
+            disposed = false;
             threads = new Thread[threadCount];
             for (int i = 0; i < threadCount; i++)
             {
@@ -94,23 +98,17 @@ namespace BitcoinUtilities.Threading
         {
             //todo: allow infinite timeout?
             //todo: shutdown completely using Interrupt and Abort ?
-            running = false;
-            try
+
+            lock (managementLock)
             {
-                enqueSemaphore.Release();
+                if (running)
+                {
+                    running = false;
+                    enqueSemaphore.Release();
+                    dequeSemaphore.Release();
+                }
             }
-            catch (SemaphoreFullException)
-            {
-                //semaphore was completely released already
-            }
-            try
-            {
-                dequeSemaphore.Release();
-            }
-            catch (SemaphoreFullException)
-            {
-                //semaphore was completely released already
-            }
+
             Stopwatch sw = Stopwatch.StartNew();
             foreach (Thread thread in threads)
             {
@@ -124,6 +122,17 @@ namespace BitcoinUtilities.Threading
                     return false;
                 }
             }
+
+            lock (managementLock)
+            {
+                if (!disposed)
+                {
+                    enqueSemaphore.Dispose();
+                    dequeSemaphore.Dispose();
+                    disposed = true;
+                }
+            }
+
             return true;
         }
 
