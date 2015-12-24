@@ -138,21 +138,29 @@ namespace BitcoinUtilities.Threading
 
         private void WorkerThreadLoop()
         {
-            while (running)
+            try
             {
-                dequeSemaphore.WaitOne(-1);
-                if (!running)
+                while (running)
                 {
-                    //Signal other threads to stop waiting.
-                    dequeSemaphore.Release();
-                    return;
+                    dequeSemaphore.WaitOne(-1);
+                    if (!running)
+                    {
+                        //Signal other threads to stop waiting.
+                        dequeSemaphore.Release();
+                        return;
+                    }
+
+                    Action task = DequeueTask();
+                    ExecuteTask(task);
+
+                    enqueSemaphore.Release();
+                    Thread.Yield();
                 }
-
-                Action task = DequeueTask();
-                ExecuteTask(task);
-
-                enqueSemaphore.Release();
-                Thread.Yield();
+            }
+            catch (Exception e)
+            {
+                //todo: test this
+                logger.Fatal(e, "An unexpected error occured in the worker thread. The worker thread stopped.");
             }
         }
 
