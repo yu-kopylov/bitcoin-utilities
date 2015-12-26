@@ -68,6 +68,8 @@ namespace BitcoinUtilities.Storage
 
         public void AddBlocks(List<Block> blocks)
         {
+            Stopwatch sw = Stopwatch.StartNew();
+
             using (SQLiteConnection conn = new SQLiteConnection(connectionString))
             {
                 conn.Open();
@@ -81,6 +83,8 @@ namespace BitcoinUtilities.Storage
                     tx.Commit();
                 }
             }
+
+            logger.Debug("AddBlocks took {0}ms.", sw.ElapsedMilliseconds);
         }
 
         private void SaveBlocks(SQLiteConnection conn, IEnumerable<Block> blocks)
@@ -217,6 +221,54 @@ namespace BitcoinUtilities.Storage
             }
 
             logger.Debug("LinkInputsToOutputs took {0}ms for {1} inputs and {2} outputs.", sw.ElapsedMilliseconds, inputCount, outputCount);
+        }
+
+        public Block GetLastBlockHeader()
+        {
+            using (SQLiteConnection conn = new SQLiteConnection(connectionString))
+            {
+                conn.Open();
+                using (conn.BeginTransaction())
+                {
+                    using (SQLiteCommand command = new SQLiteCommand("select B.Id, B.Hash, B.Height, B.Header from Blocks B order by B.Height desc limit 1", conn))
+                    {
+                        using (SQLiteDataReader reader = command.ExecuteReader())
+                        {
+                            if (!reader.Read())
+                            {
+                                return null;
+                            }
+                            Block block = new Block();
+                            int col = 0;
+                            block.Id = reader.GetInt64(col++);
+                            //todo: review constant usage
+                            block.Hash = ReadBytes(reader, col++, 32);
+                            block.Height = reader.GetInt32(col++);
+                            //todo: review constant usage
+                            block.Header = ReadBytes(reader, col++, 80);
+                            return block;
+                        }
+                    }
+                }
+            }
+        }
+
+        //todo: move to utils?
+        private byte[] ReadBytes(SQLiteDataReader reader, int col, int expectedSize)
+        {
+            byte[] buffer = new byte[expectedSize];
+            long bytesRead = reader.GetBytes(col, 0, buffer, 0, expectedSize);
+            if (bytesRead != expectedSize)
+            {
+                throw new Exception(string.Format("Unexpected BLOB size in database. Expected: {0}. Read: {1}.", expectedSize, bytesRead));
+            }
+            byte[] extraBuffer = new byte[4];
+            bytesRead = reader.GetBytes(col, expectedSize, buffer, 0, extraBuffer.Length);
+            if (bytesRead > 0)
+            {
+                throw new Exception(string.Format("Unexpected BLOB size in database. Expected: {0}. Read at least: {1}.", expectedSize, expectedSize + bytesRead));
+            }
+            return buffer;
         }
     }
 }

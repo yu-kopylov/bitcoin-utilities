@@ -43,14 +43,7 @@ namespace Test.BitcoinUtilities.Storage
         [Explicit]
         public void DownloadBlocks()
         {
-            storage = BlockChainStorage.Open("blockchain.db");
-
-            MemoryStream mem = new MemoryStream(GenesisBlock.Raw);
-            using (BitcoinStreamReader reader = new BitcoinStreamReader(mem))
-            {
-                BlockMessage blockMessage = BlockMessage.Read(reader);
-                lastSavedBlocks.Enqueue(blockConverter.FromMessage(blockMessage));
-            }
+            Init();
 
             Thread saveThread = new Thread(SaveThreadLoop);
             saveThread.IsBackground = true;
@@ -119,6 +112,28 @@ namespace Test.BitcoinUtilities.Storage
                 foreach (Block block in knownBlocks.Values.Where(b => b.Height > 0).OrderBy(b => b.Height))
                 {
                     writer.WriteLine("{0:D6}:\t{1}", block.Height, BitConverter.ToString(block.Hash));
+                }
+            }
+        }
+
+        private void Init()
+        {
+            storage = BlockChainStorage.Open("blockchain.db");
+            Block lastBlock = storage.GetLastBlockHeader();
+
+            //todo: make this logic more reusable
+            if (lastBlock != null)
+            {
+                //todo: use better locator
+                lastSavedBlocks.Enqueue(lastBlock);
+            }
+            else
+            {
+                MemoryStream mem = new MemoryStream(GenesisBlock.Raw);
+                using (BitcoinStreamReader reader = new BitcoinStreamReader(mem))
+                {
+                    BlockMessage blockMessage = BlockMessage.Read(reader);
+                    lastSavedBlocks.Enqueue(blockConverter.FromMessage(blockMessage));
                 }
             }
         }
