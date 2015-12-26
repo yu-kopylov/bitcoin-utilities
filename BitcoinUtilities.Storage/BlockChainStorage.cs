@@ -84,7 +84,7 @@ namespace BitcoinUtilities.Storage
                 }
             }
 
-            logger.Debug("AddBlocks took {0}ms.", sw.ElapsedMilliseconds);
+            logger.Debug("AddBlocks took {0}ms for {1} blocks.", sw.ElapsedMilliseconds, blocks.Count);
         }
 
         private void SaveBlocks(SQLiteConnection conn, IEnumerable<Block> blocks)
@@ -180,10 +180,19 @@ namespace BitcoinUtilities.Storage
             int outputCount = 0;
             Stopwatch sw = Stopwatch.StartNew();
 
-            using (SQLiteCommand command = new SQLiteCommand("select O.Id " +
-                                                             "from Transactions T " +
-                                                             "inner join TransactionOutputs O on O.TransactionId=T.Id " +
-                                                             "where T.Hash=@OutputHash and O.NumberInTransaction=@OutputIndex", conn))
+            //BIP-30 allows multiple transactions with the same hash, but assumes that the older ones were spent completely.
+            //A transaction output can be spent in the same block is was created, but the order of the transactions in the block is fixed. Example: block 91859.
+            using (SQLiteCommand command = new SQLiteCommand(@"
+                select O.Id from TransactionOutputs O where O.TransactionId=
+                (
+                    select T.Id from Transactions T
+                    inner join Blocks B on B.Id=T.BlockId
+                    where T.Hash=@OutputHash
+                        and (B.Height < @Height or (B.Height == @Height and T.NumberInBlock < @NumberInBlock))
+                    order by B.Height desc, T.NumberInBlock desc
+                    limit 1
+                )
+                and O.NumberInTransaction=@OutputIndex", conn))
             {
                 foreach (TransactionInput input in inputs)
                 {
@@ -198,6 +207,8 @@ namespace BitcoinUtilities.Storage
 
                     command.Parameters.Add("@OutputHash", DbType.Binary).Value = input.OutputHash;
                     command.Parameters.Add("@OutputIndex", DbType.UInt32).Value = input.OutputIndex;
+                    command.Parameters.Add("@Height", DbType.Int32).Value = input.Transaction.Block.Height;
+                    command.Parameters.Add("@NumberInBlock", DbType.Int32).Value = input.Transaction.NumberInBlock;
 
                     long? outputId = (long?) command.ExecuteScalar();
                     if (outputId == null)

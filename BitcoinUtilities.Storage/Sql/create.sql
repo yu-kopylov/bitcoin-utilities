@@ -18,7 +18,7 @@ CREATE TABLE Transactions
     FOREIGN KEY (BlockId) REFERENCES Blocks(Id)
 );
 
-CREATE UNIQUE INDEX UX_Transactions_Hash ON Transactions(Hash);
+CREATE INDEX IX_Transactions_Hash ON Transactions(Hash);
 
 CREATE TABLE TransactionInputs
 (
