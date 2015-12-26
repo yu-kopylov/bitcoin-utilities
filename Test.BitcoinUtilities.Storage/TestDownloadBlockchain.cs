@@ -8,6 +8,7 @@ using BitcoinUtilities;
 using BitcoinUtilities.P2P;
 using BitcoinUtilities.P2P.Messages;
 using BitcoinUtilities.P2P.Primitives;
+using BitcoinUtilities.Storage;
 using BitcoinUtilities.Storage.Converters;
 using BitcoinUtilities.Storage.Models;
 using BitcoinUtilities.Storage.P2P;
@@ -34,11 +35,16 @@ namespace Test.BitcoinUtilities.Storage
         private readonly AutoResetEvent saveBlocksEvent = new AutoResetEvent(false);
 
         private BlockRequestThread blockRequestThread;
+        private Exception saveThreadError;
+
+        private BlockChainStorage storage;
 
         [Test]
         [Explicit]
         public void DownloadBlocks()
         {
+            storage = BlockChainStorage.Open("blockchain.db");
+
             MemoryStream mem = new MemoryStream(GenesisBlock.Raw);
             using (BitcoinStreamReader reader = new BitcoinStreamReader(mem))
             {
@@ -69,6 +75,14 @@ namespace Test.BitcoinUtilities.Storage
                 int idleSeconds = 0;
                 while (idleSeconds < 60)// && lastSavedBlock.Height < 30000)
                 {
+                    lock (dataLock)
+                    {
+                        if (saveThreadError != null)
+                        {
+                            throw new Exception("Error in save thread.", saveThreadError);
+                        }
+                    }
+
                     if (!requestBlockListEvent.WaitOne(5000))
                     {
                         idleSeconds += 5;
@@ -163,14 +177,24 @@ namespace Test.BitcoinUtilities.Storage
 
         private void SaveThreadLoop()
         {
-            while (true)
+            try
             {
-                bool saveRequested = saveBlocksEvent.WaitOne(5000);
-                if (saveRequested)
+                while (true)
                 {
-                    //wait a little for other incoming blocks
-                    Thread.Sleep(100);
-                    SavePoolBlocks();
+                    bool saveRequested = saveBlocksEvent.WaitOne(5000);
+                    if (saveRequested)
+                    {
+                        //wait a little for other incoming blocks
+                        Thread.Sleep(100);
+                        SavePoolBlocks();
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                lock (dataLock)
+                {
+                    saveThreadError = e;
                 }
             }
         }
@@ -188,6 +212,8 @@ namespace Test.BitcoinUtilities.Storage
             }
             if (blocksToSave.Any())
             {
+                storage.AddBlocks(blocksToSave);
+
                 //Console.WriteLine("> saving {0} blocks from: {1} to {2} (from {3} to {4})", blocksToSave.Count, blocksToSave.First().Height, blocksToSave.Last().Height, BitConverter.ToString(blocksToSave.First().Hash), BitConverter.ToString(blocksToSave.Last().Hash));
                 lock (dataLock)
                 {

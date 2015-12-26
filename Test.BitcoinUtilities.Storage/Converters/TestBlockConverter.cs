@@ -35,8 +35,8 @@ namespace Test.BitcoinUtilities.Storage.Converters
 
             TransactionInput input = transaction.Inputs[0];
 
-            Assert.That(input.SourceHash, Is.EqualTo(new byte[32]));
-            Assert.That(input.SourceIndex, Is.EqualTo(0xFFFFFFFF));
+            Assert.That(input.OutputHash, Is.EqualTo(new byte[32]));
+            Assert.That(input.OutputIndex, Is.EqualTo(0xFFFFFFFF));
             Assert.That(input.SignatureScript, Is.EqualTo(GenesisBlock.SignatureScript));
             Assert.That(input.Sequence, Is.EqualTo(0xFFFFFFFF));
 

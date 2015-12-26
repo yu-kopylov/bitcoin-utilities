@@ -22,24 +22,32 @@ CREATE UNIQUE INDEX UX_Transactions_Hash ON Transactions(Hash);
 
 CREATE TABLE TransactionInputs
 (
-    Id              INTEGER PRIMARY KEY AUTOINCREMENT,
-    TransactionId   INTEGER NOT NULL,
-    SignatureScript BINARY NOT NULL,
-    Sequence        INTEGER NOT NULL,
-    OutPointId      INTEGER NOT NULL,
+    Id					INTEGER PRIMARY KEY AUTOINCREMENT,
+    TransactionId		INTEGER NOT NULL,
+	NumberInTransaction	INTEGER NOT NULL,
+    SignatureScript		BINARY NOT NULL,
+    Sequence			INTEGER NOT NULL,
+	OutputHash			BINARY NOT NULL,
+	OutputIndex			INTEGER NOT NULL,
+    OutputId			INTEGER NULL,
     FOREIGN KEY (TransactionId) REFERENCES Transactions,
-    FOREIGN KEY (OutPointId) REFERENCES TransactionOutput
+    FOREIGN KEY (OutputId) REFERENCES TransactionOutputs
 );
+
+CREATE INDEX IX_TransactionInputs_TransactionId ON TransactionInputs(TransactionId);
 
 CREATE TABLE TransactionOutputs
 (
     Id                  INTEGER PRIMARY KEY AUTOINCREMENT,
     TransactionId       INTEGER NOT NULL,
+	NumberInTransaction	INTEGER NOT NULL,
     Value               INTEGER NOT NULL,
     PubkeyScriptType    INTEGER NOT NULL,
     PubkeyScript        BINARY NOT NULL,
-    PublicKey           BINARY NOT NULL,
+    PublicKey           BINARY NULL,
     FOREIGN KEY (TransactionId) REFERENCES Transactions
 );
+
+CREATE INDEX IX_TransactionOutputs_TransactionId ON TransactionOutputs(TransactionId);
 
 CREATE INDEX IX_TransactionOutputs_PublicKey ON TransactionOutputs(PublicKey);

@@ -64,8 +64,8 @@ namespace BitcoinUtilities.Storage.Converters
 
             input.SignatureScript = inputMessage.SignatureScript;
             input.Sequence = inputMessage.Sequence;
-            input.SourceHash = inputMessage.PreviousOutput.Hash;
-            input.SourceIndex = inputMessage.PreviousOutput.Index;
+            input.OutputHash = inputMessage.PreviousOutput.Hash;
+            input.OutputIndex = inputMessage.PreviousOutput.Index;
 
             return input;
         }
@@ -76,7 +76,7 @@ namespace BitcoinUtilities.Storage.Converters
 
             output.Value = outputMessage.Value;
             //todo: remove or implement
-            output.ScriptType = PubkeyScriptType.Plain;
+            output.PubkeyScriptType = PubkeyScriptType.Plain;
             output.PubkeyScript = outputMessage.PubkeyScript;
             //todo: replace with address
             output.PublicKey = null;

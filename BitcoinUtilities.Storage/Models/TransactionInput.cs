@@ -12,10 +12,10 @@ namespace BitcoinUtilities.Storage.Models
 
         public uint Sequence { get; set; }
 
-        public byte[] SourceHash { get; set; }
+        public byte[] OutputHash { get; set; }
 
-        public uint SourceIndex { get; set; }
+        public uint OutputIndex { get; set; }
 
-        public TransactionOutput Source { get; set; }
+        public TransactionOutput Output { get; set; }
     }
 }
