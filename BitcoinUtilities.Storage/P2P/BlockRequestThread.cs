@@ -13,8 +13,8 @@ namespace BitcoinUtilities.Storage.P2P
     public class BlockRequestThread
     {
         private const int MaxSentRequests = 10;
-        private const int MaxSendAttempts = 5;
-        private static readonly TimeSpan requestTimeout = TimeSpan.FromSeconds(10);
+        private const int MaxSendAttempts = 3;
+        private static readonly TimeSpan requestTimeout = TimeSpan.FromSeconds(30);
 
         private volatile bool running = true;
 

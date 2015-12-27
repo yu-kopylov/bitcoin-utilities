@@ -12,6 +12,7 @@ using BitcoinUtilities.Storage;
 using BitcoinUtilities.Storage.Converters;
 using BitcoinUtilities.Storage.Models;
 using BitcoinUtilities.Storage.P2P;
+using NLog;
 using NUnit.Framework;
 
 namespace Test.BitcoinUtilities.Storage
@@ -19,6 +20,10 @@ namespace Test.BitcoinUtilities.Storage
     [TestFixture]
     public class TestDownloadBlockchain
     {
+        private const string StorageLocation = @"D:\Temp\blockchain.db";
+
+        private static readonly Logger logger = LogManager.GetCurrentClassLogger();
+
         private readonly BlockConverter blockConverter = new BlockConverter();
         private readonly ConcurrentDictionary<byte[], Block> knownBlocks = new ConcurrentDictionary<byte[], Block>(ByteArrayComparer.Instance);
         private readonly ConcurrentDictionary<byte[], Block> blockPool = new ConcurrentDictionary<byte[], Block>(ByteArrayComparer.Instance);
@@ -66,7 +71,7 @@ namespace Test.BitcoinUtilities.Storage
                 requestBlockListEvent.Set();
 
                 int idleSeconds = 0;
-                while (idleSeconds < 60)// && lastSavedBlock.Height < 30000)
+                while (idleSeconds < 300)
                 {
                     lock (dataLock)
                     {
@@ -76,9 +81,9 @@ namespace Test.BitcoinUtilities.Storage
                         }
                     }
 
-                    if (!requestBlockListEvent.WaitOne(5000))
+                    if (!requestBlockListEvent.WaitOne(10000))
                     {
-                        idleSeconds += 5;
+                        idleSeconds += 10;
                     }
                     byte[][] hashes = lastSavedBlocks.Select(b => b.Hash).ToArray();
                     //todo: suboptimal
@@ -106,19 +111,11 @@ namespace Test.BitcoinUtilities.Storage
                 Block lastBlock = lastSavedBlocks.Last();
                 Console.WriteLine("> {0} bytes of block chain processed, height = {1}", originalBlockchainBytes, lastBlock.Height);
             }
-
-            using (StreamWriter writer = new StreamWriter(@"D:\Temp\blockchain.txt"))
-            {
-                foreach (Block block in knownBlocks.Values.Where(b => b.Height > 0).OrderBy(b => b.Height))
-                {
-                    writer.WriteLine("{0:D6}:\t{1}", block.Height, BitConverter.ToString(block.Hash));
-                }
-            }
         }
 
         private void Init()
         {
-            storage = BlockChainStorage.Open("blockchain.db");
+            storage = BlockChainStorage.Open(StorageLocation);
             Block lastBlock = storage.GetLastBlockHeader();
 
             //todo: make this logic more reusable
@@ -213,7 +210,7 @@ namespace Test.BitcoinUtilities.Storage
                 }
             }
         }
-        
+
         private void SavePoolBlocks()
         {
             List<Block> blocksToSave = new List<Block>();
@@ -227,23 +224,63 @@ namespace Test.BitcoinUtilities.Storage
             }
             if (blocksToSave.Any())
             {
-                storage.AddBlocks(blocksToSave);
+                SaveBlocks(blocksToSave);
+            }
+        }
 
-                //Console.WriteLine("> saving {0} blocks from: {1} to {2} (from {3} to {4})", blocksToSave.Count, blocksToSave.First().Height, blocksToSave.Last().Height, BitConverter.ToString(blocksToSave.First().Hash), BitConverter.ToString(blocksToSave.Last().Hash));
-                lock (dataLock)
+        private void SaveBlocks(List<Block> blocksToSave)
+        {
+            List<Block> batch = new List<Block>();
+            int batchSize = 0;
+
+            foreach (Block block in blocksToSave)
+            {
+                batch.Add(block);
+                batchSize += block.Transactions.Sum(t => t.Inputs.Count);
+                batchSize += block.Transactions.Sum(t => t.Outputs.Count);
+                if (batchSize >= 1000)
                 {
-                    foreach (Block block in blocksToSave)
+                    SaveBlockBatch(batch);
+                    batch.Clear();
+                    batchSize = 0;
+                }
+            }
+
+            if (batch.Any())
+            {
+                SaveBlockBatch(batch);
+            }
+        }
+
+        private void SaveBlockBatch(List<Block> blocksToSave)
+        {
+            logger.Debug(
+                "Flushing batch (blocks: {0}, transactions: {1}, inputs and outputs: {2}).",
+                blocksToSave.Count,
+                blocksToSave.Sum(b => b.Transactions.Count),
+                blocksToSave.Sum(b => b.Transactions.Sum(t => t.Inputs.Count)) + blocksToSave.Sum(b => b.Transactions.Sum(t => t.Outputs.Count))
+                );
+
+            storage.AddBlocks(blocksToSave);
+
+            lock (dataLock)
+            {
+                foreach (Block block in blocksToSave)
+                {
+                    block.Transactions = null;
+                    lastSavedBlocks.Enqueue(block);
+                    if (block.Height%1000 == 0)
                     {
-                        block.Transactions = null;
-                        lastSavedBlocks.Enqueue(block);
-                    }
-                    while (lastSavedBlocks.Count > 12)
-                    {
-                        lastSavedBlocks.Dequeue();
+                        logger.Debug("Checkpoint. Height: {0}", block.Height);
                     }
                 }
-                requestBlockListEvent.Set();
+                while (lastSavedBlocks.Count > 12)
+                {
+                    lastSavedBlocks.Dequeue();
+                }
             }
+
+            requestBlockListEvent.Set();
         }
     }
 }
