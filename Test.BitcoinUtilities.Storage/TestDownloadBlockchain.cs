@@ -20,7 +20,7 @@ namespace Test.BitcoinUtilities.Storage
     [TestFixture]
     public class TestDownloadBlockchain
     {
-        private const string StorageLocation = @"D:\Temp\blockchain.db";
+        private const string StorageLocation = @"E:\Temp\Blockchain";
 
         private static readonly Logger logger = LogManager.GetCurrentClassLogger();
 
@@ -49,6 +49,8 @@ namespace Test.BitcoinUtilities.Storage
         public void DownloadBlocks()
         {
             Init();
+
+            //return;
 
             Thread saveThread = new Thread(SaveThreadLoop);
             saveThread.IsBackground = true;
@@ -242,7 +244,7 @@ namespace Test.BitcoinUtilities.Storage
                 batch.Add(block);
                 batchSize += block.Transactions.Sum(t => t.Inputs.Count);
                 batchSize += block.Transactions.Sum(t => t.Outputs.Count);
-                if (batchSize >= 10000)
+                if (batchSize >= 5000)
                 {
                     SaveBlockBatch(batch);
                     batch.Clear();

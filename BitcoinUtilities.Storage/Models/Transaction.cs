@@ -6,11 +6,11 @@ namespace BitcoinUtilities.Storage.Models
     {
         public long Id { get; set; }
 
-        public byte[] Hash { get; set; }
-
         public Block Block { get; set; }
 
         public int NumberInBlock { get; set; }
+
+        public TransactionHash Hash { get; set; }
 
         public List<TransactionInput> Inputs { get; set; }
         

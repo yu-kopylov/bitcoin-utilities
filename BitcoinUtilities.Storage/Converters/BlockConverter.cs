@@ -1,7 +1,9 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using BitcoinUtilities.P2P;
 using BitcoinUtilities.P2P.Messages;
 using BitcoinUtilities.P2P.Primitives;
+using BitcoinUtilities.Scripts;
 using BitcoinUtilities.Storage.Models;
 
 namespace BitcoinUtilities.Storage.Converters
@@ -33,7 +35,7 @@ namespace BitcoinUtilities.Storage.Converters
             Transaction transaction = new Transaction();
 
             byte[] rawTransaction = BitcoinStreamWriter.GetBytes(transactionMessage.Write);
-            transaction.Hash = CryptoUtils.DoubleSha256(rawTransaction);
+            transaction.Hash = CreateTransactionHash(CryptoUtils.DoubleSha256(rawTransaction));
 
             transaction.Inputs = new List<TransactionInput>(transactionMessage.Inputs.Length);
             for (int i = 0; i < transactionMessage.Inputs.Length; i++)
@@ -62,9 +64,9 @@ namespace BitcoinUtilities.Storage.Converters
         {
             TransactionInput input = new TransactionInput();
 
-            input.SignatureScript = inputMessage.SignatureScript;
+            input.SignatureScript = CreateBinaryData(inputMessage.SignatureScript);
             input.Sequence = inputMessage.Sequence;
-            input.OutputHash = inputMessage.PreviousOutput.Hash;
+            input.OutputHash = CreateTransactionHash(inputMessage.PreviousOutput.Hash);
             input.OutputIndex = inputMessage.PreviousOutput.Index;
 
             return input;
@@ -75,13 +77,49 @@ namespace BitcoinUtilities.Storage.Converters
             TransactionOutput output = new TransactionOutput();
 
             output.Value = outputMessage.Value;
-            //todo: remove or implement
-            output.PubkeyScriptType = PubkeyScriptType.Plain;
-            output.PubkeyScript = outputMessage.PubkeyScript;
-            //todo: replace with address
-            output.PublicKey = null;
+            output.PubkeyScript = CreateBinaryData(outputMessage.PubkeyScript);
+            output.Address = CreateAddress(outputMessage.PubkeyScript);
 
             return output;
+        }
+
+        private Address CreateAddress(byte[] pubkeyScript)
+        {
+            string address = BitcoinScript.GetAddressFromPubkeyScript(pubkeyScript);
+
+            if (address == null)
+            {
+                return null;
+            }
+
+            //todo: use a more well-known hash-function
+            uint semiHash = 23;
+            foreach (char c in address)
+            {
+                semiHash = semiHash*31 + (byte)c;
+            }
+
+            Address res = new Address();
+            res.Value = address;
+            res.SemiHash = semiHash;
+            return res;
+        }
+
+        private static BinaryData CreateBinaryData(byte[] data)
+        {
+            BinaryData res = new BinaryData();
+            res.Data = data;
+            return res;
+        }
+
+        public static TransactionHash CreateTransactionHash(byte[] hash)
+        {
+            TransactionHash res = new TransactionHash();
+
+            res.Hash = hash;
+            res.SemiHash = BitConverter.ToUInt32(hash, 0);
+
+            return res;
         }
     }
 }

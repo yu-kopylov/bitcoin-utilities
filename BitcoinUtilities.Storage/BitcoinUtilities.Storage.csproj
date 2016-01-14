@@ -49,9 +49,11 @@
   <ItemGroup>
     <Compile Include="BlockChainStorage.cs" />
     <Compile Include="Converters\BlockConverter.cs" />
+    <Compile Include="Models\Address.cs" />
+    <Compile Include="Models\BinaryData.cs" />
     <Compile Include="Models\Block.cs" />
-    <Compile Include="Models\PubkeyScriptType.cs" />
     <Compile Include="Models\Transaction.cs" />
+    <Compile Include="Models\TransactionHash.cs" />
     <Compile Include="Models\TransactionInput.cs" />
     <Compile Include="Models\TransactionOutput.cs" />
     <Compile Include="P2P\BlockRequestThread.cs" />

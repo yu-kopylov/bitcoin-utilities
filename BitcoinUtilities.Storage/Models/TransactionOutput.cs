@@ -10,10 +10,8 @@ namespace BitcoinUtilities.Storage.Models
 
         public ulong Value { get; set; }
 
-        public PubkeyScriptType PubkeyScriptType { get; set; }
-
-        public byte[] PubkeyScript { get; set; }
+        public BinaryData PubkeyScript { get; set; }
         
-        public byte[] PublicKey { get; set; }
+        public Address Address { get; set; }
     }
 }
