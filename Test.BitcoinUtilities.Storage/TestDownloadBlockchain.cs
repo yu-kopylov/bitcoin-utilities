@@ -161,24 +161,25 @@ namespace Test.BitcoinUtilities.Storage
             }
             if (message is BlockMessage)
             {
-                BlockMessage blockMessage = (BlockMessage) message;
+                BlockMessage blockMessage = (BlockMessage)message;
                 Block block = blockConverter.FromMessage(blockMessage);
-                blockPool[blockMessage.BlockHeader.PrevBlock] = block;
 
                 byte[] prevBlockHash = new byte[32];
                 Array.Copy(blockMessage.BlockHeader.PrevBlock, prevBlockHash, 32);
                 Array.Reverse(prevBlockHash);
 
-                //Console.WriteLine(">> received block (hash={0}, prevBlock={1})", BitConverter.ToString(block.Hash), BitConverter.ToString(prevBlockHash).Replace("-", ""));
-
-                if (block.Hash[31] != 0)
-                {
-                    Console.WriteLine(">> suspicious block (hash={0}, prevBlock={1})", BitConverter.ToString(block.Hash), BitConverter.ToString(prevBlockHash).Replace("-", ""));
-                }
-
-                knownBlocks[block.Hash] = block;
                 lock (dataLock)
                 {
+                    blockPool[blockMessage.BlockHeader.PrevBlock] = block;
+
+                    //Console.WriteLine(">> received block (hash={0}, prevBlock={1})", BitConverter.ToString(block.Hash), BitConverter.ToString(prevBlockHash).Replace("-", ""));
+
+                    if (block.Hash[31] != 0)
+                    {
+                        Console.WriteLine(">> suspicious block (hash={0}, prevBlock={1})", BitConverter.ToString(block.Hash), BitConverter.ToString(prevBlockHash).Replace("-", ""));
+                    }
+
+                    knownBlocks[block.Hash] = block;
                     originalBlockchainBytes += BitcoinStreamWriter.GetBytes(blockMessage.Write).Length;
                 }
                 saveBlocksEvent.Set();
@@ -214,13 +215,16 @@ namespace Test.BitcoinUtilities.Storage
         private void SavePoolBlocks()
         {
             List<Block> blocksToSave = new List<Block>();
-            Block currentBlock = lastSavedBlocks.Last();
-            Block nextBlock;
-            while (blockPool.TryRemove(currentBlock.Hash, out nextBlock))
+            lock (dataLock)
             {
-                nextBlock.Height = currentBlock.Height + 1;
-                currentBlock = nextBlock;
-                blocksToSave.Add(nextBlock);
+                Block currentBlock = lastSavedBlocks.Last();
+                Block nextBlock;
+                while (blockPool.TryRemove(currentBlock.Hash, out nextBlock))
+                {
+                    nextBlock.Height = currentBlock.Height + 1;
+                    currentBlock = nextBlock;
+                    blocksToSave.Add(nextBlock);
+                }
             }
             if (blocksToSave.Any())
             {
@@ -238,7 +242,7 @@ namespace Test.BitcoinUtilities.Storage
                 batch.Add(block);
                 batchSize += block.Transactions.Sum(t => t.Inputs.Count);
                 batchSize += block.Transactions.Sum(t => t.Outputs.Count);
-                if (batchSize >= 1000)
+                if (batchSize >= 10000)
                 {
                     SaveBlockBatch(batch);
                     batch.Clear();
