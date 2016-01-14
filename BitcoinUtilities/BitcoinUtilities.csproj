@@ -54,6 +54,7 @@
     <Compile Include="Bip38.cs" />
     <Compile Include="BitcoinAddress.cs" />
     <Compile Include="BitcoinPrivateKey.cs" />
+    <Compile Include="Scripts\BitcoinScript.cs" />
     <Compile Include="ByteArrayComparer.cs" />
     <Compile Include="Collections\LinkedDictionary.cs" />
     <Compile Include="CryptoUtils.cs" />

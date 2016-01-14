@@ -52,7 +52,7 @@ namespace BitcoinUtilities
                 return null;
             }
 
-            //todo: set first byte according to Network type (0x00 for Main Network)
+            //todo: set first byte according to the Network type (0x00 for Main Network)
             byte[] addressBytes = new byte[21];
             using (SHA256 sha256Alg = SHA256.Create())
             {

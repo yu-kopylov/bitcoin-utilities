@@ -57,6 +57,7 @@
     <Compile Include="P2P\TestBitcoinMessageUtils.cs" />
     <Compile Include="P2P\TestBitcoinStreamReader.cs" />
     <Compile Include="P2P\TestBitcoinStreamWriter.cs" />
+    <Compile Include="Scripts\TestBitcoinScript.cs" />
     <Compile Include="TestBase58Check.cs" />
     <Compile Include="TestBip38.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
