@@ -46,10 +46,10 @@ namespace BitcoinUtilities
             {
                 return 0;
             }
-            int hash = 0;
+            int hash = 23;
             for (int i = 0; i < obj.Length; i++)
             {
-                hash = hash*37 + obj[i];
+                hash = hash*31 + obj[i];
             }
             return hash;
         }
