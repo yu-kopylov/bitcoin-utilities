@@ -137,7 +137,7 @@ namespace BitcoinUtilities.Storage
                 SaveAddresses(conn, blocks.SelectMany(b => b.Transactions).SelectMany(t => t.Outputs).Select(o => o.Address).Where(a => a != null));
                 SaveBinaryData(conn, blocks.SelectMany(b => b.Transactions).SelectMany(t => t.Inputs).Select(i => i.SignatureScript));
                 SaveBinaryData(conn, blocks.SelectMany(b => b.Transactions).SelectMany(t => t.Outputs).Select(o => o.PubkeyScript));
-                
+
                 SaveTransactions(conn, blocks.SelectMany(b => b.Transactions));
                 SaveOutputs(conn, blocks.SelectMany(b => b.Transactions).SelectMany(t => t.Outputs));
                 //LinkInputsToOutputs(conn, blocks.SelectMany(b => b.Transactions).SelectMany(t => t.Inputs));
@@ -385,32 +385,6 @@ namespace BitcoinUtilities.Storage
             logger.Debug("SaveAddresses took {0}ms for {1} addresses.", sw.ElapsedMilliseconds, valuesCount);
         }
 
-        public Block GetLastBlockHeader()
-        {
-            using (conn.BeginTransaction())
-            {
-                using (SQLiteCommand command = new SQLiteCommand("select B.Id, B.Hash, B.Height, B.Header from Blocks B order by B.Height desc limit 1", conn))
-                {
-                    using (SQLiteDataReader reader = command.ExecuteReader())
-                    {
-                        if (!reader.Read())
-                        {
-                            return null;
-                        }
-                        Block block = new Block();
-                        int col = 0;
-                        block.Id = reader.GetInt64(col++);
-                        //todo: review constant usage
-                        block.Hash = ReadBytes(reader, col++, 32);
-                        block.Height = reader.GetInt32(col++);
-                        //todo: review constant usage
-                        block.Header = ReadBytes(reader, col++, 80);
-                        return block;
-                    }
-                }
-            }
-        }
-
         private static void SaveTransactionHashes(SQLiteConnection conn, IEnumerable<TransactionHash> hashes)
         {
             Stopwatch sw = Stopwatch.StartNew();
@@ -445,6 +419,32 @@ namespace BitcoinUtilities.Storage
             }
 
             logger.Debug("SaveTransactionHashes took {0}ms for {1} hashes.", sw.ElapsedMilliseconds, valuesCount);
+        }
+
+        public Block GetLastBlockHeader()
+        {
+            using (conn.BeginTransaction())
+            {
+                using (SQLiteCommand command = new SQLiteCommand("select B.Id, B.Hash, B.Height, B.Header from Blocks B order by B.Height desc limit 1", conn))
+                {
+                    using (SQLiteDataReader reader = command.ExecuteReader())
+                    {
+                        if (!reader.Read())
+                        {
+                            return null;
+                        }
+                        Block block = new Block();
+                        int col = 0;
+                        block.Id = reader.GetInt64(col++);
+                        //todo: review constant usage
+                        block.Hash = ReadBytes(reader, col++, 32);
+                        block.Height = reader.GetInt32(col++);
+                        //todo: review constant usage
+                        block.Header = ReadBytes(reader, col++, 80);
+                        return block;
+                    }
+                }
+            }
         }
 
         //todo: move to utils?
