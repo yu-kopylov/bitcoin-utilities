@@ -45,6 +45,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Collections\TestLinkedDictionary.cs" />
+    <Compile Include="Collections\TestVirtualHashTable.cs" />
     <Compile Include="P2P\Messages\TestTxMessage.cs" />
     <Compile Include="P2P\Messages\TestBlockMessage.cs" />
     <Compile Include="P2P\Messages\TestGetDataMessage.cs" />
