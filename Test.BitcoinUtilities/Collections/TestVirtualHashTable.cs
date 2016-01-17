@@ -32,12 +32,12 @@ namespace Test.BitcoinUtilities.Collections
 
         [Test]
         [Explicit]
-        public void Test()
+        public void TestPerformance()
         {
             VHTSettings tableSettings = new VHTSettings();
             //todo: use temp file
             //todo: is *.tbl extension save (does not cause problems like *.sdb)
-            tableSettings.Filename = @"E:\Temp\Blockchain\hash.tbl";
+            tableSettings.Filename = Path.Combine(testFolder, "perf.tbl");
             tableSettings.KeyLength = 20;
             tableSettings.ValueLength = 8;
             using (VirtualHashTable table = VirtualHashTable.Open(tableSettings))

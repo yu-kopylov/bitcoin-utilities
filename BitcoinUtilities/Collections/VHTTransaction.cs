@@ -107,7 +107,7 @@ namespace BitcoinUtilities.Collections
                 batch.Block = wal.ReadBlock(batch.Offset, batch.MaskOffset);
             }
 
-            List<VHTRecord> allRecords = Merge(
+            List<VHTRecord> combinedRecords = Merge(
                 batch.Records,
                 batch.Block.Records,
                 (a, b) =>
@@ -117,14 +117,14 @@ namespace BitcoinUtilities.Collections
                 }
             );
 
-            if (allRecords.Count <= wal.Header.RecordsPerBlock)
+            if (combinedRecords.Count <= wal.Header.RecordsPerBlock)
             {
-                batch.Block.Records = allRecords;
+                batch.Block.Records = combinedRecords;
                 wal.MarkDirty(batch.Block);
                 return;
             }
 
-            List<VHTRecord>[] recordsByChild = SplitByChild(batch.Block, batch.Block.Records.Union(batch.Records));
+            List<VHTRecord>[] recordsByChild = SplitByChild(batch.Block, combinedRecords);
 
             for (int childIndex = 0; childIndex < wal.Header.ChildrenPerBlock; childIndex++)
             {
@@ -324,7 +324,7 @@ namespace BitcoinUtilities.Collections
             return res;
         }
 
-        private List<VHTRecord>[] SplitByChild(VHTBlock block, IEnumerable<VHTRecord> records)
+        private List<VHTRecord>[] SplitByChild(VHTBlock block, List<VHTRecord> records)
         {
             List<VHTRecord>[] recordsByChild = new List<VHTRecord>[wal.Header.ChildrenPerBlock];
             for (int childIndex = 0; childIndex < wal.Header.ChildrenPerBlock; childIndex++)
