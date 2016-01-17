@@ -209,6 +209,7 @@ namespace BitcoinUtilities.Collections
         private void ClearContent()
         {
             affectedBlocks.Clear();
+            blocks.Clear();
 
             stream.Position = 0;
             WriteHeader(emptyMarker);
@@ -230,7 +231,7 @@ namespace BitcoinUtilities.Collections
 
         private void WriteBytes(byte[] value, bool updateChecksum)
         {
-            stream.Write(value, 0, sizeof (long));
+            stream.Write(value, 0, value.Length);
 
             if (updateChecksum)
             {

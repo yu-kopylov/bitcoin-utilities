@@ -31,6 +31,7 @@ namespace BitcoinUtilities.Collections
             
             //todo: validate settings
 
+            //todo: set or calculate BlockSize ?
             header.BlockSize = -1;
 
             header.RootBlocksCount = 16;
@@ -52,6 +53,10 @@ namespace BitcoinUtilities.Collections
 
             //todo: set or calculate BlockSize ?
             header.BlockSize = header.ChildrenPerBlock*8 + 2 + header.RecordsPerBlock * (header.KeyLength + header.ValueLength);
+            if (header.BlockSize < MinBlockSize)
+            {
+                header.BlockSize = MinBlockSize;
+            }
         }
 
         internal VHTHeader Header
@@ -170,7 +175,7 @@ namespace BitcoinUtilities.Collections
             int recordsCount = BitConverter.ToUInt16(rawBlock, inBlockOffset);
             inBlockOffset += 2;
 
-            block.Records = new List<VHTRecord>(header.RecordsPerBlock);
+            block.Records = new List<VHTRecord>(recordsCount);
 
             for (int recordIndex = 0; recordIndex < recordsCount; recordIndex++)
             {
@@ -184,7 +189,9 @@ namespace BitcoinUtilities.Collections
                 Array.Copy(rawBlock, inBlockOffset, record.Value, 0, header.ValueLength);
                 inBlockOffset += header.ValueLength;
 
-                record.Hash = GetHash(rawBlock);
+                record.Hash = GetHash(record.Key);
+
+                block.Records.Add(record);
             }
 
             return block;
@@ -200,8 +207,7 @@ namespace BitcoinUtilities.Collections
 
             foreach (VHTBlock block in blocks)
             {
-                stream.Position = block.Offset;
-                stream.Write(block.GetBytes(header), 0, header.BlockSize);
+                WriteBlock(block);
             }
 
             stream.Flush();
