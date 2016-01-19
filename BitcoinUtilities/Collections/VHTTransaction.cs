@@ -67,13 +67,22 @@ namespace BitcoinUtilities.Collections
         {
             foreach (VHTRecord record in records)
             {
-                VHTBlock rootBlock = wal.ReadRootBlock(record);
-                long blockOffset = rootBlock.Offset;
+                //todo: check arithmetic overflows
+                //todo: remove wal.ReadRootBlock
+                //VHTBlock rootBlock = wal.ReadRootBlock(record);
+                uint rootIndex = record.Hash & wal.Header.RootMask;
+                long blockOffset = (rootIndex + 1) * wal.Header.BlockSize;
 
                 VHTProcessingBatch batch;
                 if (!unprocessedBatches.TryGetValue(blockOffset, out batch))
                 {
-                    batch = CreateBatch(rootBlock, new List<VHTRecord>());
+                    //batch = CreateBatch(rootBlock, new List<VHTRecord>());
+                    //todo: use common method
+                    batch = new VHTProcessingBatch();
+                    batch.Offset = blockOffset;
+                    batch.MaskOffset = 0;
+                    batch.Block = null;
+                    batch.Records = new List<VHTRecord>();
                     unprocessedBatches.Add(blockOffset, batch);
                 }
                 batch.Records.Add(record);
@@ -126,19 +135,37 @@ namespace BitcoinUtilities.Collections
 
             List<VHTRecord>[] recordsByChild = SplitByChild(batch.Block, combinedRecords);
 
-            for (int childIndex = 0; childIndex < wal.Header.ChildrenPerBlock; childIndex++)
+            batch.Block.Records.Clear();
+
+            List<int> childIndexes = Enumerable.Range(0, wal.Header.ChildrenPerBlock).OrderBy(i => batch.Block.ChildrenOffsets[i] == 0).ThenBy(i => recordsByChild[i].Count).ToList();
+
+            foreach (int childIndex in childIndexes)
             {
                 List<VHTRecord> childRecords = recordsByChild[childIndex];
                 if (childRecords.Count != 0)
                 {
-                    //todo: check that file access order is linear
-                    VHTProcessingBatch childBatch = CreateChildBatch(batch.Block, childIndex, childRecords);
-                    unprocessedBatches.Add(childBatch.Offset, childBatch);
+                    if (batch.Block.Records.Count + childRecords.Count <= wal.Header.RecordsPerBlock)
+                    {
+                        batch.Block.Records = Merge(batch.Block.Records, childRecords, (a, b) => a ?? b);
+                    }
+                    else if (batch.Block.Records.Count < wal.Header.RecordsPerBlock)
+                    {
+                        List<VHTRecord> recordsToKeep = childRecords.Take(wal.Header.RecordsPerBlock - batch.Block.Records.Count).ToList();
+                        batch.Block.Records = Merge(batch.Block.Records, recordsToKeep, (a, b) => a ?? b);
+                        childRecords = childRecords.Skip(wal.Header.RecordsPerBlock - batch.Block.Records.Count).ToList();
+                        //todo: check that file access order is linear
+                        VHTProcessingBatch childBatch = CreateChildBatch(batch.Block, childIndex, childRecords);
+                        unprocessedBatches.Add(childBatch.Offset, childBatch);
+                    }
+                    else
+                    {
+                        //todo: check that file access order is linear
+                        VHTProcessingBatch childBatch = CreateChildBatch(batch.Block, childIndex, childRecords);
+                        unprocessedBatches.Add(childBatch.Offset, childBatch);
+                    }
                 }
             }
 
-            //todo: should we keep some values in splitted node (e.g. if some child group is small enough)?
-            batch.Block.Records.Clear();
             //todo: sholud we always write parent? (No. Should not save if the block was and remained empty. And there are no new children.)
             wal.MarkDirty(batch.Block);
         }

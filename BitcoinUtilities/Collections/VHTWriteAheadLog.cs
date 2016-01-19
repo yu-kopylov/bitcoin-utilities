@@ -174,7 +174,7 @@ namespace BitcoinUtilities.Collections
 
         private void PrepareSave()
         {
-            stream.SetLength(HeaderLength + header.BlockSize + (8 + header.BlockSize) * affectedBlocks.Count);
+            stream.SetLength(HeaderLength + header.BlockSize + (8L + header.BlockSize) * affectedBlocks.Count);
             stream.Position = 0;
 
             checksum = 23;
@@ -198,7 +198,7 @@ namespace BitcoinUtilities.Collections
 
             stream.Position = 0;
             WriteHeader(completeMarker);
-            stream.Flush();
+            stream.Flush(true);
         }
 
         private void ApplyContent()

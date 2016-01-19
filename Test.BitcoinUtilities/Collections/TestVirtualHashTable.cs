@@ -82,7 +82,7 @@ namespace Test.BitcoinUtilities.Collections
 
                 using (var tx = table.BeginTransaction())
                 {
-                    for (int i = 10000; i < 20000; i++)
+                    for (int i = 15000; i < 20000; i++)
                     {
                         tx.AddOrUpdate(CreateKey(i), BitConverter.GetBytes((long) i));
                     }
@@ -95,7 +95,7 @@ namespace Test.BitcoinUtilities.Collections
                 using (var tx = table.BeginTransaction())
                 {
                     List<byte[]> keys = new List<byte[]>();
-                    for (int i = 10000; i < 20000; i++)
+                    for (int i = 15000; i < 20000; i++)
                     {
                         keys.Add(CreateKey(i));
                     }
@@ -105,7 +105,7 @@ namespace Test.BitcoinUtilities.Collections
                     Dictionary<byte[], byte[]> values = tx.Find(keys);
                     Assert.That(values.Count, Is.EqualTo(keys.Count - 1));
 
-                    for (int i = 10000; i < 20000; i++)
+                    for (int i = 15000; i < 20000; i++)
                     {
                         byte[] key = CreateKey(i);
                         Assert.That(values[key], Is.EqualTo(BitConverter.GetBytes((long) i)));
@@ -123,7 +123,7 @@ namespace Test.BitcoinUtilities.Collections
         public void TestSimpleAdd()
         {
             VHTSettings settings = new VHTSettings();
-            settings.Filename = Path.Combine(testFolder, "VHT-TestSimpleAdd.tbl");
+            settings.Filename = Path.Combine(testFolder, "TestSimpleAdd.tbl");
             settings.KeyLength = 1;
             settings.ValueLength = 1;
 
@@ -163,7 +163,7 @@ namespace Test.BitcoinUtilities.Collections
             byte[] key = new byte[20];
             for (int i = 0; i < 20; i++)
             {
-                key[i] = (byte) ((val >> 8*(i%4))*(31 + i*2));
+                key[i] = (byte) ((val >> 8*(i%4))*(31 + i/4*8) + (val >> 8*((i + 1)%4))*(33 + i/4*8));
             }
             return key;
         }

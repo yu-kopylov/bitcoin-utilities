@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Text;
 
 namespace BitcoinUtilities.Collections
 {
@@ -11,7 +12,7 @@ namespace BitcoinUtilities.Collections
         /// <summary>
         /// The minimum block size that can accomodate a table header.
         /// </summary>
-        private const int MinBlockSize = 68;//todo: calculate sizeof(VHTHeader); 
+        private const int MinBlockSize = 68; //todo: calculate sizeof(VHTHeader); 
 
         private readonly string filename;
 
@@ -26,9 +27,9 @@ namespace BitcoinUtilities.Collections
         private VirtualHashTable(VHTSettings settings)
         {
             filename = settings.Filename;
-            
+
             header = new VHTHeader();
-            
+
             //todo: validate settings
 
             //todo: set or calculate BlockSize ?
@@ -38,11 +39,11 @@ namespace BitcoinUtilities.Collections
             header.RootMask = 0xF;
             header.RootMaskLength = 4;
 
-            header.ChildrenPerBlock = 2;
-            header.ChildrenMask = 0x1;
-            header.ChildrenMaskLength = 1;
+            header.ChildrenPerBlock = 8;
+            header.ChildrenMask = 0x7;
+            header.ChildrenMaskLength = 3;
 
-            header.RecordsPerBlock = 16;
+            header.RecordsPerBlock = 8;
 
             header.KeyLength = settings.KeyLength;
             header.ValueLength = settings.ValueLength;
@@ -52,7 +53,7 @@ namespace BitcoinUtilities.Collections
             header.AllocationUnit = 4096;
 
             //todo: set or calculate BlockSize ?
-            header.BlockSize = header.ChildrenPerBlock*8 + 2 + header.RecordsPerBlock * (header.KeyLength + header.ValueLength);
+            header.BlockSize = header.ChildrenPerBlock*8 + 2 + header.RecordsPerBlock*(header.KeyLength + header.ValueLength);
             if (header.BlockSize < MinBlockSize)
             {
                 header.BlockSize = MinBlockSize;
@@ -97,7 +98,7 @@ namespace BitcoinUtilities.Collections
             {
                 //todo: persist header
                 //todo: allocate space in big chunks
-                header.OccupiedSpace = (1 + header.RootBlocksCount) * header.BlockSize;
+                header.OccupiedSpace = (1 + header.RootBlocksCount)*header.BlockSize;
                 //todo: use allocation unit
                 header.AllocatedSpace = header.OccupiedSpace;
 
@@ -112,7 +113,7 @@ namespace BitcoinUtilities.Collections
                     block.ChildrenOffsets = new long[header.ChildrenPerBlock];
                     block.Records = new List<VHTRecord>();
 
-                    block.Offset = header.BlockSize * (i + 1);
+                    block.Offset = header.BlockSize*(i + 1);
                     block.MaskOffset = 0;
 
                     WriteBlock(block);
@@ -125,7 +126,7 @@ namespace BitcoinUtilities.Collections
                 //todo: read header and compare it values with settings
                 for (int i = 0; i < header.RootBlocksCount; i++)
                 {
-                    rootNodes[i] = ReadBlock(header.BlockSize * (i + 1), 0);
+                    rootNodes[i] = ReadBlock(header.BlockSize*(i + 1), 0);
                 }
             }
         }
@@ -200,7 +201,7 @@ namespace BitcoinUtilities.Collections
         internal void ApplyChanges(VHTHeader header, List<VHTBlock> blocks)
         {
             this.header = header;
-            
+
             stream.SetLength(header.AllocatedSpace);
             stream.Position = 0;
             stream.Write(header.GetBytes(), 0, header.BlockSize);
@@ -210,7 +211,7 @@ namespace BitcoinUtilities.Collections
                 WriteBlock(block);
             }
 
-            stream.Flush();
+            stream.Flush(true);
         }
 
         //todo: use better hash
