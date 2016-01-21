@@ -151,8 +151,9 @@ namespace BitcoinUtilities.Collections
                     else if (batch.Block.Records.Count < wal.Header.RecordsPerBlock)
                     {
                         List<VHTRecord> recordsToKeep = childRecords.Take(wal.Header.RecordsPerBlock - batch.Block.Records.Count).ToList();
-                        batch.Block.Records = Merge(batch.Block.Records, recordsToKeep, (a, b) => a ?? b);
                         childRecords = childRecords.Skip(wal.Header.RecordsPerBlock - batch.Block.Records.Count).ToList();
+
+                        batch.Block.Records = Merge(batch.Block.Records, recordsToKeep, (a, b) => a ?? b);
                         //todo: check that file access order is linear
                         VHTProcessingBatch childBatch = CreateChildBatch(batch.Block, childIndex, childRecords);
                         unprocessedBatches.Add(childBatch.Offset, childBatch);
