@@ -27,6 +27,8 @@ namespace Test.BitcoinUtilities.Collections
         {
             CompactTreeNode node = CompactTreeNode.CreateSplitNode();
 
+            ulong emptyRawData = node.RawData;
+
             Assert.That(node.IsDataNode, Is.False);
             Assert.That(node.IsSplitNode, Is.True);
             Assert.That(node.GetChild(0), Is.EqualTo(0));
@@ -75,6 +77,8 @@ namespace Test.BitcoinUtilities.Collections
             Assert.That(node.IsSplitNode, Is.True);
             Assert.That(node.GetChild(0), Is.EqualTo(0));
             Assert.That(node.GetChild(1), Is.EqualTo(0));
+
+            Assert.That(node.RawData, Is.EqualTo(emptyRawData));
         }
     }
 }
