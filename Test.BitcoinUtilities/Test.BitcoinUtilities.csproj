@@ -44,6 +44,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Collections\TestVirtualDictionary.cs" />
     <Compile Include="Collections\TestCompactTree.cs" />
     <Compile Include="Collections\TestCompactTreeNode.cs" />
     <Compile Include="Collections\TestLinkedDictionary.cs" />
