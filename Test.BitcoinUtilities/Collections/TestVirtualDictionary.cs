@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using BitcoinUtilities;
 using BitcoinUtilities.Collections;
 using NUnit.Framework;
 
@@ -20,7 +21,7 @@ namespace Test.BitcoinUtilities.Collections
             Console.WriteLine("Removing files in the test folder: : {0}", testFolder);
 
             Directory.CreateDirectory(testFolder);
-            foreach (string pattern in new string[]{"*.tbl", "*.tbl-wal"})
+            foreach (string pattern in new string[] {"*.tbl", "*.tbl-wal"})
             {
                 foreach (string filename in Directory.GetFiles(testFolder, pattern, SearchOption.TopDirectoryOnly))
                 {
@@ -99,12 +100,12 @@ namespace Test.BitcoinUtilities.Collections
                     keys.Add(CreateKey(999999999));
 
                     Dictionary<byte[], byte[]> values = tx.Find(keys);
-                    Assert.That(values.Count, Is.EqualTo(keys.Count - 1));
+                    Assert.That(values.Count == keys.Count - 1);
 
                     for (int i = 15000; i < 20000; i++)
                     {
                         byte[] key = CreateKey(i);
-                        Assert.That(values[key], Is.EqualTo(BitConverter.GetBytes((long) i)));
+                        Assert.That(ByteArrayComparer.Instance.Equals(values[key], BitConverter.GetBytes((long) i)));
                     }
 
                     tx.Commit();
@@ -122,27 +123,27 @@ namespace Test.BitcoinUtilities.Collections
             {
                 using (var tx = dict.BeginTransaction())
                 {
-                    Dictionary<byte[], byte[]> foundValues = tx.Find(new List<byte[]> { new byte[] { 1 } });
+                    Dictionary<byte[], byte[]> foundValues = tx.Find(new List<byte[]> {new byte[] {1}});
                     Assert.That(foundValues, Is.Empty);
 
-                    tx.AddOrUpdate(new byte[] { 1 }, new byte[] { 1 });
+                    tx.AddOrUpdate(new byte[] {1}, new byte[] {1});
 
-                    foundValues = tx.Find(new List<byte[]> { new byte[] { 1 } });
+                    foundValues = tx.Find(new List<byte[]> {new byte[] {1}});
                     Assert.That(foundValues.Count, Is.EqualTo(1));
-                    Assert.That(foundValues[new byte[] { 1 }], Is.EqualTo(new byte[] { 1 }));
+                    Assert.That(foundValues[new byte[] {1}], Is.EqualTo(new byte[] {1}));
 
                     tx.Commit();
 
-                    foundValues = tx.Find(new List<byte[]> { new byte[] { 1 } });
+                    foundValues = tx.Find(new List<byte[]> {new byte[] {1}});
                     Assert.That(foundValues.Count, Is.EqualTo(1));
-                    Assert.That(foundValues[new byte[] { 1 }], Is.EqualTo(new byte[] { 1 }));
+                    Assert.That(foundValues[new byte[] {1}], Is.EqualTo(new byte[] {1}));
                 }
 
                 using (var tx = dict.BeginTransaction())
                 {
-                    Dictionary<byte[], byte[]> foundValues = tx.Find(new List<byte[]> { new byte[] { 1 } });
+                    Dictionary<byte[], byte[]> foundValues = tx.Find(new List<byte[]> {new byte[] {1}});
                     Assert.That(foundValues.Count, Is.EqualTo(1));
-                    Assert.That(foundValues[new byte[] { 1 }], Is.EqualTo(new byte[] { 1 }));
+                    Assert.That(foundValues[new byte[] {1}], Is.EqualTo(new byte[] {1}));
 
                     tx.Commit();
                 }
