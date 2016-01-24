@@ -55,12 +55,12 @@ namespace BitcoinUtilities.Collections
 
             CompactTree tree = dictionary.GetBlockTree();
 
-            SortedDictionary<long, BlockBatch> blockBatches = SplitByBlock(tree, recordsToLookup);
+            SortedDictionary<long, BlockBatch> blockBatches = SplitByBlock(tree, recordsToLookup, false);
 
             foreach (BlockBatch batch in blockBatches.Values)
             {
                 Block block = dictionary.Container.ReadBlock(batch.BlockOffset);
-                FindRecords(res, block.Records, batch.Records, batch.MaskOffset / 8);
+                FindRecords(res, block.Records, batch.Records, batch.MaskOffset/8);
             }
 
             return res;
@@ -126,7 +126,7 @@ namespace BitcoinUtilities.Collections
 
         private void AddRecordsToTree(CompactTree tree, List<NonIndexedRecord> nonIndexedRecords)
         {
-            SortedDictionary<long, BlockBatch> blockUpdates = SplitByBlock(tree, nonIndexedRecords.Select(r => new Record(r.Key, r.Value)));
+            SortedDictionary<long, BlockBatch> blockUpdates = SplitByBlock(tree, nonIndexedRecords.Select(r => new Record(r.Key, r.Value)), true);
 
             List<SplitTreeNode> updatedTreeNodes = new List<SplitTreeNode>();
 
@@ -178,7 +178,7 @@ namespace BitcoinUtilities.Collections
             }
         }
 
-        private SortedDictionary<long, BlockBatch> SplitByBlock(CompactTree tree, IEnumerable<Record> records)
+        private SortedDictionary<long, BlockBatch> SplitByBlock(CompactTree tree, IEnumerable<Record> records, bool addMissingBranches)
         {
             SortedDictionary<long, BlockBatch> blockBatches = new SortedDictionary<long, BlockBatch>();
 
@@ -187,29 +187,50 @@ namespace BitcoinUtilities.Collections
                 int maskOffset = 0;
                 int nodeIndex = 0;
                 CompactTreeNode node = tree.Nodes[nodeIndex];
-                while (!node.IsDataNode)
+                int childNum = 0;
+                while (node.IsSplitNode)
                 {
-                    bool left = (record.Key[maskOffset / 8] & (1 << (7 - maskOffset % 8))) == 0;
-                    nodeIndex = node.GetChild(left ? 0 : 1);
+                    bool left = (record.Key[maskOffset/8] & (1 << (7 - maskOffset%8))) == 0;
+                    childNum = left ? 0 : 1;
+                    int childIndex = node.GetChild(childNum);
+                    if (childIndex == 0)
+                    {
+                        break;
+                    }
+                    nodeIndex = childIndex;
                     node = tree.Nodes[nodeIndex];
                     maskOffset++;
                 }
 
-                long blockOffset = node.Value;
-
-                BlockBatch blockBatch;
-                if (!blockBatches.TryGetValue(blockOffset, out blockBatch))
+                if (node.IsSplitNode)
                 {
-                    blockBatch = new BlockBatch(blockOffset, maskOffset, nodeIndex);
-                    blockBatches.Add(blockOffset, blockBatch);
+                    if (addMissingBranches)
+                    {
+                        long blockOffset = dictionary.Container.AllocateBlock();
+                        nodeIndex = tree.AddDataNode(nodeIndex, childNum, blockOffset);
+                        node = tree.Nodes[nodeIndex];
+                        maskOffset++;
+                    }
                 }
 
-                blockBatch.Records.Add(record);
+                if (node.IsDataNode)
+                {
+                    long blockOffset = node.Value;
+
+                    BlockBatch blockBatch;
+                    if (!blockBatches.TryGetValue(blockOffset, out blockBatch))
+                    {
+                        blockBatch = new BlockBatch(blockOffset, maskOffset, nodeIndex);
+                        blockBatches.Add(blockOffset, blockBatch);
+                    }
+
+                    blockBatch.Records.Add(record);
+                }
             }
 
             foreach (BlockBatch batch in blockBatches.Values)
             {
-                batch.Records.Sort((recordA, recordB) => CompareKeys(recordA.Key, recordB.Key, batch.MaskOffset / 8));
+                batch.Records.Sort((recordA, recordB) => CompareKeys(recordA.Key, recordB.Key, batch.MaskOffset/8));
             }
 
             return blockBatches;
@@ -220,7 +241,7 @@ namespace BitcoinUtilities.Collections
             Block block = dictionary.Container.ReadBlock(blockBatch.BlockOffset);
 
             //todo: review types
-            List<Record> records = MergeRecords(block.Records, blockBatch.Records, blockBatch.MaskOffset / 8);
+            List<Record> records = MergeRecords(block.Records, blockBatch.Records, blockBatch.MaskOffset/8);
 
             //todo: is it worth to have this check?
             if (records.Count <= dictionary.RecordsPerBlock)
@@ -317,8 +338,8 @@ namespace BitcoinUtilities.Collections
             List<Record> records = node.Records;
             node.Records = null;
 
-            int maskByte = node.MaskOffset / 8;
-            byte mask = (byte)(1 << (7 - node.MaskOffset % 8));
+            int maskByte = node.MaskOffset/8;
+            byte mask = (byte) (1 << (7 - node.MaskOffset%8));
 
             int firstRight = 0;
             for (; firstRight < records.Count; firstRight++)
@@ -352,5 +373,4 @@ namespace BitcoinUtilities.Collections
             //todo: inplement
         }
     }
-
 }
