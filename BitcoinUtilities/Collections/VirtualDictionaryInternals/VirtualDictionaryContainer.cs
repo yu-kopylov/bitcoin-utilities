@@ -11,13 +11,18 @@ namespace BitcoinUtilities.Collections.VirtualDictionaryInternals
         private readonly int valueSize;
         private readonly int blockSize = 4096;
         private readonly int allocationUnit = 1024*1024;
+        private readonly int treeNodesPerBlock = 510;
 
         private readonly FileStream stream;
         private readonly BinaryWriter writer;
         private readonly BinaryReader reader;
 
-        private long occupiedSpace = 0;
-        private long allocatedSpace = 0;
+        private long occupiedSpace;
+        private long allocatedSpace;
+
+        private readonly List<long> treeBlockOffsets = new List<long>();
+        private CompactTree readonlyBlockTree;
+        private CompactTree updatableBlockTree;
 
         public VirtualDictionaryContainer(string filename, int keySize, int valueSize)
         {
@@ -27,6 +32,12 @@ namespace BitcoinUtilities.Collections.VirtualDictionaryInternals
             stream = new FileStream(filename, FileMode.Create, FileAccess.ReadWrite, FileShare.Read);
             writer = new BinaryWriter(stream, Encoding.UTF8, true);
             reader = new BinaryReader(stream, Encoding.UTF8, true);
+
+            long firstTreeBlockOffset = AllocateBlock();
+            long firstDataBlockOffset = AllocateBlock();
+
+            treeBlockOffsets.Add(firstTreeBlockOffset);
+            readonlyBlockTree = new CompactTree(CompactTreeNode.CreateDataNode(firstDataBlockOffset));
         }
 
         public void Dispose()
@@ -34,6 +45,24 @@ namespace BitcoinUtilities.Collections.VirtualDictionaryInternals
             writer.Close();
             reader.Close();
             stream.Close();
+        }
+
+        public CompactTree ReadonlyBlockTree
+        {
+            get { return readonlyBlockTree; }
+        }
+
+        public CompactTree UpdatableBlockTree
+        {
+            get
+            {
+                if (updatableBlockTree == null)
+                {
+                    updatableBlockTree = new CompactTree();
+                    updatableBlockTree.Nodes.AddRange(readonlyBlockTree.Nodes);
+                }
+                return updatableBlockTree;
+            }
         }
 
         public Block ReadBlock(long offset)
@@ -78,7 +107,68 @@ namespace BitcoinUtilities.Collections.VirtualDictionaryInternals
 
         public void Commit()
         {
+            if (updatableBlockTree != null)
+            {
+                WriteTree();
+                readonlyBlockTree = updatableBlockTree;
+                updatableBlockTree = null;
+            }
             writer.Flush();
+        }
+
+        private void WriteTree()
+        {
+            //todo: node removal is not supported
+            int blocksRequired = (updatableBlockTree.Nodes.Count + treeNodesPerBlock + 1)/treeNodesPerBlock;
+
+            while (treeBlockOffsets.Count < blocksRequired)
+            {
+                long blockOffset = AllocateBlock();
+                treeBlockOffsets.Add(blockOffset);
+            }
+
+            int blockNum = 0;
+            for (; blockNum < treeBlockOffsets.Count; blockNum++)
+            {
+                int blockRangeStart = blockNum*treeNodesPerBlock;
+                bool blockUpdated = false;
+                for (int i = 0; i < treeNodesPerBlock; i++)
+                {
+                    int nodeIndex = blockRangeStart + i;
+                    if (nodeIndex >= readonlyBlockTree.Nodes.Count)
+                    {
+                        blockUpdated = nodeIndex < updatableBlockTree.Nodes.Count;
+                        break;
+                    }
+                    if (readonlyBlockTree.Nodes[nodeIndex].RawData != updatableBlockTree.Nodes[nodeIndex].RawData)
+                    {
+                        blockUpdated = true;
+                        break;
+                    }
+                }
+                if (blockUpdated)
+                {
+                    WriteTreeBlock(blockNum);
+                }
+            }
+        }
+
+        private void WriteTreeBlock(int blockNum)
+        {
+            long nextBlockOffset = (blockNum + 1) < treeBlockOffsets.Count ? treeBlockOffsets[blockNum + 1] : -1;
+            int rangeStart = blockNum*treeNodesPerBlock;
+            int recordsCount = updatableBlockTree.Nodes.Count - rangeStart;
+            if (recordsCount > treeNodesPerBlock)
+            {
+                recordsCount = treeNodesPerBlock;
+            }
+            stream.Position = treeBlockOffsets[blockNum];
+            writer.Write(nextBlockOffset);
+            writer.Write(recordsCount);
+            for (int i = 0; i < recordsCount; i++)
+            {
+                writer.Write(updatableBlockTree.Nodes[rangeStart + i].RawData);
+            }
         }
     }
 }

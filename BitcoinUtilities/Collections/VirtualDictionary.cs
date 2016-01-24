@@ -14,17 +14,11 @@ namespace BitcoinUtilities.Collections
         //todo: use local comparer
         private readonly Dictionary<byte[], int> nonIndexedRecordsByKey = new Dictionary<byte[], int>(ByteArrayComparer.Instance);
 
-        private readonly CompactTree blockTree;
-
         private readonly VirtualDictionaryContainer container;
 
         private VirtualDictionary(string filename, int keySize, int valueSize)
         {
-            blockTree = new CompactTree(CompactTreeNode.CreateDataNode(0));
-
             container = new VirtualDictionaryContainer(filename, keySize, valueSize);
-            long firstBlockOffset = container.AllocateBlock();
-            container.WriteBlock(firstBlockOffset, new List<Record>());
         }
 
         public static VirtualDictionary Open(string filename, int keySize, int valueSize)
@@ -80,11 +74,6 @@ namespace BitcoinUtilities.Collections
         internal List<NonIndexedRecord> GetNonIndexedRecords()
         {
             return nonIndexedRecords;
-        }
-
-        internal CompactTree GetBlockTree()
-        {
-            return blockTree;
         }
 
         public void ClearNonIndexedRecords()

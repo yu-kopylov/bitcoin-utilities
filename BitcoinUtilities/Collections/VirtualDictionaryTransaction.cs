@@ -53,7 +53,7 @@ namespace BitcoinUtilities.Collections
                 }
             }
 
-            CompactTree tree = dictionary.GetBlockTree();
+            CompactTree tree = dictionary.Container.ReadonlyBlockTree;
 
             SortedDictionary<long, BlockBatch> blockBatches = SplitByBlock(tree, recordsToLookup, false);
 
@@ -115,7 +115,7 @@ namespace BitcoinUtilities.Collections
                 return;
             }
 
-            CompactTree tree = dictionary.GetBlockTree();
+            CompactTree tree = dictionary.Container.UpdatableBlockTree;
 
             AddRecordsToTree(tree, nonIndexedRecords);
 
@@ -206,6 +206,7 @@ namespace BitcoinUtilities.Collections
                 {
                     if (addMissingBranches)
                     {
+                        //todo: test this branch
                         long blockOffset = dictionary.Container.AllocateBlock();
                         nodeIndex = tree.AddDataNode(nodeIndex, childNum, blockOffset);
                         node = tree.Nodes[nodeIndex];
