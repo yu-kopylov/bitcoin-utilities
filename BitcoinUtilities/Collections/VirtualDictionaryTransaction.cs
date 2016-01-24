@@ -2,127 +2,10 @@
 using System.Collections.Generic;
 using System.Diagnostics.Contracts;
 using System.Linq;
+using BitcoinUtilities.Collections.VirtualDictionaryInternals;
 
 namespace BitcoinUtilities.Collections
 {
-    public class VirtualDictionary : IDisposable
-    {
-        internal int MaxNonIndexedRecordsCount = 1000;
-        internal int RecordsPerBlock = 128;
-
-        //todo: use to accumulate small changes
-        private readonly List<NonIndexedRecord> nonIndexedRecords = new List<NonIndexedRecord>();
-        //todo: use local comparer
-        private readonly Dictionary<byte[], int> nonIndexedRecordsByKey = new Dictionary<byte[], int>(ByteArrayComparer.Instance);
-
-        private readonly Dictionary<long, Block> blocks = new Dictionary<long, Block>();
-
-        private readonly CompactTree blockTree;
-
-        private VirtualDictionary(string filename, int keySize, int valueSize)
-        {
-            blockTree = new CompactTree(CompactTreeNode.CreateDataNode(0));
-            blocks.Add(0, new Block());
-        }
-
-        public static VirtualDictionary Open(string filename, int keySize, int valueSize)
-        {
-            return new VirtualDictionary(filename, keySize, valueSize);
-        }
-
-        public void Dispose()
-        {
-            //todo: implement
-        }
-
-        public VirtualDictionaryTransaction BeginTransaction()
-        {
-            return new VirtualDictionaryTransaction(this);
-        }
-
-        //todo: class or struct?
-        internal class NonIndexedRecord
-        {
-            private readonly byte[] key;
-            private readonly byte[] value;
-
-            public NonIndexedRecord(byte[] key, byte[] value)
-            {
-                this.key = key;
-                this.value = value;
-            }
-
-            public byte[] Key
-            {
-                get { return key; }
-            }
-
-            public byte[] Value
-            {
-                get { return value; }
-            }
-        }
-
-        internal bool TryGetNonIndexedValue(byte[] key, out byte[] value)
-        {
-            int recordIndex;
-            if (nonIndexedRecordsByKey.TryGetValue(key, out recordIndex))
-            {
-                value = nonIndexedRecords[recordIndex].Value;
-                return true;
-            }
-            value = null;
-            return false;
-        }
-
-        public void AddNonIndexedValue(byte[] key, byte[] value)
-        {
-            //todo: implement correctly (depends on record being class or struct)
-            NonIndexedRecord record = new NonIndexedRecord(key, value);
-            int recordIndex;
-            if (nonIndexedRecordsByKey.TryGetValue(key, out recordIndex))
-            {
-                nonIndexedRecords[recordIndex] = record;
-            }
-            else
-            {
-                recordIndex = nonIndexedRecords.Count;
-                nonIndexedRecords.Add(record);
-                nonIndexedRecordsByKey.Add(key, recordIndex);
-            }
-        }
-
-        internal List<NonIndexedRecord> GetNonIndexedRecords()
-        {
-            return nonIndexedRecords;
-        }
-
-        internal CompactTree GetBlockTree()
-        {
-            return blockTree;
-        }
-
-        public void ClearNonIndexedRecords()
-        {
-            nonIndexedRecords.Clear();
-            nonIndexedRecordsByKey.Clear();
-        }
-
-        internal long CreateDataBlock(List<Record> records)
-        {
-            long blockOffset = blocks.Count;
-            Block block = new Block();
-            blocks.Add(blockOffset, block);
-            block.Records = records;
-            return blockOffset;
-        }
-
-        internal Block GetBlock(long blockOffset)
-        {
-            return blocks[blockOffset];
-        }
-    }
-
     public class VirtualDictionaryTransaction : IDisposable
     {
         private readonly VirtualDictionary dictionary;
@@ -176,8 +59,8 @@ namespace BitcoinUtilities.Collections
 
             foreach (BlockBatch batch in blockBatches.Values)
             {
-                Block block = dictionary.GetBlock(batch.BlockOffset);
-                FindRecords(res, block.Records, batch.Records, batch.MaskOffset/8);
+                Block block = dictionary.Container.ReadBlock(batch.BlockOffset);
+                FindRecords(res, block.Records, batch.Records, batch.MaskOffset / 8);
             }
 
             return res;
@@ -224,10 +107,11 @@ namespace BitcoinUtilities.Collections
                 dictionary.AddNonIndexedValue(unsavedRecord.Key, unsavedRecord.Value);
             }
 
-            List<VirtualDictionary.NonIndexedRecord> nonIndexedRecords = dictionary.GetNonIndexedRecords();
+            List<NonIndexedRecord> nonIndexedRecords = dictionary.GetNonIndexedRecords();
 
             if (nonIndexedRecords.Count <= dictionary.MaxNonIndexedRecordsCount)
             {
+                //todo: commit changes in container
                 return;
             }
 
@@ -236,9 +120,11 @@ namespace BitcoinUtilities.Collections
             AddRecordsToTree(tree, nonIndexedRecords);
 
             dictionary.ClearNonIndexedRecords();
+
+            dictionary.Container.Commit();
         }
 
-        private void AddRecordsToTree(CompactTree tree, List<VirtualDictionary.NonIndexedRecord> nonIndexedRecords)
+        private void AddRecordsToTree(CompactTree tree, List<NonIndexedRecord> nonIndexedRecords)
         {
             SortedDictionary<long, BlockBatch> blockUpdates = SplitByBlock(tree, nonIndexedRecords.Select(r => new Record(r.Key, r.Value)));
 
@@ -252,6 +138,9 @@ namespace BitcoinUtilities.Collections
                     updatedTreeNodes.AddRange(treeNodes);
                 }
             }
+
+            //todo: specify type
+            List<Tuple<long, List<Record>>> newBlocks = new List<Tuple<long, List<Record>>>();
 
             foreach (SplitTreeNode treeNode in updatedTreeNodes)
             {
@@ -271,11 +160,21 @@ namespace BitcoinUtilities.Collections
                         long blockOffset = treeNode.BlockOffset;
                         if (blockOffset < 0)
                         {
-                            blockOffset = dictionary.CreateDataBlock(treeNode.Records);
+                            blockOffset = dictionary.Container.AllocateBlock();
+                            newBlocks.Add(Tuple.Create(blockOffset, treeNode.Records));
+                        }
+                        else
+                        {
+                            dictionary.Container.WriteBlock(treeNode.BlockOffset, treeNode.Records);
                         }
                         treeNode.NodeIndex = tree.AddDataNode(treeNode.Parent.NodeIndex, treeNode.ChildNum, blockOffset);
                     }
                 }
+            }
+
+            foreach (Tuple<long, List<Record>> block in newBlocks)
+            {
+                dictionary.Container.WriteBlock(block.Item1, block.Item2);
             }
         }
 
@@ -290,7 +189,7 @@ namespace BitcoinUtilities.Collections
                 CompactTreeNode node = tree.Nodes[nodeIndex];
                 while (!node.IsDataNode)
                 {
-                    bool left = (record.Key[maskOffset/8] & (1 << (7 - maskOffset%8))) == 0;
+                    bool left = (record.Key[maskOffset / 8] & (1 << (7 - maskOffset % 8))) == 0;
                     nodeIndex = node.GetChild(left ? 0 : 1);
                     node = tree.Nodes[nodeIndex];
                     maskOffset++;
@@ -310,7 +209,7 @@ namespace BitcoinUtilities.Collections
 
             foreach (BlockBatch batch in blockBatches.Values)
             {
-                batch.Records.Sort((recordA, recordB) => CompareKeys(recordA.Key, recordB.Key, batch.MaskOffset/8));
+                batch.Records.Sort((recordA, recordB) => CompareKeys(recordA.Key, recordB.Key, batch.MaskOffset / 8));
             }
 
             return blockBatches;
@@ -318,10 +217,10 @@ namespace BitcoinUtilities.Collections
 
         private List<SplitTreeNode> UpdateBlock(BlockBatch blockBatch)
         {
-            Block block = dictionary.GetBlock(blockBatch.BlockOffset);
+            Block block = dictionary.Container.ReadBlock(blockBatch.BlockOffset);
 
             //todo: review types
-            List<Record> records = MergeRecords(block.Records, blockBatch.Records, blockBatch.MaskOffset/8);
+            List<Record> records = MergeRecords(block.Records, blockBatch.Records, blockBatch.MaskOffset / 8);
 
             //todo: is it worth to have this check?
             if (records.Count <= dictionary.RecordsPerBlock)
@@ -418,8 +317,8 @@ namespace BitcoinUtilities.Collections
             List<Record> records = node.Records;
             node.Records = null;
 
-            int maskByte = node.MaskOffset/8;
-            byte mask = (byte) (1 << (7 - node.MaskOffset%8));
+            int maskByte = node.MaskOffset / 8;
+            byte mask = (byte)(1 << (7 - node.MaskOffset % 8));
 
             int firstRight = 0;
             for (; firstRight < records.Count; firstRight++)
@@ -454,126 +353,4 @@ namespace BitcoinUtilities.Collections
         }
     }
 
-    internal class SplitTreeNode
-    {
-        private readonly SplitTreeNode parent;
-        private readonly int childNum;
-        private readonly int maskOffset;
-
-        private int nodeIndex;
-        private long blockOffset;
-        private List<Record> records;
-
-        public SplitTreeNode(SplitTreeNode parent, int childNum, int maskOffset, int nodeIndex, long blockOffset, List<Record> records)
-        {
-            this.parent = parent;
-            this.childNum = childNum;
-            this.maskOffset = maskOffset;
-
-            this.nodeIndex = nodeIndex;
-            this.blockOffset = blockOffset;
-            this.records = records;
-        }
-
-        public SplitTreeNode Parent
-        {
-            get { return parent; }
-        }
-
-        public int ChildNum
-        {
-            get { return childNum; }
-        }
-
-        public int MaskOffset
-        {
-            get { return maskOffset; }
-        }
-
-        public int NodeIndex
-        {
-            get { return nodeIndex; }
-            set { nodeIndex = value; }
-        }
-
-        public long BlockOffset
-        {
-            get { return blockOffset; }
-            set { blockOffset = value; }
-        }
-
-        public List<Record> Records
-        {
-            get { return records; }
-            set { records = value; }
-        }
-    }
-
-    internal class Block
-    {
-        private List<Record> records = new List<Record>();
-
-        public List<Record> Records
-        {
-            get { return records; }
-            set { records = value; }
-        }
-    }
-
-    internal class Record
-    {
-        private readonly byte[] key;
-        private readonly byte[] value;
-
-        public Record(byte[] key, byte[] value)
-        {
-            this.key = key;
-            this.value = value;
-        }
-
-        public byte[] Key
-        {
-            get { return key; }
-        }
-
-        public byte[] Value
-        {
-            get { return value; }
-        }
-    }
-
-    internal class BlockBatch
-    {
-        private readonly long blockOffset;
-        private readonly int maskOffset;
-        private readonly int nodeIndex;
-        private readonly List<Record> records = new List<Record>();
-
-        public BlockBatch(long blockOffset, int maskOffset, int nodeIndex)
-        {
-            this.blockOffset = blockOffset;
-            this.maskOffset = maskOffset;
-            this.nodeIndex = nodeIndex;
-        }
-
-        public long BlockOffset
-        {
-            get { return blockOffset; }
-        }
-
-        public int MaskOffset
-        {
-            get { return maskOffset; }
-        }
-
-        public int NodeIndex
-        {
-            get { return nodeIndex; }
-        }
-
-        public List<Record> Records
-        {
-            get { return records; }
-        }
-    }
 }

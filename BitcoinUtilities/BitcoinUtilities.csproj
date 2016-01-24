@@ -62,7 +62,14 @@
     <Compile Include="Collections\VHTSettings.cs" />
     <Compile Include="Collections\VHTTransaction.cs" />
     <Compile Include="Collections\VHTWriteAheadLog.cs" />
-    <Compile Include="Collections\VirtualDictionary\VirtualDictionary.cs" />
+    <Compile Include="Collections\VirtualDictionary.cs" />
+    <Compile Include="Collections\VirtualDictionaryInternals\Block.cs" />
+    <Compile Include="Collections\VirtualDictionaryInternals\NonIndexedRecord.cs" />
+    <Compile Include="Collections\VirtualDictionaryInternals\Record.cs" />
+    <Compile Include="Collections\VirtualDictionaryInternals\SplitTreeNode.cs" />
+    <Compile Include="Collections\VirtualDictionaryInternals\BlockBatch.cs" />
+    <Compile Include="Collections\VirtualDictionaryInternals\VirtualDictionaryContainer.cs" />
+    <Compile Include="Collections\VirtualDictionaryTransaction.cs" />
     <Compile Include="Collections\VirtualHashTable.cs" />
     <Compile Include="Scripts\BitcoinScript.cs" />
     <Compile Include="ByteArrayComparer.cs" />
