@@ -14,6 +14,8 @@ namespace BitcoinUtilities.Collections.VirtualDictionaryInternals
         private readonly int allocationUnit = 1024*1024;
         private readonly int treeNodesPerBlock = 510;
         private readonly int recordsPerBlock = 128;
+        private readonly int nonIndexedRecordsPerBlock = 510;
+        private readonly int maxNonIndexedRecordsCount = 1000;
 
         private readonly FileStream stream;
         private readonly BinaryWriter writer;
@@ -26,6 +28,13 @@ namespace BitcoinUtilities.Collections.VirtualDictionaryInternals
         private readonly List<bool> dirtyTreeBlocks = new List<bool>();
         private readonly CompactTree tree;
 
+        private readonly List<long> nonIndexedBlockOffsets = new List<long>();
+        private readonly List<bool> dirtyNonIndexedBlocks = new List<bool>();
+        //todo: set initial capacity
+        private List<NonIndexedRecord> nonIndexedRecords = new List<NonIndexedRecord>();
+        //todo: use local comparer
+        private Dictionary<byte[], int> nonIndexedRecordsByKey = new Dictionary<byte[], int>(ByteArrayComparer.Instance);
+
         public VirtualDictionaryContainer(string filename, int keySize, int valueSize)
         {
             this.keySize = keySize;
@@ -36,11 +45,17 @@ namespace BitcoinUtilities.Collections.VirtualDictionaryInternals
             reader = new BinaryReader(stream, Encoding.UTF8, true);
 
             long firstTreeBlockOffset = AllocateBlock();
-            long firstDataBlockOffset = AllocateBlock();
-
             treeBlockOffsets.Add(firstTreeBlockOffset);
             dirtyTreeBlocks.Add(true);
 
+            int nonIndexedBlockCount = (maxNonIndexedRecordsCount + nonIndexedRecordsPerBlock - 1)/nonIndexedRecordsPerBlock;
+            for (int i = 0; i < nonIndexedBlockCount; i++)
+            {
+                nonIndexedBlockOffsets.Add(AllocateBlock());
+                dirtyNonIndexedBlocks.Add(true);
+            }
+
+            long firstDataBlockOffset = AllocateBlock();
             tree = new CompactTree(CompactTreeNode.CreateDataNode(firstDataBlockOffset));
         }
 
@@ -49,6 +64,11 @@ namespace BitcoinUtilities.Collections.VirtualDictionaryInternals
             writer.Close();
             reader.Close();
             stream.Close();
+        }
+
+        public int RecordsPerBlock
+        {
+            get { return recordsPerBlock; }
         }
 
         public Block ReadBlock(long offset)
@@ -71,7 +91,7 @@ namespace BitcoinUtilities.Collections.VirtualDictionaryInternals
         public void WriteBlock(long offset, List<Record> records)
         {
             Contract.Assert(records.Count <= recordsPerBlock);
-            
+
             stream.Position = offset;
             writer.Write((short) records.Count);
             foreach (var record in records)
@@ -93,6 +113,68 @@ namespace BitcoinUtilities.Collections.VirtualDictionaryInternals
             return offset;
         }
 
+        //todo: align names (nonIndexedValue vs nonIndexedRecords)
+        public bool TryGetNonIndexedValue(byte[] key, out byte[] value)
+        {
+            int recordIndex;
+            if (nonIndexedRecordsByKey.TryGetValue(key, out recordIndex))
+            {
+                value = nonIndexedRecords[recordIndex].Value;
+                return true;
+            }
+            value = null;
+            return false;
+        }
+
+        //todo: add XMLDOC
+        public bool TryAddNonIndexedValue(byte[] key, byte[] value)
+        {
+            //todo: implement correctly (depends on record being class or struct)
+            NonIndexedRecord record = new NonIndexedRecord(key, value);
+            int recordIndex;
+            if (nonIndexedRecordsByKey.TryGetValue(key, out recordIndex))
+            {
+                nonIndexedRecords[recordIndex] = record;
+                MarkNonIndexedValueDirty(recordIndex);
+                return true;
+            }
+
+            recordIndex = nonIndexedRecords.Count;
+
+            if (recordIndex < maxNonIndexedRecordsCount)
+            {
+                nonIndexedRecords.Add(record);
+                nonIndexedRecordsByKey.Add(key, recordIndex);
+                MarkNonIndexedValueDirty(recordIndex);
+                return true;
+            }
+
+            return false;
+        }
+
+        public List<NonIndexedRecord> ClearNonIndexedValues()
+        {
+            for (int i = 0, rangeStart = 0; i < dirtyNonIndexedBlocks.Count; i++, rangeStart += nonIndexedRecordsPerBlock)
+            {
+                if (rangeStart >= nonIndexedRecords.Count)
+                {
+                    break;
+                }
+                dirtyNonIndexedBlocks[i] = true;
+            }
+
+            List<NonIndexedRecord> res = nonIndexedRecords;
+            nonIndexedRecords = new List<NonIndexedRecord>(maxNonIndexedRecordsCount);
+            nonIndexedRecordsByKey = new Dictionary<byte[], int>();
+            return res;
+        }
+
+        private void MarkNonIndexedValueDirty(int recordIndex)
+        {
+            int blockNum = recordIndex/nonIndexedRecordsPerBlock;
+            dirtyNonIndexedBlocks[blockNum] = true;
+        }
+
         public CompactTreeNode GetTreeNode(int nodeIndex)
         {
             return tree.Nodes[nodeIndex];
@@ -101,6 +183,7 @@ namespace BitcoinUtilities.Collections.VirtualDictionaryInternals
         public void SplitDataNode(int nodeIndex)
         {
             Contract.Assert(tree.Nodes[nodeIndex].IsDataNode);
+
             tree.Nodes[nodeIndex] = CompactTreeNode.CreateSplitNode();
             MarkTreeNodeDirty(nodeIndex);
         }
@@ -123,7 +206,7 @@ namespace BitcoinUtilities.Collections.VirtualDictionaryInternals
 
         private void MarkTreeNodeDirty(int nodeIndex)
         {
-            int blockNum = nodeIndex / treeNodesPerBlock;
+            int blockNum = nodeIndex/treeNodesPerBlock;
             if (blockNum < dirtyTreeBlocks.Count)
             {
                 dirtyTreeBlocks[blockNum] = true;
@@ -134,11 +217,46 @@ namespace BitcoinUtilities.Collections.VirtualDictionaryInternals
                 treeBlockOffsets.Add(AllocateBlock());
             }
         }
-        
+
         public void Commit()
         {
+            //todo: make write linear?
+            WriteNonIndexedRecords();
             WriteTree();
             writer.Flush();
+        }
+
+        private void WriteNonIndexedRecords()
+        {
+            for (int i = 0; i < nonIndexedBlockOffsets.Count; i++)
+            {
+                if (dirtyNonIndexedBlocks[i])
+                {
+                    WriteNonIndexedBlock(i);
+                }
+            }
+        }
+
+        private void WriteNonIndexedBlock(int blockNum)
+        {
+            long nextBlockOffset = (blockNum + 1) < nonIndexedBlockOffsets.Count ? nonIndexedBlockOffsets[blockNum + 1] : -1;
+            int rangeStart = blockNum*nonIndexedRecordsPerBlock;
+            int recordsCount = nonIndexedRecords.Count - rangeStart;
+            if (recordsCount < 0)
+            {
+                recordsCount = 0;
+            }
+            else if (recordsCount > nonIndexedRecordsPerBlock)
+            {
+                recordsCount = nonIndexedRecordsPerBlock;
+            }
+            stream.Position = nonIndexedBlockOffsets[blockNum];
+            writer.Write(nextBlockOffset);
+            writer.Write(recordsCount);
+            for (int i = 0; i < recordsCount; i++)
+            {
+                writer.Write(tree.Nodes[rangeStart + i].RawData);
+            }
         }
 
         private void WriteTree()

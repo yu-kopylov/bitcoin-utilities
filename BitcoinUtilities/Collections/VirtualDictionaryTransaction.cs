@@ -43,7 +43,7 @@ namespace BitcoinUtilities.Collections
                 {
                     res.Add(key, value);
                 }
-                else if (dictionary.TryGetNonIndexedValue(key, out value))
+                else if (dictionary.Container.TryGetNonIndexedValue(key, out value))
                 {
                     res.Add(key, value);
                 }
@@ -100,22 +100,23 @@ namespace BitcoinUtilities.Collections
                 return;
             }
 
+            List<NonIndexedRecord> recordsToIndex = new List<NonIndexedRecord>();
+
+            //todo: skip records indexing if number of unsavedRecord is big enough (still need to merge them with non-indexed-values)
+
             foreach (KeyValuePair<byte[], byte[]> unsavedRecord in unsavedRecords)
             {
-                dictionary.AddNonIndexedValue(unsavedRecord.Key, unsavedRecord.Value);
+                if (!dictionary.Container.TryAddNonIndexedValue(unsavedRecord.Key, unsavedRecord.Value))
+                {
+                    recordsToIndex.Add(new NonIndexedRecord(unsavedRecord.Key, unsavedRecord.Value));
+                }
             }
 
-            List<NonIndexedRecord> nonIndexedRecords = dictionary.GetNonIndexedRecords();
-
-            if (nonIndexedRecords.Count <= dictionary.MaxNonIndexedRecordsCount)
+            if (recordsToIndex.Count != 0)
             {
-                //todo: commit changes in container
-                return;
+                recordsToIndex.AddRange(dictionary.Container.ClearNonIndexedValues());
+                AddRecordsToTree(recordsToIndex);
             }
-
-            AddRecordsToTree(nonIndexedRecords);
-
-            dictionary.ClearNonIndexedRecords();
 
             dictionary.Container.Commit();
         }
@@ -241,7 +242,7 @@ namespace BitcoinUtilities.Collections
             List<Record> records = MergeRecords(block.Records, blockBatch.Records, blockBatch.MaskOffset/8);
 
             //todo: is it worth to have this check?
-            if (records.Count <= dictionary.RecordsPerBlock)
+            if (records.Count <= dictionary.Container.RecordsPerBlock)
             {
                 block.Records = records;
                 return null;
@@ -264,7 +265,7 @@ namespace BitcoinUtilities.Collections
                 foreach (SplitTreeNode treeNode in newNodes)
                 {
                     updatedTreeNodes.Add(treeNode);
-                    if (treeNode.Records.Count > dictionary.RecordsPerBlock)
+                    if (treeNode.Records.Count > dictionary.Container.RecordsPerBlock)
                     {
                         unsplitTreeNodes.Add(treeNode);
                     }
