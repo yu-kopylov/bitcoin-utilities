@@ -53,9 +53,7 @@ namespace BitcoinUtilities.Collections
                 }
             }
 
-            CompactTree tree = dictionary.Container.ReadonlyBlockTree;
-
-            SortedDictionary<long, BlockBatch> blockBatches = SplitByBlock(tree, recordsToLookup, false);
+            SortedDictionary<long, BlockBatch> blockBatches = SplitByBlock(recordsToLookup, false);
 
             foreach (BlockBatch batch in blockBatches.Values)
             {
@@ -115,18 +113,16 @@ namespace BitcoinUtilities.Collections
                 return;
             }
 
-            CompactTree tree = dictionary.Container.UpdatableBlockTree;
-
-            AddRecordsToTree(tree, nonIndexedRecords);
+            AddRecordsToTree(nonIndexedRecords);
 
             dictionary.ClearNonIndexedRecords();
 
             dictionary.Container.Commit();
         }
 
-        private void AddRecordsToTree(CompactTree tree, List<NonIndexedRecord> nonIndexedRecords)
+        private void AddRecordsToTree(List<NonIndexedRecord> nonIndexedRecords)
         {
-            SortedDictionary<long, BlockBatch> blockUpdates = SplitByBlock(tree, nonIndexedRecords.Select(r => new Record(r.Key, r.Value)), true);
+            SortedDictionary<long, BlockBatch> blockUpdates = SplitByBlock(nonIndexedRecords.Select(r => new Record(r.Key, r.Value)), true);
 
             List<SplitTreeNode> updatedTreeNodes = new List<SplitTreeNode>();
 
@@ -147,13 +143,13 @@ namespace BitcoinUtilities.Collections
                 if (treeNode.NodeIndex >= 0)
                 {
                     Contract.Assert(treeNode.Records == null, "Only root of split tree has non-empty NodeIndex.");
-                    tree.Nodes[treeNode.NodeIndex] = CompactTreeNode.CreateSplitNode();
+                    dictionary.Container.SplitDataNode(treeNode.NodeIndex);
                 }
                 else if (treeNode.NodeIndex < 0)
                 {
                     if (treeNode.Records == null)
                     {
-                        treeNode.NodeIndex = tree.AddSplitNode(treeNode.Parent.NodeIndex, treeNode.ChildNum);
+                        treeNode.NodeIndex = dictionary.Container.AddSplitNode(treeNode.Parent.NodeIndex, treeNode.ChildNum);
                     }
                     else
                     {
@@ -167,7 +163,7 @@ namespace BitcoinUtilities.Collections
                         {
                             dictionary.Container.WriteBlock(treeNode.BlockOffset, treeNode.Records);
                         }
-                        treeNode.NodeIndex = tree.AddDataNode(treeNode.Parent.NodeIndex, treeNode.ChildNum, blockOffset);
+                        treeNode.NodeIndex = dictionary.Container.AddDataNode(treeNode.Parent.NodeIndex, treeNode.ChildNum, blockOffset);
                     }
                 }
             }
@@ -178,7 +174,7 @@ namespace BitcoinUtilities.Collections
             }
         }
 
-        private SortedDictionary<long, BlockBatch> SplitByBlock(CompactTree tree, IEnumerable<Record> records, bool addMissingBranches)
+        private SortedDictionary<long, BlockBatch> SplitByBlock(IEnumerable<Record> records, bool addMissingBranches)
         {
             SortedDictionary<long, BlockBatch> blockBatches = new SortedDictionary<long, BlockBatch>();
 
@@ -186,7 +182,7 @@ namespace BitcoinUtilities.Collections
             {
                 int maskOffset = 0;
                 int nodeIndex = 0;
-                CompactTreeNode node = tree.Nodes[nodeIndex];
+                CompactTreeNode node = dictionary.Container.GetTreeNode(nodeIndex);
                 int childNum = 0;
                 while (node.IsSplitNode)
                 {
@@ -198,7 +194,7 @@ namespace BitcoinUtilities.Collections
                         break;
                     }
                     nodeIndex = childIndex;
-                    node = tree.Nodes[nodeIndex];
+                    node = dictionary.Container.GetTreeNode(nodeIndex);
                     maskOffset++;
                 }
 
@@ -208,8 +204,8 @@ namespace BitcoinUtilities.Collections
                     {
                         //todo: test this branch
                         long blockOffset = dictionary.Container.AllocateBlock();
-                        nodeIndex = tree.AddDataNode(nodeIndex, childNum, blockOffset);
-                        node = tree.Nodes[nodeIndex];
+                        nodeIndex = dictionary.Container.AddDataNode(nodeIndex, childNum, blockOffset);
+                        node = dictionary.Container.GetTreeNode(nodeIndex);
                         maskOffset++;
                     }
                 }
