@@ -63,6 +63,7 @@
     <Compile Include="Collections\VHTTransaction.cs" />
     <Compile Include="Collections\VHTWriteAheadLog.cs" />
     <Compile Include="Collections\VirtualDictionary.cs" />
+    <Compile Include="Collections\VirtualDictionaryInternals\AtomicStream.cs" />
     <Compile Include="Collections\VirtualDictionaryInternals\Block.cs" />
     <Compile Include="Collections\VirtualDictionaryInternals\NonIndexedRecord.cs" />
     <Compile Include="Collections\VirtualDictionaryInternals\Record.cs" />
