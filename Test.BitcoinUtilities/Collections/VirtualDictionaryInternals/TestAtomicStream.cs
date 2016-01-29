@@ -17,14 +17,47 @@ namespace Test.BitcoinUtilities.Collections.VirtualDictionaryInternals
 
             using (AtomicStream stream = new AtomicStream(mainStream, walStream))
             {
-                stream.Write(new byte[]{1}, 0, 1);
+                stream.Write(new byte[] {1}, 0, 1);
                 stream.Commit();
+
+                Assert.That(mainStream.ToArray(), Is.EqualTo(new byte[] {1}));
+
+                stream.Write(new byte[] {2}, 0, 1);
+                stream.Commit();
+
+                Assert.That(mainStream.ToArray(), Is.EqualTo(new byte[] {1, 2}));
+
+                stream.Position = 0;
+                stream.Write(new byte[] {3}, 0, 1);
+                stream.Commit();
+
+                Assert.That(mainStream.ToArray(), Is.EqualTo(new byte[] {3, 2}));
             }
+        }
 
-            byte[] mainContent = mainStream.ToArray();
+        [Test]
+        public void TestSequentialRead()
+        {
+            MemoryStream mainStream = new MemoryStream();
+            MemoryStream walStream = new MemoryStream();
 
-            Assert.That(mainContent.Length, Is.EqualTo(1));
-            Assert.That(mainContent[0], Is.EqualTo(1));
+            using (AtomicStream stream = new AtomicStream(mainStream, walStream))
+            {
+                stream.Write(new byte[] {1, 2, 3, 4, 5}, 0, 5);
+                stream.Commit();
+
+                byte[] buffer = new byte[3];
+                stream.Position = 0;
+
+                Assert.That(stream.Read(buffer, 0, 3), Is.EqualTo(3));
+                Assert.That(buffer, Is.EqualTo(new byte[] {1, 2, 3}));
+
+                Assert.That(stream.Read(buffer, 0, 3), Is.EqualTo(2));
+                Assert.That(buffer, Is.EqualTo(new byte[] {4, 5, 3}));
+
+                Assert.That(stream.Read(buffer, 0, 3), Is.EqualTo(0));
+                Assert.That(buffer, Is.EqualTo(new byte[] {4, 5, 3}));
+            }
         }
     }
 }

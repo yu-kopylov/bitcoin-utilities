@@ -13,9 +13,10 @@ namespace Test.BitcoinUtilities.Collections
     {
         private string testFolder;
 
-        [SetUp]
+        [TestFixtureSetUp]
         public void Setup()
         {
+            //todo: use one [SetUpFixture] for all test to delete files
             testFolder = Path.GetFullPath("tmp-test-VD");
 
             Console.WriteLine("Removing files in the test folder: : {0}", testFolder);

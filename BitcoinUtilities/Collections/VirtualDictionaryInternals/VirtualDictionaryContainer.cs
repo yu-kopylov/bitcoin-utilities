@@ -17,7 +17,7 @@ namespace BitcoinUtilities.Collections.VirtualDictionaryInternals
         private readonly int nonIndexedRecordsPerBlock = 510;
         private readonly int maxNonIndexedRecordsCount = 1000;
 
-        private readonly FileStream stream;
+        private readonly AtomicStream stream;
         private readonly BinaryWriter writer;
         private readonly BinaryReader reader;
 
@@ -40,7 +40,15 @@ namespace BitcoinUtilities.Collections.VirtualDictionaryInternals
             this.keySize = keySize;
             this.valueSize = valueSize;
 
-            stream = new FileStream(filename, FileMode.Create, FileAccess.ReadWrite, FileShare.Read);
+            FileStream mainStream = new FileStream(filename, FileMode.Create, FileAccess.ReadWrite, FileShare.Read);
+            FileStream walStream = new FileStream(filename + "-wal", FileMode.Create, FileAccess.ReadWrite, FileShare.Read);
+
+            if (mainStream.Length != 0)
+            {
+                throw new Exception("Reopening of an existing database is not supported yet.");
+            }
+
+            stream = new AtomicStream(mainStream, walStream);
             writer = new BinaryWriter(stream, Encoding.UTF8, true);
             reader = new BinaryReader(stream, Encoding.UTF8, true);
 
@@ -57,6 +65,8 @@ namespace BitcoinUtilities.Collections.VirtualDictionaryInternals
 
             long firstDataBlockOffset = AllocateBlock();
             tree = new CompactTree(CompactTreeNode.CreateDataNode(firstDataBlockOffset));
+
+            Commit();
         }
 
         public void Dispose()
@@ -223,7 +233,11 @@ namespace BitcoinUtilities.Collections.VirtualDictionaryInternals
             //todo: make write linear?
             WriteNonIndexedRecords();
             WriteTree();
+
+            //todo: is this flush useful? 
             writer.Flush();
+
+            stream.Commit();
         }
 
         private void WriteNonIndexedRecords()

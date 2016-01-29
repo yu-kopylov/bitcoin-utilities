@@ -6,7 +6,7 @@ namespace BitcoinUtilities.Collections.VirtualDictionaryInternals
 {
     internal class AtomicStream : Stream
     {
-        private const int MaxUpdateSize = 1024 * 1024;
+        private const int MaxUpdateSize = 1024*1024;
 
         private readonly Stream mainStream;
         private readonly Stream walStream;
@@ -20,6 +20,7 @@ namespace BitcoinUtilities.Collections.VirtualDictionaryInternals
 
         private long virtualLength;
         private long virtualPosition;
+        private bool dirty;
 
         public AtomicStream(Stream mainStream, Stream walStream)
         {
@@ -78,6 +79,8 @@ namespace BitcoinUtilities.Collections.VirtualDictionaryInternals
             }
 
             updates.Clear();
+            flushedUpdateCount = 0;
+            dirty = false;
         }
 
         protected override void Dispose(bool disposing)
@@ -119,7 +122,7 @@ namespace BitcoinUtilities.Collections.VirtualDictionaryInternals
                 //todo: specify exception
                 throw new Exception("AtomicStream cannot be truncated.");
             }
-            
+
             FinalizeWriteUpdate();
 
             updates.Add(StreamUpdate.SetLength(value));
@@ -130,17 +133,27 @@ namespace BitcoinUtilities.Collections.VirtualDictionaryInternals
         public override int Read(byte[] buffer, int offset, int count)
         {
             //todo: set correct condition
-            if (updates.Count > 0 || writeBufferOffset >= 0)
+            if (dirty)
             {
                 //todo: specify exception
                 throw new Exception("Cannot read modified but uncommited stream.");
             }
-            //todo: does this comparison improves efficiency?
+            //todo: does this comparison improve efficiency?
             if (mainStream.Position != virtualPosition)
             {
                 mainStream.Position = virtualPosition;
             }
-            return mainStream.Read(buffer, offset, count);
+
+            int bytesRead = mainStream.Read(buffer, offset, count);
+            virtualPosition += bytesRead;
+
+            //todo: this approach does not look very reliable
+            if (bytesRead < count && virtualPosition < virtualLength)
+            {
+                throw new Exception("Attempt to read allocated but unwritten data.");
+            }
+
+            return bytesRead;
         }
 
         public override void Write(byte[] buffer, int offset, int count)
@@ -148,8 +161,8 @@ namespace BitcoinUtilities.Collections.VirtualDictionaryInternals
             //todo: test all branches
             if (writeBufferOffset >= 0)
             {
-                if (virtualPosition < writeBufferOffset || 
-                    virtualPosition > writeBufferOffset + writeBuffer.Length + 1 || 
+                if (virtualPosition < writeBufferOffset ||
+                    virtualPosition > writeBufferOffset + writeBuffer.Length + 1 ||
                     virtualPosition + writeBuffer.Length - writeBufferOffset > MaxUpdateSize)
                 {
                     FinalizeWriteUpdate();
@@ -173,6 +186,7 @@ namespace BitcoinUtilities.Collections.VirtualDictionaryInternals
             }
 
             virtualPosition += count;
+            dirty = true;
 
             if (virtualPosition > virtualLength)
             {
@@ -221,7 +235,7 @@ namespace BitcoinUtilities.Collections.VirtualDictionaryInternals
 
         private void SaveUpdate(StreamUpdate update)
         {
-            walWriter.Write((uint)update.UpdateType);
+            walWriter.Write((uint) update.UpdateType);
             walWriter.Write(update.Value);
             if (update.Data != null)
             {
@@ -287,7 +301,7 @@ namespace BitcoinUtilities.Collections.VirtualDictionaryInternals
             {
                 return new StreamUpdate(StreamUpdateType.Write, offset, data);
             }
-            
+
             public static StreamUpdate Commit()
             {
                 return new StreamUpdate(StreamUpdateType.Commit, 0, null);
