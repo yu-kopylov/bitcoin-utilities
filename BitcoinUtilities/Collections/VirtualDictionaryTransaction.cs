@@ -100,7 +100,7 @@ namespace BitcoinUtilities.Collections
                 return;
             }
 
-            List<NonIndexedRecord> recordsToIndex = new List<NonIndexedRecord>();
+            List<Record> recordsToIndex = new List<Record>();
 
             //todo: skip records indexing if number of unsavedRecord is big enough (still need to merge them with non-indexed-values)
 
@@ -108,7 +108,7 @@ namespace BitcoinUtilities.Collections
             {
                 if (!dictionary.Container.TryAddNonIndexedValue(unsavedRecord.Key, unsavedRecord.Value))
                 {
-                    recordsToIndex.Add(new NonIndexedRecord(unsavedRecord.Key, unsavedRecord.Value));
+                    recordsToIndex.Add(new Record(unsavedRecord.Key, unsavedRecord.Value));
                 }
             }
 
@@ -121,9 +121,9 @@ namespace BitcoinUtilities.Collections
             dictionary.Container.Commit();
         }
 
-        private void AddRecordsToTree(List<NonIndexedRecord> nonIndexedRecords)
+        private void AddRecordsToTree(List<Record> nonIndexedRecords)
         {
-            SortedDictionary<long, BlockBatch> blockUpdates = SplitByBlock(nonIndexedRecords.Select(r => new Record(r.Key, r.Value)), true);
+            SortedDictionary<long, BlockBatch> blockUpdates = SplitByBlock(nonIndexedRecords, true);
 
             List<SplitTreeNode> updatedTreeNodes = new List<SplitTreeNode>();
 
@@ -175,7 +175,7 @@ namespace BitcoinUtilities.Collections
             }
         }
 
-        private SortedDictionary<long, BlockBatch> SplitByBlock(IEnumerable<Record> records, bool addMissingBranches)
+        private SortedDictionary<long, BlockBatch> SplitByBlock(List<Record> records, bool addMissingBranches)
         {
             SortedDictionary<long, BlockBatch> blockBatches = new SortedDictionary<long, BlockBatch>();
 

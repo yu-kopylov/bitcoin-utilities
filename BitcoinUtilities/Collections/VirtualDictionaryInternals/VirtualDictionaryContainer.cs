@@ -31,7 +31,7 @@ namespace BitcoinUtilities.Collections.VirtualDictionaryInternals
         private readonly List<long> nonIndexedBlockOffsets = new List<long>();
         private readonly List<bool> dirtyNonIndexedBlocks = new List<bool>();
         //todo: set initial capacity
-        private List<NonIndexedRecord> nonIndexedRecords = new List<NonIndexedRecord>();
+        private List<Record> nonIndexedRecords = new List<Record>();
         //todo: use local comparer
         private Dictionary<byte[], int> nonIndexedRecordsByKey = new Dictionary<byte[], int>(ByteArrayComparer.Instance);
 
@@ -140,7 +140,7 @@ namespace BitcoinUtilities.Collections.VirtualDictionaryInternals
         public bool TryAddNonIndexedValue(byte[] key, byte[] value)
         {
             //todo: implement correctly (depends on record being class or struct)
-            NonIndexedRecord record = new NonIndexedRecord(key, value);
+            Record record = new Record(key, value);
             int recordIndex;
             if (nonIndexedRecordsByKey.TryGetValue(key, out recordIndex))
             {
@@ -162,7 +162,7 @@ namespace BitcoinUtilities.Collections.VirtualDictionaryInternals
             return false;
         }
 
-        public List<NonIndexedRecord> ClearNonIndexedValues()
+        public List<Record> ClearNonIndexedValues()
         {
             for (int i = 0, rangeStart = 0; i < dirtyNonIndexedBlocks.Count; i++, rangeStart += nonIndexedRecordsPerBlock)
             {
@@ -173,8 +173,8 @@ namespace BitcoinUtilities.Collections.VirtualDictionaryInternals
                 dirtyNonIndexedBlocks[i] = true;
             }
 
-            List<NonIndexedRecord> res = nonIndexedRecords;
-            nonIndexedRecords = new List<NonIndexedRecord>(maxNonIndexedRecordsCount);
+            List<Record> res = nonIndexedRecords;
+            nonIndexedRecords = new List<Record>(maxNonIndexedRecordsCount);
             nonIndexedRecordsByKey = new Dictionary<byte[], int>();
             return res;
         }

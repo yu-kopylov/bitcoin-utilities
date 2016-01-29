@@ -1,5 +1,6 @@
 namespace BitcoinUtilities.Collections.VirtualDictionaryInternals
 {
+    //todo: class or struct?
     internal class Record
     {
         private readonly byte[] key;
