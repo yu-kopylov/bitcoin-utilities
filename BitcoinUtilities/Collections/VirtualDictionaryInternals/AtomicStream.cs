@@ -51,6 +51,10 @@ namespace BitcoinUtilities.Collections.VirtualDictionaryInternals
 
             updates.Add(StreamUpdate.Commit());
 
+            walStream.Position = 0;
+
+            //todo: write header and transaction number
+
             for (; flushedUpdateCount < updates.Count; flushedUpdateCount++)
             {
                 SaveUpdate(updates[flushedUpdateCount]);

@@ -175,7 +175,8 @@ namespace BitcoinUtilities.Collections.VirtualDictionaryInternals
 
             List<Record> res = nonIndexedRecords;
             nonIndexedRecords = new List<Record>(maxNonIndexedRecordsCount);
-            nonIndexedRecordsByKey = new Dictionary<byte[], int>();
+            //todo: use local comparer
+            nonIndexedRecordsByKey = new Dictionary<byte[], int>(ByteArrayComparer.Instance);
             return res;
         }
 

@@ -118,6 +118,8 @@ namespace BitcoinUtilities.Collections
                 AddRecordsToTree(recordsToIndex);
             }
 
+            unsavedRecords.Clear();
+
             dictionary.Container.Commit();
         }
 
@@ -130,10 +132,7 @@ namespace BitcoinUtilities.Collections
             foreach (BlockBatch blockUpdate in blockUpdates.Values)
             {
                 List<SplitTreeNode> treeNodes = UpdateBlock(blockUpdate);
-                if (treeNodes != null)
-                {
-                    updatedTreeNodes.AddRange(treeNodes);
-                }
+                updatedTreeNodes.AddRange(treeNodes);
             }
 
             //todo: specify type
@@ -143,8 +142,15 @@ namespace BitcoinUtilities.Collections
             {
                 if (treeNode.NodeIndex >= 0)
                 {
-                    Contract.Assert(treeNode.Records == null, "Only root of split tree has non-empty NodeIndex.");
-                    dictionary.Container.SplitDataNode(treeNode.NodeIndex);
+                    if (treeNode.Records == null)
+                    {
+                        dictionary.Container.SplitDataNode(treeNode.NodeIndex);
+                    }
+                    else
+                    {
+                        Contract.Assert(treeNode.BlockOffset >= 0, "Only the root of a split tree has a non-empty NodeIndex.");
+                        dictionary.Container.WriteBlock(treeNode.BlockOffset, treeNode.Records);
+                    }
                 }
                 else if (treeNode.NodeIndex < 0)
                 {
@@ -241,20 +247,16 @@ namespace BitcoinUtilities.Collections
             //todo: review types
             List<Record> records = MergeRecords(block.Records, blockBatch.Records, blockBatch.MaskOffset/8);
 
-            //todo: is it worth to have this check?
-            if (records.Count <= dictionary.Container.RecordsPerBlock)
-            {
-                block.Records = records;
-                return null;
-            }
-
             SplitTreeNode splitTreeRoot = new SplitTreeNode(null, -1, blockBatch.MaskOffset, blockBatch.NodeIndex, blockBatch.BlockOffset, records);
 
             List<SplitTreeNode> updatedTreeNodes = new List<SplitTreeNode>();
             updatedTreeNodes.Add(splitTreeRoot);
 
             List<SplitTreeNode> unsplitTreeNodes = new List<SplitTreeNode>();
-            unsplitTreeNodes.Add(splitTreeRoot);
+            if (splitTreeRoot.Records.Count > dictionary.Container.RecordsPerBlock)
+            {
+                unsplitTreeNodes.Add(splitTreeRoot);
+            }
 
             while (unsplitTreeNodes.Count != 0)
             {
