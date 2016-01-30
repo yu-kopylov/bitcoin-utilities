@@ -53,9 +53,9 @@ namespace BitcoinUtilities.Collections
                 }
             }
 
-            SortedDictionary<long, BlockBatch> blockBatches = SplitByBlock(recordsToLookup, false);
+            List<BlockBatch> blockBatches = SplitByBlock(recordsToLookup, false);
 
-            foreach (BlockBatch batch in blockBatches.Values)
+            foreach (BlockBatch batch in blockBatches)
             {
                 Block block = dictionary.Container.ReadBlock(batch.BlockOffset);
                 FindRecords(res, block.Records, batch.Records, batch.MaskOffset/8);
@@ -125,11 +125,11 @@ namespace BitcoinUtilities.Collections
 
         private void AddRecordsToTree(List<Record> nonIndexedRecords)
         {
-            SortedDictionary<long, BlockBatch> blockUpdates = SplitByBlock(nonIndexedRecords, true);
+            List<BlockBatch> blockUpdates = SplitByBlock(nonIndexedRecords, true);
 
             List<SplitTreeNode> updatedTreeNodes = new List<SplitTreeNode>();
 
-            foreach (BlockBatch blockUpdate in blockUpdates.Values)
+            foreach (BlockBatch blockUpdate in blockUpdates)
             {
                 List<SplitTreeNode> treeNodes = UpdateBlock(blockUpdate);
                 updatedTreeNodes.AddRange(treeNodes);
@@ -181,7 +181,7 @@ namespace BitcoinUtilities.Collections
             }
         }
 
-        private SortedDictionary<long, BlockBatch> SplitByBlock(List<Record> records, bool addMissingBranches)
+        private List<BlockBatch> SplitByBlock(List<Record> records, bool addMissingBranches)
         {
             SortedDictionary<long, BlockBatch> blockBatches = new SortedDictionary<long, BlockBatch>();
 
@@ -232,12 +232,14 @@ namespace BitcoinUtilities.Collections
                 }
             }
 
-            foreach (BlockBatch batch in blockBatches.Values)
+            List<BlockBatch> batchesList = blockBatches.Values.ToList();
+
+            foreach (BlockBatch batch in batchesList)
             {
                 batch.Records.Sort((recordA, recordB) => CompareKeys(recordA.Key, recordB.Key, batch.MaskOffset/8));
             }
 
-            return blockBatches;
+            return batchesList;
         }
 
         private List<SplitTreeNode> UpdateBlock(BlockBatch blockBatch)
