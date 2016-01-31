@@ -78,5 +78,26 @@ namespace Test.BitcoinUtilities.Collections.VirtualDictionaryInternals
                 Assert.That(buffer, Is.EqualTo(new byte[] { 0, 3, 4, 0 }));
             }
         }
+        
+        [Test]
+        public void TestOverlappingWrite()
+        {
+            MemoryStream mainStream = new MemoryStream();
+            MemoryStream walStream = new MemoryStream();
+
+            using (AtomicStream stream = new AtomicStream(mainStream, walStream))
+            {
+                stream.Write(new byte[] { 1, 2, 3, 4 }, 0, 4);
+                stream.Position = 2;
+                stream.Write(new byte[] { 5, 6, 7, 8 }, 0, 4);
+                stream.Commit();
+
+                byte[] buffer = new byte[7];
+                stream.Position = 0;
+
+                Assert.That(stream.Read(buffer, 0, 7), Is.EqualTo(6));
+                Assert.That(buffer, Is.EqualTo(new byte[] { 1, 2, 5, 6, 7, 8, 0 }));
+            }
+        }
     }
 }
