@@ -40,6 +40,8 @@ namespace Test.BitcoinUtilities.Collections
             //todo: is *.tbl extension save (does not cause problems like *.sdb)
             using (VirtualDictionary dict = VirtualDictionary.Open(Path.Combine(testFolder, "perf.tbl"), 20, 8))
             {
+                dict.FlushToDisk = false;
+
                 Stopwatch sw = Stopwatch.StartNew();
 
                 using (var tx = dict.BeginTransaction())

@@ -7,6 +7,7 @@ namespace BitcoinUtilities.Collections.VirtualDictionaryInternals
     internal class AtomicStream : Stream
     {
         private const int MaxUpdateSize = 1024*1024;
+        private bool flushToDisk = true;
 
         private readonly Stream mainStream;
         private readonly Stream walStream;
@@ -45,6 +46,12 @@ namespace BitcoinUtilities.Collections.VirtualDictionaryInternals
             virtualPosition = 0;
         }
 
+        public bool FlushToDisk
+        {
+            get { return flushToDisk; }
+            set { flushToDisk = value; }
+        }
+
         public void Commit()
         {
             FinalizeWriteUpdate();
@@ -60,27 +67,11 @@ namespace BitcoinUtilities.Collections.VirtualDictionaryInternals
                 SaveUpdate(updates[flushedUpdateCount]);
             }
 
-            FileStream walFileStream = walStream as FileStream;
-            if (walFileStream != null)
-            {
-                walFileStream.Flush(true);
-            }
-            else
-            {
-                walStream.Flush();
-            }
+            Flush(walStream);
 
             ApplyUpdates();
 
-            FileStream mainFileStream = mainStream as FileStream;
-            if (mainFileStream != null)
-            {
-                mainFileStream.Flush(true);
-            }
-            else
-            {
-                mainStream.Flush();
-            }
+            Flush(mainStream);
 
             updates.Clear();
             flushedUpdateCount = 0;
@@ -273,6 +264,19 @@ namespace BitcoinUtilities.Collections.VirtualDictionaryInternals
             else
             {
                 throw new Exception(string.Format("Unexpected StreamUpdateType: {0}", update.UpdateType));
+            }
+        }
+
+        private void Flush(Stream stream)
+        {
+            if (flushToDisk && stream is FileStream)
+            {
+                FileStream fileStream = (FileStream) stream;
+                fileStream.Flush(true);
+            }
+            else
+            {
+                stream.Flush();
             }
         }
 

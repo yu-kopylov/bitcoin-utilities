@@ -85,6 +85,12 @@ namespace BitcoinUtilities.Collections.VirtualDictionaryInternals
             get { return recordsPerBlock; }
         }
 
+        public bool FlushToDisk 
+        {
+            get { return stream.FlushToDisk; }
+            set { stream.FlushToDisk = value; }
+        }
+
         public Block ReadBlock(long offset)
         {
             Block block = new Block();

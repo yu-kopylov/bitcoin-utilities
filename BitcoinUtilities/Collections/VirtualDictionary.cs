@@ -28,6 +28,12 @@ namespace BitcoinUtilities.Collections
             get { return container; }
         }
 
+        public bool FlushToDisk
+        {
+            get { return container.FlushToDisk; }
+            set { container.FlushToDisk = value; }
+        }
+
         public VirtualDictionaryTransaction BeginTransaction()
         {
             return new VirtualDictionaryTransaction(this);
