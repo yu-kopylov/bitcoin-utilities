@@ -4,12 +4,16 @@ namespace BitcoinUtilities.Collections.VirtualDictionaryInternals
 {
     internal class Block
     {
-        private List<Record> records = new List<Record>();
+        private readonly Record[] records;
 
-        public List<Record> Records
+        public Block(Record[] records)
+        {
+            this.records = records;
+        }
+
+        public Record[] Records
         {
             get { return records; }
-            set { records = value; }
         }
     }
 }

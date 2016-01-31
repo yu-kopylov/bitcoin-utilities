@@ -64,11 +64,11 @@ namespace BitcoinUtilities.Collections
             return res;
         }
 
-        private void FindRecords(Dictionary<byte[], byte[]> res, List<Record> recordsA, List<Record> recordsB, int firstByte)
+        private void FindRecords(Dictionary<byte[], byte[]> res, Record[] recordsA, List<Record> recordsB, int firstByte)
         {
             int ofsA = 0, ofsB = 0;
 
-            while (ofsA < recordsA.Count && ofsB < recordsB.Count)
+            while (ofsA < recordsA.Length && ofsB < recordsB.Count)
             {
                 Record recordA = recordsA[ofsA];
                 Record recordB = recordsB[ofsB];
@@ -279,13 +279,13 @@ namespace BitcoinUtilities.Collections
             return updatedTreeNodes;
         }
 
-        private List<Record> MergeRecords(List<Record> recordsA, List<Record> recordsB, int firstByte)
+        private List<Record> MergeRecords(Record[] recordsA, List<Record> recordsB, int firstByte)
         {
-            List<Record> res = new List<Record>(recordsA.Count + recordsB.Count);
+            List<Record> res = new List<Record>(recordsA.Length + recordsB.Count);
 
             int ofsA = 0, ofsB = 0;
 
-            while (ofsA < recordsA.Count && ofsB < recordsB.Count)
+            while (ofsA < recordsA.Length && ofsB < recordsB.Count)
             {
                 Record recordA = recordsA[ofsA];
                 Record recordB = recordsB[ofsB];
@@ -309,7 +309,7 @@ namespace BitcoinUtilities.Collections
                     ofsB++;
                 }
             }
-            while (ofsA < recordsA.Count)
+            while (ofsA < recordsA.Length)
             {
                 res.Add(recordsA[ofsA++]);
             }

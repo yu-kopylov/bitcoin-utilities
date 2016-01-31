@@ -93,12 +93,11 @@ namespace BitcoinUtilities.Collections.VirtualDictionaryInternals
 
         public Block ReadBlock(long offset)
         {
-            Block block = new Block();
-
             stream.Position = offset;
             int count = reader.ReadInt16();
 
             byte[] blockData = reader.ReadBytes(count * (keySize + valueSize));
+            Record[] records = new Record[count];
 
             for (int i = 0, recordOffset = 0; i < count; i++, recordOffset += keySize + valueSize)
             {
@@ -106,10 +105,10 @@ namespace BitcoinUtilities.Collections.VirtualDictionaryInternals
                 ByteArrayRef value = new ByteArrayRef(blockData, recordOffset + keySize, valueSize);
 
                 Record record = new Record(key, value);
-                block.Records.Add(record);
+                records[i] = record;
             }
 
-            return block;
+            return new Block(records);
         }
 
         public void WriteBlock(long offset, List<Record> records)
