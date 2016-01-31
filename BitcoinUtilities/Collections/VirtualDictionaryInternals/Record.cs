@@ -1,23 +1,28 @@
 namespace BitcoinUtilities.Collections.VirtualDictionaryInternals
 {
-    //todo: class or struct?
-    internal class Record
+    internal struct Record
     {
-        private readonly byte[] key;
-        private readonly byte[] value;
+        private readonly ByteArrayRef key;
+        private readonly ByteArrayRef value;
 
-        public Record(byte[] key, byte[] value)
+        public Record(ByteArrayRef key, ByteArrayRef value)
         {
             this.key = key;
             this.value = value;
         }
 
-        public byte[] Key
+        public Record(byte[] key, byte[] value)
+        {
+            this.key = new ByteArrayRef(key, 0, key.Length);
+            this.value = value == null ? new ByteArrayRef(null, 0, 0) : new ByteArrayRef(value, 0, value.Length);
+        }
+
+        public ByteArrayRef Key
         {
             get { return key; }
         }
 
-        public byte[] Value
+        public ByteArrayRef Value
         {
             get { return value; }
         }

@@ -65,6 +65,7 @@
     <Compile Include="Collections\VirtualDictionary.cs" />
     <Compile Include="Collections\VirtualDictionaryInternals\AtomicStream.cs" />
     <Compile Include="Collections\VirtualDictionaryInternals\Block.cs" />
+    <Compile Include="Collections\VirtualDictionaryInternals\ByteArrayRef.cs" />
     <Compile Include="Collections\VirtualDictionaryInternals\Record.cs" />
     <Compile Include="Collections\VirtualDictionaryInternals\SplitTreeNode.cs" />
     <Compile Include="Collections\VirtualDictionaryInternals\BlockBatch.cs" />

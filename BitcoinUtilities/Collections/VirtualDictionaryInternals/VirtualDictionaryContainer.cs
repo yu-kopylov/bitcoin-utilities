@@ -97,10 +97,14 @@ namespace BitcoinUtilities.Collections.VirtualDictionaryInternals
 
             stream.Position = offset;
             int count = reader.ReadInt16();
-            for (int i = 0; i < count; i++)
+
+            byte[] blockData = reader.ReadBytes(count * (keySize + valueSize));
+
+            for (int i = 0, recordOffset = 0; i < count; i++, recordOffset += keySize + valueSize)
             {
-                byte[] key = reader.ReadBytes(keySize);
-                byte[] value = reader.ReadBytes(valueSize);
+                ByteArrayRef key = new ByteArrayRef(blockData, recordOffset, keySize);
+                ByteArrayRef value = new ByteArrayRef(blockData, recordOffset + keySize, valueSize);
+
                 Record record = new Record(key, value);
                 block.Records.Add(record);
             }
@@ -116,8 +120,8 @@ namespace BitcoinUtilities.Collections.VirtualDictionaryInternals
             writer.Write((short) records.Count);
             foreach (var record in records)
             {
-                writer.Write(record.Key, 0, record.Key.Length);
-                writer.Write(record.Value, 0, record.Value.Length);
+                writer.Write(record.Key.Array, record.Key.Position, record.Key.Length);
+                writer.Write(record.Value.Array, record.Value.Position, record.Value.Length);
             }
         }
 
@@ -139,7 +143,7 @@ namespace BitcoinUtilities.Collections.VirtualDictionaryInternals
             int recordIndex;
             if (nonIndexedRecordsByKey.TryGetValue(key, out recordIndex))
             {
-                value = nonIndexedRecords[recordIndex].Value;
+                value = nonIndexedRecords[recordIndex].Value.ToArray();
                 return true;
             }
             value = null;

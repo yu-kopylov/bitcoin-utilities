@@ -36,7 +36,8 @@ namespace Test.BitcoinUtilities.Collections
         [Explicit]
         public void TestPerformance()
         {
-            //todo: use temp file
+            Stopwatch totalSw = Stopwatch.StartNew();
+
             //todo: is *.tbl extension save (does not cause problems like *.sdb)
             using (VirtualDictionary dict = VirtualDictionary.Open(Path.Combine(testFolder, "perf.tbl"), 20, 8))
             {
@@ -179,6 +180,8 @@ namespace Test.BitcoinUtilities.Collections
                 Console.WriteLine("Mix(Lookup: (Old: 2000, Recent: 500, Mising:2500), Add New: 2500) x 10 took: {0}ms.", sw.ElapsedMilliseconds);
                 sw.Restart();
             }
+
+            Console.WriteLine("---- Total Time: {0}ms.", totalSw.ElapsedMilliseconds);
         }
 
         [Test]

@@ -85,8 +85,8 @@ namespace BitcoinUtilities.Collections
                 }
                 else
                 {
-                    //todo: copy value to avoid rewrite by client?
-                    res.Add(recordB.Key, recordA.Value);
+                    //todo: copy value to avoid rewrite by client (see ByteArrayRef implementation)?
+                    res.Add(recordB.Key.ToArray(), recordA.Value.ToArray());
                     ofsA++;
                     ofsB++;
                 }
@@ -193,7 +193,7 @@ namespace BitcoinUtilities.Collections
                 int childNum = 0;
                 while (node.IsSplitNode)
                 {
-                    bool left = (record.Key[maskOffset/8] & (1 << (7 - maskOffset%8))) == 0;
+                    bool left = (record.Key.GetByteAt(maskOffset/8) & (1 << (7 - maskOffset%8))) == 0;
                     childNum = left ? 0 : 1;
                     int childIndex = node.GetChild(childNum);
                     if (childIndex == 0)
@@ -321,12 +321,12 @@ namespace BitcoinUtilities.Collections
             return res;
         }
 
-        private int CompareKeys(byte[] keyA, byte[] keyB, int firstByte)
+        private int CompareKeys(ByteArrayRef keyA, ByteArrayRef keyB, int firstByte)
         {
             Contract.Assume(keyA.Length == keyB.Length, "Both keys should have the same size.");
             for (int i = firstByte; i < keyA.Length; i++)
             {
-                int diff = keyA[i] - keyB[i];
+                int diff = keyA.GetByteAt(i) - keyB.GetByteAt(i);
                 if (diff != 0)
                 {
                     return diff;
@@ -340,13 +340,13 @@ namespace BitcoinUtilities.Collections
             List<Record> records = node.Records;
             node.Records = null;
 
-            int maskByte = node.MaskOffset/8;
+            int maskByteOffset = node.MaskOffset/8;
             byte mask = (byte) (1 << (7 - node.MaskOffset%8));
 
             int firstRight = 0;
             for (; firstRight < records.Count; firstRight++)
             {
-                bool isLeft = (records[firstRight].Key[maskByte] & mask) == 0;
+                bool isLeft = (records[firstRight].Key.GetByteAt(maskByteOffset) & mask) == 0;
                 if (!isLeft)
                 {
                     break;
