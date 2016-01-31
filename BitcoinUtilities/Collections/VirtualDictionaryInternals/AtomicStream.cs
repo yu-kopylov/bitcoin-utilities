@@ -158,7 +158,7 @@ namespace BitcoinUtilities.Collections.VirtualDictionaryInternals
             {
                 if (virtualPosition < writeBufferOffset ||
                     virtualPosition > writeBufferOffset + writeBuffer.Length + 1 ||
-                    virtualPosition + writeBuffer.Length - writeBufferOffset > MaxUpdateSize)
+                    virtualPosition + count - writeBufferOffset > MaxUpdateSize)
                 {
                     FinalizeWriteUpdate();
                     writeBufferOffset = virtualPosition;
@@ -173,7 +173,7 @@ namespace BitcoinUtilities.Collections.VirtualDictionaryInternals
                 writeBufferOffset = virtualPosition;
             }
 
-            writeBuffer.Write(buffer, 0, count);
+            writeBuffer.Write(buffer, offset, count);
 
             if (writeBuffer.Length >= MaxUpdateSize)
             {
