@@ -142,7 +142,7 @@ namespace Test.BitcoinUtilities.Collections
                 Console.WriteLine("Lookup missing took: {0}ms.", sw.ElapsedMilliseconds);
                 sw.Restart();
 
-                for (int j = 0; j < 10; j++)
+                for (int j = 0; j < 20; j++)
                 {
                     Stopwatch innerSw = Stopwatch.StartNew();
                     using (var tx = dict.BeginTransaction())

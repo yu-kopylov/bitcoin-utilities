@@ -183,7 +183,7 @@ namespace BitcoinUtilities.Collections
 
         private List<BlockBatch> SplitByBlock(List<Record> records, bool addMissingBranches)
         {
-            SortedDictionary<long, BlockBatch> blockBatches = new SortedDictionary<long, BlockBatch>();
+            Dictionary<long, BlockBatch> blockBatches = new Dictionary<long, BlockBatch>();
 
             foreach (var record in records)
             {
