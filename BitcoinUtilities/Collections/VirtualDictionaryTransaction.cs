@@ -281,7 +281,7 @@ namespace BitcoinUtilities.Collections
 
         private List<Record> MergeRecords(List<Record> recordsA, List<Record> recordsB, int firstByte)
         {
-            List<Record> res = new List<Record>();
+            List<Record> res = new List<Record>(recordsA.Count + recordsB.Count);
 
             int ofsA = 0, ofsB = 0;
 
