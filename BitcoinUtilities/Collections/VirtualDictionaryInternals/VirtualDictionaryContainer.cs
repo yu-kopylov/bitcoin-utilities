@@ -10,11 +10,11 @@ namespace BitcoinUtilities.Collections.VirtualDictionaryInternals
     {
         private readonly int keySize;
         private readonly int valueSize;
-        private readonly int blockSize = 4096;
+        private readonly int blockSize = 4*1024;
         private readonly int allocationUnit = 1024*1024;
-        private readonly int treeNodesPerBlock = 510;
-        private readonly int recordsPerBlock = 128;
-        private readonly int nonIndexedRecordsPerBlock = 510;
+        private readonly int treeNodesPerBlock;
+        private readonly int recordsPerBlock;
+        private readonly int nonIndexedRecordsPerBlock;
         private readonly int maxNonIndexedRecordsCount = 1000;
 
         private readonly AtomicStream stream;
@@ -39,6 +39,10 @@ namespace BitcoinUtilities.Collections.VirtualDictionaryInternals
         {
             this.keySize = keySize;
             this.valueSize = valueSize;
+
+            recordsPerBlock = (blockSize - 2)/(keySize + valueSize);
+            nonIndexedRecordsPerBlock = (blockSize - 12)/8;
+            treeNodesPerBlock = (blockSize - 12) / 8;
 
             FileStream mainStream = new FileStream(filename, FileMode.Create, FileAccess.ReadWrite, FileShare.Read);
             FileStream walStream = new FileStream(filename + "-wal", FileMode.Create, FileAccess.ReadWrite, FileShare.Read);
