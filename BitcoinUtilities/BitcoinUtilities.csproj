@@ -56,12 +56,6 @@
     <Compile Include="BitcoinPrivateKey.cs" />
     <Compile Include="Collections\CompactTree.cs" />
     <Compile Include="Collections\CompactTreeNode.cs" />
-    <Compile Include="Collections\VHTBlock.cs" />
-    <Compile Include="Collections\VHTHeader.cs" />
-    <Compile Include="Collections\VHTRecord.cs" />
-    <Compile Include="Collections\VHTSettings.cs" />
-    <Compile Include="Collections\VHTTransaction.cs" />
-    <Compile Include="Collections\VHTWriteAheadLog.cs" />
     <Compile Include="Collections\VirtualDictionary.cs" />
     <Compile Include="Collections\VirtualDictionaryInternals\AtomicStream.cs" />
     <Compile Include="Collections\VirtualDictionaryInternals\Block.cs" />
@@ -71,7 +65,6 @@
     <Compile Include="Collections\VirtualDictionaryInternals\BlockBatch.cs" />
     <Compile Include="Collections\VirtualDictionaryInternals\VirtualDictionaryContainer.cs" />
     <Compile Include="Collections\VirtualDictionaryTransaction.cs" />
-    <Compile Include="Collections\VirtualHashTable.cs" />
     <Compile Include="Scripts\BitcoinScript.cs" />
     <Compile Include="ByteArrayComparer.cs" />
     <Compile Include="Collections\LinkedDictionary.cs" />
