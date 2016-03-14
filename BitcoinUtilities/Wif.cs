@@ -11,12 +11,12 @@ namespace BitcoinUtilities
         private const int CompressedWifLength = 34;
 
         /// <summary>
-        /// Encodes the private key for Main Network in WIF format.
+        /// Encodes the private key for Main Network in the WIF format.
         /// </summary>
         /// <param name="privateKey">The array of 32 bytes of the private key.</param>
         /// <param name="useCompressedPublicKey">true to specify that the public key should have the compressed format; otherwise, false.</param>
         /// <exception cref="ArgumentException">The private key is invalid.</exception>
-        /// <returns>The private key encoded in WIF format.</returns>
+        /// <returns>The private key encoded in the WIF format.</returns>
         public static string Encode(byte[] privateKey, bool useCompressedPublicKey)
         {
             if (!BitcoinPrivateKey.IsValid(privateKey))
@@ -42,6 +42,13 @@ namespace BitcoinUtilities
             return Base58Check.Encode(wifBytes);
         }
 
+        /// <summary>
+        /// Decodes the private key for Main Network in the WIF format.
+        /// </summary>
+        /// <param name="wif">The private key in the WIF format.</param>
+        /// <param name="privateKey">If the key was decoded successfully, the array of 32 bytes of the private key; otherwise, null.</param>
+        /// <param name="useCompressedPublicKey">true if the key was decoded successfully and the public key should have the compressed format; otherwise, false.</param>
+        /// <returns>true if the key was decoded successfully; otherwise, false.</returns>
         public static bool Decode(string wif, out byte[] privateKey, out bool useCompressedPublicKey)
         {
             privateKey = null;
