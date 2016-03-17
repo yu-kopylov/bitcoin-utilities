@@ -15,7 +15,16 @@ namespace BitcoinUtilities.Forms
 
         public ICommand ShowBip38Encoder
         {
-            get { return new Command((sender, e) => MessageBox.Show("ShowBip38Encoder Clicked!")); }
+            get
+            {
+                return new Command((sender, e) =>
+                {
+                    using (var dialog = new Bip38EncoderDialog())
+                    {
+                        dialog.ShowModal();
+                    }
+                });
+            }
         }
     }
 }

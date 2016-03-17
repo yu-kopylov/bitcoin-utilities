@@ -6,11 +6,11 @@
   Height="450"
   Title="Bitcoin Utilities"
   >
-  <TableLayout>
+  <TableLayout Padding="5">
     <TableRow>
       <TableRow>
         <TableCell>
-          <Button Text="Bip38Encoder" Command="{Binding ShowBip38Encoder}"/>
+          <Button Text="BIP-038 Encoder" Command="{Binding ShowBip38Encoder}"/>
         </TableCell>
       </TableRow>
     </TableRow>

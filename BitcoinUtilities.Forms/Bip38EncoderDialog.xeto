@@ -1,0 +1,52 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<Dialog
+  xmlns="http://schema.picoe.ca/eto.forms" 
+  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+  Title="BIP-038 Encoder"
+  Width="600"
+  Height="450"
+  Resizable="True"
+  >
+	<StackLayout Padding="10" Spacing="5">
+    <StackLayoutItem Expand="true" HorizontalAlignment="Stretch">
+      <TableLayout Spacing="5,5">
+        <TableRow>
+          <TableCell>
+            <TableLayout Spacing="2,2">
+              <TableRow>
+                <TableCell>
+                  <Panel Padding="2">
+                    <Label Text="Private Key (WIF):" />
+                  </Panel>
+                </TableCell>
+                <TableCell>
+                  <TextBox Text="{Binding PrivateKey}" />
+                </TableCell>
+              </TableRow>
+              <TableRow>
+                <TableCell>
+                  <Panel Padding="2">
+                    <Label Text="Password:" />
+                  </Panel>
+                </TableCell>
+                <TableCell>
+                  <PasswordBox Text="{Binding Password}"></PasswordBox>
+                </TableCell>
+              </TableRow>
+            </TableLayout>
+          </TableCell>
+        </TableRow>
+        <TableRow ScaleHeight="True">
+          <TableCell>
+            <ImageView Image="{Binding QrCodeImage}"></ImageView>
+          </TableCell>
+        </TableRow>
+      </TableLayout>
+    </StackLayoutItem>
+		<StackLayoutItem HorizontalAlignment="Right">
+			<StackLayout Orientation="Horizontal" Spacing="5">
+				<Button ID="AbortButton" Text="Cancel" Click="CloseButton_Click" />
+			</StackLayout>
+		</StackLayoutItem>
+	</StackLayout>
+</Dialog>
