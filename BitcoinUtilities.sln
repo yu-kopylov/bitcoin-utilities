@@ -1,6 +1,8 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2012
+# Visual Studio 14
+VisualStudioVersion = 14.0.24720.0
+MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BitcoinUtilities", "BitcoinUtilities\BitcoinUtilities.csproj", "{36C6CCB9-5611-40F7-95B5-47FC25EC3B63}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Test.BitcoinUtilities", "Test.BitcoinUtilities\Test.BitcoinUtilities.csproj", "{CBF88519-4383-4B85-8DC3-AB04EB88302A}"
@@ -8,6 +10,10 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BitcoinUtilities.Storage", "BitcoinUtilities.Storage\BitcoinUtilities.Storage.csproj", "{C40E8B76-3F0E-4B16-AA34-136122B985D6}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Test.BitcoinUtilities.Storage", "Test.BitcoinUtilities.Storage\Test.BitcoinUtilities.Storage.csproj", "{DB5647CA-D75E-44A8-A1A2-B849D32A394C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BitcoinUtilities.GUI", "BitcoinUtilities.GUI\BitcoinUtilities.GUI.csproj", "{A4AA1793-AE7A-44EE-92FA-E37609EE7B3C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BitcoinUtilities.Forms", "BitcoinUtilities.Forms\BitcoinUtilities.Forms.csproj", "{3FC1657F-7FC5-454C-8FA8-E7B0709C1D3B}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -31,6 +37,14 @@ Global
 		{DB5647CA-D75E-44A8-A1A2-B849D32A394C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DB5647CA-D75E-44A8-A1A2-B849D32A394C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{DB5647CA-D75E-44A8-A1A2-B849D32A394C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A4AA1793-AE7A-44EE-92FA-E37609EE7B3C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A4AA1793-AE7A-44EE-92FA-E37609EE7B3C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A4AA1793-AE7A-44EE-92FA-E37609EE7B3C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A4AA1793-AE7A-44EE-92FA-E37609EE7B3C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3FC1657F-7FC5-454C-8FA8-E7B0709C1D3B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3FC1657F-7FC5-454C-8FA8-E7B0709C1D3B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3FC1657F-7FC5-454C-8FA8-E7B0709C1D3B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3FC1657F-7FC5-454C-8FA8-E7B0709C1D3B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
