@@ -65,6 +65,7 @@
     <Compile Include="Collections\VirtualDictionaryInternals\BlockBatch.cs" />
     <Compile Include="Collections\VirtualDictionaryInternals\VirtualDictionaryContainer.cs" />
     <Compile Include="Collections\VirtualDictionaryTransaction.cs" />
+    <Compile Include="LongGuid.cs" />
     <Compile Include="Scripts\BitcoinScript.cs" />
     <Compile Include="ByteArrayComparer.cs" />
     <Compile Include="Collections\LinkedDictionary.cs" />

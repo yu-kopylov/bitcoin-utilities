@@ -69,6 +69,7 @@
     <Compile Include="P2P\TestBitcoinConnection.cs" />
     <Compile Include="TestBitcoinPrivateKey.cs" />
     <Compile Include="TestCryptoUtils.cs" />
+    <Compile Include="TestLongGuid.cs" />
     <Compile Include="TestNumberUtils.cs" />
     <Compile Include="TestWif.cs" />
     <Compile Include="Threading\TestBlockingThreadPool.cs" />
