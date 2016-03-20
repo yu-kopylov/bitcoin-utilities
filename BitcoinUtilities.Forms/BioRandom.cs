@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
 using System.IO;
-using System.Security.Cryptography;
 
 namespace BitcoinUtilities.Forms
 {
@@ -57,11 +56,7 @@ namespace BitcoinUtilities.Forms
         public byte[] CreateValue(int length)
         {
             //todo: control max length
-            byte[] hash;
-            using (SHA512 sha512 = SHA512.Create())
-            {
-                hash = sha512.ComputeHash(hashSource.ToArray());
-            }
+            byte[] hash = CryptoUtils.Sha512(hashSource.ToArray());
             byte[] result = new byte[length];
             Array.Copy(hash, result, length);
             return result;

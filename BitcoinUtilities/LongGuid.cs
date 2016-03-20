@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
 using System.IO;
-using System.Security.Cryptography;
 using System.Threading;
 
 namespace BitcoinUtilities
@@ -48,13 +47,7 @@ namespace BitcoinUtilities
                 WriteLong(mem, process.UserProcessorTime.Ticks);
             }
 
-            byte[] hash;
-            using (var sha512 = SHA512.Create())
-            {
-                mem.Position = 0;
-                hash = sha512.ComputeHash(mem);
-            }
-            return hash;
+            return CryptoUtils.Sha512(mem.ToArray());
         }
 
         private static void WriteLong(Stream stream, long value)
