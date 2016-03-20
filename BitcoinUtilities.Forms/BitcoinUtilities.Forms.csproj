@@ -62,6 +62,10 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="BioRandom.cs" />
+    <Compile Include="BioRandomDialog.xeto.cs">
+      <DependentUpon>BioRandomDialog.xeto</DependentUpon>
+    </Compile>
     <Compile Include="Bip38EncoderDialog.xeto.cs">
       <DependentUpon>Bip38EncoderDialog.xeto</DependentUpon>
     </Compile>
@@ -75,6 +79,9 @@
       <SubType>Designer</SubType>
     </EmbeddedResource>
     <EmbeddedResource Include="Bip38EncoderDialog.xeto">
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="BioRandomDialog.xeto">
       <SubType>Designer</SubType>
     </EmbeddedResource>
     <None Include="packages.config" />

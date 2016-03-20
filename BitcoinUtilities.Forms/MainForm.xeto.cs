@@ -1,4 +1,5 @@
-﻿using System.Windows.Input;
+﻿using System;
+using System.Windows.Input;
 using Eto.Forms;
 using Eto.Serialization.Xaml;
 
@@ -13,7 +14,7 @@ namespace BitcoinUtilities.Forms
             DataContext = this;
         }
 
-        public ICommand ShowBip38Encoder
+        public ICommand ShowBip38EncoderDialog
         {
             get
             {
@@ -22,6 +23,31 @@ namespace BitcoinUtilities.Forms
                     using (var dialog = new Bip38EncoderDialog())
                     {
                         dialog.ShowModal();
+                    }
+                });
+            }
+        }
+
+        public ICommand ShowBioRandomDialog
+        {
+            get
+            {
+                return new Command((sender, e) =>
+                {
+                    byte[] randomValue;
+                    using (var dialog = new BioRandomDialog(32))
+                    {
+                        dialog.ShowModal();
+                        randomValue = dialog.RandomValue;
+                    }
+
+                    if (randomValue != null)
+                    {
+                        MessageBox.Show(
+                            this,
+                            string.Format("Generated Value:\n{0}", BitConverter.ToString(randomValue)),
+                            "Random",
+                            MessageBoxType.Information);
                     }
                 });
             }

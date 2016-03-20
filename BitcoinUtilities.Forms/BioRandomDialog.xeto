@@ -1,0 +1,30 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<Dialog
+  xmlns="http://schema.picoe.ca/eto.forms" 
+  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+  Title="Random Generator"
+  Width="400"
+  Height="400"
+  >
+  <TableLayout Padding="10" Spacing="5,5">
+    <TableRow ScaleHeight="True">
+      <TableCell>
+        <Label Text="Move your mouse as random as possible within this window to generate a random value." />
+      </TableCell>
+    </TableRow>
+    <TableRow>
+      <TableCell>
+        <ProgressBar MinValue="0" MaxValue="100" Value="{Binding Progress}"/>
+      </TableCell>
+    </TableRow>
+    <TableRow>
+      <TableCell>
+        <StackLayout Spacing="5">
+          <StackLayoutItem HorizontalAlignment="Right">
+            <Button ID="AbortButton" Text="Cancel" Click="AbortButton_Click" />
+          </StackLayoutItem>
+        </StackLayout>
+      </TableCell>
+    </TableRow>
+  </TableLayout>
+</Dialog>

@@ -6,11 +6,14 @@
   Height="450"
   Title="Bitcoin Utilities"
   >
-  <TableLayout Padding="5">
+  <TableLayout Padding="5" Spacing="5,5">
     <TableRow>
       <TableRow>
-        <TableCell>
-          <Button Text="BIP-038 Encoder" Command="{Binding ShowBip38Encoder}"/>
+        <TableCell ScaleWidth="True">
+          <Button Text="BIP-038 Encoder" Command="{Binding ShowBip38EncoderDialog}"/>
+        </TableCell>
+        <TableCell ScaleWidth="True">
+          <Button Text="Generate Random" Command="{Binding ShowBioRandomDialog}"/>
         </TableCell>
       </TableRow>
     </TableRow>
