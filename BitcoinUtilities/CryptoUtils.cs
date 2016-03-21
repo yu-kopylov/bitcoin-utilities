@@ -4,6 +4,7 @@ using System.Security.Cryptography;
 namespace BitcoinUtilities
 {
     //todo: test resource pool pattern
+    //todo: add XMLDOC
     public static class CryptoUtils
     {
         private static readonly object sha256Lock = new object();

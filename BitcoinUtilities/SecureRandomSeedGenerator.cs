@@ -5,15 +5,16 @@ using System.Threading;
 
 namespace BitcoinUtilities
 {
-    public class LongGuid
+    public class SecureRandomSeedGenerator
     {
-        private static long guidCounter;
+        private static long seedCounter;
 
         /// <summary>
-        /// Returns a unique array of 64 bytes that is a SHA-512 hash of a uninique set of parameters.
+        /// Returns a unique array of 64 bytes.
+        /// The returned value is a SHA-512 hash of a uninique set of parameters.
         /// </summary>
         /// <returns>A unique array of 64 bytes.</returns>
-        public static byte[] NewGuid()
+        public static byte[] CreateSeed()
         {
             var mem = new MemoryStream();
 
@@ -24,7 +25,7 @@ namespace BitcoinUtilities
                 WriteLong(mem, Environment.TickCount);
 
                 // exclude collisions within the same AppDomain
-                var seedCounterValue = Interlocked.Increment(ref guidCounter);
+                var seedCounterValue = Interlocked.Increment(ref seedCounter);
                 WriteLong(mem, seedCounterValue);
 
                 // exclude collisions beteen AppDomains within the same process

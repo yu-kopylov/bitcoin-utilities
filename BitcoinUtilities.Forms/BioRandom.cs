@@ -29,7 +29,7 @@ namespace BitcoinUtilities.Forms
             stopwatch = Stopwatch.StartNew();
             entropy = 0;
 
-            byte[] randomSeed = LongGuid.NewGuid();
+            byte[] randomSeed = SecureRandomSeedGenerator.CreateSeed();
             hashSource.Write(randomSeed, 0, randomSeed.Length);
         }
 

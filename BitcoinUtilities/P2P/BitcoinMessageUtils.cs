@@ -18,30 +18,33 @@ namespace BitcoinUtilities.P2P
 
         public static void AppendUInt16LittleEndian(MemoryStream stream, ushort value)
         {
+            //todo: Replace BitConverter with NuberUtils. BitConverter does not guarantee byte-order.
             byte[] bytes = BitConverter.GetBytes(value);
             stream.Write(bytes, 0, 2);
         }
 
         public static void AppendInt32LittleEndian(MemoryStream stream, int value)
         {
-            byte[] bytes = BitConverter.GetBytes(value);
+            byte[] bytes = NumberUtils.GetBytes(value);
             stream.Write(bytes, 0, 4);
         }
 
         public static void AppendUInt32LittleEndian(MemoryStream stream, uint value)
         {
-            byte[] bytes = BitConverter.GetBytes(value);
+            byte[] bytes = NumberUtils.GetBytes((int) value);
             stream.Write(bytes, 0, 4);
         }
 
         public static void AppendInt64LittleEndian(MemoryStream stream, long value)
         {
+            //todo: Replace BitConverter with NuberUtils. BitConverter does not guarantee byte-order.
             byte[] bytes = BitConverter.GetBytes(value);
             stream.Write(bytes, 0, 8);
         }
 
         public static void AppendUInt64LittleEndian(MemoryStream stream, ulong value)
         {
+            //todo: Replace BitConverter with NuberUtils. BitConverter does not guarantee byte-order.
             byte[] bytes = BitConverter.GetBytes(value);
             stream.Write(bytes, 0, 8);
         }
@@ -58,6 +61,7 @@ namespace BitcoinUtilities.P2P
         {
             value = value << 16 | value >> 16;
             value = (value & 0xFF00FF00u) >> 8 | (value & 0x00FF00FFu) << 8;
+            //todo: Replace BitConverter with NuberUtils. BitConverter does not guarantee byte-order.
             byte[] bytes = BitConverter.GetBytes(value);
             stream.Write(bytes, 0, 4);
         }
@@ -67,6 +71,7 @@ namespace BitcoinUtilities.P2P
             value = value << 32 | value >> 32;
             value = (value & 0xFFFF0000FFFF0000u) >> 16 | (value & 0x0000FFFF0000FFFFu) << 16;
             value = (value & 0xFF00FF00FF00FF00u) >> 8 | (value & 0x00FF00FF00FF00FFu) << 8;
+            //todo: Replace BitConverter with NuberUtils. BitConverter does not guarantee byte-order.
             byte[] bytes = BitConverter.GetBytes(value);
             stream.Write(bytes, 0, 8);
         }

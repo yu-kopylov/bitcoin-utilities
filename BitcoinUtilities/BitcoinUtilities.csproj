@@ -65,7 +65,7 @@
     <Compile Include="Collections\VirtualDictionaryInternals\BlockBatch.cs" />
     <Compile Include="Collections\VirtualDictionaryInternals\VirtualDictionaryContainer.cs" />
     <Compile Include="Collections\VirtualDictionaryTransaction.cs" />
-    <Compile Include="LongGuid.cs" />
+    <Compile Include="SecureRandomSeedGenerator.cs" />
     <Compile Include="Scripts\BitcoinScript.cs" />
     <Compile Include="ByteArrayComparer.cs" />
     <Compile Include="Collections\LinkedDictionary.cs" />
@@ -80,6 +80,7 @@
     <Compile Include="P2P\BitcoinMessageUtils.cs" />
     <Compile Include="P2P\BitcoinStreamReader.cs" />
     <Compile Include="P2P\BitcoinStreamWriter.cs" />
+    <Compile Include="SecureRandom.cs" />
     <Compile Include="Threading\BlockingThreadPool.cs" />
     <Compile Include="P2P\GenesisBlock.cs" />
     <Compile Include="P2P\Messages\BlockMessage.cs" />
