@@ -3,17 +3,33 @@ using System.Diagnostics.Contracts;
 
 namespace BitcoinUtilities
 {
+    /*
+        The seed and data must be generated differently.
+        Otherwise, it would be possible to determine the seed from the generated random values.
+
+        Several values for noise are used to make sure that inputs for hash functions are different in more than one bit.
+    */
+
     /// <summary>
-    /// A pseudo-random number generator based on the SHA-512 hash function.
+    /// A pseudo-random number generator based on hash functions.
     /// </summary>
     public class SecureRandom
     {
         private const int MaxSeedUsages = 31;
 
-        // SeedSalt and DataSalt must be different.
-        // Otherwise, it would be possible to determine the seed from the generated random values.
-        private static readonly byte[] SeedSalt = new byte[] {0xAA, 0xBB, 0xCC, 0xDD};
-        private static readonly byte[] DataSalt = new byte[] {0x11, 0x22, 0x33, 0x44};
+        // Numbers for SeedNoise were taken from SHA-256 hash of string 'seed'.
+        private static readonly uint[] SeedNoise = new uint[]
+        {
+            0x19B25856, 0xE1C150CA, 0x834CFFC8, 0xB59B23AD,
+            0xBD0EC038, 0x9E58EB22, 0xB3B64768
+        };
+
+        // Numbers for DataNoise were taken from SHA-256 hash of string 'data'.
+        private static readonly uint[] DataNoise = new uint[]
+        {
+            0x3A6EB079, 0x0F39AC87, 0xC94F3856, 0xB2DD2C5D,
+            0x110E6811, 0x602261A9, 0xA923D3BB
+        };
 
         private byte[] seed;
         private int seedUsages;
@@ -31,6 +47,8 @@ namespace BitcoinUtilities
             this.seed = seed;
             seedUsages = 0;
             seedVersion = 0;
+
+            dataBuffer = new byte[0];
         }
 
         /// <summary>
@@ -46,9 +64,10 @@ namespace BitcoinUtilities
 
         /// <summary>
         /// Creates a new instance of SecureRandom with empty seed.
-        /// <para/>
-        /// Should be used only for testing purposes.
         /// </summary>
+        /// <remarks>
+        /// This method should be used only for testing purposes.
+        /// </remarks>
         /// <returns>A new instance of SecureRandom.</returns>
         internal static SecureRandom CreateEmpty()
         {
@@ -63,9 +82,10 @@ namespace BitcoinUtilities
         {
             seedUsages = 0;
             seedVersion++;
-            seed = CryptoUtils.Sha512(seed, seedMaterial, SeedSalt, NumberUtils.GetBytes(seedVersion));
+            byte[] noise = GetNoise(SeedNoise, seedVersion);
+            seed = CryptoUtils.Sha512(seed, seedMaterial, noise, NumberUtils.GetBytes(seedVersion));
 
-            dataBuffer = null;
+            dataBuffer = new byte[0];
         }
 
         /// <summary>
@@ -85,7 +105,7 @@ namespace BitcoinUtilities
 
         private int WriteBytes(byte[] buffer, int offset, int length)
         {
-            if (dataBuffer == null || dataBufferOffset == dataBuffer.Length)
+            if (dataBufferOffset >= dataBuffer.Length)
             {
                 FillBuffer();
                 Contract.Assert(dataBuffer != null);
@@ -111,16 +131,23 @@ namespace BitcoinUtilities
 
             dataBufferOffset = 0;
             dataBufferVersion++;
-            dataBuffer = CryptoUtils.Sha512(seed, DataSalt, NumberUtils.GetBytes(dataBufferVersion));
+            byte[] noise = GetNoise(DataNoise, dataBufferVersion);
+            dataBuffer = CryptoUtils.Sha512(dataBuffer, seed, noise, NumberUtils.GetBytes(dataBufferVersion));
         }
 
         private void CreateNextSeed()
         {
             seedUsages = 0;
             seedVersion++;
-            seed = CryptoUtils.Sha512(seed, SeedSalt, NumberUtils.GetBytes(seedVersion));
+            byte[] noise = GetNoise(SeedNoise, seedVersion);
+            seed = CryptoUtils.Sha512(seed, noise, NumberUtils.GetBytes(seedVersion));
 
-            dataBuffer = null;
+            dataBuffer = new byte[0];
+        }
+
+        private byte[] GetNoise(uint[] noises, int version)
+        {
+            return NumberUtils.GetBytes((int)noises[version % noises.Length]);
         }
     }
 }
