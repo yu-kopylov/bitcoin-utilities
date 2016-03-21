@@ -8,6 +8,9 @@ namespace BitcoinUtilities
         Otherwise, it would be possible to determine the seed from the generated random values.
 
         Several values for noise are used to make sure that inputs for hash functions are different in more than one bit.
+
+        SHA-512 is used for seed generation.
+        SHA-256 is used for data generation, instead of SHA-512, to avoid splitting SHA-512 to several 256-keys.
     */
 
     /// <summary>
@@ -132,7 +135,7 @@ namespace BitcoinUtilities
             dataBufferOffset = 0;
             dataBufferVersion++;
             byte[] noise = GetNoise(DataNoise, dataBufferVersion);
-            dataBuffer = CryptoUtils.Sha512(dataBuffer, seed, noise, NumberUtils.GetBytes(dataBufferVersion));
+            dataBuffer = CryptoUtils.Sha256(dataBuffer, seed, noise, NumberUtils.GetBytes(dataBufferVersion));
         }
 
         private void CreateNextSeed()
@@ -147,7 +150,7 @@ namespace BitcoinUtilities
 
         private byte[] GetNoise(uint[] noises, int version)
         {
-            return NumberUtils.GetBytes((int)noises[version % noises.Length]);
+            return NumberUtils.GetBytes((int) noises[version%noises.Length]);
         }
     }
 }
