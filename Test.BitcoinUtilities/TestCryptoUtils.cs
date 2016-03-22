@@ -21,6 +21,15 @@ namespace Test.BitcoinUtilities
         }
 
         [Test]
+        public void TestDoubleSha256Exceptions()
+        {
+            byte[] originalHash = CryptoUtils.DoubleSha256(Encoding.ASCII.GetBytes("123"));
+
+            Assert.Throws<ArgumentNullException>(() => CryptoUtils.DoubleSha256(null));
+            Assert.That(CryptoUtils.DoubleSha256(Encoding.ASCII.GetBytes("123")), Is.EqualTo(originalHash));
+        }
+
+        [Test]
         public void TestSha256()
         {
             byte[] hash;
@@ -55,10 +64,10 @@ namespace Test.BitcoinUtilities
         {
             byte[] originalHash = CryptoUtils.Sha256(Encoding.ASCII.GetBytes("123"));
 
-            Assert.Throws<ArgumentNullException>(() => CryptoUtils.Sha512(new byte[] {1}, null, new byte[] {2}));
+            Assert.Throws<ArgumentNullException>(() => CryptoUtils.Sha256(new byte[] {1}, null, new byte[] {2}));
             Assert.That(CryptoUtils.Sha256(Encoding.ASCII.GetBytes("123")), Is.EqualTo(originalHash));
 
-            Assert.Throws<ArgumentNullException>(() => CryptoUtils.Sha512(null));
+            Assert.Throws<ArgumentNullException>(() => CryptoUtils.Sha256(null));
             Assert.That(CryptoUtils.Sha256(Encoding.ASCII.GetBytes("123")), Is.EqualTo(originalHash));
         }
 
