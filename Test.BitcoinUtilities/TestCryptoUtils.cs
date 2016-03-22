@@ -11,7 +11,6 @@ namespace Test.BitcoinUtilities
         [Test]
         public void TestDoubleSha256()
         {
-            //todo: test exceptions
             byte[] hash = CryptoUtils.DoubleSha256(Encoding.ASCII.GetBytes("hello"));
             Assert.That(hash, Is.EqualTo(new byte[]
             {

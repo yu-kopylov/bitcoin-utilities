@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 using System.IO;
+using System.Security.Cryptography;
 using System.Threading;
 
 namespace BitcoinUtilities
@@ -46,6 +47,14 @@ namespace BitcoinUtilities
                 // relatively unique process parameters (execution time)
                 WriteLong(mem, process.PrivilegedProcessorTime.Ticks);
                 WriteLong(mem, process.UserProcessorTime.Ticks);
+            }
+
+            // should be unique and unpredictable
+            using (RandomNumberGenerator rng = RandomNumberGenerator.Create())
+            {
+                byte[] randomBytes = new byte[512];
+                rng.GetBytes(randomBytes);
+                mem.Write(randomBytes, 0, randomBytes.Length);
             }
 
             return CryptoUtils.Sha512(mem.ToArray());
