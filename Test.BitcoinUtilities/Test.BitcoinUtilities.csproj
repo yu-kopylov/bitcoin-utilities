@@ -62,6 +62,7 @@
     <Compile Include="P2P\TestBitcoinStreamReader.cs" />
     <Compile Include="P2P\TestBitcoinStreamWriter.cs" />
     <Compile Include="Scripts\TestBitcoinScript.cs" />
+    <Compile Include="TestBioRandom.cs" />
     <Compile Include="TestSecureRandom.cs" />
     <Compile Include="TestBase58Check.cs" />
     <Compile Include="TestBip38.cs" />

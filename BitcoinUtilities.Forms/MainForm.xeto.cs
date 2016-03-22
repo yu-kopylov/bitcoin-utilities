@@ -35,10 +35,10 @@ namespace BitcoinUtilities.Forms
                 return new Command((sender, e) =>
                 {
                     byte[] randomValue;
-                    using (var dialog = new BioRandomDialog(32))
+                    using (var dialog = new BioRandomDialog())
                     {
                         dialog.ShowModal();
-                        randomValue = dialog.RandomValue;
+                        randomValue = dialog.SeedMeterial;
                     }
 
                     if (randomValue != null)

@@ -62,7 +62,6 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="BioRandom.cs" />
     <Compile Include="BioRandomDialog.xeto.cs">
       <DependentUpon>BioRandomDialog.xeto</DependentUpon>
     </Compile>

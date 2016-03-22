@@ -7,29 +7,25 @@ using Eto.Serialization.Xaml;
 namespace BitcoinUtilities.Forms
 {
     /// <summary>
-    /// The dialog for a random value generation.
+    /// The dialog for a seed material generation based on mouse movement.
     /// </summary>
     public class BioRandomDialog : Dialog, INotifyPropertyChanged
     {
-        private readonly int length;
-        //todo: reset somewhere?
+        /// <summary>
+        /// The minimum bits of entropy of the generated seed material.
+        /// </summary>
+        public const int TargetEntropy = 512;
+
         private readonly BioRandom random = new BioRandom();
 
         private int progress;
-        private byte[] randomValue;
+        private byte[] seedMeterial;
 
         /// <summary>
         /// Creates a new instance of a dialog.
         /// </summary>
-        /// <param name="length">Required length of the random value in bytes. Must be in range from 1 to 64.</param>
-        public BioRandomDialog(int length)
+        public BioRandomDialog()
         {
-            if (length < 1 || length > 64)
-            {
-                throw new ArgumentException("Length must be in range from 1 to 64.", nameof(length));
-            }
-
-            this.length = length;
             XamlReader.Load(this);
 
             DataContext = this;
@@ -51,16 +47,16 @@ namespace BitcoinUtilities.Forms
         }
 
         /// <summary>
-        /// The generated random value.
+        /// The generated seed material.
         /// <para/>
-        /// Contains null if the generation process was cancelled.
+        /// Contains null if the generation process was not finished.
         /// </summary>
-        public byte[] RandomValue
+        public byte[] SeedMeterial
         {
-            get { return randomValue; }
+            get { return seedMeterial; }
             private set
             {
-                randomValue = value;
+                seedMeterial = value;
                 OnPropertyChanged();
             }
         }
@@ -76,10 +72,10 @@ namespace BitcoinUtilities.Forms
         {
             var location = mouseEventArgs.Location;
             random.AddPoint(location.X, location.Y);
-            Progress = random.Entropy;
-            if (Progress >= 100)
+            Progress = Math.Min(random.Entropy*100/TargetEntropy, 100);
+            if (random.Entropy >= TargetEntropy)
             {
-                RandomValue = random.CreateValue(length);
+                SeedMeterial = random.CreateSeedMaterial();
                 Close();
             }
         }
@@ -88,6 +84,5 @@ namespace BitcoinUtilities.Forms
         {
             Close();
         }
-
     }
 }
