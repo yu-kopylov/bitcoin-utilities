@@ -39,6 +39,8 @@ namespace Test.BitcoinUtilities
             byte[] material = random.CreateSeedMaterial();
             Assert.That(material.Length, Is.EqualTo(64));
             Assert.That(material.Count(b => b != 0), Is.GreaterThan(32));
+
+            Assert.That(random.Entropy, Is.EqualTo(0));
         }
 
         [Test]
