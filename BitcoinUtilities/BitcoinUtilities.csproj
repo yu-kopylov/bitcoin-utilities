@@ -66,6 +66,7 @@
     <Compile Include="Collections\VirtualDictionaryInternals\BlockBatch.cs" />
     <Compile Include="Collections\VirtualDictionaryInternals\VirtualDictionaryContainer.cs" />
     <Compile Include="Collections\VirtualDictionaryTransaction.cs" />
+    <Compile Include="Secp256K1Curve.cs" />
     <Compile Include="SecureRandomSeedGenerator.cs" />
     <Compile Include="Scripts\BitcoinScript.cs" />
     <Compile Include="ByteArrayComparer.cs" />
