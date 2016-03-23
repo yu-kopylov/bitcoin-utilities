@@ -8,6 +8,19 @@ namespace Test.BitcoinUtilities
     public class TestBitcoinPrivateKey
     {
         [Test]
+        public void TestCreate()
+        {
+            SecureRandom random = SecureRandom.Create();
+            for (int i = 0; i < 1000; i++)
+            {
+                byte[] privateKey = BitcoinPrivateKey.Create(random);
+
+                Assert.That(BitcoinPrivateKey.IsValid(privateKey));
+                Assert.That(BitcoinPrivateKey.IsStrong(privateKey));
+            }
+        }
+
+        [Test]
         public void TestIsValid()
         {
             //length check

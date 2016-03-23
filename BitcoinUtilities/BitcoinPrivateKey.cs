@@ -23,6 +23,25 @@ namespace BitcoinUtilities
         };
 
         /// <summary>
+        /// Creates a valid private key that passes <see cref="IsStrong"/> checks.
+        /// </summary>
+        /// <param name="random">The source of random data for the key.</param>
+        /// <returns>An array of 32 bytes with the generated private key.</returns>
+        public static byte[] Create(SecureRandom random)
+        {
+            bool goodKey = false;
+            byte[] privateKey = null;
+
+            while (!goodKey)
+            {
+                privateKey = random.NextBytes(32);
+                goodKey = IsStrong(privateKey);
+            }
+
+            return privateKey;
+        }
+
+        /// <summary>
         /// Checks that the given array is a valid private key.
         /// </summary>
         /// <param name="privateKey">The array of 32 bytes to validate.</param>
