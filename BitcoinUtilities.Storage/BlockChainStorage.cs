@@ -92,7 +92,10 @@ namespace BitcoinUtilities.Storage
             {
                 long hasTable;
 
-                using (SQLiteCommand command = new SQLiteCommand("select count(*) from sqlite_master WHERE type='table' AND name='Blocks'", conn))
+                using (
+                    SQLiteCommand command =
+                        new SQLiteCommand("select count(*) from sqlite_master WHERE type='table' AND name='Blocks'",
+                            conn))
                 {
                     hasTable = (long) command.ExecuteScalar();
                 }
@@ -109,7 +112,10 @@ namespace BitcoinUtilities.Storage
         private static void CreateSchema(SQLiteConnection conn)
         {
             string createSchemaSql;
-            using (var stream = typeof (BlockChainStorage).Assembly.GetManifestResourceStream("BitcoinUtilities.Storage.Sql.create.sql"))
+            using (
+                var stream =
+                    typeof (BlockChainStorage).Assembly.GetManifestResourceStream(
+                        "BitcoinUtilities.Storage.Sql.create.sql"))
             {
                 using (StreamReader reader = new StreamReader(stream, Encoding.UTF8))
                 {
@@ -136,10 +142,17 @@ namespace BitcoinUtilities.Storage
                 {
                     SaveBlocks(repo, blocks);
                     SaveTransactionHashes(conn, blocks.SelectMany(b => b.Transactions).Select(t => t.Hash));
-                    SaveTransactionHashes(conn, blocks.SelectMany(b => b.Transactions).SelectMany(t => t.Inputs).Select(i => i.OutputHash));
-                    SaveAddresses(conn, blocks.SelectMany(b => b.Transactions).SelectMany(t => t.Outputs).Select(o => o.Address).Where(a => a != null));
-                    SaveBinaryData(conn, blocks.SelectMany(b => b.Transactions).SelectMany(t => t.Inputs).Select(i => i.SignatureScript));
-                    SaveBinaryData(conn, blocks.SelectMany(b => b.Transactions).SelectMany(t => t.Outputs).Select(o => o.PubkeyScript));
+                    SaveTransactionHashes(conn,
+                        blocks.SelectMany(b => b.Transactions).SelectMany(t => t.Inputs).Select(i => i.OutputHash));
+                    SaveAddresses(conn,
+                        blocks.SelectMany(b => b.Transactions)
+                            .SelectMany(t => t.Outputs)
+                            .Select(o => o.Address)
+                            .Where(a => a != null));
+                    SaveBinaryData(repo,
+                        blocks.SelectMany(b => b.Transactions).SelectMany(t => t.Inputs).Select(i => i.SignatureScript));
+                    SaveBinaryData(repo,
+                        blocks.SelectMany(b => b.Transactions).SelectMany(t => t.Outputs).Select(o => o.PubkeyScript));
 
                     SaveTransactions(conn, blocks.SelectMany(b => b.Transactions));
                     SaveOutputs(conn, blocks.SelectMany(b => b.Transactions).SelectMany(t => t.Outputs));
@@ -174,8 +187,9 @@ namespace BitcoinUtilities.Storage
 
             int valuesCount = 0;
 
-            using (SQLiteCommand command = new SQLiteCommand("insert into Transactions(BlockId, NumberInBlock, HashId)" +
-                                                             "values (@BlockId, @NumberInBlock, @HashId)", conn))
+            using (
+                SQLiteCommand command = new SQLiteCommand("insert into Transactions(BlockId, NumberInBlock, HashId)" +
+                                                          "values (@BlockId, @NumberInBlock, @HashId)", conn))
             {
                 foreach (Transaction transaction in transactions)
                 {
@@ -202,8 +216,11 @@ namespace BitcoinUtilities.Storage
 
             int valuesCount = 0;
 
-            using (SQLiteCommand command = new SQLiteCommand("insert into TransactionOutputs(TransactionId, NumberInTransaction, Value, PubkeyScriptId, AddressId)" +
-                                                             "values (@TransactionId, @NumberInTransaction, @Value, @PubkeyScriptId, @AddressId)", conn))
+            using (
+                SQLiteCommand command =
+                    new SQLiteCommand(
+                        "insert into TransactionOutputs(TransactionId, NumberInTransaction, Value, PubkeyScriptId, AddressId)" +
+                        "values (@TransactionId, @NumberInTransaction, @Value, @PubkeyScriptId, @AddressId)", conn))
             {
                 foreach (TransactionOutput output in outputs)
                 {
@@ -213,7 +230,9 @@ namespace BitcoinUtilities.Storage
                     command.Parameters.Add("@NumberInTransaction", DbType.Int32).Value = output.NumberInTransaction;
                     command.Parameters.Add("@Value", DbType.UInt64).Value = output.Value;
                     command.Parameters.Add("@PubkeyScriptId", DbType.Int64).Value = output.PubkeyScript.Id;
-                    command.Parameters.Add("@AddressId", DbType.Int64).Value = output.Address == null ? null : (object) output.Address.Id;
+                    command.Parameters.Add("@AddressId", DbType.Int64).Value = output.Address == null
+                        ? null
+                        : (object) output.Address.Id;
 
                     command.ExecuteNonQuery();
 
@@ -232,8 +251,12 @@ namespace BitcoinUtilities.Storage
 
             int valuesCount = 0;
 
-            using (SQLiteCommand command = new SQLiteCommand("insert into TransactionInputs(TransactionId, NumberInTransaction, SignatureScriptId, Sequence, OutputHashId, OutputIndex)" +
-                                                             "values (@TransactionId, @NumberInTransaction, @SignatureScriptId, @Sequence, @OutputHashId, @OutputIndex)", conn))
+            using (
+                SQLiteCommand command =
+                    new SQLiteCommand(
+                        "insert into TransactionInputs(TransactionId, NumberInTransaction, SignatureScriptId, Sequence, OutputHashId, OutputIndex)" +
+                        "values (@TransactionId, @NumberInTransaction, @SignatureScriptId, @Sequence, @OutputHashId, @OutputIndex)",
+                        conn))
             {
                 foreach (TransactionInput input in inputs)
                 {
@@ -318,23 +341,16 @@ namespace BitcoinUtilities.Storage
         //    logger.Debug("LinkInputsToOutputs took {0}ms for {1} inputs and {2} outputs.", sw.ElapsedMilliseconds, inputCount, outputCount);
         //}
 
-        private static void SaveBinaryData(SQLiteConnection conn, IEnumerable<BinaryData> values)
+        private static void SaveBinaryData(BlockChainRepository repo, IEnumerable<BinaryData> values)
         {
             Stopwatch sw = Stopwatch.StartNew();
 
             int valuesCount = 0;
 
-            using (SQLiteCommand command = new SQLiteCommand(@"insert into BinaryData(Data) values (@Data)", conn))
+            foreach (BinaryData data in values)
             {
-                foreach (BinaryData data in values)
-                {
-                    valuesCount++;
-
-                    command.Parameters.Add("@Data", DbType.Binary).Value = data.Data;
-                    command.ExecuteNonQuery();
-                    data.Id = conn.LastInsertRowId;
-                    command.Parameters.Clear();
-                }
+                valuesCount++;
+                repo.InsertBinaryData(data);
             }
 
             logger.Debug("SaveBinaryData took {0}ms for {1} values.", sw.ElapsedMilliseconds, valuesCount);
@@ -346,8 +362,13 @@ namespace BitcoinUtilities.Storage
 
             int valuesCount = 0;
 
-            using (SQLiteCommand findCommand = new SQLiteCommand(@"select H.Id from Addresses H where H.Value=@Value and H.SemiHash=@SemiHash", conn))
-            using (SQLiteCommand addCommand = new SQLiteCommand(@"insert into Addresses(Value, SemiHash) values (@Value, @SemiHash)", conn))
+            using (
+                SQLiteCommand findCommand =
+                    new SQLiteCommand(@"select H.Id from Addresses H where H.Value=@Value and H.SemiHash=@SemiHash",
+                        conn))
+            using (
+                SQLiteCommand addCommand =
+                    new SQLiteCommand(@"insert into Addresses(Value, SemiHash) values (@Value, @SemiHash)", conn))
             {
                 foreach (Address address in addresses)
                 {
@@ -382,8 +403,13 @@ namespace BitcoinUtilities.Storage
 
             int valuesCount = 0;
 
-            using (SQLiteCommand findCommand = new SQLiteCommand(@"select H.Id from TransactionHashes H where H.Hash=@Hash and H.SemiHash=@SemiHash", conn))
-            using (SQLiteCommand addCommand = new SQLiteCommand(@"insert into TransactionHashes(Hash, SemiHash) values (@Hash, @SemiHash)", conn))
+            using (
+                SQLiteCommand findCommand =
+                    new SQLiteCommand(
+                        @"select H.Id from TransactionHashes H where H.Hash=@Hash and H.SemiHash=@SemiHash", conn))
+            using (
+                SQLiteCommand addCommand =
+                    new SQLiteCommand(@"insert into TransactionHashes(Hash, SemiHash) values (@Hash, @SemiHash)", conn))
             {
                 foreach (TransactionHash hash in hashes)
                 {
@@ -416,7 +442,11 @@ namespace BitcoinUtilities.Storage
         {
             using (conn.BeginTransaction())
             {
-                using (SQLiteCommand command = new SQLiteCommand("select B.Id, B.Hash, B.Height, B.Header from Blocks B order by B.Height desc limit 1", conn))
+                using (
+                    SQLiteCommand command =
+                        new SQLiteCommand(
+                            "select B.Id, B.Hash, B.Height, B.Header from Blocks B order by B.Height desc limit 1", conn)
+                    )
                 {
                     using (SQLiteDataReader reader = command.ExecuteReader())
                     {
@@ -454,13 +484,16 @@ namespace BitcoinUtilities.Storage
             long bytesRead = reader.GetBytes(col, 0, buffer, 0, expectedSize);
             if (bytesRead != expectedSize)
             {
-                throw new Exception(string.Format("Unexpected BLOB size in database. Expected: {0}. Read: {1}.", expectedSize, bytesRead));
+                throw new Exception(string.Format("Unexpected BLOB size in database. Expected: {0}. Read: {1}.",
+                    expectedSize, bytesRead));
             }
             byte[] extraBuffer = new byte[4];
             bytesRead = reader.GetBytes(col, expectedSize, buffer, 0, extraBuffer.Length);
             if (bytesRead > 0)
             {
-                throw new Exception(string.Format("Unexpected BLOB size in database. Expected: {0}. Read at least: {1}.", expectedSize, expectedSize + bytesRead));
+                throw new Exception(string.Format(
+                    "Unexpected BLOB size in database. Expected: {0}. Read at least: {1}.", expectedSize,
+                    expectedSize + bytesRead));
             }
             return buffer;
         }

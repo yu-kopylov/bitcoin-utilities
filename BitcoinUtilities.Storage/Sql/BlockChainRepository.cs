@@ -50,5 +50,15 @@ namespace BitcoinUtilities.Storage.Sql
             command.ExecuteNonQuery();
             block.Id = connection.LastInsertRowId;
         }
+
+        public void InsertBinaryData(BinaryData data)
+        {
+            var command = CreateCommand("insert into BinaryData(Data) values (@Data)");
+
+            command.Parameters.Add("@Data", DbType.Binary).Value = data.Data;
+
+            command.ExecuteNonQuery();
+            data.Id = connection.LastInsertRowId;
+        }
     }
 }
