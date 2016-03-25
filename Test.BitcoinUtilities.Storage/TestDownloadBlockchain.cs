@@ -20,7 +20,7 @@ namespace Test.BitcoinUtilities.Storage
     [TestFixture]
     public class TestDownloadBlockchain
     {
-        private const string StorageLocation = @"E:\Temp\Blockchain";
+        private const string StorageLocation = @"D:\Temp\Blockchain";
 
         private static readonly Logger logger = LogManager.GetCurrentClassLogger();
 

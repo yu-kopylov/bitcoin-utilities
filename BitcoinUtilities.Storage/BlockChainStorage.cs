@@ -8,6 +8,7 @@ using System.Linq;
 using System.Text;
 using BitcoinUtilities.Storage.Converters;
 using BitcoinUtilities.Storage.Models;
+using BitcoinUtilities.Storage.Sql;
 using NLog;
 
 namespace BitcoinUtilities.Storage
@@ -129,49 +130,39 @@ namespace BitcoinUtilities.Storage
         {
             Stopwatch sw = Stopwatch.StartNew();
 
-            using (var tx = conn.BeginTransaction())
+            using (BlockChainRepository repo = new BlockChainRepository(conn))
             {
-                SaveBlocks(conn, blocks);
-                SaveTransactionHashes(conn, blocks.SelectMany(b => b.Transactions).Select(t => t.Hash));
-                SaveTransactionHashes(conn, blocks.SelectMany(b => b.Transactions).SelectMany(t => t.Inputs).Select(i => i.OutputHash));
-                SaveAddresses(conn, blocks.SelectMany(b => b.Transactions).SelectMany(t => t.Outputs).Select(o => o.Address).Where(a => a != null));
-                SaveBinaryData(conn, blocks.SelectMany(b => b.Transactions).SelectMany(t => t.Inputs).Select(i => i.SignatureScript));
-                SaveBinaryData(conn, blocks.SelectMany(b => b.Transactions).SelectMany(t => t.Outputs).Select(o => o.PubkeyScript));
+                using (var tx = conn.BeginTransaction())
+                {
+                    SaveBlocks(repo, blocks);
+                    SaveTransactionHashes(conn, blocks.SelectMany(b => b.Transactions).Select(t => t.Hash));
+                    SaveTransactionHashes(conn, blocks.SelectMany(b => b.Transactions).SelectMany(t => t.Inputs).Select(i => i.OutputHash));
+                    SaveAddresses(conn, blocks.SelectMany(b => b.Transactions).SelectMany(t => t.Outputs).Select(o => o.Address).Where(a => a != null));
+                    SaveBinaryData(conn, blocks.SelectMany(b => b.Transactions).SelectMany(t => t.Inputs).Select(i => i.SignatureScript));
+                    SaveBinaryData(conn, blocks.SelectMany(b => b.Transactions).SelectMany(t => t.Outputs).Select(o => o.PubkeyScript));
 
-                SaveTransactions(conn, blocks.SelectMany(b => b.Transactions));
-                SaveOutputs(conn, blocks.SelectMany(b => b.Transactions).SelectMany(t => t.Outputs));
-                //LinkInputsToOutputs(conn, blocks.SelectMany(b => b.Transactions).SelectMany(t => t.Inputs));
-                SaveInputs(conn, blocks.SelectMany(b => b.Transactions).SelectMany(t => t.Inputs));
+                    SaveTransactions(conn, blocks.SelectMany(b => b.Transactions));
+                    SaveOutputs(conn, blocks.SelectMany(b => b.Transactions).SelectMany(t => t.Outputs));
+                    //LinkInputsToOutputs(conn, blocks.SelectMany(b => b.Transactions).SelectMany(t => t.Inputs));
+                    SaveInputs(conn, blocks.SelectMany(b => b.Transactions).SelectMany(t => t.Inputs));
 
-                tx.Commit();
+                    tx.Commit();
+                }
             }
 
             logger.Debug("AddBlocks took {0}ms for {1} blocks.", sw.ElapsedMilliseconds, blocks.Count);
         }
 
-        private void SaveBlocks(SQLiteConnection conn, IEnumerable<Block> blocks)
+        private void SaveBlocks(BlockChainRepository repo, IEnumerable<Block> blocks)
         {
             Stopwatch sw = Stopwatch.StartNew();
 
             int valuesCount = 0;
 
-            using (SQLiteCommand command = new SQLiteCommand("insert into Blocks(Hash, Height, Header)" +
-                                                             "values (@Hash, @Height, @Header)", conn))
+            foreach (Block block in blocks)
             {
-                foreach (Block block in blocks)
-                {
-                    valuesCount++;
-
-                    command.Parameters.Add("@Hash", DbType.Binary).Value = block.Hash;
-                    command.Parameters.Add("@Height", DbType.Int32).Value = block.Height;
-                    command.Parameters.Add("@Header", DbType.Binary).Value = block.Header;
-
-                    command.ExecuteNonQuery();
-
-                    block.Id = conn.LastInsertRowId;
-
-                    command.Parameters.Clear();
-                }
+                valuesCount++;
+                repo.InsertBlock(block);
             }
 
             logger.Debug("SaveBlocks took {0}ms for {1} blocks.", sw.ElapsedMilliseconds, valuesCount);

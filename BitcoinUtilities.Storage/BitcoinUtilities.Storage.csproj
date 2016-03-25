@@ -58,6 +58,7 @@
     <Compile Include="Models\TransactionOutput.cs" />
     <Compile Include="P2P\BlockRequestThread.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Sql\BlockChainRepository.cs" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Sql\create.sql" />
