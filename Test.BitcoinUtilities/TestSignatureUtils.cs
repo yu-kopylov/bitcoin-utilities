@@ -36,8 +36,7 @@ namespace Test.BitcoinUtilities
             Assert.That(SignatureUtils.VerifyMessage(corruptedEncodedPublicKey, signatureBase64, message), Is.False);
 
             byte[] uncompressedEncodedPublicKey = BitcoinPrivateKey.ToEncodedPublicKey(privateKey, !compressed);
-            //todo: should it fail?
-            Assert.That(SignatureUtils.VerifyMessage(uncompressedEncodedPublicKey, signatureBase64, message), Is.True);
+            Assert.That(SignatureUtils.VerifyMessage(uncompressedEncodedPublicKey, signatureBase64, message), Is.False);
 
             byte[] corruptedSignature = Convert.FromBase64String(signatureBase64);
             corruptedSignature[17]++;
