@@ -73,6 +73,7 @@
     <Compile Include="TestCryptoUtils.cs" />
     <Compile Include="TestSecureRandomSeedGenerator.cs" />
     <Compile Include="TestNumberUtils.cs" />
+    <Compile Include="TestSignatureUtils.cs" />
     <Compile Include="TestWif.cs" />
     <Compile Include="Threading\TestBlockingThreadPool.cs" />
   </ItemGroup>

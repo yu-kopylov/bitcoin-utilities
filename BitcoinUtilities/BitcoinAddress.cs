@@ -1,9 +1,5 @@
 ﻿using System;
 using System.Security.Cryptography;
-using Org.BouncyCastle.Asn1.Sec;
-using Org.BouncyCastle.Asn1.X9;
-using Org.BouncyCastle.Math;
-using Org.BouncyCastle.Math.EC;
 
 namespace BitcoinUtilities
 {
@@ -12,8 +8,6 @@ namespace BitcoinUtilities
     /// </summary>
     public static class BitcoinAddress
     {
-        private static readonly X9ECParameters curveParameters = SecNamedCurves.GetByName("secp256k1");
-
         /// <summary>
         /// Creates a bitcoin address for the Main Network from the private key.
         /// </summary>
@@ -25,15 +19,10 @@ namespace BitcoinUtilities
         {
             if (!BitcoinPrivateKey.IsValid(privateKey))
             {
-                throw new ArgumentException("The private key is invalid.", "privateKey");
+                throw new ArgumentException("The private key is invalid.", nameof(privateKey));
             }
 
-            ECPoint publicKeyPoint = curveParameters.G.Multiply(new BigInteger(1, privateKey));
-
-            // Compressed and uncopressed formats are defined in "SEC 1: Elliptic Curve Cryptography" in section "2.3.3 Elliptic-Curve-Point-to-Octet-String Conversion".
-            // see: http://www.secg.org/sec1-v2.pdf
-            ECPoint publicKey = publicKeyPoint.Curve.CreatePoint(publicKeyPoint.X.ToBigInteger(), publicKeyPoint.Y.ToBigInteger(), useCompressedPublicKey);
-            byte[] encodedPublicKey = publicKey.GetEncoded();
+            byte[] encodedPublicKey = BitcoinPrivateKey.ToEncodedPublicKey(privateKey, useCompressedPublicKey);
 
             return FromPublicKey(encodedPublicKey);
         }
