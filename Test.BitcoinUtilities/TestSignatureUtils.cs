@@ -43,5 +43,34 @@ namespace Test.BitcoinUtilities
             string corruptedSignatureBase64 = Convert.ToBase64String(corruptedSignature);
             Assert.That(SignatureUtils.VerifyMessage(encodedPublicKey, corruptedSignatureBase64, message), Is.False);
         }
+
+        [Test]
+        public void TestSignAndVerify()
+        {
+            byte[] privateKey = new byte[]
+            {
+                0xC3, 0x54, 0x83, 0x30, 0xDA, 0x47, 0x8E, 0x50, 0x06, 0x49, 0xD4, 0xD5, 0x9F, 0x90, 0x69, 0x58,
+                0x98, 0x79, 0x2A, 0x3D, 0xC0, 0x2E, 0xD0, 0x54, 0xEA, 0x01, 0x1B, 0x69, 0xED, 0x3E, 0x42, 0x59
+            };
+
+            for (int i = 0; i < 16; i++)
+            {
+                SignAndVerify("ABC", privateKey, true);
+                SignAndVerify("ABC", privateKey, false);
+            }
+        }
+
+        private void SignAndVerify(string message, byte[] key, bool useCompressedPublicKey)
+        {
+            string address = BitcoinAddress.FromPrivateKey(key, useCompressedPublicKey);
+            string signature = SignatureUtils.SingMesssage(message, key, useCompressedPublicKey);
+            byte[] encodedPubliKey = BitcoinPrivateKey.ToEncodedPublicKey(key, useCompressedPublicKey);
+
+            Console.WriteLine("---- SignAndVerify ----");
+            Console.WriteLine("Address: {0}", address);
+            Console.WriteLine("Message: {0}", message);
+            Console.WriteLine("Signature: {0}", signature);
+            Assert.That(SignatureUtils.VerifyMessage(encodedPubliKey, signature, message), Is.True);
+        }
     }
 }

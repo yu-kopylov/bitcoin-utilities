@@ -1,10 +1,12 @@
 ﻿using System;
+using System.Diagnostics.Contracts;
 using System.IO;
 using System.Linq;
 using System.Text;
 using BitcoinUtilities.P2P;
 using Org.BouncyCastle.Asn1.Sec;
 using Org.BouncyCastle.Asn1.X9;
+using Org.BouncyCastle.Crypto;
 using Org.BouncyCastle.Crypto.Parameters;
 using Org.BouncyCastle.Crypto.Signers;
 using Org.BouncyCastle.Math;
@@ -14,6 +16,56 @@ namespace BitcoinUtilities
 {
     public static class SignatureUtils
     {
+        //todo: add XMLDOC
+        public static string SingMesssage(string message, byte[] privateKey, bool useCompressedPublicKey)
+        {
+            //todo: handle incorrect parameters
+
+            //todo: use Secp256K1Curve class
+            X9ECParameters curveParameters = SecNamedCurves.GetByName("secp256k1");
+            ECDomainParameters domainParameters = new ECDomainParameters(curveParameters.Curve, curveParameters.G, curveParameters.N, curveParameters.H);
+            ICipherParameters parameters = new ECPrivateKeyParameters(new BigInteger(1, privateKey), domainParameters);
+
+            //todo: review K values generator initalization in the new version of BouncyCastle 
+            ECDsaSigner signer = new ECDsaSigner();
+
+            var secureRandom = new Org.BouncyCastle.Security.SecureRandom(SecureRandomSeedGenerator.CreateSeed());
+            signer.Init(true, new ParametersWithRandom(parameters, secureRandom));
+
+            var hash = GetMessageHash(message);
+
+            BigInteger[] signatureArray = signer.GenerateSignature(hash);
+
+            byte[] encodedPublicKey = BitcoinPrivateKey.ToEncodedPublicKey(privateKey, useCompressedPublicKey);
+
+            int pubKeyMaskOffset = useCompressedPublicKey ? 4 : 0;
+
+            Signature signature = null;
+
+            for (int i = 0; i < 4; i++)
+            {
+                Signature candidateSignature = new Signature();
+                candidateSignature.PublicKeyMask = i + pubKeyMaskOffset;
+                candidateSignature.R = signatureArray[0];
+                candidateSignature.S = signatureArray[1];
+
+                byte[] recoveredPublicKey = RecoverPublicKeyFromSignature(hash, candidateSignature);
+                if (recoveredPublicKey != null && recoveredPublicKey.SequenceEqual(encodedPublicKey))
+                {
+                    signature = candidateSignature;
+                    break;
+                }
+            }
+
+            if (signature == null)
+            {
+                // this should not happen
+                throw new Exception("The public key is not recoverable from signature.");
+            }
+
+            return EncodeSignature(signature);
+        }
+
         //todo: add XMLDOC
         public static bool VerifyMessage(byte[] encodedPublicKey, string signatureBase64, string message)
         {
@@ -82,22 +134,28 @@ namespace BitcoinUtilities
             //todo: use Secp256K1Curve class
             X9ECParameters curveParameters = SecNamedCurves.GetByName("secp256k1");
 
-            byte encodedRPrefix = (signature.PubKeyMask & 1) == 0 ? (byte) 0x02b : (byte) 0x03;
-            BigInteger rOffset = (signature.PubKeyMask & 2) == 0 ? BigInteger.Zero : curveParameters.N;
-            bool useCompressedPublicKey = (signature.PubKeyMask & 4) != 0;
+            byte encodedRPrefix = (signature.PublicKeyMask & 1) == 0 ? (byte) 2 : (byte) 3;
+            BigInteger rOffset = (signature.PublicKeyMask & 2) == 0 ? BigInteger.Zero : curveParameters.N;
+            bool useCompressedPublicKey = (signature.PublicKeyMask & 4) != 0;
 
             BigInteger e = new BigInteger(1, hash);
 
-            BigInteger rX = signature.R.Add(rOffset);
+            BigInteger tmp = signature.R.Add(rOffset);
+            BigInteger rX = tmp.Mod(Secp256K1Curve.FieldSize);
+            if (tmp != rX)
+            {
+                //todo: test this event
+                Console.WriteLine("HIT");
+            }
             byte[] rXBytes = rX.ToByteArrayUnsigned();
-            byte[] xPointEncoded = new byte[rXBytes.Length + 1];
-            xPointEncoded[0] = encodedRPrefix;
-            Array.Copy(rXBytes, 0, xPointEncoded, 1, rXBytes.Length);
+            byte[] rPointEncoded = new byte[33];
+            rPointEncoded[0] = encodedRPrefix;
+            Array.Copy(rXBytes, 0, rPointEncoded, 33 - rXBytes.Length, rXBytes.Length);
 
             ECPoint rPoint;
             try
             {
-                rPoint = curveParameters.Curve.DecodePoint(xPointEncoded);
+                rPoint = curveParameters.Curve.DecodePoint(rPointEncoded);
             }
             catch (ArgumentException)
             {
@@ -111,6 +169,22 @@ namespace BitcoinUtilities
             ECPoint q = rPoint.Multiply(signature.S).Subtract(curveParameters.G.Multiply(e)).Multiply(signature.R.ModInverse(curveParameters.N));
             q = curveParameters.Curve.CreatePoint(q.X.ToBigInteger(), q.Y.ToBigInteger(), useCompressedPublicKey);
             return q.GetEncoded();
+        }
+
+        private static string EncodeSignature(Signature signature)
+        {
+            byte[] r = signature.R.ToByteArrayUnsigned();
+            byte[] s = signature.S.ToByteArrayUnsigned();
+
+            Contract.Assert(r.Length <= 32);
+            Contract.Assert(s.Length <= 32);
+
+            byte[] signatureBytes = new byte[65];
+            signatureBytes[0] = (byte) (0x1B + signature.PublicKeyMask);
+            Array.Copy(r, 0, signatureBytes, 33 - r.Length, r.Length);
+            Array.Copy(s, 0, signatureBytes, 65 - s.Length, s.Length);
+
+            return Convert.ToBase64String(signatureBytes);
         }
 
         private static bool ParseSignature(string signatureBase64, out Signature signature)
@@ -146,7 +220,7 @@ namespace BitcoinUtilities
             }
 
             signature = new Signature();
-            signature.PubKeyMask = header - 0x1B;
+            signature.PublicKeyMask = header - 0x1B;
             signature.R = new BigInteger(1, signatureBytes, 1, 32);
             signature.S = new BigInteger(1, signatureBytes, 33, 32);
 
@@ -155,7 +229,7 @@ namespace BitcoinUtilities
 
         private class Signature
         {
-            public int PubKeyMask { get; set; }
+            public int PublicKeyMask { get; set; }
             public BigInteger R { get; set; }
             public BigInteger S { get; set; }
         }
