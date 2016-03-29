@@ -32,12 +32,12 @@ namespace BitcoinUtilities
         {
             if (!BitcoinPrivateKey.IsValid(privateKey))
             {
-                throw new ArgumentException("The private key is invalid.", "privateKey");
+                throw new ArgumentException("The private key is invalid.", nameof(privateKey));
             }
 
             if (password == null)
             {
-                throw new ArgumentException("The password is null.", "privateKey");
+                throw new ArgumentException("The password is null.", nameof(privateKey));
             }
 
             password = password.Normalize(NormalizationForm.FormC);
@@ -118,7 +118,7 @@ namespace BitcoinUtilities
 
             if (password == null)
             {
-                throw new ArgumentException("The password is null.", "privateKey");
+                throw new ArgumentException("The password is null.", nameof(privateKey));
             }
 
             if (!ValidateEncryptedKeyStructure(encryptedKeyBytes))

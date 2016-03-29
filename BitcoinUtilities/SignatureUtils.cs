@@ -6,7 +6,7 @@ using System.Text;
 using BitcoinUtilities.P2P;
 using Org.BouncyCastle.Asn1.Sec;
 using Org.BouncyCastle.Asn1.X9;
-using Org.BouncyCastle.Crypto;
+using Org.BouncyCastle.Crypto.Digests;
 using Org.BouncyCastle.Crypto.Parameters;
 using Org.BouncyCastle.Crypto.Signers;
 using Org.BouncyCastle.Math;
@@ -16,25 +16,32 @@ namespace BitcoinUtilities
 {
     public static class SignatureUtils
     {
+        //todo: use Secp256K1Curve class ?
+
+        private static readonly X9ECParameters curveParameters = SecNamedCurves.GetByName("secp256k1");
+
+        private static readonly ECDomainParameters domainParameters =
+            new ECDomainParameters(curveParameters.Curve, curveParameters.G, curveParameters.N, curveParameters.H);
+
+        private static readonly BigInteger halfCurveOrder  = curveParameters.N.ShiftRight(1);
+
         //todo: add XMLDOC
         public static string SingMesssage(string message, byte[] privateKey, bool useCompressedPublicKey)
         {
             //todo: handle incorrect parameters
 
-            //todo: use Secp256K1Curve class
-            X9ECParameters curveParameters = SecNamedCurves.GetByName("secp256k1");
-            ECDomainParameters domainParameters = new ECDomainParameters(curveParameters.Curve, curveParameters.G, curveParameters.N, curveParameters.H);
-            ICipherParameters parameters = new ECPrivateKeyParameters(new BigInteger(1, privateKey), domainParameters);
+            ECPrivateKeyParameters parameters = new ECPrivateKeyParameters(new BigInteger(1, privateKey), domainParameters);
 
-            //todo: review K values generator initalization in the new version of BouncyCastle 
-            ECDsaSigner signer = new ECDsaSigner();
-
-            var secureRandom = new Org.BouncyCastle.Security.SecureRandom(SecureRandomSeedGenerator.CreateSeed());
-            signer.Init(true, new ParametersWithRandom(parameters, secureRandom));
+            ECDsaSigner signer = new ECDsaSigner(new HMacDsaKCalculator(new Sha256Digest()));
+            signer.Init(true, parameters);
 
             var hash = GetMessageHash(message);
 
             BigInteger[] signatureArray = signer.GenerateSignature(hash);
+            BigInteger r = signatureArray[0];
+            BigInteger s = signatureArray[1];
+
+            s = NormalizeS(s);
 
             byte[] encodedPublicKey = BitcoinPrivateKey.ToEncodedPublicKey(privateKey, useCompressedPublicKey);
 
@@ -46,14 +53,19 @@ namespace BitcoinUtilities
             {
                 Signature candidateSignature = new Signature();
                 candidateSignature.PublicKeyMask = i + pubKeyMaskOffset;
-                candidateSignature.R = signatureArray[0];
-                candidateSignature.S = signatureArray[1];
+                candidateSignature.R = r;
+                candidateSignature.S = s;
 
                 byte[] recoveredPublicKey = RecoverPublicKeyFromSignature(hash, candidateSignature);
                 if (recoveredPublicKey != null && recoveredPublicKey.SequenceEqual(encodedPublicKey))
                 {
+                    //todo: test this
+                    if (signature != null)
+                    {
+                        throw new Exception("ambiguous key");
+                    }
                     signature = candidateSignature;
-                    break;
+                    //break;
                 }
             }
 
@@ -90,7 +102,29 @@ namespace BitcoinUtilities
             }
 
             // todo: is it really not necessary to verify signature (is signature always valid for recovered public ?)
-            return encodedPublicKey.SequenceEqual(recoveredPublicKey);
+            bool r1 = encodedPublicKey.SequenceEqual(recoveredPublicKey);
+            bool r2 = VerifySignature(curveParameters.Curve.DecodePoint(recoveredPublicKey), hash, signature);
+            if (r1 && !r2)
+            {
+                Console.WriteLine("DIFF");
+            }
+            return r1;
+        }
+
+        /// <summary>
+        /// Normalizes the S-component of a signature according to the BIP-62.
+        /// <para/>
+        /// Specification: https://github.com/bitcoin/bips/blob/master/bip-0062.mediawiki (Low S values in signatures)
+        /// <para/>
+        /// Reference Implementation: https://github.com/bitcoin/bitcoin/blob/v0.9.3/src/key.cpp#L202-L227
+        /// </summary>
+        private static BigInteger NormalizeS(BigInteger s)
+        {
+            if (s.CompareTo(halfCurveOrder) > 0)
+            {
+                s = curveParameters.N.Subtract(s);
+            }
+            return s;
         }
 
         private static byte[] GetMessageHash(string message)
@@ -116,9 +150,6 @@ namespace BitcoinUtilities
         //todo: remove ?
         private static bool VerifySignature(ECPoint publicKeyPoint, byte[] hash, Signature signature)
         {
-            //todo: use Secp256K1Curve class
-            X9ECParameters curveParameters = SecNamedCurves.GetByName("secp256k1");
-            ECDomainParameters domainParameters = new ECDomainParameters(curveParameters.Curve, curveParameters.G, curveParameters.N, curveParameters.H);
             ECPublicKeyParameters parameters = new ECPublicKeyParameters(publicKeyPoint, domainParameters);
 
             ECDsaSigner signer = new ECDsaSigner();
@@ -131,9 +162,6 @@ namespace BitcoinUtilities
         // see: http://www.secg.org/sec1-v2.pdf
         private static byte[] RecoverPublicKeyFromSignature(byte[] hash, Signature signature)
         {
-            //todo: use Secp256K1Curve class
-            X9ECParameters curveParameters = SecNamedCurves.GetByName("secp256k1");
-
             byte encodedRPrefix = (signature.PublicKeyMask & 1) == 0 ? (byte) 2 : (byte) 3;
             BigInteger rOffset = (signature.PublicKeyMask & 2) == 0 ? BigInteger.Zero : curveParameters.N;
             bool useCompressedPublicKey = (signature.PublicKeyMask & 4) != 0;
@@ -144,8 +172,12 @@ namespace BitcoinUtilities
             BigInteger rX = tmp.Mod(Secp256K1Curve.FieldSize);
             if (tmp != rX)
             {
-                //todo: test this event
+                //todo: test this event against reference client
                 Console.WriteLine("HIT");
+            }
+            else
+            {
+                Console.WriteLine("NOT HIT");
             }
             byte[] rXBytes = rX.ToByteArrayUnsigned();
             byte[] rPointEncoded = new byte[33];
