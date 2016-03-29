@@ -112,10 +112,27 @@ namespace BitcoinUtilities
         {
             HashSet<byte> distinctBytes = new HashSet<byte>();
             HashSet<byte> distinctDeltas = new HashSet<byte>();
-            for (int i = 0; i < privateKey.Length; i++)
+
+            // skip leading zeros
+            int from = 0;
+            while (from < privateKey.Length && privateKey[from] == 0)
             {
-                byte b0 = privateKey[i];
-                byte b1 = privateKey[(i + 1)%privateKey.Length];
+                from++;
+            }
+
+            // skip trailing zeros
+            int to = privateKey.Length - 1;
+            while (to >= 0 && privateKey[to] == 0)
+            {
+                to--;
+            }
+
+            int actualLength = to - from + 1;
+
+            for (int i = 0; i < actualLength; i++)
+            {
+                byte b0 = privateKey[from + i];
+                byte b1 = privateKey[from + (i + 1)%actualLength];
                 byte delta = (byte) (b1 - b0);
 
                 distinctBytes.Add(b0);
