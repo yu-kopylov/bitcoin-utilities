@@ -140,8 +140,6 @@ namespace Test.BitcoinUtilities
             // S-component normalization
             SignAndVerify("ABCD_0001", privateKey, true, "IL21huoowwTtYLdUSTXCClKxecI4c5VLweXzvXIVS17hXtriqRyNMYpwtg2BySlfPHP2Yw998Ml2Ac5RNOS2W1I=");
 
-            //todo: research why headers 0x1D, 0x1E, 0x21, 0x22 does not occure
-
             // signature header is 0x1B
             SignAndVerify("ABCD_0002", privateKey, false, "G0n7e+6b7ye9La0HdCJYBZOyOb4xlWMm9vHVLAQA9Rp2bdRJSiAuJiUqa7KGnNKO70IeqMdqnuOWhJ9BAGGRkEk=");
             // signature header is 0x1C

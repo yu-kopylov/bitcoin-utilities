@@ -166,27 +166,21 @@ namespace BitcoinUtilities
         // see: http://www.secg.org/sec1-v2.pdf
         private static byte[] RecoverPublicKeyFromSignature(byte[] hash, Signature signature)
         {
+            if ((signature.PublicKeyMask & 2) != 0)
+            {
+                // It seems that loop for j from 0 to h in the "4.1.6 Public Key Recovery Operation" algorithm, should be a loop from 0 yo h - 1.
+                return null;
+            }
+
             byte encodedRPrefix = (signature.PublicKeyMask & 1) == 0 ? (byte) 2 : (byte) 3;
-            BigInteger rOffset = (signature.PublicKeyMask & 2) == 0 ? BigInteger.Zero : curveParameters.N;
             bool useCompressedPublicKey = (signature.PublicKeyMask & 4) != 0;
 
             BigInteger e = new BigInteger(1, hash);
 
-            BigInteger tmp = signature.R.Add(rOffset);
-            BigInteger rX = tmp.Mod(Secp256K1Curve.FieldSize);
-            if (tmp != rX)
-            {
-                //todo: test this event against reference client
-                Console.WriteLine("HIT");
-            }
-            else
-            {
-                Console.WriteLine("NOT HIT");
-            }
-            byte[] rXBytes = rX.ToByteArrayUnsigned();
+            byte[] rBytes = signature.R.ToByteArrayUnsigned();
             byte[] rPointEncoded = new byte[33];
             rPointEncoded[0] = encodedRPrefix;
-            Array.Copy(rXBytes, 0, rPointEncoded, 33 - rXBytes.Length, rXBytes.Length);
+            Array.Copy(rBytes, 0, rPointEncoded, 33 - rBytes.Length, rBytes.Length);
 
             ECPoint rPoint;
             try
