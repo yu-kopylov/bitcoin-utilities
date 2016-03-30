@@ -8,40 +8,56 @@ namespace Test.BitcoinUtilities
     public class TestSignatureUtils
     {
         [Test]
-        public void TestVerifyMessageWithReferenceExample()
+        public void TestVerifyMessage()
         {
-            // reference example from https://bitcoin.org/en/developer-reference#verifymessage
-            // const string address = "mgnucj8nYqdrPFh2JfZSB1NmUThUGnmsqe";
-            // const string privateKeyWif = "cU8Q2jGeX3GNKNa5etiC8mgEgFSeVUTRQfWE2ZCzszyqYNK4Mepy";
-            const bool compressed = true;
-            byte[] privateKey = new byte[]
-            {
-                0xC3, 0x54, 0x83, 0x30, 0xDA, 0x47, 0x8E, 0x50, 0x06, 0x49, 0xD4, 0xD5, 0x9F, 0x90, 0x69, 0x58,
-                0x98, 0x79, 0x2A, 0x3D, 0xC0, 0x2E, 0xD0, 0x54, 0xEA, 0x01, 0x1B, 0x69, 0xED, 0x3E, 0x42, 0x59
-            };
-            byte[] encodedPublicKey = BitcoinPrivateKey.ToEncodedPublicKey(privateKey, compressed);
+            // WIF reference example
+            string wif = "KwdMAjGmerYanjeui5SHS7JkmpZvVipYvB2LJGU1ZxJwYvP98617";
+            string address = "1LoVGDgRs9hTfTNJNuXKSpywcbdvwRXpmK";
+            string message = "test";
+            string signature = "IKbIRnBqx8C1S6cRGcBX778Ek/0aM8z3XSxZDGIBhOcVMVw+y5ORLdvkJ7uCgWwc0D7WvRFeZfpma0BleAslDEU=";
 
-            const string signatureBase64 = "IL98ziCmwYi5pL+dqKp4Ux+zCa4hP/xbjHmWh+Mk/lefV/0pWV1p/gQ94jgExSmgH2/+PDcCCrOHAady2IEySSI=";
-            const string message = "Hello, World!";
+            Assert.True(SignatureUtils.VerifyMessage(address, message, signature));
 
-            Assert.That(SignatureUtils.VerifyMessage(encodedPublicKey, signatureBase64, message), Is.True);
+            // wrong message
+            Assert.False(SignatureUtils.VerifyMessage(address, message + "X", signature));
 
-            string corruptedMessage = message + "X";
-            Assert.That(SignatureUtils.VerifyMessage(encodedPublicKey, signatureBase64, corruptedMessage), Is.False);
-
-            byte[] corruptedPrivateKey = new byte[privateKey.Length];
-            Array.Copy(privateKey, corruptedPrivateKey, privateKey.Length);
+            // wrong private key
+            byte[] corruptedPrivateKey;
+            bool compressed;
+            Assert.True(Wif.Decode(wif, out corruptedPrivateKey, out compressed));
             corruptedPrivateKey[17]++;
-            byte[] corruptedEncodedPublicKey = BitcoinPrivateKey.ToEncodedPublicKey(corruptedPrivateKey, compressed);
-            Assert.That(SignatureUtils.VerifyMessage(corruptedEncodedPublicKey, signatureBase64, message), Is.False);
+            Assert.False(SignatureUtils.VerifyMessage(BitcoinAddress.FromPrivateKey(corruptedPrivateKey, compressed), message, signature));
 
-            byte[] uncompressedEncodedPublicKey = BitcoinPrivateKey.ToEncodedPublicKey(privateKey, !compressed);
-            Assert.That(SignatureUtils.VerifyMessage(uncompressedEncodedPublicKey, signatureBase64, message), Is.False);
+            // wrong compression
+            byte[] privateKey;
+            Assert.True(Wif.Decode(wif, out privateKey, out compressed));
+            Assert.False(SignatureUtils.VerifyMessage(BitcoinAddress.FromPrivateKey(privateKey, !compressed), message, signature));
 
-            byte[] corruptedSignature = Convert.FromBase64String(signatureBase64);
-            corruptedSignature[17]++;
-            string corruptedSignatureBase64 = Convert.ToBase64String(corruptedSignature);
-            Assert.That(SignatureUtils.VerifyMessage(encodedPublicKey, corruptedSignatureBase64, message), Is.False);
+            // corruprted signature header
+            for (byte header = 0x1A; header <= 0x23; header++)
+            {
+                byte[] corruptedSignature = Convert.FromBase64String(signature);
+                if (corruptedSignature[0] == header)
+                {
+                    continue;
+                }
+                corruptedSignature[0] = header;
+                Assert.False(SignatureUtils.VerifyMessage(address, message, Convert.ToBase64String(corruptedSignature)));
+            }
+
+            // corruprted r-component of signature
+            {
+                byte[] corruptedSignature = Convert.FromBase64String(signature);
+                corruptedSignature[11]++;
+                Assert.False(SignatureUtils.VerifyMessage(address, message, Convert.ToBase64String(corruptedSignature)));
+            }
+
+            // corruprted s-component of signature
+            {
+                byte[] corruptedSignature = Convert.FromBase64String(signature);
+                corruptedSignature[43]++;
+                Assert.False(SignatureUtils.VerifyMessage(address, message, Convert.ToBase64String(corruptedSignature)));
+            }
         }
 
         [Test]
@@ -57,13 +73,6 @@ namespace Test.BitcoinUtilities
                 0x0C, 0x28, 0xFC, 0xA3, 0x86, 0xC7, 0xA2, 0x27, 0x60, 0x0B, 0x2F, 0xE5, 0x0B, 0x7C, 0xAE, 0x11,
                 0xEC, 0x86, 0xD3, 0xBF, 0x1F, 0xBE, 0x47, 0x1B, 0xE8, 0x98, 0x27, 0xE1, 0x9D, 0x72, 0xAA, 0x1D
             };
-
-//            for (int i = 0; i < 64; i++)
-//            {
-//                SignAndVerify(string.Format("ABCD_{0:X4}", i), privateKey, true, null);
-//                SignAndVerify(string.Format("ABCD_{0:X4}", i), privateKey, false, null);
-//            }
-
 
             // S-component normalization
             SignAndVerify("ABCD_0001", privateKey, true, "IL21huoowwTtYLdUSTXCClKxecI4c5VLweXzvXIVS17hXtriqRyNMYpwtg2BySlfPHP2Yw998Ml2Ac5RNOS2W1I=");
@@ -91,8 +100,6 @@ namespace Test.BitcoinUtilities
                 Assert.That(signature, Is.EqualTo(expectedSignature));
             }
 
-            byte[] encodedPubliKey = BitcoinPrivateKey.ToEncodedPublicKey(key, useCompressedPublicKey);
-
             Console.WriteLine("---- SignAndVerify ----");
             Console.WriteLine("Address:\t{0}", address);
             Console.WriteLine("WIF:\t\t{0}", Wif.Encode(key, useCompressedPublicKey));
@@ -100,7 +107,7 @@ namespace Test.BitcoinUtilities
             Console.WriteLine("Signature:\t{0}", signature);
             Console.WriteLine("Signature Header:\t0x{0:X2}", Convert.FromBase64String(signature)[0]);
 
-            Assert.That(SignatureUtils.VerifyMessage(encodedPubliKey, signature, message), Is.True);
+            Assert.True(SignatureUtils.VerifyMessage(address, message, signature));
         }
     }
 }

@@ -78,10 +78,17 @@ namespace BitcoinUtilities
             return EncodeSignature(signature);
         }
 
-        //todo: add XMLDOC
-        public static bool VerifyMessage(byte[] encodedPublicKey, string signatureBase64, string message)
+        /// <summary>
+        /// Checks that the given signature is valid for the given message and the given address.
+        /// </summary>
+        /// <param name="address">The address in Base58Check encoding.</param>
+        /// <param name="message">The message.</param>
+        /// <param name="signatureBase64">The signature in base-64 encoding.</param>
+        /// <returns>true if the given signature is valid for the given message and the given address; otherwise, false.</returns>
+        //todo: describe encoding
+        public static bool VerifyMessage(string address, string message, string signatureBase64)
         {
-            if (encodedPublicKey == null || signatureBase64 == null || message == null)
+            if (address == null || message == null || signatureBase64 == null)
             {
                 return false;
             }
@@ -101,14 +108,9 @@ namespace BitcoinUtilities
                 return false;
             }
 
-            // todo: is it really not necessary to verify signature (is signature always valid for recovered public ?)
-            bool r1 = encodedPublicKey.SequenceEqual(recoveredPublicKey);
-            bool r2 = VerifySignature(curveParameters.Curve.DecodePoint(recoveredPublicKey), hash, signature);
-            if (r1 && !r2)
-            {
-                Console.WriteLine("DIFF");
-            }
-            return r1;
+            string recoveredAddress = BitcoinAddress.FromPublicKey(recoveredPublicKey);
+
+            return recoveredAddress == address;
         }
 
         /// <summary>
@@ -145,17 +147,6 @@ namespace BitcoinUtilities
 
             byte[] text = mem.ToArray();
             return CryptoUtils.DoubleSha256(text);
-        }
-
-        //todo: remove ?
-        private static bool VerifySignature(ECPoint publicKeyPoint, byte[] hash, Signature signature)
-        {
-            ECPublicKeyParameters parameters = new ECPublicKeyParameters(publicKeyPoint, domainParameters);
-
-            ECDsaSigner signer = new ECDsaSigner();
-            signer.Init(false, parameters);
-
-            return signer.VerifySignature(hash, signature.R, signature.S);
         }
 
         // The public key recovery algorithm is described in "SEC 1: Elliptic Curve Cryptography" in section "4.1.6 Public Key Recovery Operation".
