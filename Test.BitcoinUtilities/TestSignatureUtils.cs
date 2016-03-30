@@ -61,6 +61,47 @@ namespace Test.BitcoinUtilities
         }
 
         [Test]
+        public void TestVerifyMessageValidation()
+        {
+            string address = "1LoVGDgRs9hTfTNJNuXKSpywcbdvwRXpmK";
+            string message = "test";
+            string signature = "IKbIRnBqx8C1S6cRGcBX778Ek/0aM8z3XSxZDGIBhOcVMVw+y5ORLdvkJ7uCgWwc0D7WvRFeZfpma0BleAslDEU=";
+
+            Assert.True(SignatureUtils.VerifyMessage(address, message, signature));
+
+            Assert.False(SignatureUtils.VerifyMessage(null, message, signature));
+            Assert.False(SignatureUtils.VerifyMessage(address, null, signature));
+            Assert.False(SignatureUtils.VerifyMessage(address, message, null));
+
+            Assert.False(SignatureUtils.VerifyMessage("", message, signature));
+            Assert.False(SignatureUtils.VerifyMessage(address, "", signature));
+            Assert.False(SignatureUtils.VerifyMessage(address, message, ""));
+
+            // one byte signature
+            byte[] oneByteSignature = new byte[1];
+            oneByteSignature[0] = 0x1B;
+            Assert.False(SignatureUtils.VerifyMessage(address, message, Convert.ToBase64String(oneByteSignature)));
+
+            // signature contains only zeros
+            byte[] zeroSignature = new byte[65];
+            Assert.False(SignatureUtils.VerifyMessage(address, message, Convert.ToBase64String(zeroSignature)));
+
+            // r and s in signature contains only zeros, header is not empty
+            byte[] zeroSignatureWithHeader = new byte[65];
+            zeroSignatureWithHeader[0] = 0x1B;
+            Assert.False(SignatureUtils.VerifyMessage(address, message, Convert.ToBase64String(zeroSignatureWithHeader)));
+
+            // invalid point (r = Q - 1, s = Q - 1)
+            Assert.False(SignatureUtils.VerifyMessage(
+                address,
+                message,
+                "G/////////////////////////////////////7///wu/////////////////////////////////////v///C4="));
+
+            // signature is not a valid base-64 string
+            Assert.False(SignatureUtils.VerifyMessage(address, message, signature + "*"));
+        }
+
+        [Test]
         public void TestSignAndVerify()
         {
             // WIF reference example

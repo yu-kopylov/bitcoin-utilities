@@ -59,13 +59,8 @@ namespace BitcoinUtilities
                 byte[] recoveredPublicKey = RecoverPublicKeyFromSignature(hash, candidateSignature);
                 if (recoveredPublicKey != null && recoveredPublicKey.SequenceEqual(encodedPublicKey))
                 {
-                    //todo: test this
-                    if (signature != null)
-                    {
-                        throw new Exception("ambiguous key");
-                    }
                     signature = candidateSignature;
-                    //break;
+                    break;
                 }
             }
 
@@ -184,6 +179,7 @@ namespace BitcoinUtilities
             {
                 return null;
             }
+
             if (!rPoint.Multiply(curveParameters.N).IsInfinity)
             {
                 return null;
