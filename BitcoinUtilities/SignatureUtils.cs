@@ -25,10 +25,30 @@ namespace BitcoinUtilities
 
         private static readonly BigInteger halfCurveOrder = curveParameters.N.ShiftRight(1);
 
-        //todo: add XMLDOC
+        /// <summary>
+        /// Creates a signature for the given messsage and the given private key.
+        /// </summary>
+        /// <param name="message">The message.</param>
+        /// <param name="privateKey">The array of 32 bytes of the private key.</param>
+        /// <param name="useCompressedPublicKey">true to specify that the public key should have the compressed format; otherwise, false.</param>
+        /// <exception cref="ArgumentException">The message is null or private key is null or invalid.</exception>
+        /// <returns>The signature for the given message and the given private key in base-64 encoding.</returns>
         public static string SingMesssage(string message, byte[] privateKey, bool useCompressedPublicKey)
         {
-            //todo: handle incorrect parameters
+            if (message == null)
+            {
+                throw new ArgumentException("The message is null.", nameof(message));
+            }
+
+            if (privateKey == null)
+            {
+                throw new ArgumentException("The private key is null.", nameof(privateKey));
+            }
+
+            if (!BitcoinPrivateKey.IsValid(privateKey))
+            {
+                throw new ArgumentException("The private key is invalid.", nameof(privateKey));
+            }
 
             ECPrivateKeyParameters parameters = new ECPrivateKeyParameters(new BigInteger(1, privateKey), domainParameters);
 
@@ -229,7 +249,6 @@ namespace BitcoinUtilities
 
             byte header = signatureBytes[0];
 
-            //todo: write test
             if (header < 0x1B || header > 0x22)
             {
                 return false;

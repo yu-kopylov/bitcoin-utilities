@@ -63,6 +63,7 @@ namespace Test.BitcoinUtilities
         [Test]
         public void TestVerifyMessageValidation()
         {
+            // WIF reference example
             string address = "1LoVGDgRs9hTfTNJNuXKSpywcbdvwRXpmK";
             string message = "test";
             string signature = "IKbIRnBqx8C1S6cRGcBX778Ek/0aM8z3XSxZDGIBhOcVMVw+y5ORLdvkJ7uCgWwc0D7WvRFeZfpma0BleAslDEU=";
@@ -99,6 +100,27 @@ namespace Test.BitcoinUtilities
 
             // signature is not a valid base-64 string
             Assert.False(SignatureUtils.VerifyMessage(address, message, signature + "*"));
+        }
+
+        [Test]
+        public void TestSignMessageValidation()
+        {
+            // WIF reference example
+            string message = "test";
+            string signature = "IKbIRnBqx8C1S6cRGcBX778Ek/0aM8z3XSxZDGIBhOcVMVw+y5ORLdvkJ7uCgWwc0D7WvRFeZfpma0BleAslDEU=";
+            byte[] privateKey = new byte[]
+            {
+                0x0C, 0x28, 0xFC, 0xA3, 0x86, 0xC7, 0xA2, 0x27, 0x60, 0x0B, 0x2F, 0xE5, 0x0B, 0x7C, 0xAE, 0x11,
+                0xEC, 0x86, 0xD3, 0xBF, 0x1F, 0xBE, 0x47, 0x1B, 0xE8, 0x98, 0x27, 0xE1, 0x9D, 0x72, 0xAA, 0x1D
+            };
+
+            Assert.That(SignatureUtils.SingMesssage(message, privateKey, true), Is.EqualTo(signature));
+
+            Assert.Throws<ArgumentException>(() => SignatureUtils.SingMesssage(null, privateKey, true));
+            Assert.Throws<ArgumentException>(() => SignatureUtils.SingMesssage(message, null, true));
+
+            Assert.Throws<ArgumentException>(() => SignatureUtils.SingMesssage(message, new byte[0], true));
+            Assert.Throws<ArgumentException>(() => SignatureUtils.SingMesssage(message, new byte[32], true));
         }
 
         [Test]
