@@ -80,7 +80,6 @@ namespace BitcoinUtilities
         /// <param name="message">The message.</param>
         /// <param name="signatureBase64">The signature in base-64 encoding.</param>
         /// <returns>true if the given signature is valid for the given message and the given address; otherwise, false.</returns>
-        //todo: describe encoding
         public static bool VerifyMessage(string address, string message, string signatureBase64)
         {
             if (address == null || message == null || signatureBase64 == null)
@@ -127,8 +126,7 @@ namespace BitcoinUtilities
         private static byte[] GetMessageHash(string message)
         {
             byte[] messagePrefix = Encoding.ASCII.GetBytes("Bitcoin Signed Message:\n");
-            //todo: fail on unmappable characters
-            byte[] messageBytes = Encoding.ASCII.GetBytes(message);
+            byte[] messageBytes = Encoding.UTF8.GetBytes(message);
 
             MemoryStream mem = new MemoryStream();
             using (BitcoinStreamWriter writer = new BitcoinStreamWriter(mem))

@@ -102,7 +102,7 @@ namespace Test.BitcoinUtilities
         }
 
         [Test]
-        public void TestSignAndVerify()
+        public void TestSignAndVerifyMessage()
         {
             // WIF reference example
             // WIF (compressed):        KwdMAjGmerYanjeui5SHS7JkmpZvVipYvB2LJGU1ZxJwYvP98617
@@ -128,6 +128,9 @@ namespace Test.BitcoinUtilities
             SignAndVerify("ABCD_0002", privateKey, true, "H0n7e+6b7ye9La0HdCJYBZOyOb4xlWMm9vHVLAQA9Rp2bdRJSiAuJiUqa7KGnNKO70IeqMdqnuOWhJ9BAGGRkEk=");
             // signature header is 0x20
             SignAndVerify("ABCD_0000", privateKey, true, "IGiWS/eo1pc0KMH54YB76h6+0PMCdm1KtN+9HTXrDzRfUNH4RpBn2WQdLBb+Ary8Qbt4U0IiERbLvuYHa1zzKbI=");
+
+            // non ASCII characters
+            SignAndVerify("проверка", privateKey, true, "IIuYtuiOt6yRk8eAtXRMHW4K27Kgoxqj6uMi5kLywnhTKPJwxn3AQPZfEmViz0amIaGl5BQVmqhJYhYA1BwS+vw=");
         }
 
         private void SignAndVerify(string message, byte[] key, bool useCompressedPublicKey, string expectedSignature)
@@ -136,11 +139,6 @@ namespace Test.BitcoinUtilities
 
             string signature = SignatureUtils.SingMesssage(message, key, useCompressedPublicKey);
 
-            if (expectedSignature != null)
-            {
-                Assert.That(signature, Is.EqualTo(expectedSignature));
-            }
-
             Console.WriteLine("---- SignAndVerify ----");
             Console.WriteLine("Address:\t{0}", address);
             Console.WriteLine("WIF:\t\t{0}", Wif.Encode(key, useCompressedPublicKey));
@@ -148,6 +146,7 @@ namespace Test.BitcoinUtilities
             Console.WriteLine("Signature:\t{0}", signature);
             Console.WriteLine("Signature Header:\t0x{0:X2}", Convert.FromBase64String(signature)[0]);
 
+            Assert.That(signature, Is.EqualTo(expectedSignature));
             Assert.True(SignatureUtils.VerifyMessage(address, message, signature));
         }
     }
