@@ -23,7 +23,7 @@ namespace BitcoinUtilities
         private static readonly ECDomainParameters domainParameters =
             new ECDomainParameters(curveParameters.Curve, curveParameters.G, curveParameters.N, curveParameters.H);
 
-        private static readonly BigInteger halfCurveOrder  = curveParameters.N.ShiftRight(1);
+        private static readonly BigInteger halfCurveOrder = curveParameters.N.ShiftRight(1);
 
         //todo: add XMLDOC
         public static string SingMesssage(string message, byte[] privateKey, bool useCompressedPublicKey)
@@ -199,8 +199,7 @@ namespace BitcoinUtilities
             }
 
             ECPoint q = rPoint.Multiply(signature.S).Subtract(curveParameters.G.Multiply(e)).Multiply(signature.R.ModInverse(curveParameters.N));
-            q = curveParameters.Curve.CreatePoint(q.X.ToBigInteger(), q.Y.ToBigInteger(), useCompressedPublicKey);
-            return q.GetEncoded();
+            return q.GetEncoded(useCompressedPublicKey);
         }
 
         private static string EncodeSignature(Signature signature)
