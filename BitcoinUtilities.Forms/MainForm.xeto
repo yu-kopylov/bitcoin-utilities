@@ -17,6 +17,25 @@
         </TableCell>
       </TableRow>
     </TableRow>
+    <TableRow>
+      <TableCell ScaleWidth="True">
+        <StackLayout Orientation="Horizontal">
+          <Label Text="Started: "/>
+          <!--todo: <Label Text="{Binding Node, Path=Started}"/>-->
+          <Label Text="."/>
+        </StackLayout>
+      </TableCell>
+    </TableRow>
+    <TableRow>
+      <TableRow>
+        <TableCell ScaleWidth="True">
+          <Button Text="Start Node" Command="{Binding StartNode}"/>
+        </TableCell>
+        <TableCell ScaleWidth="True">
+          <Button Text="Stop Node" Command="{Binding StopNode}"/>
+        </TableCell>
+      </TableRow>
+    </TableRow>
     <TableRow/>
   </TableLayout>
 </Form>

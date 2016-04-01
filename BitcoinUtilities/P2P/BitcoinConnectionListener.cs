@@ -26,6 +26,10 @@ namespace BitcoinUtilities.P2P
             Stop();
         }
 
+        /// <summary>
+        /// Starts listening for incoming connection requests.
+        /// </summary>
+        /// <exception cref="SocketException">If listener failed to use privided host or port to accept connections.</exception>
         public void Start()
         {
             tcpListener = new TcpListener(address, port);

@@ -13,7 +13,7 @@ using NLog;
 
 namespace BitcoinUtilities.Storage
 {
-    public class BlockChainStorage : IDisposable
+    public class BlockChainStorage : IBlockChainStorage, IDisposable
     {
         private static readonly Logger logger = LogManager.GetCurrentClassLogger();
 

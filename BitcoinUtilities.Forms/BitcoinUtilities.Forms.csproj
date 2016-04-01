@@ -86,6 +86,10 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\BitcoinUtilities.Storage\BitcoinUtilities.Storage.csproj">
+      <Project>{C40E8B76-3F0E-4B16-AA34-136122B985D6}</Project>
+      <Name>BitcoinUtilities.Storage</Name>
+    </ProjectReference>
     <ProjectReference Include="..\BitcoinUtilities\BitcoinUtilities.csproj">
       <Project>{36C6CCB9-5611-40F7-95B5-47FC25EC3B63}</Project>
       <Name>BitcoinUtilities</Name>
