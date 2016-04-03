@@ -8,7 +8,7 @@ using Eto.Forms;
 using Eto.Serialization.Xaml;
 using ZXing;
 
-namespace BitcoinUtilities.Forms
+namespace BitcoinUtilities.GUI.Views
 {
     public class Bip38EncoderDialog : Dialog, INotifyPropertyChanged
     {
@@ -136,6 +136,7 @@ namespace BitcoinUtilities.Forms
 
             var mem = new MemoryStream();
 
+            //todo: move image generation to ViewModel and remove reference to System.Drawing from this project
             using (System.Drawing.Bitmap bitmap = writer.Write(encryptedKey))
             {
                 bitmap.Save(mem, System.Drawing.Imaging.ImageFormat.Png);

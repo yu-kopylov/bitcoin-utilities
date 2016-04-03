@@ -42,6 +42,11 @@ namespace BitcoinUtilities
             get { return storage; }
         }
 
+        public List<BitcoinEndpoint> Endpoints
+        {
+            get { return endpoints; }
+        }
+
         public event PropertyChangedEventHandler PropertyChanged;
 
         protected virtual void OnPropertyChanged([CallerMemberName] string propertyName = null)
@@ -88,6 +93,7 @@ namespace BitcoinUtilities
                     todo: to avoid monopolization of connection pool by unfriendly set of nodes.
                 */
                 endpoints.Add(endpoint);
+                OnPropertyChanged(nameof(endpoints));
             }
         }
 
@@ -116,6 +122,7 @@ namespace BitcoinUtilities
             }
 
             endpoints.Clear();
+            OnPropertyChanged(nameof(endpoints));
 
             Started = false;
         }

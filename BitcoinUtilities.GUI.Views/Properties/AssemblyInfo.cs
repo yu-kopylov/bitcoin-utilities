@@ -5,11 +5,11 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("BitcoinUtilities.Forms")]
+[assembly: AssemblyTitle("BitcoinUtilities.GUI.Views")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("BitcoinUtilities.Forms")]
+[assembly: AssemblyProduct("BitcoinUtilities.GUI.Views")]
 [assembly: AssemblyCopyright("Copyright ©  2016")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
@@ -20,7 +20,7 @@ using System.Runtime.InteropServices;
 [assembly: ComVisible(false)]
 
 // The following GUID is for the ID of the typelib if this project is exposed to COM
-[assembly: Guid("3fc1657f-7fc5-454c-8fa8-e7b0709c1d3b")]
+[assembly: Guid("b8c1bf7c-ed67-4c4c-8c09-efe50a1ec39d")]
 
 // Version information for an assembly consists of the following four values:
 //

@@ -4,7 +4,7 @@ using System.Runtime.CompilerServices;
 using Eto.Forms;
 using Eto.Serialization.Xaml;
 
-namespace BitcoinUtilities.Forms
+namespace BitcoinUtilities.GUI.Views
 {
     /// <summary>
     /// The dialog for a seed material generation based on mouse movement.

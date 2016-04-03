@@ -77,9 +77,9 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\BitcoinUtilities.Forms\BitcoinUtilities.Forms.csproj">
-      <Project>{3FC1657F-7FC5-454C-8FA8-E7B0709C1D3B}</Project>
-      <Name>BitcoinUtilities.Forms</Name>
+    <ProjectReference Include="..\BitcoinUtilities.GUI.Views\BitcoinUtilities.GUI.Views.csproj">
+      <Project>{B8C1BF7C-ED67-4C4C-8C09-EFE50A1EC39D}</Project>
+      <Name>BitcoinUtilities.GUI.Views</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

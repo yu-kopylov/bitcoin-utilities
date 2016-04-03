@@ -1,0 +1,31 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<Form
+  xmlns="http://schema.picoe.ca/eto.forms" 
+  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+  xmlns:v="clr-namespace:BitcoinUtilities.GUI.Views;assembly=BitcoinUtilities.GUI.Views"
+  Width="600"
+  Height="450"
+  Title="Bitcoin Utilities"
+  >
+  <TableLayout Padding="5" Spacing="5,5">
+    <TableRow>
+      <TableCell ScaleWidth="True">
+        <Button Text="BIP-038 Encoder" Command="{Binding ShowBip38EncoderDialog}"/>
+      </TableCell>
+      <TableCell ScaleWidth="True">
+        <Button Text="Generate Random" Command="{Binding ShowBioRandomDialog}"/>
+      </TableCell>
+    </TableRow>
+    <TableRow>
+      <TableCell ScaleWidth="True">
+        <v:BitcoinNodeView DataContext="{Binding BitcoinNode}"/>
+      </TableCell>
+      <TableCell ScaleWidth="True">
+        <StackLayout Orientation="Vertical">
+          <Button Text="Start Node" Command="{Binding StartNode}"/>
+          <Button Text="Stop Node" Command="{Binding StopNode}"/>
+        </StackLayout>
+      </TableCell>
+    </TableRow>
+  </TableLayout>
+</Form>

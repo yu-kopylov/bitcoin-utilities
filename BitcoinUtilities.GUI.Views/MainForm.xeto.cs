@@ -1,17 +1,14 @@
 ﻿using System;
-using System.ComponentModel;
-using System.Runtime.CompilerServices;
 using System.Windows.Input;
+using BitcoinUtilities.GUI.ViewModels;
 using BitcoinUtilities.Storage;
 using Eto.Forms;
 using Eto.Serialization.Xaml;
 
-namespace BitcoinUtilities.Forms
+namespace BitcoinUtilities.GUI.Views
 {
-    public class MainForm : Form, INotifyPropertyChanged
+    public class MainForm : Form
     {
-        private BitcoinNode node;
-
         public MainForm()
         {
             XamlReader.Load(this);
@@ -19,22 +16,7 @@ namespace BitcoinUtilities.Forms
             DataContext = this;
         }
 
-        public BitcoinNode Node
-        {
-            get { return node; }
-            set
-            {
-                node = value;
-                OnPropertyChanged();
-            }
-        }
-
-        public event PropertyChangedEventHandler PropertyChanged;
-
-        protected virtual void OnPropertyChanged([CallerMemberName] string propertyName = null)
-        {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-        }
+        public BitcoinNodeViewModel BitcoinNode { get; set; } = new BitcoinNodeViewModel();
 
         public ICommand StartNode
         {
@@ -42,14 +24,14 @@ namespace BitcoinUtilities.Forms
             {
                 return new Command((sender, e) =>
                 {
-                    if (Node == null || !Node.Started)
+                    if (BitcoinNode.Node == null || !BitcoinNode.Node.Started)
                     {
                         try
                         {
                             //todo: use settings for storage location
                             BlockChainStorage storage = BlockChainStorage.Open(@"D:\Temp\Blockchain");
-                            Node = new BitcoinNode(storage);
-                            Node.Start();
+                            BitcoinNode.Node = new BitcoinNode(storage);
+                            BitcoinNode.Node.Start();
                         }
                         catch (Exception ex)
                         {
@@ -66,11 +48,11 @@ namespace BitcoinUtilities.Forms
             {
                 return new Command((sender, e) =>
                 {
-                    if (Node != null && Node.Started)
+                    if (BitcoinNode.Node != null && BitcoinNode.Node.Started)
                     {
-                        Node.Stop();
+                        BitcoinNode.Node.Stop();
                         //todo: who should close storage ?
-                        IDisposable storage = Node.Storage as IDisposable;
+                        IDisposable storage = BitcoinNode.Node.Storage as IDisposable;
                         storage?.Dispose();
                     }
                 });
