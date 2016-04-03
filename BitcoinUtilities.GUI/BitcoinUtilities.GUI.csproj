@@ -77,6 +77,10 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\BitcoinUtilities.GUI.ViewModels\BitcoinUtilities.GUI.ViewModels.csproj">
+      <Project>{1D98E7B7-5D52-4E4A-BACB-295F46AC6752}</Project>
+      <Name>BitcoinUtilities.GUI.ViewModels</Name>
+    </ProjectReference>
     <ProjectReference Include="..\BitcoinUtilities.GUI.Views\BitcoinUtilities.GUI.Views.csproj">
       <Project>{B8C1BF7C-ED67-4C4C-8C09-EFE50A1EC39D}</Project>
       <Name>BitcoinUtilities.GUI.Views</Name>

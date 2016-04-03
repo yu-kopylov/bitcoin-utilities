@@ -20,12 +20,6 @@
       <TableCell ScaleWidth="True">
         <v:BitcoinNodeView DataContext="{Binding BitcoinNode}"/>
       </TableCell>
-      <TableCell ScaleWidth="True">
-        <StackLayout Orientation="Vertical">
-          <Button Text="Start Node" Command="{Binding StartNode}"/>
-          <Button Text="Stop Node" Command="{Binding StopNode}"/>
-        </StackLayout>
-      </TableCell>
     </TableRow>
   </TableLayout>
 </Form>

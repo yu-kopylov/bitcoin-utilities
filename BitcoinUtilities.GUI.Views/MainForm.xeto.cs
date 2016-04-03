@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Windows.Input;
 using BitcoinUtilities.GUI.ViewModels;
-using BitcoinUtilities.Storage;
 using Eto.Forms;
 using Eto.Serialization.Xaml;
 
@@ -9,55 +8,16 @@ namespace BitcoinUtilities.GUI.Views
 {
     public class MainForm : Form
     {
-        public MainForm()
+        public MainForm(ApplicationContext applicationContext)
         {
             XamlReader.Load(this);
 
             DataContext = this;
+
+            BitcoinNode = new BitcoinNodeViewModel(applicationContext, new ViewContext(this));
         }
 
-        public BitcoinNodeViewModel BitcoinNode { get; set; } = new BitcoinNodeViewModel();
-
-        public ICommand StartNode
-        {
-            get
-            {
-                return new Command((sender, e) =>
-                {
-                    if (BitcoinNode.Node == null || !BitcoinNode.Node.Started)
-                    {
-                        try
-                        {
-                            //todo: use settings for storage location
-                            BlockChainStorage storage = BlockChainStorage.Open(@"D:\Temp\Blockchain");
-                            BitcoinNode.Node = new BitcoinNode(storage);
-                            BitcoinNode.Node.Start();
-                        }
-                        catch (Exception ex)
-                        {
-                            MessageBox.Show(this, ex.Message, MessageBoxType.Error);
-                        }
-                    }
-                });
-            }
-        }
-
-        public ICommand StopNode
-        {
-            get
-            {
-                return new Command((sender, e) =>
-                {
-                    if (BitcoinNode.Node != null && BitcoinNode.Node.Started)
-                    {
-                        BitcoinNode.Node.Stop();
-                        //todo: who should close storage ?
-                        IDisposable storage = BitcoinNode.Node.Storage as IDisposable;
-                        storage?.Dispose();
-                    }
-                });
-            }
-        }
+        public BitcoinNodeViewModel BitcoinNode { get; set; }
 
         public ICommand ShowBip38EncoderDialog
         {

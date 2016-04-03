@@ -1,4 +1,5 @@
 ﻿using System;
+using BitcoinUtilities.GUI.ViewModels;
 using BitcoinUtilities.GUI.Views;
 using Eto;
 using Eto.Forms;
@@ -10,7 +11,8 @@ namespace BitcoinUtilities.GUI
         [STAThread]
         static void Main(string[] args)
         {
-            new Application(Platform.Detect).Run(new MainForm());
+            ApplicationContext applicationContext = new ApplicationContext();
+            new Application(Platform.Detect).Run(new MainForm(applicationContext));
         }
     }
 }

@@ -20,5 +20,14 @@
         <Label Text="{Binding ConnectionCount}"/>
       </TableCell>
     </TableRow>
+    <TableRow>
+      <TableCell ScaleWidth="True">
+        <Button Text="Start Node" Enabled="{Binding CanStartNode}" Click="StartNode"/>
+      </TableCell>
+      <TableCell ScaleWidth="True">
+        <Button Text="Stop Node" Enabled="{Binding CanStopNode}" Click="StopNode"/>
+      </TableCell>
+    </TableRow>
+    <TableRow/>
   </TableLayout>
 </Panel>
