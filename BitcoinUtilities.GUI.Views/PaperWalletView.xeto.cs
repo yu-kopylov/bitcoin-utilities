@@ -8,7 +8,9 @@ namespace BitcoinUtilities.GUI.Views
 {
     public class PaperWalletView : Panel
     {
-        protected ImageView QrCodeImage;
+		private static readonly Bitmap emptyBitmap = new Bitmap(1, 1, PixelFormat.Format24bppRgb); 
+
+		protected ImageView QrCodeImage;
 
         public PaperWalletView()
         {
@@ -22,7 +24,8 @@ namespace BitcoinUtilities.GUI.Views
         {
             if (bitmapBytes == null)
             {
-                return null;
+				//todo: ImageView from Eto.Forms 2.2.0 crashes with null image in GTK3 (should be fixed in next release)
+				return emptyBitmap;
             }
             return new Bitmap(bitmapBytes);
         }
