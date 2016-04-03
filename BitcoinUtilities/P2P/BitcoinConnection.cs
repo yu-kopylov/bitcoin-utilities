@@ -61,10 +61,17 @@ namespace BitcoinUtilities.P2P
             }
         }
 
+        /// <summary>
+        /// Connects to a remote host.
+        /// </summary>
+        /// <param name="host">The DNS name of the remote host.</param>
+        /// <param name="port">The port number of the remote host.</param>
+        /// <exception cref="SocketException">Connection failed.</exception>
         public void Connect(string host, int port)
         {
             if (client != null)
             {
+                //todo: specify exception
                 throw new Exception("A connection was already established.");
             }
 

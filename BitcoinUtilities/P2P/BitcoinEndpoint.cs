@@ -64,10 +64,17 @@ namespace BitcoinUtilities.P2P
             get { return protocolVersion; }
         }
 
+        /// <summary>
+        /// Connects to a remote host.
+        /// </summary>
+        /// <param name="host">The DNS name of the remote host.</param>
+        /// <param name="port">The port number of the remote host.</param>
+        /// <exception cref="System.Net.Sockets.SocketException">Connection failed.</exception>
         public void Connect(string host, int port)
         {
             if (conn != null)
             {
+                //todo: specify exception
                 throw new Exception("Connection was already established.");
             }
 
@@ -77,10 +84,12 @@ namespace BitcoinUtilities.P2P
             Start();
         }
 
+        //todo: add XMLDOC
         public void Connect(BitcoinConnection connection)
         {
             if (conn != null)
             {
+                //todo: specify exception
                 throw new Exception("Connection was already established.");
             }
 
@@ -145,7 +154,8 @@ namespace BitcoinUtilities.P2P
                 if (!threadPool.Execute(() => HandleMessage(message), MessageProcessingStartTimeout))
                 {
                     //todo: terminate connection?
-                    logger.Warn("Message was ignored because all threads were busy (command: {0}, payload: {1} byte(s)).", message.Command, message.Payload.Length);
+                    logger.Warn("Message was ignored because all threads were busy (command: {0}, payload: {1} byte(s)).", message.Command,
+                        message.Payload.Length);
                 }
             }
         }
@@ -162,7 +172,8 @@ namespace BitcoinUtilities.P2P
             {
                 if (message.Payload.Length != 8)
                 {
-                    conn.WriteMessage(CreateRejectMessage(message, BitcoinMessageRejectReason.Malformed, "The Ping command payload should have a length of 8 bytes."));
+                    conn.WriteMessage(CreateRejectMessage(message, BitcoinMessageRejectReason.Malformed,
+                        "The Ping command payload should have a length of 8 bytes."));
                     return;
                 }
 

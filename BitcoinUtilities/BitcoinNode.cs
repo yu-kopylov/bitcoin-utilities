@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Net;
+using System.Net.Sockets;
 using System.Runtime.CompilerServices;
 using BitcoinUtilities.P2P;
 
@@ -70,15 +71,29 @@ namespace BitcoinUtilities
                 Random random = new Random();
                 for (int i = 0; i < 2; i++)
                 {
-                    //todo: The construction of BitcoinEndpoint and BitcoinConnection is confusing. Both can use host and port.
-                    BitcoinEndpoint endpoint = new BitcoinEndpoint(HandleMessage);
-                    //todo: describe and handle exceptions
                     //todo: don't connect to same node twice
                     IPAddress selectedAddress = nodeAddresses[random.Next(nodeAddresses.Count)];
-                    endpoint.Connect(selectedAddress.ToString(), 8333);
-                    endpoints.Add(endpoint);
+                    ConnectTo(selectedAddress.ToString(), 8333);
                 }
             }
+        }
+
+        private void ConnectTo(string host, int port)
+        {
+            //todo: The construction of BitcoinEndpoint and BitcoinConnection is confusing. Both can use host and port.
+            BitcoinEndpoint endpoint = new BitcoinEndpoint(HandleMessage);
+            //todo: describe and handle exceptions
+            try
+            {
+                endpoint.Connect(host, port);
+            }
+            catch (SocketException)
+            {
+                //todo: log error?
+                return;
+            }
+            endpoints.Add(endpoint);
+            OnPropertyChanged(nameof(endpoints));
         }
 
         private void HandleConnection(BitcoinConnection connection)
