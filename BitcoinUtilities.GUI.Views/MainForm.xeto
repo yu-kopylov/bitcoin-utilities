@@ -11,9 +11,10 @@
     <TabPage Text="Paper Wallet">
       <StackLayout>
         <Button Text="BIP-038 Encoder" Command="{Binding ShowBip38EncoderDialog}"/>
+        <v:PaperWalletView DataContext="{Binding PaperWallet}"/>
       </StackLayout>
     </TabPage>
-    <TabPage Text="RNG">
+    <TabPage Text="Random Number Generator">
       <StackLayout>
         <Button Text="Generate Random" Command="{Binding ShowBioRandomDialog}"/>
       </StackLayout>

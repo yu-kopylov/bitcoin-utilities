@@ -72,6 +72,9 @@
     <Compile Include="MainForm.xeto.cs">
       <DependentUpon>MainForm.xeto</DependentUpon>
     </Compile>
+    <Compile Include="PaperWalletView.xeto.cs">
+      <DependentUpon>PaperWalletView.xeto</DependentUpon>
+    </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ViewContext.cs" />
   </ItemGroup>
@@ -97,6 +100,9 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
+    <EmbeddedResource Include="PaperWalletView.xeto">
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\BitcoinUtilities.GUI.ViewModels\BitcoinUtilities.GUI.ViewModels.csproj">

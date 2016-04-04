@@ -3,57 +3,27 @@ using System.ComponentModel;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Threading;
-using Eto.Drawing;
-using Eto.Forms;
-using Eto.Serialization.Xaml;
 using ZXing;
 
-namespace BitcoinUtilities.GUI.Views
+namespace BitcoinUtilities.GUI.ViewModels
 {
-    public class Bip38EncoderDialog : Dialog, INotifyPropertyChanged
+    public class PaperWalletViewModel : INotifyPropertyChanged
     {
+        private readonly IViewContext viewContext;
+
+        //todo: add common timer for delayed UI events
         private readonly Timer timer;
         private volatile bool inputUpdated = true;
         private volatile bool inputUpdatedRecently;
 
         private string password = "test";
         private string privateKey = "KwdMAjGmerYanjeui5SHS7JkmpZvVipYvB2LJGU1ZxJwYvP98617";
-        private Image qrCodeImage;
+        private byte[] qrCodeImage;
 
-        public Bip38EncoderDialog()
+        public PaperWalletViewModel(IViewContext viewContext)
         {
-            XamlReader.Load(this);
-
-            DataContext = this;
-
+            this.viewContext = viewContext;
             timer = new Timer(TimerTick, null, TimeSpan.Zero, TimeSpan.FromMilliseconds(300));
-        }
-
-        protected override void Dispose(bool disposing)
-        {
-            if (disposing)
-            {
-                timer.Dispose();
-                if (qrCodeImage != null)
-                {
-                    qrCodeImage.Dispose();
-                    qrCodeImage = null;
-                }
-            }
-            base.Dispose(disposing);
-        }
-
-        public string PrivateKey
-        {
-            get { return privateKey; }
-            set
-            {
-                privateKey = value;
-                OnPropertyChanged();
-
-                inputUpdated = true;
-                inputUpdatedRecently = true;
-            }
         }
 
         public string Password
@@ -69,10 +39,23 @@ namespace BitcoinUtilities.GUI.Views
             }
         }
 
-        public Image QrCodeImage
+        public string PrivateKey
+        {
+            get { return privateKey; }
+            set
+            {
+                privateKey = value;
+                OnPropertyChanged();
+
+                inputUpdated = true;
+                inputUpdatedRecently = true;
+            }
+        }
+
+        public byte[] QrCodeImage
         {
             get { return qrCodeImage; }
-            set
+            private set
             {
                 qrCodeImage = value;
                 OnPropertyChanged();
@@ -84,11 +67,6 @@ namespace BitcoinUtilities.GUI.Views
         protected virtual void OnPropertyChanged([CallerMemberName] string propertyName = null)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-        }
-
-        protected void CloseButton_Click(object sender, EventArgs e)
-        {
-            Close();
         }
 
         private void TimerTick(object state)
@@ -104,14 +82,7 @@ namespace BitcoinUtilities.GUI.Views
 
         private void UpdateImage()
         {
-            if (QrCodeImage != null)
-            {
-                Application.Instance.Invoke(() =>
-                {
-                    QrCodeImage.Dispose();
-                    QrCodeImage = null;
-                });
-            }
+            viewContext.Invoke(() => { QrCodeImage = null; });
 
             byte[] privateKeyBytes;
             bool compressed;
@@ -131,20 +102,18 @@ namespace BitcoinUtilities.GUI.Views
                 return;
             }
 
-            IBarcodeWriter writer = new BarcodeWriter { Format = BarcodeFormat.QR_CODE };
+            IBarcodeWriter writer = new BarcodeWriter {Format = BarcodeFormat.QR_CODE};
 
             var mem = new MemoryStream();
 
-            //todo: move image generation to ViewModel and remove reference to System.Drawing from this project
             using (System.Drawing.Bitmap bitmap = writer.Write(encryptedKey))
             {
                 bitmap.Save(mem, System.Drawing.Imaging.ImageFormat.Png);
             }
 
-            mem.Position = 0;
+            byte[] bitmapBytes = mem.ToArray();
 
-            Application.Instance.Invoke(() => { QrCodeImage = new Bitmap(mem); });
+            viewContext.Invoke(() => { QrCodeImage = bitmapBytes; });
         }
-
     }
 }

@@ -17,5 +17,10 @@ namespace BitcoinUtilities.GUI.Views
         {
             MessageBox.Show(window, e.Message, MessageBoxType.Error);
         }
+
+        public void Invoke(Action action)
+        {
+            Application.Instance.Invoke(action);
+        }
     }
 }

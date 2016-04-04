@@ -14,10 +14,14 @@ namespace BitcoinUtilities.GUI.Views
 
             DataContext = this;
 
-            BitcoinNode = new BitcoinNodeViewModel(applicationContext, new ViewContext(this));
+            IViewContext viewContext = new ViewContext(this);
+
+            BitcoinNode = new BitcoinNodeViewModel(applicationContext, viewContext);
+            PaperWallet = new PaperWalletViewModel(viewContext);
         }
 
         public BitcoinNodeViewModel BitcoinNode { get; set; }
+        public PaperWalletViewModel PaperWallet { get; set; }
 
         public ICommand ShowBip38EncoderDialog
         {
