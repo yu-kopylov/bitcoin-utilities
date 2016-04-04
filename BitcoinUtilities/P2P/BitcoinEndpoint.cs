@@ -65,17 +65,16 @@ namespace BitcoinUtilities.P2P
         }
 
         /// <summary>
-        /// Connects to a remote host.
+        /// Connects to a remote host and sends a version handshake.
         /// </summary>
         /// <param name="host">The DNS name of the remote host.</param>
         /// <param name="port">The port number of the remote host.</param>
-        /// <exception cref="System.Net.Sockets.SocketException">Connection failed.</exception>
+        /// <exception cref="BitcoinNetworkException">Connection failed.</exception>
         public void Connect(string host, int port)
         {
             if (conn != null)
             {
-                //todo: specify exception
-                throw new Exception("Connection was already established.");
+                throw new BitcoinNetworkException("Connection was already established.");
             }
 
             conn = new BitcoinConnection();
@@ -84,13 +83,16 @@ namespace BitcoinUtilities.P2P
             Start();
         }
 
-        //todo: add XMLDOC
+        /// <summary>
+        /// Connects to a remote host using an established connection and sends a version handshake.
+        /// </summary>
+        /// <param name="connection">The established network connection.</param>
+        /// <exception cref="BitcoinNetworkException">Connection failed.</exception>
         public void Connect(BitcoinConnection connection)
         {
             if (conn != null)
             {
-                //todo: specify exception
-                throw new Exception("Connection was already established.");
+                throw new BitcoinNetworkException("Connection was already established.");
             }
 
             conn = connection;
@@ -107,7 +109,7 @@ namespace BitcoinUtilities.P2P
             if (incVersionMessage.Command != BitcoinCommands.Version)
             {
                 //todo: handle correctly
-                throw new Exception("Remote endpoind did not send Version message.");
+                throw new BitcoinNetworkException("Remote endpoint did not send Version message.");
             }
 
             //todo: check minimal peer protocol version
@@ -119,7 +121,7 @@ namespace BitcoinUtilities.P2P
             if (incVerAckMessage.Command != BitcoinCommands.VerAck)
             {
                 //todo: handle correctly
-                throw new Exception("Remote endpoind did not send VerAck message.");
+                throw new BitcoinNetworkException("Remote endpoint did not send VerAck message.");
             }
 
             running = true;
@@ -137,6 +139,7 @@ namespace BitcoinUtilities.P2P
             while (running)
             {
                 BitcoinMessage message;
+                //todo: review exception handling
                 try
                 {
                     message = conn.ReadMessage();
@@ -146,9 +149,14 @@ namespace BitcoinUtilities.P2P
                     //todo: this happens when endpoint is disposed, can it happen for other reasons?
                     return;
                 }
-                catch (IOException)
+                catch (BitcoinNetworkException)
                 {
                     //todo: this happens when endpoint is disposed, can it happen for other reasons?
+                    return;
+                }
+                catch (IOException)
+                {
+                    //todo: this was happening before BitcoinNetworkException was introduced when endpoint was disposed, can it happen for other reasons?
                     return;
                 }
                 if (!threadPool.Execute(() => HandleMessage(message), MessageProcessingStartTimeout))

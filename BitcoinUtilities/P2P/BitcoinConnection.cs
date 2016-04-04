@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Security.Cryptography;
@@ -66,16 +67,22 @@ namespace BitcoinUtilities.P2P
         /// </summary>
         /// <param name="host">The DNS name of the remote host.</param>
         /// <param name="port">The port number of the remote host.</param>
-        /// <exception cref="SocketException">Connection failed.</exception>
+        /// <exception cref="BitcoinNetworkException">Connection failed.</exception>
         public void Connect(string host, int port)
         {
             if (client != null)
             {
-                //todo: specify exception
-                throw new Exception("A connection was already established.");
+                throw new BitcoinNetworkException("A connection was already established.");
             }
 
-            client = new TcpClient(host, port);
+            try
+            {
+                client = new TcpClient(host, port);
+            }
+            catch (SocketException e)
+            {
+                throw new BitcoinNetworkException("Connection failed.", e);
+            }
 
             //todo: also implement this in BitcoinConnectionListener
             client.Client.ReceiveBufferSize = 32*1024*1024;
@@ -122,7 +129,7 @@ namespace BitcoinUtilities.P2P
                 if (commandBytes.Length > MaxCommandLength)
                 {
                     //todo: handle correctly
-                    throw new Exception(string.Format("Command length ({0}) exeeds maximum command length ({1}).", commandBytes.Length, MaxCommandLength));
+                    throw new BitcoinNetworkException($"Command length ({commandBytes.Length}) exeeds maximum command length ({MaxCommandLength}).");
                 }
 
                 byte[] header = new byte[MessageHeaderLength];
@@ -199,7 +206,7 @@ namespace BitcoinUtilities.P2P
 
             if (logger.IsTraceEnabled)
             {
-                logger.Trace("Recieved message: {0}", FormatForLog(message));
+                logger.Trace("Received message: {0}", FormatForLog(message));
             }
 
             return message;
@@ -211,7 +218,15 @@ namespace BitcoinUtilities.P2P
             int bytesRead = 0;
             while (bytesRead < count)
             {
-                bytesRead += stream.Read(res, bytesRead, count - bytesRead);
+                try
+                {
+                    bytesRead += stream.Read(res, bytesRead, count - bytesRead);
+                }
+                catch (IOException e)
+                {
+                    //todo: test if write methods also require exception wrapping
+                    throw new BitcoinNetworkException("Cannot read bytes from the network stream.", e);
+                }
             }
             return res;
         }

@@ -1,4 +1,6 @@
-﻿namespace BitcoinUtilities.GUI.ViewModels
+﻿using BitcoinUtilities.Node;
+
+namespace BitcoinUtilities.GUI.ViewModels
 {
     public class ApplicationContext
     {

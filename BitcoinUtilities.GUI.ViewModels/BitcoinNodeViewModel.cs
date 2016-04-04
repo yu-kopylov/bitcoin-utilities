@@ -1,6 +1,7 @@
 ﻿using System;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using BitcoinUtilities.Node;
 using BitcoinUtilities.Storage;
 
 namespace BitcoinUtilities.GUI.ViewModels
@@ -105,7 +106,7 @@ namespace BitcoinUtilities.GUI.ViewModels
 
         private void OnNodePropertyChanged(object sender, PropertyChangedEventArgs args)
         {
-            UpdateValues();
+            viewContext.Invoke(UpdateValues);
         }
 
         private void UpdateValues()

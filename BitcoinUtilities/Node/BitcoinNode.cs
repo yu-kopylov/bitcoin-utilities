@@ -1,13 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.ComponentModel;
-using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Runtime.CompilerServices;
+using System.Threading;
 using BitcoinUtilities.P2P;
 
-namespace BitcoinUtilities
+namespace BitcoinUtilities.Node
 {
     /// <summary>
     /// Represents a bitcoin node that can interact with other nodes on the network.
@@ -17,6 +16,7 @@ namespace BitcoinUtilities
         private readonly IBlockChainStorage storage;
 
         private BitcoinConnectionListener listener;
+        private NodeDiscoveryThread nodeDiscoveryThread;
 
         private readonly List<BitcoinEndpoint> endpoints = new List<BitcoinEndpoint>();
 
@@ -57,28 +57,21 @@ namespace BitcoinUtilities
 
         public void Start()
         {
-            //todo: discover own external address
-            //todo: discover seeds
+            //todo: discover own external address? (it seems useless without external port)
             //todo: use setting to specify port and operating mode
             listener = new BitcoinConnectionListener(IPAddress.Any, 8333, HandleConnection);
             listener.Start();
-            Started = true;
 
-            //todo: add persistent collection of known nodes
-            List<IPAddress> nodeAddresses = DnsSeeds.GetNodeAddresses();
-            if (nodeAddresses.Any())
-            {
-                Random random = new Random();
-                for (int i = 0; i < 2; i++)
-                {
-                    //todo: don't connect to same node twice
-                    IPAddress selectedAddress = nodeAddresses[random.Next(nodeAddresses.Count)];
-                    ConnectTo(selectedAddress.ToString(), 8333);
-                }
-            }
+            nodeDiscoveryThread = new NodeDiscoveryThread(this);
+
+            Thread thread = new Thread(nodeDiscoveryThread.Run);
+            thread.IsBackground = true;
+            thread.Start();
+
+            Started = true;
         }
 
-        private void ConnectTo(string host, int port)
+        public void ConnectTo(string host, int port)
         {
             //todo: The construction of BitcoinEndpoint and BitcoinConnection is confusing. Both can use host and port.
             BitcoinEndpoint endpoint = new BitcoinEndpoint(HandleMessage);
@@ -87,11 +80,12 @@ namespace BitcoinUtilities
             {
                 endpoint.Connect(host, port);
             }
-            catch (SocketException)
+            catch (BitcoinNetworkException)
             {
                 //todo: log error?
                 return;
             }
+            //todo: close connection in node was stopped
             endpoints.Add(endpoint);
             OnPropertyChanged(nameof(endpoints));
         }
@@ -131,11 +125,18 @@ namespace BitcoinUtilities
                 listener = null;
             }
 
+            if (nodeDiscoveryThread != null)
+            {
+                nodeDiscoveryThread.Stop();
+                nodeDiscoveryThread = null;
+            }
+
             foreach (BitcoinEndpoint endpoint in endpoints)
             {
                 endpoint.Dispose();
             }
 
+            //todo: instead remove endpoints on disconnection
             endpoints.Clear();
             OnPropertyChanged(nameof(endpoints));
 
