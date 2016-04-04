@@ -23,20 +23,6 @@ namespace BitcoinUtilities.GUI.Views
         public BitcoinNodeViewModel BitcoinNode { get; set; }
         public PaperWalletViewModel PaperWallet { get; set; }
 
-        public ICommand ShowBip38EncoderDialog
-        {
-            get
-            {
-                return new Command((sender, e) =>
-                {
-                    using (var dialog = new Bip38EncoderDialog())
-                    {
-                        dialog.ShowModal();
-                    }
-                });
-            }
-        }
-
         public ICommand ShowBioRandomDialog
         {
             get

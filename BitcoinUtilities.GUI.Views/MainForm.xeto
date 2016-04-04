@@ -9,8 +9,7 @@
   >
   <TabControl TabPosition="Left">
     <TabPage Text="Paper Wallet">
-      <StackLayout>
-        <Button Text="BIP-038 Encoder" Command="{Binding ShowBip38EncoderDialog}"/>
+      <StackLayout HorizontalContentAlignment="Stretch">
         <v:PaperWalletView DataContext="{Binding PaperWallet}"/>
       </StackLayout>
     </TabPage>
@@ -20,7 +19,7 @@
       </StackLayout>
     </TabPage>
     <TabPage Text="Bitcoin Node">
-      <StackLayout>
+      <StackLayout HorizontalContentAlignment="Stretch">
         <v:BitcoinNodeView DataContext="{Binding BitcoinNode}"/>
       </StackLayout>
     </TabPage>

@@ -32,7 +32,7 @@
     </TableRow>
     <TableRow ScaleHeight="True">
       <TableCell>
-        <ImageView ID="QrCodeImage"/>
+        <ImageView ID="QrCodeImage" Height="350"/>
       </TableCell>
     </TableRow>
   </TableLayout>

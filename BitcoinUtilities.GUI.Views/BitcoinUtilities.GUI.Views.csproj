@@ -44,27 +44,14 @@
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
-    <Reference Include="System.Drawing" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
-    <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
-    <Reference Include="zxing, Version=0.14.0.0, Culture=neutral, PublicKeyToken=4e88037ac681fe60, processorArchitecture=MSIL">
-      <HintPath>..\packages\ZXing.Net.0.14.0.1\lib\net40\zxing.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="zxing.presentation, Version=0.14.0.0, Culture=neutral, PublicKeyToken=4e88037ac681fe60, processorArchitecture=MSIL">
-      <HintPath>..\packages\ZXing.Net.0.14.0.1\lib\net40\zxing.presentation.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="BioRandomDialog.xeto.cs">
       <DependentUpon>BioRandomDialog.xeto</DependentUpon>
-    </Compile>
-    <Compile Include="Bip38EncoderDialog.xeto.cs">
-      <DependentUpon>Bip38EncoderDialog.xeto</DependentUpon>
     </Compile>
     <Compile Include="BitcoinNodeView.xeto.cs">
       <DependentUpon>BitcoinNodeView.xeto</DependentUpon>
@@ -85,11 +72,6 @@
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="BioRandomDialog.xeto">
-      <SubType>Designer</SubType>
-    </EmbeddedResource>
-  </ItemGroup>
-  <ItemGroup>
-    <EmbeddedResource Include="Bip38EncoderDialog.xeto">
       <SubType>Designer</SubType>
     </EmbeddedResource>
   </ItemGroup>
