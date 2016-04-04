@@ -7,19 +7,21 @@
   Height="450"
   Title="Bitcoin Utilities"
   >
-  <TableLayout Padding="5" Spacing="5,5">
-    <TableRow>
-      <TableCell ScaleWidth="True">
+  <TabControl TabPosition="Left">
+    <TabPage Text="Paper Wallet">
+      <StackLayout>
         <Button Text="BIP-038 Encoder" Command="{Binding ShowBip38EncoderDialog}"/>
-      </TableCell>
-      <TableCell ScaleWidth="True">
+      </StackLayout>
+    </TabPage>
+    <TabPage Text="RNG">
+      <StackLayout>
         <Button Text="Generate Random" Command="{Binding ShowBioRandomDialog}"/>
-      </TableCell>
-    </TableRow>
-    <TableRow>
-      <TableCell ScaleWidth="True">
+      </StackLayout>
+    </TabPage>
+    <TabPage Text="Bitcoin Node">
+      <StackLayout>
         <v:BitcoinNodeView DataContext="{Binding BitcoinNode}"/>
-      </TableCell>
-    </TableRow>
-  </TableLayout>
+      </StackLayout>
+    </TabPage>
+  </TabControl>
 </Form>
