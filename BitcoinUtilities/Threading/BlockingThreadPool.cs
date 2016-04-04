@@ -36,11 +36,11 @@ namespace BitcoinUtilities.Threading
         {
             if (threadCount <= 0)
             {
-                throw new ArgumentException("Parameter threadCount should be greater than zero.", "threadCount");
+                throw new ArgumentException($"Parameter {nameof(threadCount)} should be greater than zero.", nameof(threadCount));
             }
             if (taskCountLimit < threadCount)
             {
-                throw new ArgumentException("Parameter taskCountLimit should be greater or equal to threadCount.", "taskCountLimit");
+                throw new ArgumentException($"Parameter {nameof(taskCountLimit)} should be greater or equal to {nameof(threadCount)}.", nameof(taskCountLimit));
             }
 
             taskQueue = new Queue<Action>(taskCountLimit);

@@ -13,8 +13,8 @@ namespace BitcoinUtilities
         private BinaryWriter writer;
         private Stopwatch stopwatch;
 
-        private float prevX;
-        private float prevY;
+        private float previousX;
+        private float previousY;
 
         private int entropy;
 
@@ -47,8 +47,8 @@ namespace BitcoinUtilities
                 writer.Write(stopwatch.ElapsedTicks);
 
                 entropy += 3;
-                prevX = x;
-                prevY = y;
+                previousX = x;
+                previousY = y;
             }
         }
 
@@ -69,14 +69,14 @@ namespace BitcoinUtilities
             writer = new BinaryWriter(hashSource);
             stopwatch = Stopwatch.StartNew();
             entropy = 0;
-            prevX = 0;
-            prevY = 0;
+            previousX = 0;
+            previousY = 0;
         }
 
         private float GetDistanceFromLastPoint(float x, float y)
         {
-            float distanceX = Math.Abs(x - prevX);
-            float distanceY = Math.Abs(y - prevY);
+            float distanceX = Math.Abs(x - previousX);
+            float distanceY = Math.Abs(y - previousY);
             return distanceX + distanceY;
         }
     }
