@@ -25,12 +25,15 @@ namespace Test.BitcoinUtilities.Collections
             Assert.That(dict.Count, Is.EqualTo(3));
             Assert.That(dict.Select(p => p.Key).ToList(), Is.EqualTo(new int[] {1, 2, 3}));
             Assert.That(dict.Select(p => p.Value).ToList(), Is.EqualTo(new string[] {"1", "2", "3"}));
+            Assert.That(dict.GetLast().Key, Is.EqualTo(3));
+            Assert.That(dict.GetLast().Value, Is.EqualTo("3"));
 
             dict.Clear();
 
             Assert.That(dict.Count, Is.EqualTo(0));
             Assert.That(dict.Select(p => p.Key).ToList(), Is.EqualTo(new int[] {}));
             Assert.That(dict.Select(p => p.Value).ToList(), Is.EqualTo(new string[] {}));
+            Assert.Throws<InvalidOperationException>(() => dict.GetLast());
 
             dict.Add(11, "11");
             dict.Add(12, "12");
@@ -106,12 +109,17 @@ namespace Test.BitcoinUtilities.Collections
             Assert.True(dict.ContainsKey(103));
             Assert.True(dict.ContainsKey(104));
             Assert.False(dict.ContainsKey(105));
+
+            Assert.That(dict.GetLast().Key, Is.EqualTo(14));
+            Assert.That(dict.GetLast().Value, Is.EqualTo("14"));
         }
 
         [Test]
         public void TestExceptions()
         {
             LinkedDictionary<string, string> dict = new LinkedDictionary<string, string>();
+
+            Assert.Throws<InvalidOperationException>(() => dict.GetLast());
 
             dict.Add("a", "a");
 
@@ -126,6 +134,10 @@ namespace Test.BitcoinUtilities.Collections
             Assert.Throws<KeyNotFoundException>(() => Console.WriteLine(dict["b"]));
 
             Assert.Throws<ArgumentNullException>(() => dict.ContainsKey(null));
+
+            dict.Remove("a");
+
+            Assert.Throws<InvalidOperationException>(() => dict.GetLast());
         }
 
         private class ModComparer : IEqualityComparer<int>

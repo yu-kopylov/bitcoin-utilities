@@ -41,6 +41,20 @@ namespace BitcoinUtilities.Collections
         }
 
         /// <summary>
+        /// Gets the last added element from the dictionary.
+        /// </summary>
+        /// <exception cref="InvalidOperationException">If the dictionary is empty.</exception>
+        public KeyValuePair<TKey, TValue> GetLast()
+        {
+            var lastNode = list.Last;
+            if (lastNode == null)
+            {
+                throw new InvalidOperationException("An attempt to get the last element from an empty dictionary.");
+            }
+            return lastNode.Value;
+        }
+
+        /// <summary>
         /// Gets or sets the value associated with the specified key.
         /// <para/>
         /// Does not change the order of enumeration.
