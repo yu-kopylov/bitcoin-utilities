@@ -14,36 +14,45 @@ namespace BitcoinUtilities.Node
         private const int TargetEnpointsCount = 8;
 
         private readonly BitcoinNode node;
-
-        private volatile bool running;
-        private volatile bool stopped;
+        private readonly CancellationToken cancellationToken;
 
         private readonly AutoResetEvent signalEvent = new AutoResetEvent(true);
+        private volatile bool started;
 
         private DateTime lastDnsSeedsLookup = DateTime.MinValue;
         private readonly HashSet<IPAddress> knownAddresses = new HashSet<IPAddress>();
 
-        public NodeDiscoveryThread(BitcoinNode node)
+        public NodeDiscoveryThread(BitcoinNode node, CancellationToken cancellationToken)
         {
             this.node = node;
+
+            cancellationToken.Register(Signal);
+            this.cancellationToken = cancellationToken;
         }
 
         public void Run()
         {
-            if (running || stopped)
+            if (started)
             {
-                //todo: specify exception
-                throw new Exception($"{nameof(NodeDiscoveryThread)} was already started once.");
+                throw new InvalidOperationException($"{nameof(NodeDiscoveryThread)} was already started once.");
             }
 
-            running = true;
-            while (running)
+            started = true;
+
+            while (!cancellationToken.IsCancellationRequested)
             {
-                signalEvent.WaitOne(stateRefreshInterval);
                 CheckDnsSeeds();
                 ConnectToNodes();
+                signalEvent.WaitOne(stateRefreshInterval);
             }
-            stopped = true;
+        }
+
+        /// <summary>
+        /// Signals thread to stop waiting and process changed state.
+        /// </summary>
+        public void Signal()
+        {
+            signalEvent.Set();
         }
 
         private void ConnectToNodes()
@@ -60,7 +69,7 @@ namespace BitcoinUtilities.Node
             //todo: avoid infinite loop if we all knownAddresses are either unreachable or already connected
             //todo: count only outgoing endpoints
             //todo: connect only to full nodes and check protocol version
-            while (running && node.Endpoints.Count < TargetEnpointsCount && knownAddressesList.Any())
+            while (!cancellationToken.IsCancellationRequested && node.Endpoints.Count < TargetEnpointsCount && knownAddressesList.Any())
             {
                 //todo: don't connect to same node twice
                 IPAddress selectedAddress = knownAddressesList[random.Next(knownAddressesList.Count)];
@@ -89,12 +98,6 @@ namespace BitcoinUtilities.Node
                 //todo: add persistent collection of known nodes
                 knownAddresses.Add(address);
             }
-        }
-
-        public void Stop()
-        {
-            running = true;
-            signalEvent.Set();
         }
     }
 }

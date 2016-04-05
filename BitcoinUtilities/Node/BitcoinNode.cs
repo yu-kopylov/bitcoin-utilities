@@ -1,7 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.ComponentModel;
 using System.Net;
-using System.Net.Sockets;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using BitcoinUtilities.P2P;
@@ -20,6 +19,7 @@ namespace BitcoinUtilities.Node
 
         private readonly List<BitcoinEndpoint> endpoints = new List<BitcoinEndpoint>();
 
+        private readonly CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
         private bool started;
 
         public BitcoinNode(IBlockChainStorage storage)
@@ -62,7 +62,7 @@ namespace BitcoinUtilities.Node
             listener = new BitcoinConnectionListener(IPAddress.Any, 8333, HandleConnection);
             listener.Start();
 
-            nodeDiscoveryThread = new NodeDiscoveryThread(this);
+            nodeDiscoveryThread = new NodeDiscoveryThread(this, cancellationTokenSource.Token);
 
             Thread thread = new Thread(nodeDiscoveryThread.Run);
             thread.IsBackground = true;
@@ -85,9 +85,17 @@ namespace BitcoinUtilities.Node
                 //todo: log error?
                 return;
             }
-            //todo: close connection in node was stopped
-            endpoints.Add(endpoint);
-            OnPropertyChanged(nameof(endpoints));
+            //todo: there is a race condition here between Stop command and adding endpoints
+            if (cancellationTokenSource.IsCancellationRequested)
+            {
+                endpoint.Dispose();
+            }
+            else
+            {
+                //todo: close connection in node was stopped
+                endpoints.Add(endpoint);
+                OnPropertyChanged(nameof(endpoints));
+            }
         }
 
         private void HandleConnection(BitcoinConnection connection)
@@ -119,16 +127,11 @@ namespace BitcoinUtilities.Node
                 return;
             }
 
+            cancellationTokenSource.Cancel();
+
             if (listener != null)
             {
                 listener.Stop();
-                listener = null;
-            }
-
-            if (nodeDiscoveryThread != null)
-            {
-                nodeDiscoveryThread.Stop();
-                nodeDiscoveryThread = null;
             }
 
             foreach (BitcoinEndpoint endpoint in endpoints)
