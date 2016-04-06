@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace BitcoinUtilities.Node
 {
@@ -27,7 +28,7 @@ namespace BitcoinUtilities.Node
         private readonly LimitedNodeAddressDictionary confirmed = new LimitedNodeAddressDictionary(MaxConfirmedAddressesCount, confirmedTimeout);
         private readonly LimitedNodeAddressDictionary temporaryRejected = new LimitedNodeAddressDictionary(MaxTemporaryRejectedAddressesCount, temporaryRejectedTimeout);
 
-        public object GetNewestUntested(int count)
+        public List<NodeAddress> GetNewestUntested(int count)
         {
             lock (lockObject)
             {
@@ -35,7 +36,7 @@ namespace BitcoinUtilities.Node
             }
         }
 
-        public object GetOldestRejected(int count)
+        public List<NodeAddress> GetOldestRejected(int count)
         {
             lock (lockObject)
             {
@@ -43,7 +44,7 @@ namespace BitcoinUtilities.Node
             }
         }
 
-        public object GetNewestBanned(int count)
+        public List<NodeAddress> GetNewestBanned(int count)
         {
             lock (lockObject)
             {
@@ -51,7 +52,7 @@ namespace BitcoinUtilities.Node
             }
         }
 
-        public object GetNewestConfirmed(int count)
+        public List<NodeAddress> GetNewestConfirmed(int count)
         {
             lock (lockObject)
             {
@@ -59,7 +60,7 @@ namespace BitcoinUtilities.Node
             }
         }
 
-        public object GetOldestTemporaryRejected(int count)
+        public List<NodeAddress> GetOldestTemporaryRejected(int count)
         {
             lock (lockObject)
             {
@@ -67,7 +68,7 @@ namespace BitcoinUtilities.Node
             }
         }
 
-        public void AddAddress(NodeAddress address)
+        public void Add(NodeAddress address)
         {
             lock (lockObject)
             {

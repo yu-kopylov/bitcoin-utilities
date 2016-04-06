@@ -14,6 +14,8 @@ namespace BitcoinUtilities.Node
     {
         private readonly IBlockChainStorage storage;
 
+        private NodeAddressCollection addressCollection;
+
         private BitcoinConnectionListener listener;
         private NodeDiscoveryThread nodeDiscoveryThread;
 
@@ -25,6 +27,11 @@ namespace BitcoinUtilities.Node
         public BitcoinNode(IBlockChainStorage storage)
         {
             this.storage = storage;
+        }
+
+        public NodeAddressCollection AddressCollection
+        {
+            get { return addressCollection; }
         }
 
         public bool Started
@@ -57,6 +64,8 @@ namespace BitcoinUtilities.Node
 
         public void Start()
         {
+            addressCollection = new NodeAddressCollection();
+
             //todo: discover own external address? (it seems useless without external port)
             //todo: use setting to specify port and operating mode
             listener = new BitcoinConnectionListener(IPAddress.Any, 8333, HandleConnection);
@@ -71,31 +80,36 @@ namespace BitcoinUtilities.Node
             Started = true;
         }
 
-        public void ConnectTo(string host, int port)
+        public void ConnectTo(NodeAddress address)
         {
             //todo: The construction of BitcoinEndpoint and BitcoinConnection is confusing. Both can use host and port.
             BitcoinEndpoint endpoint = new BitcoinEndpoint(HandleMessage);
             //todo: describe and handle exceptions
             try
             {
-                endpoint.Connect(host, port);
+                endpoint.Connect(address.Address.ToString(), address.Port);
             }
             catch (BitcoinNetworkException)
             {
+                addressCollection.Reject(address);
                 //todo: log error?
                 return;
             }
+
             //todo: there is a race condition here between Stop command and adding endpoints
             if (cancellationTokenSource.IsCancellationRequested)
             {
                 endpoint.Dispose();
+                return;
             }
-            else
-            {
-                //todo: close connection in node was stopped
-                endpoints.Add(endpoint);
-                OnPropertyChanged(nameof(endpoints));
-            }
+
+            //todo: wait for nodeDiscoveryThread to stop and dispose it
+
+            //todo: check if remote node is an SPV
+            addressCollection.Confirm(address);
+
+            endpoints.Add(endpoint);
+            OnPropertyChanged(nameof(endpoints));
         }
 
         private void HandleConnection(BitcoinConnection connection)
