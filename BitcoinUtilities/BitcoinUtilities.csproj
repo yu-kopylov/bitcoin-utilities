@@ -55,6 +55,8 @@
     <Compile Include="BioRandom.cs" />
     <Compile Include="Bip38.cs" />
     <Compile Include="BitcoinAddress.cs" />
+    <Compile Include="Node\LimitedNodeAddressDictionary.cs" />
+    <Compile Include="Node\NodeAddressCollection.cs" />
     <Compile Include="Node\BitcoinNode.cs" />
     <Compile Include="BitcoinPrivateKey.cs" />
     <Compile Include="Collections\CompactTree.cs" />
@@ -69,6 +71,7 @@
     <Compile Include="Collections\VirtualDictionaryInternals\VirtualDictionaryContainer.cs" />
     <Compile Include="Collections\VirtualDictionaryTransaction.cs" />
     <Compile Include="IBlockChainStorage.cs" />
+    <Compile Include="Node\NodeAddress.cs" />
     <Compile Include="Node\NodeDiscoveryThread.cs" />
     <Compile Include="P2P\BitcoinNetworkException.cs" />
     <Compile Include="P2P\DnsSeeds.cs" />

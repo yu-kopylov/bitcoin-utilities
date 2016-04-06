@@ -49,6 +49,8 @@
     <Compile Include="Collections\TestCompactTreeNode.cs" />
     <Compile Include="Collections\TestLinkedDictionary.cs" />
     <Compile Include="Collections\VirtualDictionaryInternals\TestAtomicStream.cs" />
+    <Compile Include="Node\TestLimitedNodeAddressDictionary.cs" />
+    <Compile Include="Node\TestNodeAddressCollection.cs" />
     <Compile Include="P2P\Messages\TestTxMessage.cs" />
     <Compile Include="P2P\Messages\TestBlockMessage.cs" />
     <Compile Include="P2P\Messages\TestGetDataMessage.cs" />
