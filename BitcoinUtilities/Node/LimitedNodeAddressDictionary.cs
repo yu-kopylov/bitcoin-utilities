@@ -20,13 +20,13 @@ namespace BitcoinUtilities.Node
 
         public List<NodeAddress> GetOldest(int count)
         {
-            Truncate(GetDateTime());
+            Truncate(SystemTime.UtcNow);
             return addresses.Take(count).Select(p => p.Key).ToList();
         }
 
         public List<NodeAddress> GetNewest(int count)
         {
-            Truncate(GetDateTime());
+            Truncate(SystemTime.UtcNow);
             int skipCount = addresses.Count - count;
             List<NodeAddress> res = addresses.Skip(skipCount).Select(p => p.Key).ToList();
             res.Reverse();
@@ -35,13 +35,13 @@ namespace BitcoinUtilities.Node
 
         public bool ContainsKey(NodeAddress address)
         {
-            Truncate(GetDateTime());
+            Truncate(SystemTime.UtcNow);
             return addresses.ContainsKey(address);
         }
 
         public void Add(NodeAddress address)
         {
-            DateTime now = GetDateTime();
+            DateTime now = SystemTime.UtcNow;
 
             addresses.Remove(address);
 
@@ -55,11 +55,6 @@ namespace BitcoinUtilities.Node
         public bool Remove(NodeAddress address)
         {
             return addresses.Remove(address);
-        }
-
-        internal virtual DateTime GetDateTime()
-        {
-            return DateTime.UtcNow;
         }
 
         private void FixFutureDates(DateTime now)

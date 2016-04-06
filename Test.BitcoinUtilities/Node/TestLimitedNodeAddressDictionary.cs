@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Net;
+using BitcoinUtilities;
 using BitcoinUtilities.Node;
 using NUnit.Framework;
 
@@ -83,20 +84,20 @@ namespace Test.BitcoinUtilities.Node
         [Test]
         public void TestTimeout()
         {
-            PatchedLimitedNodeAddressDictionary dict = new PatchedLimitedNodeAddressDictionary(3, TimeSpan.FromMinutes(20));
+            LimitedNodeAddressDictionary dict = new LimitedNodeAddressDictionary(3, TimeSpan.FromMinutes(20));
 
             DateTime baseTime = DateTime.UtcNow;
-            dict.SetDateTime(baseTime);
+            SystemTime.Override(baseTime);
 
             dict.Add(new NodeAddress(IPAddress.Parse("192.168.0.1"), 8333));
             dict.Add(new NodeAddress(IPAddress.Parse("192.168.0.2"), 8333));
 
-            dict.SetDateTime(baseTime.AddMinutes(5));
+            SystemTime.Override(baseTime.AddMinutes(5));
 
             dict.Add(new NodeAddress(IPAddress.Parse("192.168.0.3"), 8333));
             dict.Add(new NodeAddress(IPAddress.Parse("192.168.0.4"), 8333));
 
-            dict.SetDateTime(baseTime.AddMinutes(10));
+            SystemTime.Override(baseTime.AddMinutes(10));
 
             Assert.That(dict.GetOldest(5), Is.EqualTo(new List<NodeAddress>
             {
@@ -105,7 +106,7 @@ namespace Test.BitcoinUtilities.Node
                 new NodeAddress(IPAddress.Parse("192.168.0.4"), 8333)
             }));
 
-            dict.SetDateTime(baseTime.AddMinutes(22));
+            SystemTime.Override(baseTime.AddMinutes(22));
 
             Assert.That(dict.GetOldest(5), Is.EqualTo(new List<NodeAddress>
             {
@@ -113,7 +114,7 @@ namespace Test.BitcoinUtilities.Node
                 new NodeAddress(IPAddress.Parse("192.168.0.4"), 8333)
             }));
 
-            dict.SetDateTime(baseTime.AddMinutes(27));
+            SystemTime.Override(baseTime.AddMinutes(27));
 
             Assert.That(dict.GetOldest(5), Is.EqualTo(new List<NodeAddress>()));
         }
@@ -121,23 +122,23 @@ namespace Test.BitcoinUtilities.Node
         [Test]
         public void TestTimeInFuture()
         {
-            PatchedLimitedNodeAddressDictionary dict = new PatchedLimitedNodeAddressDictionary(3, TimeSpan.FromMinutes(20));
+            LimitedNodeAddressDictionary dict = new LimitedNodeAddressDictionary(3, TimeSpan.FromMinutes(20));
 
             DateTime baseTime = DateTime.UtcNow;
-            dict.SetDateTime(baseTime);
+            SystemTime.Override(baseTime);
 
             dict.Add(new NodeAddress(IPAddress.Parse("192.168.0.1"), 8333));
             dict.Add(new NodeAddress(IPAddress.Parse("192.168.0.2"), 8333));
 
-            dict.SetDateTime(baseTime.AddMinutes(10));
+            SystemTime.Override(baseTime.AddMinutes(10));
 
             dict.Add(new NodeAddress(IPAddress.Parse("192.168.0.3"), 8333));
 
-            dict.SetDateTime(baseTime.AddMinutes(5));
+            SystemTime.Override(baseTime.AddMinutes(5));
 
             dict.Add(new NodeAddress(IPAddress.Parse("192.168.0.4"), 8333));
 
-            dict.SetDateTime(baseTime.AddMinutes(10));
+            SystemTime.Override(baseTime.AddMinutes(10));
 
             Assert.That(dict.GetOldest(5), Is.EqualTo(new List<NodeAddress>
             {
@@ -146,7 +147,7 @@ namespace Test.BitcoinUtilities.Node
                 new NodeAddress(IPAddress.Parse("192.168.0.4"), 8333)
             }));
 
-            dict.SetDateTime(baseTime.AddMinutes(22));
+            SystemTime.Override(baseTime.AddMinutes(22));
 
             Assert.That(dict.GetOldest(5), Is.EqualTo(new List<NodeAddress>
             {
@@ -154,24 +155,9 @@ namespace Test.BitcoinUtilities.Node
                 new NodeAddress(IPAddress.Parse("192.168.0.4"), 8333)
             }));
 
-            dict.SetDateTime(baseTime.AddMinutes(27));
+            SystemTime.Override(baseTime.AddMinutes(27));
 
             Assert.That(dict.GetOldest(5), Is.EqualTo(new List<NodeAddress>()));
-        }
-
-        [Test]
-        public void TestTimeSource()
-        {
-            LimitedNodeAddressDictionary dict = new LimitedNodeAddressDictionary(1, TimeSpan.FromMinutes(1));
-
-            DateTime time1 = DateTime.UtcNow;
-            DateTime time2 = dict.GetDateTime();
-            DateTime time3 = DateTime.UtcNow;
-
-            Assert.That(time2.Kind, Is.EqualTo(DateTimeKind.Utc));
-
-            Assert.That(time2, Is.GreaterThanOrEqualTo(time1));
-            Assert.That(time2, Is.LessThanOrEqualTo(time3));
         }
 
         [Test]
@@ -186,25 +172,6 @@ namespace Test.BitcoinUtilities.Node
 
             Assert.That(dict.GetOldest(-1), Is.EqualTo(new List<NodeAddress>()));
             Assert.That(dict.GetNewest(-1), Is.EqualTo(new List<NodeAddress>()));
-        }
-
-        private class PatchedLimitedNodeAddressDictionary : LimitedNodeAddressDictionary
-        {
-            private DateTime dateTime = DateTime.UtcNow;
-
-            public PatchedLimitedNodeAddressDictionary(int maxAddressCount, TimeSpan timeout) : base(maxAddressCount, timeout)
-            {
-            }
-
-            internal override DateTime GetDateTime()
-            {
-                return dateTime;
-            }
-
-            public void SetDateTime(DateTime newDateTime)
-            {
-                this.dateTime = newDateTime;
-            }
         }
     }
 }

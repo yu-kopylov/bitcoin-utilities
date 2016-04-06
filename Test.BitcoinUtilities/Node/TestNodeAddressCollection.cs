@@ -1,5 +1,7 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Net;
+using BitcoinUtilities;
 using BitcoinUtilities.Node;
 using NUnit.Framework;
 
@@ -8,6 +10,12 @@ namespace Test.BitcoinUtilities.Node
     [TestFixture]
     public class TestNodeAddressCollection
     {
+        [TearDown]
+        public void TearDown()
+        {
+            SystemTime.Reset();
+        }
+
         [Test]
         public void TestUnknownAddress()
         {
@@ -213,6 +221,33 @@ namespace Test.BitcoinUtilities.Node
             Assert.That(addressCollection.GetNewestBanned(10), Is.EqualTo(new List<NodeAddress> {address3}));
             Assert.That(addressCollection.GetNewestConfirmed(10), Is.EqualTo(new List<NodeAddress> {address4}));
             Assert.That(addressCollection.GetOldestTemporaryRejected(10), Is.EqualTo(new List<NodeAddress> {address1, address2, address0}));
+        }
+
+        [Test]
+        public void TestAddOutdated()
+        {
+            NodeAddressCollection addressCollection = new NodeAddressCollection();
+
+            NodeAddress address1 = new NodeAddress(IPAddress.Parse("192.168.0.1"), 8333);
+            NodeAddress address2 = new NodeAddress(IPAddress.Parse("192.168.0.2"), 8333);
+
+            DateTime baseDate = DateTime.UtcNow;
+
+            addressCollection.Add(address1);
+            addressCollection.Add(address2);
+
+            addressCollection.Reject(address1);
+            addressCollection.Reject(address2);
+
+            Assert.That(addressCollection.GetNewestUntested(10), Is.EqualTo(new List<NodeAddress>()));
+            Assert.That(addressCollection.GetOldestRejected(10), Is.EqualTo(new List<NodeAddress> {address1, address2}));
+
+            SystemTime.Override(baseDate.AddMonths(1));
+
+            addressCollection.Add(address2);
+
+            Assert.That(addressCollection.GetNewestUntested(10), Is.EqualTo(new List<NodeAddress> {address2}));
+            Assert.That(addressCollection.GetOldestRejected(10), Is.EqualTo(new List<NodeAddress>()));
         }
     }
 }
