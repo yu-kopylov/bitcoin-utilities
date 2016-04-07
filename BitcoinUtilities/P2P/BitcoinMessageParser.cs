@@ -7,17 +7,19 @@ namespace BitcoinUtilities.P2P
 {
     public class BitcoinMessageParser
     {
-        private static readonly Dictionary<string, Func<BitcoinStreamReader, IBitcoinMessage>> messageReadMethods = new Dictionary<string, Func<BitcoinStreamReader, IBitcoinMessage>>();
+        private static readonly Dictionary<string, Func<BitcoinStreamReader, IBitcoinMessage>> messageReadMethods =
+            new Dictionary<string, Func<BitcoinStreamReader, IBitcoinMessage>>();
 
         static BitcoinMessageParser()
         {
-            messageReadMethods.Add(VersionMessage.Command, VersionMessage.Read);
             messageReadMethods.Add(BlockMessage.Command, BlockMessage.Read);
             messageReadMethods.Add(GetBlocksMessage.Command, GetBlocksMessage.Read);
             messageReadMethods.Add(GetDataMessage.Command, GetDataMessage.Read);
             messageReadMethods.Add(GetHeadersMessage.Command, GetHeadersMessage.Read);
             messageReadMethods.Add(InvMessage.Command, InvMessage.Read);
             messageReadMethods.Add(MerkleBlockMessage.Command, MerkleBlockMessage.Read);
+            messageReadMethods.Add(RejectMessage.Command, RejectMessage.Read);
+            messageReadMethods.Add(VersionMessage.Command, VersionMessage.Read);
         }
 
         public static IBitcoinMessage Parse(BitcoinMessage message)

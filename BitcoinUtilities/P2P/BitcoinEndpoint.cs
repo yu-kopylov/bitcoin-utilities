@@ -1,6 +1,5 @@
 ﻿using System;
 using System.IO;
-using System.Linq;
 using System.Net;
 using System.Threading;
 using BitcoinUtilities.P2P.Messages;
@@ -179,7 +178,9 @@ namespace BitcoinUtilities.P2P
                 if (!threadPool.Execute(() => HandleMessage(message), MessageProcessingStartTimeout))
                 {
                     //todo: terminate connection?
-                    logger.Warn("Message was ignored because all threads were busy (command: {0}, payload: {1} byte(s)).", message.Command,
+                    logger.Warn(
+                        "Message was ignored because all threads were busy (command: {0}, payload: {1} byte(s)).",
+                        message.Command,
                         message.Payload.Length);
                 }
             }
@@ -197,7 +198,9 @@ namespace BitcoinUtilities.P2P
             {
                 if (message.Payload.Length != 8)
                 {
-                    conn.WriteMessage(CreateRejectMessage(message, BitcoinMessageRejectReason.Malformed,
+                    WriteMessage(new RejectMessage(
+                        message.Command,
+                        RejectMessage.RejectReason.Malformed,
                         "The Ping command payload should have a length of 8 bytes."));
                     return;
                 }
@@ -207,7 +210,7 @@ namespace BitcoinUtilities.P2P
                 return;
             }
 
-            if (message.Command == BitcoinCommands.Reject)
+            if (message.Command == RejectMessage.Command)
             {
                 //todo: stop endpoint / allow messageHandler to process it (be careful of reject message loop)?
                 return;
@@ -223,26 +226,15 @@ namespace BitcoinUtilities.P2P
 
             if (messageHandler == null || !messageHandler(this, parsedMessage))
             {
-                conn.WriteMessage(CreateRejectMessage(message, BitcoinMessageRejectReason.Malformed, "Unknown command."));
+                WriteMessage(new RejectMessage(message.Command, RejectMessage.RejectReason.Malformed, "Unknown command."));
             }
-        }
-
-        private BitcoinMessage CreateRejectMessage(BitcoinMessage originalMessage, BitcoinMessageRejectReason rejectReason, string rejectReasonText)
-        {
-            MemoryStream mem = new MemoryStream();
-
-            BitcoinMessageUtils.AppendText(mem, originalMessage.Command);
-            BitcoinMessageUtils.AppendByte(mem, (byte) rejectReason);
-            BitcoinMessageUtils.AppendText(mem, rejectReasonText);
-
-            return new BitcoinMessage(BitcoinCommands.Reject, mem.ToArray());
         }
 
         private VersionMessage CreateVersionMessage()
         {
             long timestamp = GetUnixTimestamp();
             IPEndPoint remoteEndPoint = conn.RemoteEndPoint;
-            IPEndPoint localEndPoint = conn.LocalEndPoint; //todo: should it always be a public address
+            IPEndPoint localEndPoint = conn.LocalEndPoint; //todo: should it always be a public address ?
 
             VersionMessage message = new VersionMessage(
                 UserAgent,
@@ -273,23 +265,10 @@ namespace BitcoinUtilities.P2P
     /// <returns>true if the given message is supported; otherwise, false.</returns>
     public delegate bool BitcoinMessageHandler(BitcoinEndpoint endpoint, IBitcoinMessage message);
 
-    public enum BitcoinMessageRejectReason
-    {
-        Malformed = 0x01,
-        Invalid = 0x10,
-        Obsolete = 0x11,
-        Duplicate = 0x12,
-        Nonstandard = 0x40,
-        Dust = 0x41,
-        InsufficientFee = 0x42,
-        Checkpoint = 0x43
-    }
-
     public static class BitcoinCommands
     {
         public static readonly string VerAck = "verack";
         public static readonly string Ping = "ping";
         public static readonly string Pong = "pong";
-        public static readonly string Reject = "reject";
     }
 }
