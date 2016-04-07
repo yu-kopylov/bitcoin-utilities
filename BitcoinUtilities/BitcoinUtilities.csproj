@@ -74,7 +74,9 @@
     <Compile Include="Node\NodeAddress.cs" />
     <Compile Include="Node\NodeDiscoveryThread.cs" />
     <Compile Include="P2P\BitcoinNetworkException.cs" />
+    <Compile Include="P2P\BitcoinPeerInfo.cs" />
     <Compile Include="P2P\DnsSeeds.cs" />
+    <Compile Include="P2P\Messages\VersionMessage.cs" />
     <Compile Include="Secp256K1Curve.cs" />
     <Compile Include="SecureRandomSeedGenerator.cs" />
     <Compile Include="Scripts\BitcoinScript.cs" />

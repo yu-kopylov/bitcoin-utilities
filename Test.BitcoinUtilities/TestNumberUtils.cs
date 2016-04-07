@@ -7,9 +7,19 @@ namespace Test.BitcoinUtilities
     public class TestNumberUtils
     {
         [Test]
-        public void TestReverseBytes()
+        public void TestReverseBytesUShort()
         {
-            Assert.That(NumberUtils.ReverseBytes(0x12345678), Is.EqualTo(0x78563412));
+            Assert.That(NumberUtils.ReverseBytes((ushort) 0x1234), Is.EqualTo(0x3412));
+            Assert.That(NumberUtils.ReverseBytes((ushort) 0xFF00), Is.EqualTo(0x00FF));
+            Assert.That(NumberUtils.ReverseBytes((ushort) 0x00FF), Is.EqualTo(0xFF00));
+        }
+
+        [Test]
+        public void TestReverseBytesUInt()
+        {
+            Assert.That(NumberUtils.ReverseBytes((uint) 0x12345678), Is.EqualTo(0x78563412));
+            Assert.That(NumberUtils.ReverseBytes((uint) 0xFFFF0000), Is.EqualTo(0x0000FFFF));
+            Assert.That(NumberUtils.ReverseBytes((uint) 0x0000FFFF), Is.EqualTo(0xFFFF0000));
         }
 
         [Test]

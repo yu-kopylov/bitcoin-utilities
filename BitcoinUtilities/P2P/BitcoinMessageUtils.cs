@@ -4,6 +4,7 @@ using System.Text;
 
 namespace BitcoinUtilities.P2P
 {
+    //todo: replace with BitcoinStreamWriter
     public static class BitcoinMessageUtils
     {
         public static void AppendBool(MemoryStream stream, bool value)

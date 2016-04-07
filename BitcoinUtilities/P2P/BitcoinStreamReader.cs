@@ -10,6 +10,18 @@ namespace BitcoinUtilities.P2P
         {
         }
 
+        /// <summary>
+        /// Reads a two-byte unsigned integer in a big-endian encoding.
+        /// </summary>
+        public ushort ReadUInt16BigEndian()
+        {
+            ushort value = ReadUInt16();
+            return NumberUtils.ReverseBytes(value);
+        }
+
+        /// <summary>
+        /// Reads a four-byte signed integer in a big-endian encoding.
+        /// </summary>
         public int ReadInt32BigEndian()
         {
             uint value = ReadUInt32();
@@ -17,7 +29,7 @@ namespace BitcoinUtilities.P2P
         }
 
         /// <summary>
-        /// Reads variable length integer.
+        /// Reads a variable length integer.
         /// </summary>
         public ulong ReadUInt64Compact()
         {
@@ -41,19 +53,21 @@ namespace BitcoinUtilities.P2P
             return ReadUInt64();
         }
 
+        /// <summary>
+        /// Reads an array of objects prefixed with the count of objects in a variable length integer format.
+        /// </summary>
+        /// <exception cref="IOException">If the received array has more than <see cref="maxElements"/> elements.</exception>
         public T[] ReadArray<T>(int maxElements, Func<BitcoinStreamReader, T> readMethod)
         {
             ulong elementCountLong = ReadUInt64Compact();
             if (elementCountLong > int.MaxValue)
             {
-                //todo: handle correctly
-                throw new Exception("Too many elements in array.");
+                throw new IOException($"Received an array with too many elements ({elementCountLong} elements).");
             }
             int elementCount = (int) elementCountLong;
             if (elementCount > maxElements)
             {
-                //todo: handle correctly
-                throw new Exception("Too many elements in array.");
+                throw new IOException($"Received an array with too many elements ({elementCountLong} elements).");
             }
             T[] result = new T[elementCount];
             for (int i = 0; i < elementCount; i++)
@@ -61,6 +75,27 @@ namespace BitcoinUtilities.P2P
                 result[i] = readMethod(this);
             }
             return result;
+        }
+
+        /// <summary>
+        /// Reads a length-prefixed string in the ASCII encoding.
+        /// The length of the string should be a variable length integer.
+        /// </summary>
+        /// <exception cref="IOException">If the received string is longer than <see cref="maxLength"/>.</exception>
+        public string ReadText(int maxLength)
+        {
+            ulong length = ReadUInt64Compact();
+            if (length > int.MaxValue)
+            {
+                throw new IOException($"A received string is too long ({length} bytes).");
+            }
+            int intLength = (int) length;
+            if (intLength > maxLength)
+            {
+                throw new IOException($"A received string is too long ({length} bytes).");
+            }
+            byte[] bytes = ReadBytes(intLength);
+            return Encoding.ASCII.GetString(bytes);
         }
     }
 }

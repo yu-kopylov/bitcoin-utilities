@@ -3,7 +3,16 @@
     public static class NumberUtils
     {
         /// <summary>
-        /// Constructs a 4-byte unsigned integer with reverse a order of bytes in its binary representation.
+        /// Constructs a 2-byte unsigned integer with a reversed order of bytes in its binary representation.
+        /// </summary>
+        public static ushort ReverseBytes(ushort value)
+        {
+            value = (ushort) (value << 8 | value >> 8);
+            return value;
+        }
+
+        /// <summary>
+        /// Constructs a 4-byte unsigned integer with a reversed order of bytes in its binary representation.
         /// </summary>
         public static uint ReverseBytes(uint value)
         {

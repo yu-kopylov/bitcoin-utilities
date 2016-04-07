@@ -11,7 +11,16 @@ namespace BitcoinUtilities.P2P
         }
 
         /// <summary>
-        /// Reads variable length integer.
+        /// Writes a two-byte unsigned integer in a big-endian encoding.
+        /// </summary>
+        public void WriteBigEndian(ushort value)
+        {
+            value = NumberUtils.ReverseBytes(value);
+            Write(value);
+        }
+
+        /// <summary>
+        /// Writes variable length integer.
         /// </summary>
         public void WriteCompact(ulong value)
         {
@@ -36,13 +45,30 @@ namespace BitcoinUtilities.P2P
             }
         }
 
+        /// <summary>
+        /// Writes an array of objects prepending it with a count of objects in a variable length integer format.
+        /// </summary>
+        /// <typeparam name="T">The type of objects to be written.</typeparam>
+        /// <param name="values">The array of objects.</param>
+        /// <param name="writeMethod">A method that can write a single object to a stream.</param>
         public void WriteArray<T>(T[] values, Action<BitcoinStreamWriter, T> writeMethod)
         {
-            WriteCompact((ulong)values.Length);
+            WriteCompact((ulong) values.Length);
             foreach (T value in values)
             {
                 writeMethod(this, value);
             }
+        }
+
+        /// <summary>
+        /// Writes a length-prefixed string in the ASCII encoding.
+        /// The length of the string is written as a variable length integer.
+        /// </summary>
+        public void WriteText(string value)
+        {
+            byte[] bytes = Encoding.ASCII.GetBytes(value);
+            WriteCompact((ulong) bytes.Length);
+            Write(bytes, 0, bytes.Length);
         }
 
         public static byte[] GetBytes(Action<BitcoinStreamWriter> writeMethod)

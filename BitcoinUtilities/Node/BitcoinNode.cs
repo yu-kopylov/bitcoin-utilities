@@ -4,6 +4,7 @@ using System.Net;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using BitcoinUtilities.P2P;
+using BitcoinUtilities.P2P.Messages;
 
 namespace BitcoinUtilities.Node
 {
@@ -103,7 +104,13 @@ namespace BitcoinUtilities.Node
                 return;
             }
 
-            //todo: wait for nodeDiscoveryThread to stop and dispose it
+            if ((endpoint.PeerInfo.VersionMessage.Services & VersionMessage.ServiceNodeNetwork) == 0)
+            {
+                // outgoing connections ignore non-full nodes
+                addressCollection.Reject(address);
+                endpoint.Dispose();
+                return;
+            }
 
             //todo: check if remote node is an SPV
             addressCollection.Confirm(address);
@@ -152,6 +159,8 @@ namespace BitcoinUtilities.Node
             {
                 endpoint.Dispose();
             }
+
+            //todo: wait for nodeDiscoveryThread to stop and dispose it
 
             //todo: instead remove endpoints on disconnection
             endpoints.Clear();

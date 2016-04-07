@@ -1,7 +1,9 @@
 ﻿using System;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Threading;
+using BitcoinUtilities.P2P.Messages;
 using BitcoinUtilities.Threading;
 using NLog;
 
@@ -35,6 +37,8 @@ namespace BitcoinUtilities.P2P
         private const int MessageProcessingStartTimeout = 300000;
 
         private BitcoinConnection conn;
+        private BitcoinPeerInfo peerInfo;
+
         private Thread listenerThread;
         private BlockingThreadPool threadPool;
         private volatile bool running;
@@ -62,6 +66,11 @@ namespace BitcoinUtilities.P2P
         public int ProtocolVersion
         {
             get { return protocolVersion; }
+        }
+
+        public BitcoinPeerInfo PeerInfo
+        {
+            get { return peerInfo; }
         }
 
         /// <summary>
@@ -102,14 +111,20 @@ namespace BitcoinUtilities.P2P
 
         private void Start()
         {
-            BitcoinMessage outVersionMessage = CreateVersionMessage();
-            conn.WriteMessage(outVersionMessage);
+            VersionMessage outVersionMessage = CreateVersionMessage();
+            WriteMessage(outVersionMessage);
 
             BitcoinMessage incVersionMessage = conn.ReadMessage();
-            if (incVersionMessage.Command != BitcoinCommands.Version)
+            if (incVersionMessage.Command != VersionMessage.Command)
             {
-                //todo: handle correctly
                 throw new BitcoinNetworkException("Remote endpoint did not send Version message.");
+            }
+
+            VersionMessage incVersionMessageParsed;
+            using (BitcoinStreamReader reader = new BitcoinStreamReader(new MemoryStream(incVersionMessage.Payload)))
+            {
+                //todo: review and handle exceptions
+                incVersionMessageParsed = VersionMessage.Read(reader);
             }
 
             //todo: check minimal peer protocol version
@@ -123,6 +138,8 @@ namespace BitcoinUtilities.P2P
                 //todo: handle correctly
                 throw new BitcoinNetworkException("Remote endpoint did not send VerAck message.");
             }
+
+            peerInfo = new BitcoinPeerInfo(conn.RemoteEndPoint, incVersionMessageParsed);
 
             running = true;
 
@@ -221,33 +238,24 @@ namespace BitcoinUtilities.P2P
             return new BitcoinMessage(BitcoinCommands.Reject, mem.ToArray());
         }
 
-        private BitcoinMessage CreateVersionMessage()
+        private VersionMessage CreateVersionMessage()
         {
-            MemoryStream mem = new MemoryStream();
-
-            BitcoinMessageUtils.AppendInt32LittleEndian(mem, protocolVersion);
-            BitcoinMessageUtils.AppendUInt64LittleEndian(mem, Services);
-            BitcoinMessageUtils.AppendInt64LittleEndian(mem, GetUnixTimestamp());
-
-            BitcoinMessageUtils.AppendUInt64LittleEndian(mem, Services); // todo: what it should contain for remote address?
+            long timestamp = GetUnixTimestamp();
             IPEndPoint remoteEndPoint = conn.RemoteEndPoint;
-            byte[] remoteAddress = remoteEndPoint.Address.MapToIPv6().GetAddressBytes();
-            mem.Write(remoteAddress, 0, remoteAddress.Length);
-            BitcoinMessageUtils.AppendUInt16BigEndian(mem, (ushort) remoteEndPoint.Port); //todo: shouldn't port be 8333 ?
+            IPEndPoint localEndPoint = conn.LocalEndPoint; //todo: should it always be a public address
 
-            BitcoinMessageUtils.AppendUInt64LittleEndian(mem, Services);
-            IPEndPoint localEndPoint = conn.LocalEndPoint; //todo: should it always a public address
-            byte[] localAddress = localEndPoint.Address.MapToIPv6().GetAddressBytes();
-            mem.Write(localAddress, 0, localAddress.Length);
-            BitcoinMessageUtils.AppendUInt16BigEndian(mem, (ushort) localEndPoint.Port);
+            VersionMessage message = new VersionMessage(
+                UserAgent,
+                protocolVersion,
+                Services,
+                timestamp,
+                Nonce,
+                localEndPoint,
+                remoteEndPoint,
+                StartHeight,
+                AcceptBroadcasts);
 
-            BitcoinMessageUtils.AppendUInt64LittleEndian(mem, Nonce);
-
-            BitcoinMessageUtils.AppendText(mem, UserAgent);
-            BitcoinMessageUtils.AppendInt32LittleEndian(mem, StartHeight);
-            BitcoinMessageUtils.AppendBool(mem, AcceptBroadcasts);
-
-            return new BitcoinMessage(BitcoinCommands.Version, mem.ToArray());
+            return message;
         }
 
         private long GetUnixTimestamp()
@@ -279,7 +287,6 @@ namespace BitcoinUtilities.P2P
 
     public static class BitcoinCommands
     {
-        public static readonly string Version = "version";
         public static readonly string VerAck = "verack";
         public static readonly string Ping = "ping";
         public static readonly string Pong = "pong";

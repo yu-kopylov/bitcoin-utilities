@@ -1,4 +1,5 @@
 ﻿using BitcoinUtilities.P2P;
+using BitcoinUtilities.P2P.Messages;
 using NUnit.Framework;
 
 namespace Test.BitcoinUtilities.P2P
@@ -28,7 +29,7 @@ namespace Test.BitcoinUtilities.P2P
                 conn.WriteMessage(new BitcoinMessage("version", hello));
 
                 BitcoinMessage incVersionMessage = conn.ReadMessage();
-                Assert.That(incVersionMessage.Command, Is.EqualTo(BitcoinCommands.Version));
+                Assert.That(incVersionMessage.Command, Is.EqualTo(VersionMessage.Command));
 
                 conn.WriteMessage(new BitcoinMessage(BitcoinCommands.VerAck, new byte[0]));
 
