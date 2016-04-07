@@ -37,7 +37,7 @@ namespace Test.BitcoinUtilities.P2P
                 Assert.That(incVerAckMessage.Command, Is.EqualTo(VerAckMessage.Command));
 
                 BitcoinMessage incPing = conn.ReadMessage();
-                Assert.That(incPing.Command, Is.EqualTo(BitcoinCommands.Ping));
+                Assert.That(incPing.Command, Is.EqualTo(PingMessage.Command));
             }
         }
     }

@@ -14,22 +14,22 @@ namespace Test.BitcoinUtilities.P2P
     public class TestBitcoinEndpoint
     {
         private static readonly byte[] blockHash0 = new byte[]
-                                                    {
-                                                        0x6F, 0xE2, 0x8C, 0x0A, 0xB6, 0xF1, 0xB3, 0x72, 0xC1, 0xA6, 0xA2, 0x46, 0xAE, 0x63, 0xF7, 0x4F,
-                                                        0x93, 0x1E, 0x83, 0x65, 0xE1, 0x5A, 0x08, 0x9C, 0x68, 0xD6, 0x19, 0x00, 0x00, 0x00, 0x00, 0x00
-                                                    };
+        {
+            0x6F, 0xE2, 0x8C, 0x0A, 0xB6, 0xF1, 0xB3, 0x72, 0xC1, 0xA6, 0xA2, 0x46, 0xAE, 0x63, 0xF7, 0x4F,
+            0x93, 0x1E, 0x83, 0x65, 0xE1, 0x5A, 0x08, 0x9C, 0x68, 0xD6, 0x19, 0x00, 0x00, 0x00, 0x00, 0x00
+        };
 
         private static readonly byte[] blockHash1 = new byte[]
-                                                    {
-                                                        0x48, 0x60, 0xEB, 0x18, 0xBF, 0x1B, 0x16, 0x20, 0xE3, 0x7E, 0x94, 0x90, 0xFC, 0x8A, 0x42, 0x75,
-                                                        0x14, 0x41, 0x6F, 0xD7, 0x51, 0x59, 0xAB, 0x86, 0x68, 0x8E, 0x9A, 0x83, 0x00, 0x00, 0x00, 0x00
-                                                    };
+        {
+            0x48, 0x60, 0xEB, 0x18, 0xBF, 0x1B, 0x16, 0x20, 0xE3, 0x7E, 0x94, 0x90, 0xFC, 0x8A, 0x42, 0x75,
+            0x14, 0x41, 0x6F, 0xD7, 0x51, 0x59, 0xAB, 0x86, 0x68, 0x8E, 0x9A, 0x83, 0x00, 0x00, 0x00, 0x00
+        };
 
         private static readonly byte[] blockHash2 = new byte[]
-                                                    {
-                                                        0xBD, 0xDD, 0x99, 0xCC, 0xFD, 0xA3, 0x9D, 0xA1, 0xB1, 0x08, 0xCE, 0x1A, 0x5D, 0x70, 0x03, 0x8D,
-                                                        0x0A, 0x96, 0x7B, 0xAC, 0xB6, 0x8B, 0x6B, 0x63, 0x06, 0x5F, 0x62, 0x6A, 0x00, 0x00, 0x00, 0x00
-                                                    };
+        {
+            0xBD, 0xDD, 0x99, 0xCC, 0xFD, 0xA3, 0x9D, 0xA1, 0xB1, 0x08, 0xCE, 0x1A, 0x5D, 0x70, 0x03, 0x8D,
+            0x0A, 0x96, 0x7B, 0xAC, 0xB6, 0x8B, 0x6B, 0x63, 0x06, 0x5F, 0x62, 0x6A, 0x00, 0x00, 0x00, 0x00
+        };
 
 
         [Test]
@@ -99,9 +99,9 @@ namespace Test.BitcoinUtilities.P2P
                 Console.WriteLine("\t{0} (stop)", BitConverter.ToString(getHeadersMessage.HashStop));
 
                 endpoint.WriteMessage(new InvMessage(new InventoryVector[]
-                                                     {
-                                                         new InventoryVector(InventoryVectorType.MsgBlock, blockHash1)
-                                                     }));
+                {
+                    new InventoryVector(InventoryVectorType.MsgBlock, blockHash1)
+                }));
             }
 
             if (message is GetDataMessage)
@@ -115,7 +115,7 @@ namespace Test.BitcoinUtilities.P2P
 
             if (message is BlockMessage)
             {
-                BlockMessage blockMessage = (BlockMessage)message;
+                BlockMessage blockMessage = (BlockMessage) message;
                 foreach (Tx tx in blockMessage.Transactions)
                 {
                     Console.WriteLine("\tInputs:");
@@ -139,9 +139,8 @@ namespace Test.BitcoinUtilities.P2P
                 foreach (bool flag in flagsBitArray)
                 {
                     flagsSb.Append(flag ? "1" : "0");
-
                 }
-                
+
                 Console.WriteLine("\tTotalTransactions: {0}", merkleBlockMessage.TotalTransactions);
                 Console.WriteLine("\tFlags:             {0}", flagsSb);
 
@@ -207,7 +206,7 @@ namespace Test.BitcoinUtilities.P2P
                 locatorHashes[i] = new byte[32];
             }
 
-            IBitcoinMessage pingMessage = new BitcoinMessage(BitcoinCommands.Ping, new byte[8]);
+            IBitcoinMessage pingMessage = new PingMessage(0);
 
             IBitcoinMessage bigMessage = new GetBlocksMessage(client.ProtocolVersion, locatorHashes, new byte[32]);
             byte[] messageText = BitcoinStreamWriter.GetBytes(bigMessage.Write);

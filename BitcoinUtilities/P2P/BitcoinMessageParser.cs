@@ -18,6 +18,8 @@ namespace BitcoinUtilities.P2P
             messageReadMethods.Add(GetHeadersMessage.Command, GetHeadersMessage.Read);
             messageReadMethods.Add(InvMessage.Command, InvMessage.Read);
             messageReadMethods.Add(MerkleBlockMessage.Command, MerkleBlockMessage.Read);
+            messageReadMethods.Add(PingMessage.Command, PingMessage.Read);
+            messageReadMethods.Add(PongMessage.Command, PongMessage.Read);
             messageReadMethods.Add(RejectMessage.Command, RejectMessage.Read);
             messageReadMethods.Add(VerAckMessage.Command, VerAckMessage.Read);
             messageReadMethods.Add(VersionMessage.Command, VersionMessage.Read);

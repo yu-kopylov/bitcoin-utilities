@@ -193,22 +193,6 @@ namespace BitcoinUtilities.P2P
 
         private void HandleMessage(BitcoinMessage message)
         {
-            if (message.Command == BitcoinCommands.Ping)
-            {
-                if (message.Payload.Length != 8)
-                {
-                    WriteMessage(new RejectMessage(
-                        message.Command,
-                        RejectMessage.RejectReason.Malformed,
-                        "The Ping command payload should have a length of 8 bytes."));
-                    return;
-                }
-
-                BitcoinMessage pongMessage = new BitcoinMessage(BitcoinCommands.Pong, message.Payload);
-                conn.WriteMessage(pongMessage);
-                return;
-            }
-
             if (message.Command == RejectMessage.Command)
             {
                 //todo: stop endpoint / allow messageHandler to process it (be careful of reject message loop)?
@@ -216,6 +200,12 @@ namespace BitcoinUtilities.P2P
             }
 
             IBitcoinMessage parsedMessage = BitcoinMessageParser.Parse(message);
+
+            if (parsedMessage is PingMessage)
+            {
+                PingMessage ping = (PingMessage) parsedMessage;
+                WriteMessage(new PongMessage(ping.Nonce));
+            }
 
             if (parsedMessage == null)
             {
@@ -251,7 +241,7 @@ namespace BitcoinUtilities.P2P
 
         private long GetUnixTimestamp()
         {
-            TimeSpan timeSpan = (DateTime.UtcNow - unixEpoch);
+            TimeSpan timeSpan = DateTime.UtcNow - unixEpoch;
             return (long) timeSpan.TotalSeconds;
         }
     }
@@ -263,10 +253,4 @@ namespace BitcoinUtilities.P2P
     /// <param name="message">The message from the remote endpoint.</param>
     /// <returns>true if the given message is supported; otherwise, false.</returns>
     public delegate bool BitcoinMessageHandler(BitcoinEndpoint endpoint, IBitcoinMessage message);
-
-    public static class BitcoinCommands
-    {
-        public static readonly string Ping = "ping";
-        public static readonly string Pong = "pong";
-    }
 }
