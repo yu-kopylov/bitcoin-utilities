@@ -128,11 +128,10 @@ namespace BitcoinUtilities.P2P
 
             //todo: check minimal peer protocol version
 
-            BitcoinMessage outVerAckMessage = new BitcoinMessage(BitcoinCommands.VerAck, new byte[0]);
-            conn.WriteMessage(outVerAckMessage);
+            WriteMessage(new VerAckMessage());
 
             BitcoinMessage incVerAckMessage = conn.ReadMessage();
-            if (incVerAckMessage.Command != BitcoinCommands.VerAck)
+            if (incVerAckMessage.Command != VerAckMessage.Command)
             {
                 //todo: handle correctly
                 throw new BitcoinNetworkException("Remote endpoint did not send VerAck message.");
@@ -267,7 +266,6 @@ namespace BitcoinUtilities.P2P
 
     public static class BitcoinCommands
     {
-        public static readonly string VerAck = "verack";
         public static readonly string Ping = "ping";
         public static readonly string Pong = "pong";
     }

@@ -31,10 +31,10 @@ namespace Test.BitcoinUtilities.P2P
                 BitcoinMessage incVersionMessage = conn.ReadMessage();
                 Assert.That(incVersionMessage.Command, Is.EqualTo(VersionMessage.Command));
 
-                conn.WriteMessage(new BitcoinMessage(BitcoinCommands.VerAck, new byte[0]));
+                conn.WriteMessage(new BitcoinMessage(VerAckMessage.Command, new byte[0]));
 
                 BitcoinMessage incVerAckMessage = conn.ReadMessage();
-                Assert.That(incVerAckMessage.Command, Is.EqualTo(BitcoinCommands.VerAck));
+                Assert.That(incVerAckMessage.Command, Is.EqualTo(VerAckMessage.Command));
 
                 BitcoinMessage incPing = conn.ReadMessage();
                 Assert.That(incPing.Command, Is.EqualTo(BitcoinCommands.Ping));

@@ -51,6 +51,7 @@
     <Compile Include="Collections\VirtualDictionaryInternals\TestAtomicStream.cs" />
     <Compile Include="Node\TestLimitedNodeAddressDictionary.cs" />
     <Compile Include="Node\TestNodeAddressCollection.cs" />
+    <Compile Include="P2P\Messages\TestVerAckMessage.cs" />
     <Compile Include="P2P\Messages\TestRejectMessage.cs" />
     <Compile Include="P2P\Messages\TestTxMessage.cs" />
     <Compile Include="P2P\Messages\TestBlockMessage.cs" />
