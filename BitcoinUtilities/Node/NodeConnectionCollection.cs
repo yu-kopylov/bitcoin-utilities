@@ -147,8 +147,7 @@ namespace BitcoinUtilities.Node
                 connections.Add(connection);
             }
 
-            //todo: there is a race condition here (endpoint can disconnect before handler is registered)
-            endpoint.Disconnected += () => Remove(connection);
+            endpoint.CallWhenDisconnected(() => Remove(connection));
 
             Changed?.Invoke();
 

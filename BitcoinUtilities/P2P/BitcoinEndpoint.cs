@@ -42,6 +42,9 @@ namespace BitcoinUtilities.P2P
         private BlockingThreadPool threadPool;
         private volatile bool running;
 
+        private readonly object disconnectLock = new object();
+        private volatile bool disconnected;
+
         public BitcoinEndpoint(BitcoinMessageHandler messageHandler)
         {
             this.messageHandler = messageHandler;
@@ -73,6 +76,26 @@ namespace BitcoinUtilities.P2P
         }
 
         public event Action Disconnected;
+
+        /// <summary>
+        /// Method attaches the given handler to the <see cref="Disconnected"/> event.
+        /// <para/>
+        /// It also guaranties that the handler would be called even if the endpoint was already disconnected.
+        /// </summary>
+        /// <param name="handler">The handler.</param>
+        public void CallWhenDisconnected(Action handler)
+        {
+            bool runNow;
+            lock (disconnectLock)
+            {
+                runNow = disconnected;
+                Disconnected += handler;
+            }
+            if (runNow)
+            {
+                handler();
+            }
+        }
 
         /// <summary>
         /// Connects to a remote host and sends a version handshake.
@@ -186,7 +209,15 @@ namespace BitcoinUtilities.P2P
                 }
             }
 
-            Disconnected?.Invoke();
+            Action handler;
+
+            lock (disconnectLock)
+            {
+                disconnected = true;
+                handler = Disconnected;
+            }
+
+            handler?.Invoke();
         }
 
         public void WriteMessage(IBitcoinMessage message)
