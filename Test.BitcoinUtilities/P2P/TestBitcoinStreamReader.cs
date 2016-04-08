@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Net;
 using BitcoinUtilities.P2P;
 using NUnit.Framework;
 
@@ -52,6 +53,26 @@ namespace Test.BitcoinUtilities.P2P
 
             Assert.That(ExecuteRead(r => r.ReadText(4), testString), Is.EqualTo("test"));
             Assert.Throws<IOException>(() => ExecuteRead(r => r.ReadText(3), testString));
+        }
+
+        [Test]
+        public void TestReadAddress()
+        {
+            Assert.That(ExecuteRead(
+                r => r.ReadAddress(),
+                new byte[]
+                {
+                    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xFF, 0xFF, 0xC0, 0xA8, 0x00, 0x01
+                }),
+                Is.EqualTo(IPAddress.Parse("192.168.0.1").MapToIPv6()));
+
+            Assert.That(
+                ExecuteRead(r => r.ReadAddress(),
+                    new byte[]
+                    {
+                        0x20, 0x01, 0xCD, 0xBA, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x32, 0x57, 0x96, 0x52
+                    }),
+                Is.EqualTo(IPAddress.Parse("2001:cdba::3257:9652")));
         }
 
         private T ExecuteRead<T>(Func<BitcoinStreamReader, T> readMethod, byte[] data)

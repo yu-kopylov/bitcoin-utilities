@@ -79,12 +79,14 @@
     <Compile Include="P2P\BitcoinNetworkException.cs" />
     <Compile Include="P2P\BitcoinPeerInfo.cs" />
     <Compile Include="P2P\DnsSeeds.cs" />
+    <Compile Include="P2P\Messages\AddrMessage.cs" />
     <Compile Include="P2P\Messages\PongMessage.cs" />
     <Compile Include="P2P\Messages\RejectMessage.cs" />
     <Compile Include="P2P\Messages\GetAddrMessage.cs" />
     <Compile Include="P2P\Messages\VerAckMessage.cs" />
     <Compile Include="P2P\Messages\VersionMessage.cs" />
     <Compile Include="P2P\Messages\PingMessage.cs" />
+    <Compile Include="P2P\Primitives\NetAddr.cs" />
     <Compile Include="Secp256K1Curve.cs" />
     <Compile Include="SecureRandomSeedGenerator.cs" />
     <Compile Include="Scripts\BitcoinScript.cs" />
@@ -121,6 +123,7 @@
     <Compile Include="P2P\Primitives\TxOut.cs" />
     <Compile Include="P2P\Primitives\TxOutPoint.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="UnixTime.cs" />
     <Compile Include="Wif.cs" />
   </ItemGroup>
   <ItemGroup>

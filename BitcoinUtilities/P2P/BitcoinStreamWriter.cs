@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using System.Net;
 using System.Text;
 
 namespace BitcoinUtilities.P2P
@@ -69,6 +70,16 @@ namespace BitcoinUtilities.P2P
             byte[] bytes = Encoding.ASCII.GetBytes(value);
             WriteCompact((ulong) bytes.Length);
             Write(bytes, 0, bytes.Length);
+        }
+
+        /// <summary>
+        /// Writes an IP address as an array of 16 bytes.
+        /// IPv4 addresses are mapped to IPv6 addresses before processing.
+        /// </summary>
+        public void WriteAddress(IPAddress address)
+        {
+            byte[] addressBytes = address.MapToIPv6().GetAddressBytes();
+            Write(addressBytes, 0, addressBytes.Length);
         }
 
         public static byte[] GetBytes(Action<BitcoinStreamWriter> writeMethod)

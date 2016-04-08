@@ -167,10 +167,12 @@ namespace BitcoinUtilities.P2P.Messages
             writer.Write(timestamp);
 
             writer.Write(remoteServices);
-            WriteAddress(writer, remoteEndpoint);
+            writer.WriteAddress(remoteEndpoint.Address);
+            writer.WriteBigEndian((ushort) remoteEndpoint.Port);
 
             writer.Write(localServices);
-            WriteAddress(writer, localEndpoint);
+            writer.WriteAddress(localEndpoint.Address);
+            writer.WriteBigEndian((ushort) localEndpoint.Port);
 
             writer.Write(nonce);
 
@@ -186,10 +188,14 @@ namespace BitcoinUtilities.P2P.Messages
             long timestamp = reader.ReadInt64();
 
             ulong remoteServices = reader.ReadUInt64();
-            IPEndPoint remoteEndpoint = ReadAddress(reader);
+            IPAddress remoteAddress = reader.ReadAddress();
+            ushort remotePort = reader.ReadUInt16BigEndian();
+            IPEndPoint remoteEndpoint = new IPEndPoint(remoteAddress, remotePort);
 
             ulong localServices = reader.ReadUInt64();
-            IPEndPoint localEndpoint = ReadAddress(reader);
+            IPAddress localAddress = reader.ReadAddress();
+            ushort localPort = reader.ReadUInt16BigEndian();
+            IPEndPoint localEndpoint = new IPEndPoint(localAddress, localPort);
 
             ulong nonce = reader.ReadUInt64();
 
@@ -211,24 +217,6 @@ namespace BitcoinUtilities.P2P.Messages
             versionMessage.LocalServices = localServices;
             versionMessage.RemoteServices = remoteServices;
             return versionMessage;
-        }
-
-        private static void WriteAddress(BitcoinStreamWriter writer, IPEndPoint endpoint)
-        {
-            byte[] addressBytes = endpoint.Address.MapToIPv6().GetAddressBytes();
-            writer.Write(addressBytes, 0, addressBytes.Length);
-
-            writer.WriteBigEndian((ushort) endpoint.Port);
-        }
-
-        private static IPEndPoint ReadAddress(BitcoinStreamReader reader)
-        {
-            byte[] addressBytes = reader.ReadBytes(16);
-            IPAddress remoteAddress = new IPAddress(addressBytes);
-
-            int port = reader.ReadUInt16BigEndian();
-
-            return new IPEndPoint(remoteAddress, port);
         }
     }
 }

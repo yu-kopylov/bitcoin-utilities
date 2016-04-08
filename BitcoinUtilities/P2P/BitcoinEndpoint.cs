@@ -20,8 +20,6 @@ namespace BitcoinUtilities.P2P
     {
         private static readonly Logger logger = LogManager.GetCurrentClassLogger();
 
-        private static readonly DateTime unixEpoch = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
-
         private const string UserAgent = "/BitcoinUtilities:0.0.1/";
         private readonly int protocolVersion = 70002;
         private const ulong Services = 0;
@@ -256,7 +254,7 @@ namespace BitcoinUtilities.P2P
 
         private VersionMessage CreateVersionMessage()
         {
-            long timestamp = GetUnixTimestamp();
+            long timestamp = UnixTime.ToTimestamp(SystemTime.UtcNow);
             IPEndPoint remoteEndPoint = conn.RemoteEndPoint;
             IPEndPoint localEndPoint = conn.LocalEndPoint; //todo: should it always be a public address ?
 
@@ -272,12 +270,6 @@ namespace BitcoinUtilities.P2P
                 AcceptBroadcasts);
 
             return message;
-        }
-
-        private long GetUnixTimestamp()
-        {
-            TimeSpan timeSpan = DateTime.UtcNow - unixEpoch;
-            return (long) timeSpan.TotalSeconds;
         }
     }
 

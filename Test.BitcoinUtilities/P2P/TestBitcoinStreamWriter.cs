@@ -1,4 +1,5 @@
-﻿using BitcoinUtilities.P2P;
+﻿using System.Net;
+using BitcoinUtilities.P2P;
 using NUnit.Framework;
 
 namespace Test.BitcoinUtilities.P2P
@@ -62,6 +63,23 @@ namespace Test.BitcoinUtilities.P2P
             expectedResult[expectedResult.Length - 2] = 0x31;
             expectedResult[expectedResult.Length - 1] = 0x32;
             Assert.That(BitcoinStreamWriter.GetBytes(r => r.WriteText("12".PadLeft(256))), Is.EqualTo(expectedResult));
+        }
+
+        [Test]
+        public void TestWriteAddress()
+        {
+            Assert.That(
+                BitcoinStreamWriter.GetBytes(r => r.WriteAddress(IPAddress.Parse("192.168.0.1"))),
+                Is.EqualTo(new byte[]
+                {
+                    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xFF, 0xFF, 0xC0, 0xA8, 0x00, 0x01
+                }));
+            Assert.That(
+                BitcoinStreamWriter.GetBytes(r => r.WriteAddress(IPAddress.Parse("2001:cdba::3257:9652"))),
+                Is.EqualTo(new byte[]
+                {
+                    0x20, 0x01, 0xCD, 0xBA, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x32, 0x57, 0x96, 0x52
+                }));
         }
     }
 }

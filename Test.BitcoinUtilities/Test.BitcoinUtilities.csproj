@@ -63,6 +63,7 @@
     <Compile Include="P2P\Messages\TestGetHeadersMessage.cs" />
     <Compile Include="P2P\Messages\TestGetBlocksMessage.cs" />
     <Compile Include="P2P\Messages\TestInvMessage.cs" />
+    <Compile Include="P2P\Messages\TestAddrMessage.cs" />
     <Compile Include="P2P\Messages\TestVersionMessage.cs" />
     <Compile Include="P2P\TestBitcoinEndpoint.cs" />
     <Compile Include="P2P\TestBitcoinMessageFormatter.cs" />
@@ -83,6 +84,7 @@
     <Compile Include="TestNumberUtils.cs" />
     <Compile Include="TestSignatureUtils.cs" />
     <Compile Include="TestSystemTime.cs" />
+    <Compile Include="TestUnixTime.cs" />
     <Compile Include="TestWif.cs" />
     <Compile Include="Threading\TestBlockingThreadPool.cs" />
   </ItemGroup>

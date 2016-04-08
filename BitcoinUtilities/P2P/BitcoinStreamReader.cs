@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Net;
 using System.Text;
 
 namespace BitcoinUtilities.P2P
@@ -96,6 +97,15 @@ namespace BitcoinUtilities.P2P
             }
             byte[] bytes = ReadBytes(intLength);
             return Encoding.ASCII.GetString(bytes);
+        }
+
+        /// <summary>
+        /// Reads an IPv6 address.
+        /// </summary>
+        public IPAddress ReadAddress()
+        {
+            byte[] addressBytes = ReadBytes(16);
+            return new IPAddress(addressBytes);
         }
     }
 }
