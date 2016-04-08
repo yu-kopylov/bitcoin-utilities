@@ -13,6 +13,7 @@ namespace BitcoinUtilities.P2P
         static BitcoinMessageParser()
         {
             messageReadMethods.Add(BlockMessage.Command, BlockMessage.Read);
+            messageReadMethods.Add(GetAddrMessage.Command, GetAddrMessage.Read);
             messageReadMethods.Add(GetBlocksMessage.Command, GetBlocksMessage.Read);
             messageReadMethods.Add(GetDataMessage.Command, GetDataMessage.Read);
             messageReadMethods.Add(GetHeadersMessage.Command, GetHeadersMessage.Read);

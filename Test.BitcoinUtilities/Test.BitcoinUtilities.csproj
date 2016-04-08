@@ -53,6 +53,7 @@
     <Compile Include="Node\TestNodeAddressCollection.cs" />
     <Compile Include="P2P\Messages\TestPongMessage.cs" />
     <Compile Include="P2P\Messages\TestPingMessage.cs" />
+    <Compile Include="P2P\Messages\TestGetAddrMessage.cs" />
     <Compile Include="P2P\Messages\TestVerAckMessage.cs" />
     <Compile Include="P2P\Messages\TestRejectMessage.cs" />
     <Compile Include="P2P\Messages\TestTxMessage.cs" />

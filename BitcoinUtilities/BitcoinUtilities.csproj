@@ -81,6 +81,7 @@
     <Compile Include="P2P\DnsSeeds.cs" />
     <Compile Include="P2P\Messages\PongMessage.cs" />
     <Compile Include="P2P\Messages\RejectMessage.cs" />
+    <Compile Include="P2P\Messages\GetAddrMessage.cs" />
     <Compile Include="P2P\Messages\VerAckMessage.cs" />
     <Compile Include="P2P\Messages\VersionMessage.cs" />
     <Compile Include="P2P\Messages\PingMessage.cs" />
