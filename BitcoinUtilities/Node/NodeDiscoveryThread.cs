@@ -11,7 +11,6 @@ namespace BitcoinUtilities.Node
     {
         private static readonly TimeSpan stateRefreshInterval = TimeSpan.FromMilliseconds(5000);
         private static readonly TimeSpan dnsSeedsRefreshInterval = TimeSpan.FromMinutes(60);
-        private const int TargetEnpointsCount = 8;
 
         private readonly Random random = new Random();
 
@@ -63,26 +62,32 @@ namespace BitcoinUtilities.Node
 
         private void ConnectToNodes()
         {
-            //todo: count only outgoing endpoints
-            if (node.Endpoints.Count >= TargetEnpointsCount)
+            if (cancellationToken.IsCancellationRequested || IsMaximumConnectionCountReached())
             {
                 return;
             }
 
             List<NodeAddress> addresses = SelectNodesToConnect();
 
-            //todo: count only outgoing endpoints
-            //todo: connect only to full nodes and check protocol version
             //todo: limit number of concurrent connection attempts?
             Parallel.ForEach(addresses, address =>
             {
-                if (cancellationToken.IsCancellationRequested || node.Endpoints.Count >= TargetEnpointsCount)
+                if (cancellationToken.IsCancellationRequested || IsMaximumConnectionCountReached())
+                {
+                    return;
+                }
+                if (node.ConnectionCollection.IsConnected(address.Address))
                 {
                     return;
                 }
                 //todo: don't connect to already connected nodes
                 node.ConnectTo(address);
             });
+        }
+
+        private bool IsMaximumConnectionCountReached()
+        {
+            return node.ConnectionCollection.OutgoingConnectionsCount >= node.ConnectionCollection.MaxOutgoingConnectionsCount;
         }
 
         private List<NodeAddress> SelectNodesToConnect()

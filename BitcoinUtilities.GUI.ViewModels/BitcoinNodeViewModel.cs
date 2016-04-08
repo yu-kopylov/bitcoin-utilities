@@ -12,7 +12,9 @@ namespace BitcoinUtilities.GUI.ViewModels
         private readonly IViewContext viewContext;
 
         private string state;
-        private int connectionCount;
+
+        private int incomingConnectionsCount;
+        private int outgoingConnectionsCount;
 
         private bool canStartNode;
         private bool canStopNode;
@@ -34,12 +36,22 @@ namespace BitcoinUtilities.GUI.ViewModels
             }
         }
 
-        public int ConnectionCount
+        public int IncomingConnectionsCount
         {
-            get { return connectionCount; }
-            private set
+            get { return incomingConnectionsCount; }
+            set
             {
-                connectionCount = value;
+                incomingConnectionsCount = value;
+                OnPropertyChanged();
+            }
+        }
+
+        public int OutgoingConnectionsCount
+        {
+            get { return outgoingConnectionsCount; }
+            set
+            {
+                outgoingConnectionsCount = value;
                 OnPropertyChanged();
             }
         }
@@ -93,6 +105,7 @@ namespace BitcoinUtilities.GUI.ViewModels
                 oldNode.PropertyChanged -= OnNodePropertyChanged;
             }
             node.PropertyChanged += OnNodePropertyChanged;
+            node.ConnectionCollection.Changed += () => OnNodePropertyChanged(null, null); //todo: unregister?
             UpdateValues();
         }
 
@@ -115,13 +128,15 @@ namespace BitcoinUtilities.GUI.ViewModels
             if (node == null)
             {
                 State = "No Node";
-                ConnectionCount = 0;
+                IncomingConnectionsCount = 0;
+                OutgoingConnectionsCount = 0;
                 CanStartNode = true;
                 CanStopNode = false;
                 return;
             }
             State = node.Started ? "Started" : "Stopped";
-            ConnectionCount = node.Endpoints.Count;
+            IncomingConnectionsCount = node.ConnectionCollection.IncomingConnectionsCount;
+            OutgoingConnectionsCount = node.ConnectionCollection.OutgoingConnectionsCount;
             CanStartNode = !node.Started;
             CanStopNode = node.Started;
         }

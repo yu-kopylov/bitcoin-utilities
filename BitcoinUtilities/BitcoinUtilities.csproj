@@ -72,6 +72,9 @@
     <Compile Include="Collections\VirtualDictionaryTransaction.cs" />
     <Compile Include="IBlockChainStorage.cs" />
     <Compile Include="Node\NodeAddress.cs" />
+    <Compile Include="Node\NodeConnection.cs" />
+    <Compile Include="Node\NodeConnectionCollection.cs" />
+    <Compile Include="Node\NodeConnectionDirection.cs" />
     <Compile Include="Node\NodeDiscoveryThread.cs" />
     <Compile Include="P2P\BitcoinNetworkException.cs" />
     <Compile Include="P2P\BitcoinPeerInfo.cs" />

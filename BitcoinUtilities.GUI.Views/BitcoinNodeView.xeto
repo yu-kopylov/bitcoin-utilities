@@ -1,6 +1,6 @@
 ﻿<?xml version="1.0" encoding="UTF-8"?>
 <Panel
-  xmlns="http://schema.picoe.ca/eto.forms" 
+  xmlns="http://schema.picoe.ca/eto.forms"
   xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
   >
   <TableLayout>
@@ -14,10 +14,18 @@
     </TableRow>
     <TableRow>
       <TableCell>
-        <Label Text="Connections:"/>
+        <Label Text="Incoming Connections:"/>
       </TableCell>
       <TableCell ScaleWidth="True">
-        <Label Text="{Binding ConnectionCount}"/>
+        <Label Text="{Binding IncomingConnectionsCount}"/>
+      </TableCell>
+    </TableRow>
+    <TableRow>
+      <TableCell>
+        <Label Text="Outgoing Connections:"/>
+      </TableCell>
+      <TableCell ScaleWidth="True">
+        <Label Text="{Binding OutgoingConnectionsCount}"/>
       </TableCell>
     </TableRow>
     <TableRow>

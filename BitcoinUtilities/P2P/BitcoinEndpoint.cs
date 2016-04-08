@@ -72,6 +72,8 @@ namespace BitcoinUtilities.P2P
             get { return peerInfo; }
         }
 
+        public event Action Disconnected;
+
         /// <summary>
         /// Connects to a remote host and sends a version handshake.
         /// </summary>
@@ -162,17 +164,17 @@ namespace BitcoinUtilities.P2P
                 catch (ObjectDisposedException)
                 {
                     //todo: this happens when endpoint is disposed, can it happen for other reasons?
-                    return;
+                    break;
                 }
                 catch (BitcoinNetworkException)
                 {
                     //todo: this happens when endpoint is disposed, can it happen for other reasons?
-                    return;
+                    break;
                 }
                 catch (IOException)
                 {
                     //todo: this was happening before BitcoinNetworkException was introduced when endpoint was disposed, can it happen for other reasons?
-                    return;
+                    break;
                 }
                 if (!threadPool.Execute(() => HandleMessage(message), MessageProcessingStartTimeout))
                 {
@@ -183,6 +185,8 @@ namespace BitcoinUtilities.P2P
                         message.Payload.Length);
                 }
             }
+
+            Disconnected?.Invoke();
         }
 
         public void WriteMessage(IBitcoinMessage message)

@@ -123,9 +123,13 @@ namespace BitcoinUtilities.P2P.Messages
         }
 
         /// <summary>
-        /// Node random nonce, randomly generated every time a version packet is sent.
+        /// A random nonce which can help a node detect a connection to itself.
         /// <para/>
-        /// This nonce is used to detect connections to self.
+        /// Nonce is randomly generated every time a version packet is sent.
+        /// <para/>
+        /// If the nonce is 0, the nonce field is ignored.
+        /// <para/>
+        /// If the nonce is anything else, a node should terminate the connection on receipt of a version message with a nonce it previously sent.
         /// </summary>
         public ulong Nonce
         {
@@ -191,6 +195,7 @@ namespace BitcoinUtilities.P2P.Messages
 
             string userAgent = reader.ReadText(MaxUserAgentLength);
             int startHeight = reader.ReadInt32();
+            //todo: support clients that don't send relay bit 
             bool acceptBroadcasts = reader.ReadBoolean();
 
             VersionMessage versionMessage = new VersionMessage(

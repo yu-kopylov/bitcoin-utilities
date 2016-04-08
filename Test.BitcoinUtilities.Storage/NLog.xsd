@@ -163,7 +163,7 @@
   </xs:simpleType>
   <xs:simpleType name="NLogLevelList">
     <xs:restriction base="xs:string">
-      <xs:pattern value="(|Trace|Debug|Info|Warn|Error|Fatal)(,(Trace|Debug|Info|Warn|Error|Fatal))*" />
+      <xs:pattern value="(|Trace|Debug|Info|Warn|Error|Fatal)(,(Trace|Debug|Incomingfo|Warn|Error|Fatal))*" />
     </xs:restriction>
   </xs:simpleType>
   <xs:complexType name="NLogInclude">
