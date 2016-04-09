@@ -207,6 +207,7 @@ namespace BitcoinUtilities.Node
                     throw new InvalidOperationException($"Unexpected connection direction: {connection.Direction}.");
                 }
             }
+            Changed?.Invoke();
         }
 
         private void CloseConnections()

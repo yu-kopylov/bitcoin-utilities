@@ -4,6 +4,7 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 using BitcoinUtilities.P2P;
 using BitcoinUtilities.P2P.Messages;
+using BitcoinUtilities.P2P.Primitives;
 
 namespace BitcoinUtilities.Node
 {
@@ -135,6 +136,11 @@ namespace BitcoinUtilities.Node
 
         private bool HandleMessage(BitcoinEndpoint endpoint, IBitcoinMessage message)
         {
+            if (message is AddrMessage)
+            {
+                SaveReceivedAddresses((AddrMessage) message);
+                return true;
+            }
             //todo: handle getaddr message
             //todo: implement
             return true;
@@ -154,6 +160,15 @@ namespace BitcoinUtilities.Node
             //todo: wait for nodeDiscoveryThread to stop and dispose it
 
             Started = false;
+        }
+
+        private void SaveReceivedAddresses(AddrMessage addrMessage)
+        {
+            foreach (NetAddr addr in addrMessage.AddressList)
+            {
+                //todo: check timestamp in address?
+                addressCollection.Add(new NodeAddress(addr.Address, addr.Port));
+            }
         }
     }
 }
