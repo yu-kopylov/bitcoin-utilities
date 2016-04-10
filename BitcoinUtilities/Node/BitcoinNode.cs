@@ -1,4 +1,6 @@
-﻿using System.ComponentModel;
+﻿using System.Collections.Generic;
+using System.ComponentModel;
+using System.Linq;
 using System.Net;
 using System.Runtime.CompilerServices;
 using System.Threading;
@@ -141,6 +143,13 @@ namespace BitcoinUtilities.Node
                 SaveReceivedAddresses((AddrMessage) message);
                 return true;
             }
+            //todo: send GetAddr message sometimes
+            //todo: see 0.10.1 Change log: Ignore getaddr messages on Outbound connections.
+            if (message is GetAddrMessage)
+            {
+                SendKnownAddresses(endpoint);
+                return true;
+            }
             //todo: handle getaddr message
             //todo: implement
             return true;
@@ -167,8 +176,28 @@ namespace BitcoinUtilities.Node
             foreach (NetAddr addr in addrMessage.AddressList)
             {
                 //todo: check timestamp in address?
+                //todo: prioritize connections to port 8333
                 addressCollection.Add(new NodeAddress(addr.Address, addr.Port));
             }
+        }
+
+        private void SendKnownAddresses(BitcoinEndpoint endpoint)
+        {
+            List<NetAddr> addresses = new List<NetAddr>();
+            List<NodeConnection> currentConnections = connectionCollection.GetConnections();
+            foreach (NodeConnection connection in currentConnections)
+            {
+                //todo: filter loopback addresses
+                NetAddr addr = new NetAddr(
+                    //todo: use last message date instead
+                    (uint) connection.Endpoint.PeerInfo.VersionMessage.Timestamp,
+                    connection.Endpoint.PeerInfo.VersionMessage.Services,
+                    endpoint.PeerInfo.IpEndpoint.Address,
+                    (ushort) endpoint.PeerInfo.IpEndpoint.Port);
+                addresses.Add(addr);
+            }
+            AddrMessage addrMessage = new AddrMessage(addresses.Take(AddrMessage.MaxAddressesPerMessage).ToArray());
+            endpoint.WriteMessage(addrMessage);
         }
     }
 }

@@ -103,6 +103,11 @@ namespace BitcoinUtilities.Node
 
         private void CheckDnsSeeds()
         {
+            if (cancellationToken.IsCancellationRequested)
+            {
+                return;
+            }
+
             DateTime now = DateTime.UtcNow;
             if (lastDnsSeedsLookup > now)
             {
