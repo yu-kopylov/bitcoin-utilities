@@ -118,6 +118,7 @@ namespace BitcoinUtilities.Node
             {
                 return;
             }
+            //todo: if network was inaccessible on start of application seeds will not be received for up to dnsSeedsRefreshInterval (1 hour)
             lastDnsSeedsLookup = now;
 
             List<IPAddress> addresses = DnsSeeds.GetNodeAddresses();
