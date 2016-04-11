@@ -1,6 +1,7 @@
 ﻿using System;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using BitcoinUtilities.GUI.Models;
 using BitcoinUtilities.Node;
 using BitcoinUtilities.Storage;
 

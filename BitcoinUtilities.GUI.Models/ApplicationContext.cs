@@ -1,6 +1,6 @@
 ﻿using BitcoinUtilities.Node;
 
-namespace BitcoinUtilities.GUI.ViewModels
+namespace BitcoinUtilities.GUI.Models
 {
     public class ApplicationContext
     {

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Windows.Input;
+using BitcoinUtilities.GUI.Models;
 using BitcoinUtilities.GUI.ViewModels;
 using Eto.Forms;
 using Eto.Serialization.Xaml;

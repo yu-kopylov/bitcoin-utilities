@@ -87,6 +87,10 @@
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\BitcoinUtilities.GUI.Models\BitcoinUtilities.GUI.Models.csproj">
+      <Project>{99D7210D-2CA0-41CE-B576-DBC262339AD9}</Project>
+      <Name>BitcoinUtilities.GUI.Models</Name>
+    </ProjectReference>
     <ProjectReference Include="..\BitcoinUtilities.GUI.ViewModels\BitcoinUtilities.GUI.ViewModels.csproj">
       <Project>{1D98E7B7-5D52-4E4A-BACB-295F46AC6752}</Project>
       <Name>BitcoinUtilities.GUI.ViewModels</Name>

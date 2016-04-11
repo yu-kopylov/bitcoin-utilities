@@ -1,5 +1,5 @@
 ﻿using System;
-using BitcoinUtilities.GUI.ViewModels;
+using BitcoinUtilities.GUI.Models;
 using BitcoinUtilities.GUI.Views;
 using Eto;
 using Eto.Forms;
