@@ -12,8 +12,8 @@ namespace Test.BitcoinUtilities.GUI.Models
         {
             Settings settings = new Settings();
 
-            Assert.That(settings.SettingsFolder, Is.StringEnding("GUI"));
-            Assert.That(settings.SettingsFilename, Is.EqualTo("settings.json"));
+            Assert.That(Settings.SettingsFolder, Is.StringEnding("GUI"));
+            Assert.That(Settings.SettingsFilename, Is.EqualTo("settings.json"));
 
             Assert.That(settings.BlockchainFolder, Is.StringEnding("Blockchain"));
             Assert.That(settings.WalletFolder, Is.StringEnding("Wallet"));
@@ -21,7 +21,7 @@ namespace Test.BitcoinUtilities.GUI.Models
             settings.BlockchainFolder = "test-blockchain";
             settings.WalletFolder = "test-wallet";
 
-            Assert.Throws<DirectoryNotFoundException>(() => settings.Load("non-existing-folder"));
+            Assert.False(settings.Load("non-existing-folder"));
 
             Assert.That(settings.BlockchainFolder, Is.EqualTo("test-blockchain"));
             Assert.That(settings.WalletFolder, Is.EqualTo("test-wallet"));
@@ -36,7 +36,13 @@ namespace Test.BitcoinUtilities.GUI.Models
             Assert.That(settings.BlockchainFolder, Is.EqualTo("test-blockchain2"));
             Assert.That(settings.WalletFolder, Is.EqualTo("test-wallet2"));
 
-            settings.Load(testFolder);
+            Assert.True(settings.Load(testFolder));
+
+            Assert.That(settings.BlockchainFolder, Is.EqualTo("test-blockchain"));
+            Assert.That(settings.WalletFolder, Is.EqualTo("test-wallet"));
+
+            File.WriteAllText(Path.Combine(testFolder, Settings.SettingsFilename), "not json");
+            Assert.False(settings.Load(testFolder));
 
             Assert.That(settings.BlockchainFolder, Is.EqualTo("test-blockchain"));
             Assert.That(settings.WalletFolder, Is.EqualTo("test-wallet"));

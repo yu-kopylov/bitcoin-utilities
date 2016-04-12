@@ -32,7 +32,6 @@ namespace BitcoinUtilities.GUI.Models.Formats
         public static SettingsFormat Read(string filename)
         {
             DataContractJsonSerializer ser = new DataContractJsonSerializer(typeof(SettingsFormat));
-            //todo: handle errors
             using (var stream = new FileStream(filename, FileMode.Open, FileAccess.Read, FileShare.Read))
             {
                 return (SettingsFormat) ser.ReadObject(stream);
@@ -42,7 +41,6 @@ namespace BitcoinUtilities.GUI.Models.Formats
         public static void Write(string filename, SettingsFormat settings)
         {
             DataContractJsonSerializer ser = new DataContractJsonSerializer(typeof(SettingsFormat));
-            //todo: handle errors ?
             using (var stream = new FileStream(filename, FileMode.Create, FileAccess.Write, FileShare.Read))
             {
                 ser.WriteObject(stream, settings);

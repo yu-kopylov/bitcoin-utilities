@@ -6,34 +6,41 @@
   <TableLayout>
     <TableRow>
       <TableCell>
-        <Label Text="State:"/>
-      </TableCell>
-      <TableCell ScaleWidth="True">
-        <Label Text="{Binding State}"/>
+        <TableLayout>
+          <TableRow>
+            <TableCell>
+              <Label Text="State:"/>
+            </TableCell>
+            <TableCell ScaleWidth="True">
+              <Label Text="{Binding State}"/>
+            </TableCell>
+          </TableRow>
+          <TableRow>
+            <TableCell>
+              <Label Text="Incoming Connections:"/>
+            </TableCell>
+            <TableCell ScaleWidth="True">
+              <Label Text="{Binding IncomingConnectionsCount}"/>
+            </TableCell>
+          </TableRow>
+          <TableRow>
+            <TableCell>
+              <Label Text="Outgoing Connections:"/>
+            </TableCell>
+            <TableCell ScaleWidth="True">
+              <Label Text="{Binding OutgoingConnectionsCount}"/>
+            </TableCell>
+          </TableRow>
+        </TableLayout>
       </TableCell>
     </TableRow>
     <TableRow>
       <TableCell>
-        <Label Text="Incoming Connections:"/>
-      </TableCell>
-      <TableCell ScaleWidth="True">
-        <Label Text="{Binding IncomingConnectionsCount}"/>
-      </TableCell>
-    </TableRow>
-    <TableRow>
-      <TableCell>
-        <Label Text="Outgoing Connections:"/>
-      </TableCell>
-      <TableCell ScaleWidth="True">
-        <Label Text="{Binding OutgoingConnectionsCount}"/>
-      </TableCell>
-    </TableRow>
-    <TableRow>
-      <TableCell ScaleWidth="True">
-        <Button Text="Start Node" Enabled="{Binding CanStartNode}" Click="StartNode"/>
-      </TableCell>
-      <TableCell ScaleWidth="True">
-        <Button Text="Stop Node" Enabled="{Binding CanStopNode}" Click="StopNode"/>
+        <StackLayout Orientation="Horizontal" Padding="5">
+          <Button Text="Start Node" Enabled="{Binding CanStartNode}" Click="StartNode"/>
+          <Button Text="Stop Node" Enabled="{Binding CanStopNode}" Click="StopNode"/>
+          <Button Text="Settings" Click="ShowSettings"/>
+        </StackLayout>
       </TableCell>
     </TableRow>
     <TableRow/>

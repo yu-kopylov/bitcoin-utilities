@@ -4,12 +4,14 @@ namespace BitcoinUtilities.GUI.Models
 {
     public class ApplicationContext
     {
-        private BitcoinNode bitcoinNode;
-
-        public BitcoinNode BitcoinNode
+        public ApplicationContext()
         {
-            get { return bitcoinNode; }
-            set { bitcoinNode = value; }
+            Settings = new Settings();
+            Settings.Load(Settings.SettingsFolder);
         }
+
+        public Settings Settings { get; set; }
+
+        public BitcoinNode BitcoinNode { get; set; }
     }
 }

@@ -86,8 +86,7 @@ namespace BitcoinUtilities.GUI.ViewModels
 
         public void StartNode()
         {
-            //todo: use settings for storage location
-            BlockChainStorage storage = BlockChainStorage.Open(@"D:\Temp\Blockchain");
+            BlockChainStorage storage = BlockChainStorage.Open(applicationContext.Settings.BlockchainFolder);
             BitcoinNode node = new BitcoinNode(storage);
             try
             {
@@ -140,6 +139,11 @@ namespace BitcoinUtilities.GUI.ViewModels
             OutgoingConnectionsCount = node.ConnectionCollection.OutgoingConnectionsCount;
             CanStartNode = !node.Started;
             CanStopNode = node.Started;
+        }
+
+        public SettingsViewModel CreateSettingsViewModel()
+        {
+            return new SettingsViewModel(applicationContext);
         }
     }
 }

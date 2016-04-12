@@ -1,20 +1,24 @@
 ﻿using System;
 using System.IO;
+using System.Runtime.Serialization;
 using BitcoinUtilities.GUI.Models.Formats;
+using NLog;
 
 namespace BitcoinUtilities.GUI.Models
 {
     public class Settings
     {
+        private static readonly Logger logger = LogManager.GetCurrentClassLogger();
+
         public Settings()
         {
-            Reset();
+            SetDefaults();
         }
 
         /// <summary>
         /// The folder in which configuration is stored.
         /// </summary>
-        public string SettingsFolder
+        public static string SettingsFolder
         {
             get
             {
@@ -26,7 +30,7 @@ namespace BitcoinUtilities.GUI.Models
         /// <summary>
         /// The filename of the settings file without a folder.
         /// </summary>
-        public string SettingsFilename
+        public static string SettingsFilename
         {
             get { return "settings.json"; }
         }
@@ -44,7 +48,7 @@ namespace BitcoinUtilities.GUI.Models
         /// <summary>
         /// Sets default settings values.
         /// </summary>
-        public void Reset()
+        public void SetDefaults()
         {
             string documentsFolder = Environment.GetFolderPath(Environment.SpecialFolder.Personal);
             BlockchainFolder = Path.Combine(documentsFolder, "BitcoinUtilities", "Blockchain");
@@ -54,11 +58,29 @@ namespace BitcoinUtilities.GUI.Models
         /// <summary>
         /// Loads settings from the specified folder.
         /// </summary>
-        public void Load(string folder)
+        /// <returns>
+        /// true if the setting was loaded successfully; otherwise, false.
+        /// </returns>
+        public bool Load(string folder)
         {
             string fullFilename = Path.Combine(folder, SettingsFilename);
-            SettingsFormat settingsFormat = SettingsFormat.Read(fullFilename);
+            SettingsFormat settingsFormat;
+            try
+            {
+                settingsFormat = SettingsFormat.Read(fullFilename);
+            }
+            catch (IOException e)
+            {
+                logger.Error(e, "Could not read the setting file.");
+                return false;
+            }
+            catch (SerializationException e)
+            {
+                logger.Error(e, "Invalid settings file format.");
+                return false;
+            }
             settingsFormat.ApplyTo(this);
+            return true;
         }
 
         /// <summary>

@@ -23,5 +23,17 @@ namespace BitcoinUtilities.GUI.Views
             BitcoinNodeViewModel viewModel = (BitcoinNodeViewModel) DataContext;
             viewModel.StopNode();
         }
+
+        protected void ShowSettings(object sender, EventArgs e)
+        {
+            BitcoinNodeViewModel viewModel = (BitcoinNodeViewModel) DataContext;
+
+            SettingsDialog dialog = new SettingsDialog();
+
+            SettingsViewModel settingsViewModel = viewModel.CreateSettingsViewModel();
+            dialog.DataContext = settingsViewModel;
+
+            dialog.ShowModal(this);
+        }
     }
 }
