@@ -18,7 +18,7 @@ namespace TestUtilities
         {
             string testFolder = Path.GetFullPath(Path.Combine("tmp-test", testType.Name, relativePath));
 
-            Console.WriteLine("Removing files in the test folder: : {0}", testFolder);
+            Console.WriteLine("Removing files in the test folder: {0}", testFolder);
 
             Directory.CreateDirectory(testFolder);
             foreach (string pattern in patterns)
