@@ -5,6 +5,7 @@ using System.IO;
 using BitcoinUtilities;
 using BitcoinUtilities.Collections;
 using NUnit.Framework;
+using TestUtilities;
 
 namespace Test.BitcoinUtilities.Collections
 {
@@ -17,19 +18,7 @@ namespace Test.BitcoinUtilities.Collections
         public void Setup()
         {
             //todo: use one [SetUpFixture] for all test to delete files
-            testFolder = Path.GetFullPath("tmp-test-VD");
-
-            Console.WriteLine("Removing files in the test folder: : {0}", testFolder);
-
-            Directory.CreateDirectory(testFolder);
-            foreach (string pattern in new string[] {"*.tbl", "*.tbl-wal"})
-            {
-                foreach (string filename in Directory.GetFiles(testFolder, pattern, SearchOption.TopDirectoryOnly))
-                {
-                    Console.WriteLine("Removing: {0}", filename);
-                    File.Delete(filename);
-                }
-            }
+            testFolder = TestUtils.PrepareTestFolder(typeof(TestVirtualDictionary), "Test", "*.tbl", "*.tbl-wal");
         }
 
         [Test]

@@ -1,6 +1,7 @@
 ﻿using System.IO;
 using BitcoinUtilities.GUI.Models;
 using NUnit.Framework;
+using TestUtilities;
 
 namespace Test.BitcoinUtilities.GUI.Models
 {
@@ -10,6 +11,8 @@ namespace Test.BitcoinUtilities.GUI.Models
         [Test]
         public void Test()
         {
+            string testFolder = TestUtils.PrepareTestFolder(typeof(TestSettings), "Test", "*.json");
+
             Settings settings = new Settings();
 
             Assert.That(Settings.SettingsFolder, Is.StringEnding("GUI"));
@@ -25,9 +28,7 @@ namespace Test.BitcoinUtilities.GUI.Models
 
             Assert.That(settings.BlockchainFolder, Is.EqualTo("test-blockchain"));
             Assert.That(settings.WalletFolder, Is.EqualTo("test-wallet"));
-
-            string testFolder = Path.Combine("tmp-test", "TestSettings");
-
+            
             settings.Save(testFolder);
 
             settings.BlockchainFolder = "test-blockchain2";

@@ -96,6 +96,10 @@
       <Project>{36C6CCB9-5611-40F7-95B5-47FC25EC3B63}</Project>
       <Name>BitcoinUtilities</Name>
     </ProjectReference>
+    <ProjectReference Include="..\TestUtilities\TestUtilities.csproj">
+      <Project>{63B435D9-2923-4BA1-AC86-576A8BD2AE22}</Project>
+      <Name>TestUtilities</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
