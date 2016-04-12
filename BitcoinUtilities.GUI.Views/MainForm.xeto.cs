@@ -1,7 +1,4 @@
 ﻿using System;
-using System.Windows.Input;
-using BitcoinUtilities.GUI.Models;
-using BitcoinUtilities.GUI.ViewModels;
 using Eto.Forms;
 using Eto.Serialization.Xaml;
 
@@ -9,43 +6,27 @@ namespace BitcoinUtilities.GUI.Views
 {
     public class MainForm : Form
     {
-        public MainForm(ApplicationContext applicationContext)
+        public MainForm()
         {
             XamlReader.Load(this);
-
-            DataContext = this;
-
-            IViewContext viewContext = new ViewContext(this);
-
-            BitcoinNode = new BitcoinNodeViewModel(applicationContext, viewContext);
-            PaperWallet = new PaperWalletViewModel(viewContext);
         }
 
-        public BitcoinNodeViewModel BitcoinNode { get; set; }
-        public PaperWalletViewModel PaperWallet { get; set; }
-
-        public ICommand ShowBioRandomDialog
+        protected void ShowBioRandomDialog(object sender, EventArgs e)
         {
-            get
+            byte[] randomValue;
+            using (var dialog = new BioRandomDialog())
             {
-                return new Command((sender, e) =>
-                {
-                    byte[] randomValue;
-                    using (var dialog = new BioRandomDialog())
-                    {
-                        dialog.ShowModal();
-                        randomValue = dialog.SeedMeterial;
-                    }
+                dialog.ShowModal();
+                randomValue = dialog.SeedMeterial;
+            }
 
-                    if (randomValue != null)
-                    {
-                        MessageBox.Show(
-                            this,
-                            string.Format("Generated Value:\n{0}", BitConverter.ToString(randomValue)),
-                            "Random",
-                            MessageBoxType.Information);
-                    }
-                });
+            if (randomValue != null)
+            {
+                MessageBox.Show(
+                    this,
+                    $"Generated Value:\n{BitConverter.ToString(randomValue)}",
+                    "Random",
+                    MessageBoxType.Information);
             }
         }
     }

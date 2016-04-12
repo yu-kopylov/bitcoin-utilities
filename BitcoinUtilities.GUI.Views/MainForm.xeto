@@ -15,7 +15,7 @@
     </TabPage>
     <TabPage Text="Random Number Generator">
       <StackLayout>
-        <Button Text="Generate Random" Command="{Binding ShowBioRandomDialog}"/>
+        <Button Text="Generate Random" Click="ShowBioRandomDialog"/>
       </StackLayout>
     </TabPage>
     <TabPage Text="Bitcoin Node">

@@ -49,6 +49,7 @@
   <ItemGroup>
     <Compile Include="BitcoinNodeViewModel.cs" />
     <Compile Include="IViewContext.cs" />
+    <Compile Include="MainFormViewModel.cs" />
     <Compile Include="PaperWalletViewModel.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
