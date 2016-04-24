@@ -75,7 +75,9 @@
     <Compile Include="Node\NodeConnection.cs" />
     <Compile Include="Node\NodeConnectionCollection.cs" />
     <Compile Include="Node\NodeConnectionDirection.cs" />
-    <Compile Include="Node\NodeDiscoveryThread.cs" />
+    <Compile Include="Node\NodeServiceCollection.cs" />
+    <Compile Include="Node\Services\NodeDiscoveryService.cs" />
+    <Compile Include="Node\INodeService.cs" />
     <Compile Include="P2P\BitcoinNetworkException.cs" />
     <Compile Include="P2P\BitcoinPeerInfo.cs" />
     <Compile Include="P2P\DnsSeeds.cs" />

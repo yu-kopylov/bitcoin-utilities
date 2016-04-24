@@ -1,9 +1,11 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Net;
 using System.Runtime.CompilerServices;
 using System.Threading;
+using BitcoinUtilities.Node.Services;
 using BitcoinUtilities.P2P;
 using BitcoinUtilities.P2P.Messages;
 using BitcoinUtilities.P2P.Primitives;
@@ -13,23 +15,31 @@ namespace BitcoinUtilities.Node
     /// <summary>
     /// Represents a bitcoin node that can interact with other nodes on the network.
     /// </summary>
-    public class BitcoinNode : INotifyPropertyChanged
+    public class BitcoinNode : INotifyPropertyChanged, IDisposable
     {
+        private readonly NodeServiceCollection services = new NodeServiceCollection();
+
         private readonly IBlockChainStorage storage;
 
         private NodeAddressCollection addressCollection;
         private NodeConnectionCollection connectionCollection;
 
         private BitcoinConnectionListener listener;
-        private NodeDiscoveryThread nodeDiscoveryThread;
-
-
+        private readonly NodeDiscoveryService nodeDiscoveryService = new NodeDiscoveryService();
+        
         private readonly CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
         private bool started;
 
         public BitcoinNode(IBlockChainStorage storage)
         {
             this.storage = storage;
+
+            services.Add(nodeDiscoveryService);
+        }
+
+        public void Dispose()
+        {
+            services.Dispose();
         }
 
         public NodeAddressCollection AddressCollection
@@ -69,18 +79,17 @@ namespace BitcoinUtilities.Node
         {
             addressCollection = new NodeAddressCollection();
             connectionCollection = new NodeConnectionCollection(cancellationTokenSource.Token);
+            //todo: review, maybe registering event handler is a responsibility of nodeDiscoveryService 
+            connectionCollection.Changed += nodeDiscoveryService.Signal;
 
             //todo: discover own external address? (it seems useless without external port)
             //todo: use setting to specify port and operating mode
             listener = new BitcoinConnectionListener(IPAddress.Any, 8333, HandleIncomingConnection);
             listener.Start();
 
-            nodeDiscoveryThread = new NodeDiscoveryThread(this, cancellationTokenSource.Token);
-            connectionCollection.Changed += nodeDiscoveryThread.Signal;
+            services.Init(this, cancellationTokenSource.Token);
 
-            Thread thread = new Thread(nodeDiscoveryThread.Run);
-            thread.IsBackground = true;
-            thread.Start();
+            services.Start();
 
             Started = true;
         }
@@ -166,7 +175,10 @@ namespace BitcoinUtilities.Node
 
             listener?.Stop();
 
-            //todo: wait for nodeDiscoveryThread to stop and dispose it
+            //todo: use parameter for timeout?
+            TimeSpan stopTimeout = TimeSpan.FromSeconds(30);
+            bool servicesTerminated = services.Join(stopTimeout);
+            //todo: use value of servicesTerminated
 
             Started = false;
         }

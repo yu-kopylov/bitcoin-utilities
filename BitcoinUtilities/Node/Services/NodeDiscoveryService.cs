@@ -5,24 +5,27 @@ using System.Threading;
 using System.Threading.Tasks;
 using BitcoinUtilities.P2P;
 
-namespace BitcoinUtilities.Node
+namespace BitcoinUtilities.Node.Services
 {
-    public class NodeDiscoveryThread : IDisposable
+    public class NodeDiscoveryService : INodeService, IDisposable
     {
         private static readonly TimeSpan stateRefreshInterval = TimeSpan.FromMilliseconds(5000);
         private static readonly TimeSpan dnsSeedsRefreshInterval = TimeSpan.FromMinutes(60);
 
         private readonly Random random = new Random();
-
-        private readonly BitcoinNode node;
-        private readonly CancellationToken cancellationToken;
-
         private readonly AutoResetEvent signalEvent = new AutoResetEvent(true);
-        private volatile bool started;
 
         private DateTime lastDnsSeedsLookup = DateTime.MinValue;
 
-        public NodeDiscoveryThread(BitcoinNode node, CancellationToken cancellationToken)
+        private BitcoinNode node;
+        private CancellationToken cancellationToken;
+
+        public void Dispose()
+        {
+            signalEvent.Dispose();
+        }
+
+        public void Init(BitcoinNode node, CancellationToken cancellationToken)
         {
             this.node = node;
 
@@ -30,20 +33,8 @@ namespace BitcoinUtilities.Node
             this.cancellationToken = cancellationToken;
         }
 
-        public void Dispose()
-        {
-            signalEvent.Dispose();
-        }
-
         public void Run()
         {
-            if (started)
-            {
-                throw new InvalidOperationException($"{nameof(NodeDiscoveryThread)} was already started once.");
-            }
-
-            started = true;
-
             while (!cancellationToken.IsCancellationRequested)
             {
                 CheckDnsSeeds();

@@ -48,5 +48,16 @@ namespace Test.BitcoinUtilities.GUI.Models
             Assert.That(settings.BlockchainFolder, Is.EqualTo("test-blockchain"));
             Assert.That(settings.WalletFolder, Is.EqualTo("test-wallet"));
         }
+
+        [Test]
+        public void TestSaveImpossible()
+        {
+            string testFolder = TestUtils.PrepareTestFolder(typeof(TestSettings), "TestSaveImpossible", "*.json");
+
+            Directory.CreateDirectory(Path.Combine(testFolder, Settings.SettingsFilename));
+
+            Settings settings = new Settings();
+            settings.Save(testFolder);
+        }
     }
 }
