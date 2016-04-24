@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using BitcoinUtilities.GUI.Models;
 using NUnit.Framework;
 using TestUtilities;
@@ -57,7 +58,7 @@ namespace Test.BitcoinUtilities.GUI.Models
             Directory.CreateDirectory(Path.Combine(testFolder, Settings.SettingsFilename));
 
             Settings settings = new Settings();
-            settings.Save(testFolder);
+            Assert.Throws<UnauthorizedAccessException>(() => settings.Save(testFolder));
         }
     }
 }
