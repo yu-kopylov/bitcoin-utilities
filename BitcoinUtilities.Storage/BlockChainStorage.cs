@@ -6,6 +6,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
+using BitcoinUtilities.P2P.Primitives;
 using BitcoinUtilities.Storage.Converters;
 using BitcoinUtilities.Storage.Models;
 using BitcoinUtilities.Storage.Sql;
@@ -496,6 +497,11 @@ namespace BitcoinUtilities.Storage
                     expectedSize + bytesRead));
             }
             return buffer;
+        }
+
+        public void AddHeaders(BlockHeader[] headers)
+        {
+            //todo: implement
         }
     }
 }

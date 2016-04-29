@@ -37,6 +37,7 @@
     <Reference Include="CryptSharp.SCryptSubset">
       <HintPath>..\packages\SCrypt.2.0.0.2\lib\CryptSharp.SCryptSubset.dll</HintPath>
     </Reference>
+    <Reference Include="Microsoft.Build.Tasks.v4.0" />
     <Reference Include="NLog, Version=4.0.0.0, Culture=neutral, PublicKeyToken=5120e14c03d0593c, processorArchitecture=MSIL">
       <HintPath>..\packages\NLog.4.2.2\lib\net45\NLog.dll</HintPath>
       <Private>True</Private>
@@ -76,12 +77,14 @@
     <Compile Include="Node\NodeConnectionCollection.cs" />
     <Compile Include="Node\NodeConnectionDirection.cs" />
     <Compile Include="Node\NodeServiceCollection.cs" />
+    <Compile Include="Node\Services\BlockHeaderDownloadService.cs" />
     <Compile Include="Node\Services\NodeDiscoveryService.cs" />
     <Compile Include="Node\INodeService.cs" />
     <Compile Include="P2P\BitcoinNetworkException.cs" />
     <Compile Include="P2P\BitcoinPeerInfo.cs" />
     <Compile Include="P2P\DnsSeeds.cs" />
     <Compile Include="P2P\Messages\AddrMessage.cs" />
+    <Compile Include="P2P\Messages\HeadersMessage.cs" />
     <Compile Include="P2P\Messages\PongMessage.cs" />
     <Compile Include="P2P\Messages\RejectMessage.cs" />
     <Compile Include="P2P\Messages\GetAddrMessage.cs" />

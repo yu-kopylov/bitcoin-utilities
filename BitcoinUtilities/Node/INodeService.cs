@@ -1,4 +1,5 @@
 ﻿using System.Threading;
+using BitcoinUtilities.P2P;
 
 namespace BitcoinUtilities.Node
 {
@@ -22,5 +23,11 @@ namespace BitcoinUtilities.Node
         /// The main method that would be executed in the thread.
         /// </summary>
         void Run();
+
+        /// <summary>
+        /// This method is called when a message is received by the node.
+        /// </summary>
+        /// <param name="message">The incoming message.</param>
+        void ProcessMessage(IBitcoinMessage message);
     }
 }

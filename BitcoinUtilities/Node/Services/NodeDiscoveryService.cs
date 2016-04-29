@@ -43,6 +43,11 @@ namespace BitcoinUtilities.Node.Services
             }
         }
 
+        public void ProcessMessage(IBitcoinMessage message)
+        {
+            //todo: process AddrMessage
+        }
+
         /// <summary>
         /// Signals thread to stop waiting and process changed state.
         /// </summary>

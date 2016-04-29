@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using System.Threading;
 using BitcoinUtilities.Node;
+using BitcoinUtilities.P2P;
 using NUnit.Framework;
 
 namespace Test.BitcoinUtilities.Node
@@ -110,6 +111,11 @@ namespace Test.BitcoinUtilities.Node
                 }
 
                 Thread.Sleep(shutdownTimeout);
+            }
+
+            public void ProcessMessage(IBitcoinMessage message)
+            {
+                //todo: add test for this method
             }
 
             public void Dispose()

@@ -35,6 +35,7 @@ namespace BitcoinUtilities.Node
             this.storage = storage;
 
             services.Add(nodeDiscoveryService);
+            services.Add(new BlockHeaderDownloadService());
         }
 
         public void Dispose()

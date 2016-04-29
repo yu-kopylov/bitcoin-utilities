@@ -5,7 +5,7 @@ using BitcoinUtilities.P2P.Messages;
 
 namespace BitcoinUtilities.P2P
 {
-    public class BitcoinMessageParser
+    public static class BitcoinMessageParser
     {
         private static readonly Dictionary<string, Func<BitcoinStreamReader, IBitcoinMessage>> messageReadMethods =
             new Dictionary<string, Func<BitcoinStreamReader, IBitcoinMessage>>();
@@ -18,6 +18,7 @@ namespace BitcoinUtilities.P2P
             messageReadMethods.Add(GetBlocksMessage.Command, GetBlocksMessage.Read);
             messageReadMethods.Add(GetDataMessage.Command, GetDataMessage.Read);
             messageReadMethods.Add(GetHeadersMessage.Command, GetHeadersMessage.Read);
+            messageReadMethods.Add(HeadersMessage.Command, HeadersMessage.Read);
             messageReadMethods.Add(InvMessage.Command, InvMessage.Read);
             messageReadMethods.Add(MerkleBlockMessage.Command, MerkleBlockMessage.Read);
             messageReadMethods.Add(PingMessage.Command, PingMessage.Read);
