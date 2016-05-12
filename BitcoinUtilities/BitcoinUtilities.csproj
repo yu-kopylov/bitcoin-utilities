@@ -56,6 +56,7 @@
     <Compile Include="BioRandom.cs" />
     <Compile Include="Bip38.cs" />
     <Compile Include="BitcoinAddress.cs" />
+    <Compile Include="Node\INodeServiceFactory.cs" />
     <Compile Include="Node\LimitedNodeAddressDictionary.cs" />
     <Compile Include="Node\NodeAddressCollection.cs" />
     <Compile Include="Node\BitcoinNode.cs" />

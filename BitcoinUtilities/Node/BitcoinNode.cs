@@ -25,8 +25,7 @@ namespace BitcoinUtilities.Node
         private NodeConnectionCollection connectionCollection;
 
         private BitcoinConnectionListener listener;
-        private readonly NodeDiscoveryService nodeDiscoveryService = new NodeDiscoveryService();
-        
+
         private readonly CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
         private bool started;
 
@@ -34,13 +33,13 @@ namespace BitcoinUtilities.Node
         {
             this.storage = storage;
 
-            services.Add(nodeDiscoveryService);
-            services.Add(new BlockHeaderDownloadService());
+            services.AddFactory(new NodeDiscoveryServiceFactory());
+            services.AddFactory(new BlockHeaderDownloadServiceFactory());
         }
 
         public void Dispose()
         {
-            services.Dispose();
+            Stop();
         }
 
         public NodeAddressCollection AddressCollection
@@ -78,17 +77,18 @@ namespace BitcoinUtilities.Node
 
         public void Start()
         {
+            //todo: review the order in which services and listener start/stop, dispose created entities when start fails
+            services.CreateServices(this, cancellationTokenSource.Token);
+
             addressCollection = new NodeAddressCollection();
             connectionCollection = new NodeConnectionCollection(cancellationTokenSource.Token);
             //todo: review, maybe registering event handler is a responsibility of nodeDiscoveryService 
-            connectionCollection.Changed += nodeDiscoveryService.Signal;
+            //todo: connectionCollection.Changed += nodeDiscoveryService.Signal; - signal nodeDiscoveryService to connect to new nodes (is it its responsibility?)
 
             //todo: discover own external address? (it seems useless without external port)
             //todo: use setting to specify port and operating mode
             listener = new BitcoinConnectionListener(IPAddress.Any, 8333, HandleIncomingConnection);
             listener.Start();
-
-            services.Init(this, cancellationTokenSource.Token);
 
             services.Start();
 
@@ -160,6 +160,8 @@ namespace BitcoinUtilities.Node
                 SendKnownAddresses(endpoint);
                 return true;
             }
+
+            services.ProcessMessage(endpoint, message);
             //todo: handle getaddr message
             //todo: implement
             return true;
@@ -169,7 +171,7 @@ namespace BitcoinUtilities.Node
         {
             if (!Started)
             {
-                return;
+                throw new InvalidOperationException($"{nameof(BitcoinNode)} is not running.");
             }
 
             cancellationTokenSource.Cancel();
@@ -180,6 +182,8 @@ namespace BitcoinUtilities.Node
             TimeSpan stopTimeout = TimeSpan.FromSeconds(30);
             bool servicesTerminated = services.Join(stopTimeout);
             //todo: use value of servicesTerminated
+
+            services.DisposeServices();
 
             Started = false;
         }

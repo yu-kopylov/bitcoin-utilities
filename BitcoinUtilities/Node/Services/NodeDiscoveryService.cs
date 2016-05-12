@@ -17,20 +17,20 @@ namespace BitcoinUtilities.Node.Services
 
         private DateTime lastDnsSeedsLookup = DateTime.MinValue;
 
-        private BitcoinNode node;
-        private CancellationToken cancellationToken;
+        private readonly BitcoinNode node;
+        private readonly CancellationToken cancellationToken;
 
-        public void Dispose()
-        {
-            signalEvent.Dispose();
-        }
-
-        public void Init(BitcoinNode node, CancellationToken cancellationToken)
+        public NodeDiscoveryService(BitcoinNode node, CancellationToken cancellationToken)
         {
             this.node = node;
 
             cancellationToken.Register(Signal);
             this.cancellationToken = cancellationToken;
+        }
+
+        public void Dispose()
+        {
+            signalEvent.Dispose();
         }
 
         public void Run()
@@ -43,7 +43,7 @@ namespace BitcoinUtilities.Node.Services
             }
         }
 
-        public void ProcessMessage(IBitcoinMessage message)
+        public void ProcessMessage(BitcoinEndpoint endpoint, IBitcoinMessage message)
         {
             //todo: process AddrMessage
         }
@@ -144,6 +144,14 @@ namespace BitcoinUtilities.Node.Services
             }
 
             return res;
+        }
+    }
+
+    public class NodeDiscoveryServiceFactory : INodeServiceFactory
+    {
+        public INodeService Create(BitcoinNode node, CancellationToken cancellationToken)
+        {
+            return new NodeDiscoveryService(node, cancellationToken);
         }
     }
 }

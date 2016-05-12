@@ -6,9 +6,9 @@ namespace BitcoinUtilities.Node.Services
 {
     public class BlockHeaderDownloadService : INodeService
     {
-        private BitcoinNode node;
+        private readonly BitcoinNode node;
 
-        public void Init(BitcoinNode node, CancellationToken cancellationToken)
+        public BlockHeaderDownloadService(BitcoinNode node, CancellationToken cancellationToken)
         {
             this.node = node;
         }
@@ -18,7 +18,7 @@ namespace BitcoinUtilities.Node.Services
             //todo: implement
         }
 
-        public void ProcessMessage(IBitcoinMessage message)
+        public void ProcessMessage(BitcoinEndpoint endpoint, IBitcoinMessage message)
         {
             HeadersMessage headersMessage = message as HeadersMessage;
             if (headersMessage != null)
@@ -31,6 +31,14 @@ namespace BitcoinUtilities.Node.Services
         {
             //todo: check for exesting headers and calculate height for new headers
             node.Storage.AddHeaders(message.Headers);
+        }
+    }
+
+    public class BlockHeaderDownloadServiceFactory : INodeServiceFactory
+    {
+        public INodeService Create(BitcoinNode node, CancellationToken cancellationToken)
+        {
+            return new BlockHeaderDownloadService(node, cancellationToken);
         }
     }
 }
