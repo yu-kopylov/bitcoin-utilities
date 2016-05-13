@@ -70,6 +70,7 @@ namespace BitcoinUtilities.Node
                 {
                     DisposeService(disposableService);
                 }
+                //todo: remove reference to service?
             }
         }
 

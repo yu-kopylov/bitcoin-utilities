@@ -43,7 +43,7 @@ namespace Test.BitcoinUtilities.P2P.Messages
 
             Assert.That(UnixTime.ToDateTime(address.Timestamp), Is.EqualTo(new DateTime(2010, 12, 21, 02, 50, 10, DateTimeKind.Utc)));
             Assert.That(address.Services, Is.EqualTo(1));
-            Assert.That(address.Address, Is.EqualTo(IPAddress.Parse("10.0.0.1").MapToIPv6()));
+            Assert.That(address.Address, Is.EqualTo(IpUtils.MapToIPv6(IPAddress.Parse("10.0.0.1"))));
             Assert.That(address.Port, Is.EqualTo(8333));
 
             byte[] outBytes = BitcoinStreamWriter.GetBytes(message.Write);

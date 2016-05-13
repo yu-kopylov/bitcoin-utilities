@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Net;
+using BitcoinUtilities;
 using BitcoinUtilities.P2P;
 using NUnit.Framework;
 
@@ -64,7 +65,7 @@ namespace Test.BitcoinUtilities.P2P
                 {
                     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xFF, 0xFF, 0xC0, 0xA8, 0x00, 0x01
                 }),
-                Is.EqualTo(IPAddress.Parse("192.168.0.1").MapToIPv6()));
+                Is.EqualTo(IpUtils.MapToIPv6(IPAddress.Parse("192.168.0.1"))));
 
             Assert.That(
                 ExecuteRead(r => r.ReadAddress(),

@@ -78,7 +78,7 @@ namespace BitcoinUtilities.P2P
         /// </summary>
         public void WriteAddress(IPAddress address)
         {
-            byte[] addressBytes = address.MapToIPv6().GetAddressBytes();
+            byte[] addressBytes = IpUtils.MapToIPv6(address).GetAddressBytes();
             Write(addressBytes, 0, addressBytes.Length);
         }
 
