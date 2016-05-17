@@ -6,5 +6,5 @@ install:
 script:
   - xbuild /p:Configuration=Release BitcoinUtilities.sln
   - mono ./testrunner/NUnit.Runners.2.6.4/tools/nunit-console.exe
-  ./Test.BitcoinUtilities/bin/Release/Test.BitcoinUtilities.dll
-  ./Test.BitcoinUtilities.GUI.Models/bin/Release/Test.BitcoinUtilities.GUI.Models.dll
+    ./Test.BitcoinUtilities/bin/Release/Test.BitcoinUtilities.dll
+    ./Test.BitcoinUtilities.GUI.Models/bin/Release/Test.BitcoinUtilities.GUI.Models.dll
