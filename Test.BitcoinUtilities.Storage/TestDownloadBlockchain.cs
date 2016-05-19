@@ -32,6 +32,7 @@ namespace Test.BitcoinUtilities.Storage
         private readonly object dataLock = new object();
 
         private volatile Queue<Block> lastSavedBlocks = new Queue<Block>();
+        private volatile BlockLocator blockLocator = new BlockLocator();
         private volatile byte[] lastRequestedBlockHash;
 
         private long originalBlockchainBytes;
@@ -87,7 +88,7 @@ namespace Test.BitcoinUtilities.Storage
                     {
                         idleSeconds += 10;
                     }
-                    byte[][] hashes = lastSavedBlocks.Select(b => b.Hash).ToArray();
+                    byte[][] hashes = blockLocator.GetHashes();
                     //todo: suboptimal
                     Block lastBlock = lastSavedBlocks.Last();
                     byte[] lastHash = lastBlock.Hash;
@@ -118,6 +119,7 @@ namespace Test.BitcoinUtilities.Storage
         private void Init()
         {
             storage = BlockChainStorage.Open(StorageLocation);
+            blockLocator = storage.GetCurrentChainLocator();
             Block lastBlock = storage.GetLastBlockHeader();
 
             //todo: make this logic more reusable
@@ -275,6 +277,7 @@ namespace Test.BitcoinUtilities.Storage
                 {
                     block.Transactions = null;
                     lastSavedBlocks.Enqueue(block);
+                    blockLocator.AddHash(block.Height, block.Hash);
                     if (block.Height%1000 == 0)
                     {
                         logger.Debug("Checkpoint. Height: {0}", block.Height);

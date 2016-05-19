@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Data;
 using System.Data.SQLite;
+using System.Text;
 using BitcoinUtilities.Storage.Models;
 
 namespace BitcoinUtilities.Storage.Sql
@@ -59,6 +60,90 @@ namespace BitcoinUtilities.Storage.Sql
 
             command.ExecuteNonQuery();
             data.Id = connection.LastInsertRowId;
+        }
+
+        public Block GetLastBlockHeader()
+        {
+            var command = CreateCommand($"select {GetBlockColumns("B")} from Blocks B order by B.Height desc limit 1");
+            using (SQLiteDataReader reader = command.ExecuteReader())
+            {
+                if (!reader.Read())
+                {
+                    return null;
+                }
+                return ReadBlock(reader);
+            }
+        }
+
+        public List<Block> ReadHeadersWithHeight(int[] heights)
+        {
+            var command = CreateCommand(
+                $"select {GetBlockColumns("B")} from Blocks B" +
+                $" where B.Height in ({GetInParameters("H", heights.Length)})" +
+                $" order by B.Height asc");
+
+            SetInParameters(command, "H", heights);
+
+            List<Block> blocks = new List<Block>();
+
+            using (SQLiteDataReader reader = command.ExecuteReader())
+            {
+                while(reader.Read())
+                {
+                    blocks.Add(ReadBlock(reader));
+                }
+            }
+
+            return blocks;
+        }
+
+        private string GetBlockColumns(string alias)
+        {
+            return $"{alias}.Id, {alias}.Hash, {alias}.Height, {alias}.Header";
+        }
+
+        private Block ReadBlock(SQLiteDataReader reader)
+        {
+            Block block = new Block();
+
+            int col = 0;
+
+            block.Id = reader.GetInt64(col++);
+            block.Hash = ReadBytes(reader, col++);
+            block.Height = reader.GetInt32(col++);
+            block.Header = ReadBytes(reader, col++);
+
+            return block;
+        }
+
+        //todo: move to utils?
+        private string GetInParameters(string parameterPrefix, int valuesCount)
+        {
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < valuesCount; i++)
+            {
+                if (i > 0)
+                {
+                    sb.Append(", ");
+                }
+                sb.Append($"@{parameterPrefix}{i}");
+            }
+            return sb.ToString();
+        }
+
+        //todo: move to utils?
+        private void SetInParameters(SQLiteCommand command, string parameterPrefix, int[] values)
+        {
+            for (int i = 0; i < values.Length; i++)
+            {
+                command.Parameters.Add($"@{parameterPrefix}{i}", DbType.Int32).Value = values[i];
+            }
+        }
+
+        //todo: move to utils?
+        private byte[] ReadBytes(SQLiteDataReader reader, int col)
+        {
+            return (byte[]) reader[col];
         }
     }
 }

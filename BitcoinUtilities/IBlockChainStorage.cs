@@ -1,4 +1,5 @@
-﻿using BitcoinUtilities.P2P.Primitives;
+﻿using BitcoinUtilities.P2P;
+using BitcoinUtilities.P2P.Primitives;
 
 namespace BitcoinUtilities
 {
@@ -6,5 +7,6 @@ namespace BitcoinUtilities
     public interface IBlockChainStorage
     {
         void AddHeaders(BlockHeader[] headers);
+        BlockLocator GetCurrentChainLocator();
     }
 }

@@ -6,6 +6,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
+using BitcoinUtilities.P2P;
 using BitcoinUtilities.P2P.Primitives;
 using BitcoinUtilities.Storage.Converters;
 using BitcoinUtilities.Storage.Models;
@@ -115,7 +116,7 @@ namespace BitcoinUtilities.Storage
             string createSchemaSql;
             using (
                 var stream =
-                    typeof (BlockChainStorage).Assembly.GetManifestResourceStream(
+                    typeof(BlockChainStorage).Assembly.GetManifestResourceStream(
                         "BitcoinUtilities.Storage.Sql.create.sql"))
             {
                 using (StreamReader reader = new StreamReader(stream, Encoding.UTF8))
@@ -439,32 +440,14 @@ namespace BitcoinUtilities.Storage
             logger.Debug("SaveTransactionHashes took {0}ms for {1} hashes.", sw.ElapsedMilliseconds, valuesCount);
         }
 
+        //todo: use locator instead ?
         public Block GetLastBlockHeader()
         {
-            using (conn.BeginTransaction())
+            using (BlockChainRepository repo = new BlockChainRepository(conn))
             {
-                using (
-                    SQLiteCommand command =
-                        new SQLiteCommand(
-                            "select B.Id, B.Hash, B.Height, B.Header from Blocks B order by B.Height desc limit 1", conn)
-                    )
+                using (conn.BeginTransaction())
                 {
-                    using (SQLiteDataReader reader = command.ExecuteReader())
-                    {
-                        if (!reader.Read())
-                        {
-                            return null;
-                        }
-                        Block block = new Block();
-                        int col = 0;
-                        block.Id = reader.GetInt64(col++);
-                        //todo: review constant usage
-                        block.Hash = ReadBytes(reader, col++, 32);
-                        block.Height = reader.GetInt32(col++);
-                        //todo: review constant usage
-                        block.Header = ReadBytes(reader, col++, 80);
-                        return block;
-                    }
+                    return repo.GetLastBlockHeader();
                 }
             }
         }
@@ -478,30 +461,36 @@ namespace BitcoinUtilities.Storage
             }
         }
 
-        //todo: move to utils?
-        private byte[] ReadBytes(SQLiteDataReader reader, int col, int expectedSize)
-        {
-            byte[] buffer = new byte[expectedSize];
-            long bytesRead = reader.GetBytes(col, 0, buffer, 0, expectedSize);
-            if (bytesRead != expectedSize)
-            {
-                throw new Exception(string.Format("Unexpected BLOB size in database. Expected: {0}. Read: {1}.",
-                    expectedSize, bytesRead));
-            }
-            byte[] extraBuffer = new byte[4];
-            bytesRead = reader.GetBytes(col, expectedSize, buffer, 0, extraBuffer.Length);
-            if (bytesRead > 0)
-            {
-                throw new Exception(string.Format(
-                    "Unexpected BLOB size in database. Expected: {0}. Read at least: {1}.", expectedSize,
-                    expectedSize + bytesRead));
-            }
-            return buffer;
-        }
-
         public void AddHeaders(BlockHeader[] headers)
         {
             //todo: implement
+        }
+
+        public BlockLocator GetCurrentChainLocator()
+        {
+            List<Block> headers = new List<Block>();
+
+            using (BlockChainRepository repo = new BlockChainRepository(conn))
+            {
+                using (var tx = conn.BeginTransaction())
+                {
+                    Block lastBlock = repo.GetLastBlockHeader();
+                    if (lastBlock != null)
+                    {
+                        headers = repo.ReadHeadersWithHeight(BlockLocator.GetRequiredBlockHeights(lastBlock.Height));
+                    }
+                    tx.Commit();
+                }
+            }
+
+            BlockLocator locator = new BlockLocator();
+
+            foreach (Block header in headers)
+            {
+                locator.AddHash(header.Height, header.Hash);
+            }
+
+            return locator;
         }
     }
 }
