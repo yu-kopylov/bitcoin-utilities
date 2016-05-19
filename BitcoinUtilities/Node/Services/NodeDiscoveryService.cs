@@ -43,6 +43,11 @@ namespace BitcoinUtilities.Node.Services
             }
         }
 
+        public void OnNodeConnected(BitcoinEndpoint endpoint)
+        {
+            //todo: remember node?
+        }
+
         public void ProcessMessage(BitcoinEndpoint endpoint, IBitcoinMessage message)
         {
             //todo: process AddrMessage

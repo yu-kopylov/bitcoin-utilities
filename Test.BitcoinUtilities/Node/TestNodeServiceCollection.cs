@@ -206,6 +206,11 @@ namespace Test.BitcoinUtilities.Node
                 log.Log("Service stopped.");
             }
 
+            public void OnNodeConnected(BitcoinEndpoint endpoint)
+            {
+                //todo: test?
+            }
+
             public void ProcessMessage(BitcoinEndpoint endpoint, IBitcoinMessage message)
             {
                 //todo: add test for this method

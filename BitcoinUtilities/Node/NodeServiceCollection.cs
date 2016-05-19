@@ -86,6 +86,18 @@ namespace BitcoinUtilities.Node
             }
         }
 
+        public void OnNodeConnected(BitcoinEndpoint endpoint)
+        {
+            //todo: add test and maybe catch exceptions
+            
+            //todo: make sure this method is called before any messages are received by service
+
+            foreach (NodeServiceInfo serviceInfo in services)
+            {
+                serviceInfo.Service.OnNodeConnected(endpoint);
+            }
+        }
+
         public void ProcessMessage(BitcoinEndpoint endpoint, IBitcoinMessage message)
         {
             //todo: add test and maybe catch exceptions

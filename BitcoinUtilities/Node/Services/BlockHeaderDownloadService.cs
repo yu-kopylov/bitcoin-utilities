@@ -18,6 +18,13 @@ namespace BitcoinUtilities.Node.Services
             //todo: implement
         }
 
+        public void OnNodeConnected(BitcoinEndpoint endpoint)
+        {
+            BlockLocator blockLocator = node.Storage.GetCurrentChainLocator();
+            //todo: check if remote node provides this service?
+            endpoint.WriteMessage(new GetHeadersMessage(endpoint.ProtocolVersion, blockLocator.GetHashes(), new byte[32]));
+        }
+
         public void ProcessMessage(BitcoinEndpoint endpoint, IBitcoinMessage message)
         {
             HeadersMessage headersMessage = message as HeadersMessage;

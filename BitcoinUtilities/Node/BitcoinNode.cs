@@ -132,7 +132,10 @@ namespace BitcoinUtilities.Node
             if (!connectionCollection.Add(NodeConnectionDirection.Outgoing, endpoint))
             {
                 endpoint.Dispose();
+                return;
             }
+
+            services.OnNodeConnected(endpoint);
         }
 
         private void HandleIncomingConnection(BitcoinConnection connection)
@@ -143,7 +146,10 @@ namespace BitcoinUtilities.Node
             if (!connectionCollection.Add(NodeConnectionDirection.Incoming, endpoint))
             {
                 endpoint.Dispose();
+                return;
             }
+
+            services.OnNodeConnected(endpoint);
         }
 
         private bool HandleMessage(BitcoinEndpoint endpoint, IBitcoinMessage message)
