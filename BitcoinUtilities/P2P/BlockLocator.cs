@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 
 namespace BitcoinUtilities.P2P
@@ -9,40 +8,20 @@ namespace BitcoinUtilities.P2P
     /// </summary>
     public class BlockLocator
     {
-        private const int DefaultItemsPerGroup = 10;
-        private static readonly int[] DefaultGroupDivisors = new int[] {1, 4, 16, 64, 256, 1024, 4096, 16384, 65536, 262144};
+        private const int GroupCount = 10;
+        private const int ItemsPerGroup = 10;
+        private static readonly int[] GroupDivisors = new int[] { 1, 4, 16, 64, 256, 1024, 4096, 16384, 65536, 262144 };
 
-        private readonly int groupCount;
-        private readonly int itemsPerGroup;
-        private readonly int[] groupDivisors;
-        private readonly List<BlockLocatorEntry>[] groups;
+        private readonly LinkedList<BlockLocatorEntry>[] groups;
 
-        internal BlockLocator(int itemsPerGroup, int[] groupDivisors)
+        public BlockLocator()
         {
-            if (groupDivisors.Length == 0)
+            groups = new LinkedList<BlockLocatorEntry>[GroupCount];
+
+            for (int groupIndex = 0; groupIndex < GroupCount; groupIndex++)
             {
-                throw new ArgumentException($"The {nameof(groupDivisors)} array should contain at least one element.", nameof(groupDivisors));
+                groups[groupIndex] = new LinkedList<BlockLocatorEntry>();
             }
-
-            if (groupDivisors[0] != 1)
-            {
-                throw new ArgumentException($"The first element of the {nameof(groupDivisors)} array must be equal to 1.", nameof(groupDivisors));
-            }
-
-            this.itemsPerGroup = itemsPerGroup;
-            this.groupDivisors = groupDivisors;
-
-            groupCount = groupDivisors.Length;
-            groups = new List<BlockLocatorEntry>[groupCount];
-
-            for (int groupIndex = 0; groupIndex < groupCount; groupIndex++)
-            {
-                groups[groupIndex] = new List<BlockLocatorEntry>();
-            }
-        }
-
-        public BlockLocator() : this(DefaultItemsPerGroup, DefaultGroupDivisors)
-        {
         }
 
         /// <summary>
@@ -50,15 +29,15 @@ namespace BitcoinUtilities.P2P
         /// </summary>
         /// <param name="targetHeight">The height of the last block that should be described by the locator.</param>
         /// <returns>An array of block heights that are required to build a locator for the given height.</returns>
-        public int[] GetRequiredBlockHeights(int targetHeight)
+        public static int[] GetRequiredBlockHeights(int targetHeight)
         {
             SortedSet<int> heights = new SortedSet<int>();
 
-            for (int groupIndex = 0; groupIndex < groupCount; groupIndex++)
+            for (int groupIndex = 0; groupIndex < GroupCount; groupIndex++)
             {
-                int groupDivisor = groupDivisors[groupIndex];
+                int groupDivisor = GroupDivisors[groupIndex];
                 int height = targetHeight - targetHeight%groupDivisor;
-                for (int i = 0; i < itemsPerGroup && height > 0; i++, height -= groupDivisor)
+                for (int i = 0; i < ItemsPerGroup && height > 0; i++, height -= groupDivisor)
                 {
                     heights.Add(height);
                 }
@@ -78,21 +57,21 @@ namespace BitcoinUtilities.P2P
         {
             BlockLocatorEntry entry = new BlockLocatorEntry(height, hash);
 
-            for (int groupIndex = 0; groupIndex < groupCount; groupIndex++)
+            for (int groupIndex = 0; groupIndex < GroupCount; groupIndex++)
             {
-                int groupDivisor = groupDivisors[groupIndex];
+                int groupDivisor = GroupDivisors[groupIndex];
                 if (height%groupDivisor == 0)
                 {
-                    //todo: use circular buffer
-                    while (groups[groupIndex].Count > 0 && groups[groupIndex][0].Height >= height)
+                    LinkedList<BlockLocatorEntry> group = groups[groupIndex];
+                    while (group.Count > 0 && group.First.Value.Height >= height)
                     {
-                        groups[groupIndex].RemoveAt(0);
+                        group.RemoveFirst();
                     }
-                    while (groups[groupIndex].Count >= itemsPerGroup)
+                    while (group.Count >= ItemsPerGroup)
                     {
-                        groups[groupIndex].RemoveAt(groups[groupIndex].Count - 1);
+                        group.RemoveLast();
                     }
-                    groups[groupIndex].Insert(0, entry);
+                    group.AddFirst(entry);
                 }
             }
         }
@@ -108,10 +87,10 @@ namespace BitcoinUtilities.P2P
                 return new byte[0][];
             }
 
-            List<byte[]> hashes = new List<byte[]>(groupCount*itemsPerGroup);
-            int lastHeight = groups[0][0].Height + 1;
+            List<byte[]> hashes = new List<byte[]>(GroupCount*ItemsPerGroup);
+            int lastHeight = groups[0].First.Value.Height + 1;
 
-            foreach (List<BlockLocatorEntry> group in groups)
+            foreach (LinkedList<BlockLocatorEntry> group in groups)
             {
                 foreach (BlockLocatorEntry entry in group)
                 {
