@@ -10,6 +10,12 @@ namespace Test.BitcoinUtilities.P2P
     public class TestBlockLocator
     {
         [Test]
+        public void TestEmptyLocator()
+        {
+            Assert.That(new BlockLocator().GetHashes().Length, Is.EqualTo(0));
+        }
+
+        [Test]
         public void TestGetRequiredBlockHeights()
         {
             Assert.That(BlockLocator.GetRequiredBlockHeights(1), Is.EquivalentTo(CalculateExpectedHeights(1, 1)));
