@@ -57,6 +57,7 @@
     <Compile Include="Bip38.cs" />
     <Compile Include="BitcoinAddress.cs" />
     <Compile Include="IpUtils.cs" />
+    <Compile Include="Node\BitcoinProtocolViolationException.cs" />
     <Compile Include="Node\INodeServiceFactory.cs" />
     <Compile Include="Node\LimitedNodeAddressDictionary.cs" />
     <Compile Include="Node\NodeAddressCollection.cs" />
@@ -79,6 +80,7 @@
     <Compile Include="Node\NodeConnectionCollection.cs" />
     <Compile Include="Node\NodeConnectionDirection.cs" />
     <Compile Include="Node\NodeServiceCollection.cs" />
+    <Compile Include="Node\Rules\BlockHeaderValidator.cs" />
     <Compile Include="Node\Services\BlockHeaderDownloadService.cs" />
     <Compile Include="Node\Services\NodeDiscoveryService.cs" />
     <Compile Include="Node\INodeService.cs" />

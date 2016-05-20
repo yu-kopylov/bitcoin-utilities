@@ -89,7 +89,7 @@ namespace BitcoinUtilities.Node
         public void OnNodeConnected(BitcoinEndpoint endpoint)
         {
             //todo: add test and maybe catch exceptions
-            
+
             //todo: make sure this method is called before any messages are received by service
 
             foreach (NodeServiceInfo serviceInfo in services)
@@ -100,11 +100,20 @@ namespace BitcoinUtilities.Node
 
         public void ProcessMessage(BitcoinEndpoint endpoint, IBitcoinMessage message)
         {
-            //todo: add test and maybe catch exceptions
-
-            foreach (NodeServiceInfo serviceInfo in services)
+            //todo: add test and catch maybe catch other exceptions
+            try
             {
-                serviceInfo.Service.ProcessMessage(endpoint, message);
+                foreach (NodeServiceInfo serviceInfo in services)
+                {
+                    serviceInfo.Service.ProcessMessage(endpoint, message);
+                }
+            }
+            catch (BitcoinProtocolViolationException e)
+            {
+                logger.Error(e, "Remote node violated protecol rules ({0}).", endpoint.PeerInfo.IpEndpoint);
+                //todo: is this a correct way to disconnect node?
+                //todo: ban node ?
+                endpoint.Dispose();
             }
         }
 

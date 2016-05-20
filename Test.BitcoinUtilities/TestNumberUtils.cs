@@ -1,4 +1,5 @@
-﻿using BitcoinUtilities;
+﻿using System.Numerics;
+using BitcoinUtilities;
 using NUnit.Framework;
 
 namespace Test.BitcoinUtilities
@@ -32,6 +33,47 @@ namespace Test.BitcoinUtilities
             Assert.That(
                 NumberUtils.GetBytes(unchecked((int) 0x81828384)),
                 Is.EqualTo(new byte[] {0x84, 0x83, 0x82, 0x81}));
+        }
+
+        [Test]
+        public void TestToBigInteger()
+        {
+            Assert.That(NumberUtils.ToBigInteger(new byte[] {0}), Is.EqualTo(new BigInteger(0)));
+            Assert.That(NumberUtils.ToBigInteger(new byte[] {1}), Is.EqualTo(new BigInteger(1)));
+            Assert.That(NumberUtils.ToBigInteger(new byte[] {255}), Is.EqualTo(new BigInteger(255)));
+
+            Assert.That(NumberUtils.ToBigInteger(new byte[] {1, 0}), Is.EqualTo(new BigInteger(1)));
+            Assert.That(NumberUtils.ToBigInteger(new byte[] {0, 1}), Is.EqualTo(new BigInteger(256)));
+
+            Assert.That(NumberUtils.ToBigInteger(new byte[] {0, 200}), Is.EqualTo(new BigInteger(51200)));
+        }
+
+        [Test]
+        public void TestNBitsToTarget()
+        {
+            Assert.That(NumberUtils.NBitsToTarget(0x01003456), Is.EqualTo(new BigInteger(0)));
+            Assert.That(NumberUtils.NBitsToTarget(0x05009234), Is.EqualTo(new BigInteger(0x92340000)));
+
+            Assert.That(NumberUtils.NBitsToTarget(0x01003456), Is.EqualTo(new BigInteger(0x00)));
+            Assert.That(NumberUtils.NBitsToTarget(0x01123456), Is.EqualTo(new BigInteger(0x12)));
+            Assert.That(NumberUtils.NBitsToTarget(0x02008000), Is.EqualTo(new BigInteger(0x80)));
+            Assert.That(NumberUtils.NBitsToTarget(0x05009234), Is.EqualTo(new BigInteger(0x92340000)));
+
+
+            Assert.That(NumberUtils.NBitsToTarget(0x207FFFFF), Is.EqualTo(new BigInteger(new byte[]
+            {
+                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                0x00, 0x00, 0x00, 0x00, 0x00, 0xFF, 0xFF, 0x7F
+            })));
+
+            // High bit set(0x80 in 0x92).
+            //todo: this test case seems wrong, but all negative targets are treated like zero
+            Assert.That(NumberUtils.NBitsToTarget(0x04923456), Is.EqualTo(new BigInteger(-0x12345600)));
+
+            // Inverse of above; no high bit.
+            Assert.That(NumberUtils.NBitsToTarget(0x04123456), Is.EqualTo(new BigInteger(0x12345600)));
         }
     }
 }

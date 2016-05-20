@@ -44,7 +44,7 @@ namespace Test.BitcoinUtilities.P2P.Messages
 
             Assert.That(message.BlockHeader.Version, Is.EqualTo(1));
             Assert.That(message.BlockHeader.Timestamp, Is.EqualTo(1293629558));
-            Assert.That(message.BlockHeader.Bits, Is.EqualTo(0x1B04864C));
+            Assert.That(message.BlockHeader.NBits, Is.EqualTo(0x1B04864C));
             Assert.That(message.BlockHeader.Nonce, Is.EqualTo(0x29854B55));
             Assert.That(message.TotalTransactions, Is.EqualTo(7));
             Assert.That(message.Hashes.Count, Is.EqualTo(4));

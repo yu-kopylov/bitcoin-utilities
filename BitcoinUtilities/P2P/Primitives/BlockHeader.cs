@@ -9,16 +9,16 @@ namespace BitcoinUtilities.P2P.Primitives
         private readonly byte[] prevBlock;
         private readonly byte[] merkleRoot;
         private readonly uint timestamp;
-        private readonly uint bits;
+        private readonly uint nBits;
         private readonly uint nonce;
 
-        public BlockHeader(uint version, byte[] prevBlock, byte[] merkleRoot, uint timestamp, uint bits, uint nonce)
+        public BlockHeader(uint version, byte[] prevBlock, byte[] merkleRoot, uint timestamp, uint nBits, uint nonce)
         {
             this.version = version;
             this.prevBlock = prevBlock;
             this.merkleRoot = merkleRoot;
             this.timestamp = timestamp;
-            this.bits = bits;
+            this.nBits = nBits;
             this.nonce = nonce;
         }
 
@@ -57,9 +57,9 @@ namespace BitcoinUtilities.P2P.Primitives
         /// <summary>
         /// The calculated difficulty target being used for this block.
         /// </summary>
-        public uint Bits
+        public uint NBits
         {
-            get { return bits; }
+            get { return nBits; }
         }
 
         /// <summary>
@@ -76,7 +76,7 @@ namespace BitcoinUtilities.P2P.Primitives
             writer.Write(prevBlock);
             writer.Write(merkleRoot);
             writer.Write(timestamp);
-            writer.Write(bits);
+            writer.Write(nBits);
             writer.Write(nonce);
         }
 
