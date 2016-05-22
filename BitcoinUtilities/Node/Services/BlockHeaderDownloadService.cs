@@ -1,8 +1,10 @@
-﻿using System.Threading;
+﻿using System.Collections.Generic;
+using System.Threading;
 using BitcoinUtilities.Node.Rules;
 using BitcoinUtilities.P2P;
 using BitcoinUtilities.P2P.Messages;
 using BitcoinUtilities.P2P.Primitives;
+using BitcoinUtilities.Storage;
 
 namespace BitcoinUtilities.Node.Services
 {
@@ -38,12 +40,15 @@ namespace BitcoinUtilities.Node.Services
 
         private void ProcessHeadersMessage(HeadersMessage message)
         {
+            List<StoredBlock> blocks = new List<StoredBlock>();
             foreach (BlockHeader header in message.Headers)
             {
                 if (!BlockHeaderValidator.IsValid(header))
                 {
                     throw new BitcoinProtocolViolationException("An invalid header was received.");
                 }
+                //todo: also check nBits against current network difficulty
+                blocks.Add(new StoredBlock(header));
             }
             //todo: check for exesting headers and calculate height for new headers
             node.Storage.AddHeaders(message.Headers);

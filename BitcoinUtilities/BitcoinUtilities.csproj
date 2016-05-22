@@ -74,7 +74,7 @@
     <Compile Include="Collections\VirtualDictionaryInternals\BlockBatch.cs" />
     <Compile Include="Collections\VirtualDictionaryInternals\VirtualDictionaryContainer.cs" />
     <Compile Include="Collections\VirtualDictionaryTransaction.cs" />
-    <Compile Include="IBlockChainStorage.cs" />
+    <Compile Include="Storage\IBlockChainStorage.cs" />
     <Compile Include="Node\NodeAddress.cs" />
     <Compile Include="Node\NodeConnection.cs" />
     <Compile Include="Node\NodeConnectionCollection.cs" />
@@ -114,6 +114,7 @@
     <Compile Include="P2P\BitcoinStreamWriter.cs" />
     <Compile Include="SecureRandom.cs" />
     <Compile Include="SignatureUtils.cs" />
+    <Compile Include="Storage\StoredBlock.cs" />
     <Compile Include="SystemTime.cs" />
     <Compile Include="Threading\BlockingThreadPool.cs" />
     <Compile Include="P2P\GenesisBlock.cs" />
