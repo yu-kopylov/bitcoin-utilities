@@ -1,5 +1,7 @@
-﻿using System.Numerics;
+﻿using System;
+using System.Numerics;
 using BitcoinUtilities;
+using BitcoinUtilities.P2P;
 using NUnit.Framework;
 
 namespace Test.BitcoinUtilities
@@ -69,11 +71,28 @@ namespace Test.BitcoinUtilities
             })));
 
             // High bit set(0x80 in 0x92).
-            //todo: this test case seems wrong, but all negative targets are treated like zero
             Assert.That(NumberUtils.NBitsToTarget(0x04923456), Is.EqualTo(new BigInteger(-0x12345600)));
 
             // Inverse of above; no high bit.
             Assert.That(NumberUtils.NBitsToTarget(0x04123456), Is.EqualTo(new BigInteger(0x12345600)));
+        }
+
+        [Test]
+        public void TestDifficultyTargetToWork()
+        {
+            Assert.That(NumberUtils.DifficultyTargetToWork(-BigInteger.Pow(2, 1024)), Is.EqualTo(Math.Pow(2, 256)));
+            Assert.That(NumberUtils.DifficultyTargetToWork(-10), Is.EqualTo(Math.Pow(2, 256)));
+            Assert.That(NumberUtils.DifficultyTargetToWork(-1), Is.EqualTo(Math.Pow(2, 256)));
+            Assert.That(NumberUtils.DifficultyTargetToWork(0), Is.EqualTo(Math.Pow(2, 256)));
+            Assert.That(NumberUtils.DifficultyTargetToWork(1), Is.EqualTo(Math.Pow(2, 255)));
+            Assert.That(NumberUtils.DifficultyTargetToWork(2), Is.EqualTo(Math.Pow(2, 256)/3).Within(1e-12).Percent);
+            Assert.That(NumberUtils.DifficultyTargetToWork(3), Is.EqualTo(Math.Pow(2, 254)));
+            Assert.That(NumberUtils.DifficultyTargetToWork(BigInteger.Pow(2, 254)), Is.EqualTo(4));
+            Assert.That(NumberUtils.DifficultyTargetToWork(BigInteger.Pow(2, 256)/3), Is.EqualTo(3).Within(1e-12).Percent);
+            Assert.That(NumberUtils.DifficultyTargetToWork(BigInteger.Pow(2, 255)), Is.EqualTo(2));
+            Assert.That(NumberUtils.DifficultyTargetToWork(BigInteger.Pow(2, 256)), Is.EqualTo(1));
+            Assert.That(NumberUtils.DifficultyTargetToWork(BigInteger.Pow(2, 257)), Is.EqualTo(1));
+            Assert.That(NumberUtils.DifficultyTargetToWork(BigInteger.Pow(2, 1024)), Is.EqualTo(1));
         }
     }
 }

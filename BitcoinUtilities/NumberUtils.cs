@@ -5,6 +5,8 @@ namespace BitcoinUtilities
 {
     public static class NumberUtils
     {
+        private static readonly BigInteger power256Of2 = BigInteger.Pow(2, 256);
+
         /// <summary>
         /// Constructs a 2-byte unsigned integer with a reversed order of bytes in its binary representation.
         /// </summary>
@@ -46,8 +48,8 @@ namespace BitcoinUtilities
         /// <returns>A <see cref="BigInteger"/> that corresponds to the given array.</returns>
         public static BigInteger ToBigInteger(byte[] bytes)
         {
-            byte[] unsignedBytes = new byte[bytes.Length+1];
-            Array.Copy(bytes, unsignedBytes, bytes.Length); 
+            byte[] unsignedBytes = new byte[bytes.Length + 1];
+            Array.Copy(bytes, unsignedBytes, bytes.Length);
             //todo: test and specify byte order
             return new BigInteger(unsignedBytes);
         }
@@ -63,7 +65,6 @@ namespace BitcoinUtilities
             int exp = (int) (nBits >> 24) - 3;
             int mantissa = (int) (nBits & 0x007FFFFF);
 
-            //todo: this negative number encoding is non-standard but matches the reference example
             if ((nBits & 0x00800000) != 0)
             {
                 mantissa = -mantissa;
@@ -81,6 +82,33 @@ namespace BitcoinUtilities
             }
 
             return res;
+        }
+
+        /// <summary>
+        /// Estimates the number of randomly generated 256-bit hashes that have
+        /// approximately 1 hash that is less than or equal to the given difficulty target.
+        /// <para/>
+        /// If the target is negative then it is treated as a zero target.
+        /// </summary>
+        /// <param name="target">The difficulty target.</param>
+        /// <returns>Estimated number of hashes.</returns>
+        public static double DifficultyTargetToWork(BigInteger target)
+        {
+            //todo: compare with implementations in other Bitcoin projects
+
+            if (target < 0)
+            {
+                return Math.Pow(2, 256);
+            }
+
+            if (target > power256Of2)
+            {
+                return 1;
+            }
+
+            BigInteger goodHashCount = target + 1;
+
+            return Math.Pow(2, 256 - BigInteger.Log(goodHashCount, 2));
         }
     }
 }
