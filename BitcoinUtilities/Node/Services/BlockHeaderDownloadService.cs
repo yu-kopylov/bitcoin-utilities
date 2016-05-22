@@ -1,9 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Threading;
-using BitcoinUtilities.Node.Rules;
 using BitcoinUtilities.P2P;
 using BitcoinUtilities.P2P.Messages;
-using BitcoinUtilities.P2P.Primitives;
 using BitcoinUtilities.Storage;
 
 namespace BitcoinUtilities.Node.Services
@@ -24,9 +22,9 @@ namespace BitcoinUtilities.Node.Services
 
         public void OnNodeConnected(BitcoinEndpoint endpoint)
         {
-            BlockLocator blockLocator = node.Storage.GetCurrentChainLocator();
+            BlockLocator blockLocator = node.Blockchain.GetBlockLocator();
             //todo: check if remote node provides this service?
-            endpoint.WriteMessage(new GetHeadersMessage(endpoint.ProtocolVersion, blockLocator.GetHashes(), new byte[32]));
+            RequestHeaders(endpoint, blockLocator);
         }
 
         public void ProcessMessage(BitcoinEndpoint endpoint, IBitcoinMessage message)
@@ -34,24 +32,39 @@ namespace BitcoinUtilities.Node.Services
             HeadersMessage headersMessage = message as HeadersMessage;
             if (headersMessage != null)
             {
-                ProcessHeadersMessage(headersMessage);
+                ProcessHeadersMessage(endpoint, headersMessage);
             }
         }
 
-        private void ProcessHeadersMessage(HeadersMessage message)
+        private void ProcessHeadersMessage(BitcoinEndpoint endpoint, HeadersMessage message)
         {
-            List<StoredBlock> blocks = new List<StoredBlock>();
-            foreach (BlockHeader header in message.Headers)
+            List<StoredBlock> storedBlocks = node.Blockchain.AddHeaders(message.Headers);
+
+            //todo: save blockLocator per node between requests?
+            BlockLocator blockLocator = new BlockLocator();
+
+            //todo: what should happen if message contains headers from different branchas?
+            bool hasSavedHeaders = false;
+            foreach (StoredBlock block in storedBlocks)
             {
-                if (!BlockHeaderValidator.IsValid(header))
+                if (block.Height >= 0)
                 {
-                    throw new BitcoinProtocolViolationException("An invalid header was received.");
+                    //todo: this code assumes that blocks in storedBlocks collections are in order of ascending height and belong to one branch
+                    blockLocator.AddHash(block.Height, block.Hash);
+                    hasSavedHeaders = true;
                 }
-                //todo: also check nBits against current network difficulty
-                blocks.Add(new StoredBlock(header));
             }
-            //todo: check for exesting headers and calculate height for new headers
-            node.Storage.AddHeaders(message.Headers);
+
+            //todo: review this condition
+            if (hasSavedHeaders)
+            {
+                RequestHeaders(endpoint, blockLocator);
+            }
+        }
+
+        private static void RequestHeaders(BitcoinEndpoint endpoint, BlockLocator blockLocator)
+        {
+            endpoint.WriteMessage(new GetHeadersMessage(endpoint.ProtocolVersion, blockLocator.GetHashes(), new byte[32]));
         }
     }
 

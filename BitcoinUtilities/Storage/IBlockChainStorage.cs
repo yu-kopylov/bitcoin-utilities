@@ -1,12 +1,14 @@
-﻿using BitcoinUtilities.P2P;
-using BitcoinUtilities.P2P.Primitives;
-
-namespace BitcoinUtilities.Storage
+﻿namespace BitcoinUtilities.Storage
 {
     //todo: add methods and XMLDOC
     public interface IBlockChainStorage
     {
-        void AddHeaders(BlockHeader[] headers);
         BlockLocator GetCurrentChainLocator();
+
+        StoredBlock FindBlockByHash(byte[] hash);
+
+        StoredBlock FindBlockByHeight(int height);
+
+        void AddBlock(StoredBlock block);
     }
 }

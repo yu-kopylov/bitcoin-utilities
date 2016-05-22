@@ -18,23 +18,24 @@ namespace Test.BitcoinUtilities.Storage
         [Test]
         public void TestGetRequiredBlockHeights()
         {
-            Assert.That(BlockLocator.GetRequiredBlockHeights(1), Is.EquivalentTo(CalculateExpectedHeights(1, 1)));
-            Assert.That(BlockLocator.GetRequiredBlockHeights(2), Is.EquivalentTo(CalculateExpectedHeights(1, 2)));
-            Assert.That(BlockLocator.GetRequiredBlockHeights(3), Is.EquivalentTo(CalculateExpectedHeights(1, 3)));
+            Assert.That(BlockLocator.GetRequiredBlockHeights(0), Is.EquivalentTo(CalculateExpectedHeights(0, 0)));
+            Assert.That(BlockLocator.GetRequiredBlockHeights(1), Is.EquivalentTo(CalculateExpectedHeights(0, 1)));
+            Assert.That(BlockLocator.GetRequiredBlockHeights(2), Is.EquivalentTo(CalculateExpectedHeights(0, 2)));
+            Assert.That(BlockLocator.GetRequiredBlockHeights(3), Is.EquivalentTo(CalculateExpectedHeights(0, 3)));
 
-            Assert.That(BlockLocator.GetRequiredBlockHeights(15), Is.EquivalentTo(CalculateExpectedHeights(1, 15)));
-            Assert.That(BlockLocator.GetRequiredBlockHeights(16), Is.EquivalentTo(CalculateExpectedHeights(1, 16)));
-            Assert.That(BlockLocator.GetRequiredBlockHeights(17), Is.EquivalentTo(CalculateExpectedHeights(1, 17)));
+            Assert.That(BlockLocator.GetRequiredBlockHeights(15), Is.EquivalentTo(CalculateExpectedHeights(0, 15)));
+            Assert.That(BlockLocator.GetRequiredBlockHeights(16), Is.EquivalentTo(CalculateExpectedHeights(0, 16)));
+            Assert.That(BlockLocator.GetRequiredBlockHeights(17), Is.EquivalentTo(CalculateExpectedHeights(0, 17)));
 
-            Assert.That(BlockLocator.GetRequiredBlockHeights(20), Is.EquivalentTo(CalculateExpectedHeights(1, 20)));
+            Assert.That(BlockLocator.GetRequiredBlockHeights(20), Is.EquivalentTo(CalculateExpectedHeights(0, 20)));
 
-            Assert.That(BlockLocator.GetRequiredBlockHeights(63), Is.EquivalentTo(CalculateExpectedHeights(1, 63)));
-            Assert.That(BlockLocator.GetRequiredBlockHeights(64), Is.EquivalentTo(CalculateExpectedHeights(1, 64)));
-            Assert.That(BlockLocator.GetRequiredBlockHeights(65), Is.EquivalentTo(CalculateExpectedHeights(1, 65)));
+            Assert.That(BlockLocator.GetRequiredBlockHeights(63), Is.EquivalentTo(CalculateExpectedHeights(0, 63)));
+            Assert.That(BlockLocator.GetRequiredBlockHeights(64), Is.EquivalentTo(CalculateExpectedHeights(0, 64)));
+            Assert.That(BlockLocator.GetRequiredBlockHeights(65), Is.EquivalentTo(CalculateExpectedHeights(0, 65)));
 
-            Assert.That(BlockLocator.GetRequiredBlockHeights(299000), Is.EquivalentTo(CalculateExpectedHeights(1, 299000)));
-            Assert.That(BlockLocator.GetRequiredBlockHeights(299001), Is.EquivalentTo(CalculateExpectedHeights(1, 299001)));
-            Assert.That(BlockLocator.GetRequiredBlockHeights(299002), Is.EquivalentTo(CalculateExpectedHeights(1, 299002)));
+            Assert.That(BlockLocator.GetRequiredBlockHeights(299000), Is.EquivalentTo(CalculateExpectedHeights(0, 299000)));
+            Assert.That(BlockLocator.GetRequiredBlockHeights(299001), Is.EquivalentTo(CalculateExpectedHeights(0, 299001)));
+            Assert.That(BlockLocator.GetRequiredBlockHeights(299002), Is.EquivalentTo(CalculateExpectedHeights(0, 299002)));
         }
 
         [Test]
@@ -63,7 +64,7 @@ namespace Test.BitcoinUtilities.Storage
         [Test]
         public void TestSets()
         {
-            for (int from = 1; from <= 33; from++)
+            for (int from = 0; from <= 33; from++)
             {
                 for (int to = from; to <= 33; to++)
                 {
@@ -77,8 +78,8 @@ namespace Test.BitcoinUtilities.Storage
                 }
             }
 
-            TestSet(1, 299000);
-            TestSet(1, 299001);
+            TestSet(0, 299000);
+            TestSet(0, 299001);
 
             TestSet(100000, 299000);
             TestSet(100000, 299001);

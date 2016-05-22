@@ -461,11 +461,6 @@ namespace BitcoinUtilities.Storage
             }
         }
 
-        public void AddHeaders(BlockHeader[] headers)
-        {
-            //todo: implement
-        }
-
         public BlockLocator GetCurrentChainLocator()
         {
             List<Block> headers = new List<Block>();
@@ -491,6 +486,85 @@ namespace BitcoinUtilities.Storage
             }
 
             return locator;
+        }
+
+        public StoredBlock FindBlockByHash(byte[] hash)
+        {
+            using (BlockChainRepository repo = new BlockChainRepository(conn))
+            {
+                using (var tx = conn.BeginTransaction())
+                {
+                    Block block = repo.FindBlockByHash(hash);
+
+                    if (block == null)
+                    {
+                        return null;
+                    }
+
+                    //todo: read fields instead?
+                    BlockHeader blockHeader = BlockHeader.Read(new BitcoinStreamReader(new MemoryStream(block.Header)));
+                    StoredBlock storedBlock = new StoredBlock(blockHeader);
+
+                    storedBlock.Height = block.Height;
+                    //todo: fill storedBlock.HasContent
+                    //todo: fill storedBlock.TotalWork
+
+                    tx.Commit();
+
+                    return storedBlock;
+                }
+            }
+        }
+
+        public StoredBlock FindBlockByHeight(int height)
+        {
+            using (BlockChainRepository repo = new BlockChainRepository(conn))
+            {
+                using (var tx = conn.BeginTransaction())
+                {
+                    //todo: rewrite this method
+                    List<Block> blocks = repo.ReadHeadersWithHeight(new int[] {height});
+
+                    if (!blocks.Any())
+                    {
+                        return null;
+                    }
+
+                    Block block = blocks[0];
+
+                    //todo: read fields instead?
+                    BlockHeader blockHeader = BlockHeader.Read(new BitcoinStreamReader(new MemoryStream(block.Header)));
+                    StoredBlock storedBlock = new StoredBlock(blockHeader);
+
+                    storedBlock.Height = block.Height;
+                    //todo: fill storedBlock.HasContent
+                    //todo: fill storedBlock.TotalWork
+
+                    tx.Commit();
+
+                    return storedBlock;
+                }
+            }
+        }
+
+        public void AddBlock(StoredBlock storedBlock)
+        {
+            using (BlockChainRepository repo = new BlockChainRepository(conn))
+            {
+                using (var tx = conn.BeginTransaction())
+                {
+                    //todo: use BlockConverter ?
+                    Block block = new Block();
+                    block.Height = storedBlock.Height;
+                    block.Header = BitcoinStreamWriter.GetBytes(storedBlock.Header.Write);
+                    block.Hash = storedBlock.Hash;
+                    block.Transactions = new List<Transaction>();
+
+                    repo.InsertBlock(block);
+
+                    tx.Commit();
+                }
+            }
         }
     }
 }

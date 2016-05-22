@@ -37,7 +37,7 @@ namespace BitcoinUtilities.Storage
             {
                 int groupDivisor = GroupDivisors[groupIndex];
                 int height = targetHeight - targetHeight%groupDivisor;
-                for (int i = 0; i < ItemsPerGroup && height > 0; i++, height -= groupDivisor)
+                for (int i = 0; i < ItemsPerGroup && height >= 0; i++, height -= groupDivisor)
                 {
                     heights.Add(height);
                 }

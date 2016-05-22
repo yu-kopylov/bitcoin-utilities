@@ -30,6 +30,7 @@ namespace BitcoinUtilities.Storage.Sql
 
         private SQLiteCommand CreateCommand(string sql)
         {
+            //todo: use separate class as cache for commands (it is not a responsibility of repositories)
             SQLiteCommand command;
             if (!commands.TryGetValue(sql, out command))
             {
@@ -60,6 +61,21 @@ namespace BitcoinUtilities.Storage.Sql
 
             command.ExecuteNonQuery();
             data.Id = connection.LastInsertRowId;
+        }
+
+        public Block FindBlockByHash(byte[] hash)
+        {
+            var command = CreateCommand($"select {GetBlockColumns("B")} from Blocks B where B.Hash=@Hash");
+            command.Parameters.Add("@Hash", DbType.Binary).Value = hash;
+
+            using (SQLiteDataReader reader = command.ExecuteReader())
+            {
+                if (!reader.Read())
+                {
+                    return null;
+                }
+                return ReadBlock(reader);
+            }
         }
 
         public Block GetLastBlockHeader()

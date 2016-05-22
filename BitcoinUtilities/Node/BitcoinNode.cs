@@ -21,6 +21,7 @@ namespace BitcoinUtilities.Node
         private readonly NodeServiceCollection services = new NodeServiceCollection();
 
         private readonly IBlockChainStorage storage;
+        private readonly Blockchain blockchain;
 
         private NodeAddressCollection addressCollection;
         private NodeConnectionCollection connectionCollection;
@@ -33,6 +34,7 @@ namespace BitcoinUtilities.Node
         public BitcoinNode(IBlockChainStorage storage)
         {
             this.storage = storage;
+            this.blockchain = new Blockchain(storage);
 
             services.AddFactory(new NodeDiscoveryServiceFactory());
             services.AddFactory(new BlockHeaderDownloadServiceFactory());
@@ -69,6 +71,11 @@ namespace BitcoinUtilities.Node
             get { return storage; }
         }
 
+        public Blockchain Blockchain
+        {
+            get { return blockchain; }
+        }
+
         public event PropertyChangedEventHandler PropertyChanged;
 
         protected virtual void OnPropertyChanged([CallerMemberName] string propertyName = null)
@@ -78,6 +85,8 @@ namespace BitcoinUtilities.Node
 
         public void Start()
         {
+            blockchain.Init();
+
             //todo: review the order in which services and listener start/stop, dispose created entities when start fails
             services.CreateServices(this, cancellationTokenSource.Token);
 

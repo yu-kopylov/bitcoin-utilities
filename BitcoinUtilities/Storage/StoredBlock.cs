@@ -36,14 +36,14 @@ namespace BitcoinUtilities.Storage
         /// <para/>
         /// It equals -1 if the height of the block in unknown.
         /// </summary>
-        public int Height { get; private set; }
+        public int Height { get; set; }
 
         /// <summary>
         /// An estimated amount of work that was required to build blockchain up to this block.
         /// <para/>
         /// It is measured as number of hashes that had to be generated to build blocks in the blockchain.
         /// </summary>
-        public double TotalWork { get; private set; }
+        public double TotalWork { get; set; }
 
         /// <summary>
         /// True if storage has the content of the block. 
