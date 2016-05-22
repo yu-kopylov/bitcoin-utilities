@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using BitcoinUtilities.P2P;
+using BitcoinUtilities.Storage;
 using NUnit.Framework;
 
-namespace Test.BitcoinUtilities.P2P
+namespace Test.BitcoinUtilities.Storage
 {
     [TestFixture]
     public class TestBlockLocator

@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 
-namespace BitcoinUtilities.P2P
+namespace BitcoinUtilities.Storage
 {
     /// <summary>
     /// An updatable set of block locator hashes.

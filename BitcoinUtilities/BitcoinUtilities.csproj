@@ -86,7 +86,7 @@
     <Compile Include="Node\INodeService.cs" />
     <Compile Include="P2P\BitcoinNetworkException.cs" />
     <Compile Include="P2P\BitcoinPeerInfo.cs" />
-    <Compile Include="P2P\BlockLocator.cs" />
+    <Compile Include="Storage\BlockLocator.cs" />
     <Compile Include="P2P\DnsSeeds.cs" />
     <Compile Include="P2P\Messages\AddrMessage.cs" />
     <Compile Include="P2P\Messages\HeadersMessage.cs" />
