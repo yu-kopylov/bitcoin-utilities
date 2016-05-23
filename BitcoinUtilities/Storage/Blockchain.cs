@@ -8,8 +8,13 @@ using BitcoinUtilities.P2P.Primitives;
 
 namespace BitcoinUtilities.Storage
 {
+    /// <summary>
+    /// All public methods are thread-safe.
+    /// </summary>
     public class Blockchain
     {
+        //todo: improve XMLDOC for this class
+
         private readonly object lockObject = new object();
 
         private readonly IBlockChainStorage storage;
@@ -81,8 +86,7 @@ namespace BitcoinUtilities.Storage
             }
 
             //todo: perform topological sorting of blocks?
-
-
+            
             List<StoredBlock> res = new List<StoredBlock>();
 
             //todo: consider reducing contention by using reader-writer lock
@@ -130,6 +134,11 @@ namespace BitcoinUtilities.Storage
             //todo: move this logic to StoredBlock ?
             block.Height = parentBlock.Height + 1;
             block.TotalWork = parentBlock.Height + blockWork;
+
+            if (!BlockHeaderValidator.IsValid(block, parentBlock))
+            {
+                throw new BitcoinProtocolViolationException("An invalid header was received.");
+            }
 
             storage.AddBlock(block);
 

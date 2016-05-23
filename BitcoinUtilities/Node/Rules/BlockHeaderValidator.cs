@@ -1,11 +1,15 @@
 ﻿using System.Numerics;
 using BitcoinUtilities.P2P;
 using BitcoinUtilities.P2P.Primitives;
+using BitcoinUtilities.Storage;
 
 namespace BitcoinUtilities.Node.Rules
 {
     public static class BlockHeaderValidator
     {
+        //todo: use network settings instead?
+        public const int DifficultyAdjustmentInterval = 2016;
+
         public static bool IsValid(BlockHeader header)
         {
             byte[] text = BitcoinStreamWriter.GetBytes(header.Write);
@@ -23,6 +27,24 @@ namespace BitcoinUtilities.Node.Rules
             //todo: add other validations
             //todo: compare nBits with network settings
 
+            return true;
+        }
+
+        internal static bool IsValid(StoredBlock block, StoredBlock parentBlock)
+        {
+            BigInteger blockDifficultyTarget = NumberUtils.NBitsToTarget(block.Header.NBits);
+            if (block.Height%DifficultyAdjustmentInterval != 0)
+            {
+                BigInteger parentBlockDifficultyTarget = NumberUtils.NBitsToTarget(parentBlock.Header.NBits);
+                if (blockDifficultyTarget != parentBlockDifficultyTarget)
+                {
+                    return false;
+                }
+            }
+            else
+            {
+                //todo: calculate new difficulty
+            }
             return true;
         }
     }
