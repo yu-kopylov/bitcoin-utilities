@@ -1,4 +1,5 @@
-﻿using System.Numerics;
+﻿using System;
+using System.Numerics;
 using BitcoinUtilities.P2P;
 using BitcoinUtilities.P2P.Primitives;
 using BitcoinUtilities.Storage;
@@ -12,6 +13,21 @@ namespace BitcoinUtilities.Node.Rules
 
         public static bool IsValid(BlockHeader header)
         {
+            return
+                IsTimestampValid(header) &&
+                IsHashValid(header);
+        }
+
+        /// <remarks>Specification: https://en.bitcoin.it/wiki/Block_timestamp</remarks>
+        internal static bool IsTimestampValid(BlockHeader header)
+        {
+            //todo: also compare with previous blocks
+            //todo: Specification requires to adjust current time. Why is it necessary?
+            return UnixTime.ToDateTime(header.Timestamp) < DateTime.UtcNow.AddHours(2);
+        }
+
+        internal static bool IsHashValid(BlockHeader header)
+        {
             byte[] text = BitcoinStreamWriter.GetBytes(header.Write);
             //todo: This hash is calculated too often. Save it somewhere.
             byte[] hash = CryptoUtils.DoubleSha256(text);
@@ -24,8 +40,10 @@ namespace BitcoinUtilities.Node.Rules
                 return false;
             }
 
-            //todo: add other validations
             //todo: compare nBits with network settings
+
+
+            //todo: add other validations
 
             return true;
         }

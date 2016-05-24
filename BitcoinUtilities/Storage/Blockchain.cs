@@ -86,7 +86,7 @@ namespace BitcoinUtilities.Storage
             }
 
             //todo: perform topological sorting of blocks?
-            
+
             List<StoredBlock> res = new List<StoredBlock>();
 
             //todo: consider reducing contention by using reader-writer lock
