@@ -501,17 +501,58 @@ namespace BitcoinUtilities.Storage
                         return null;
                     }
 
-                    //todo: read fields instead?
-                    BlockHeader blockHeader = BlockHeader.Read(new BitcoinStreamReader(new MemoryStream(block.Header)));
-                    StoredBlock storedBlock = new StoredBlock(blockHeader);
-
-                    storedBlock.Height = block.Height;
-                    //todo: fill storedBlock.HasContent
-                    //todo: fill storedBlock.TotalWork
-
+                    //todo: is it worth commiting?
                     tx.Commit();
 
-                    return storedBlock;
+                    return ToStoredBlock(block);
+                }
+            }
+        }
+
+        public Subchain FindSubchain(byte[] hash, int length)
+        {
+            using (BlockChainRepository repo = new BlockChainRepository(conn))
+            {
+                using (var tx = conn.BeginTransaction())
+                {
+                    Block dbBlock = repo.FindBlockByHash(hash);
+
+                    if (dbBlock == null)
+                    {
+                        return null;
+                    }
+
+                    List<StoredBlock> blocks = new List<StoredBlock>();
+
+                    StoredBlock block = ToStoredBlock(dbBlock);
+                    blocks.Add(block);
+
+                    for (int i = 1; i < length; i++)
+                    {
+                        byte[] parentBlockHash = block.Header.PrevBlock;
+                        if (parentBlockHash.All(b => b == 0))
+                        {
+                            //genesis block is reached;
+                            break;
+                        }
+
+                        dbBlock = repo.FindBlockByHash(parentBlockHash);
+
+                        if (dbBlock == null)
+                        {
+                            throw new InvalidOperationException("The storage has a chain that starts with an invalid genesis block.");
+                        }
+
+                        block = ToStoredBlock(dbBlock);
+                        blocks.Add(block);
+                    }
+
+                    //todo: is it worth commiting?
+                    tx.Commit();
+
+                    blocks.Reverse();
+
+                    return new Subchain(blocks);
                 }
             }
         }
@@ -532,17 +573,10 @@ namespace BitcoinUtilities.Storage
 
                     Block block = blocks[0];
 
-                    //todo: read fields instead?
-                    BlockHeader blockHeader = BlockHeader.Read(new BitcoinStreamReader(new MemoryStream(block.Header)));
-                    StoredBlock storedBlock = new StoredBlock(blockHeader);
-
-                    storedBlock.Height = block.Height;
-                    //todo: fill storedBlock.HasContent
-                    //todo: fill storedBlock.TotalWork
-
+                    //todo: is it worth commiting?
                     tx.Commit();
 
-                    return storedBlock;
+                    return ToStoredBlock(block);
                 }
             }
         }
@@ -565,6 +599,18 @@ namespace BitcoinUtilities.Storage
                     tx.Commit();
                 }
             }
+        }
+
+        private static StoredBlock ToStoredBlock(Block block)
+        {
+            //todo: read fields instead?
+            BlockHeader blockHeader = BlockHeader.Read(new BitcoinStreamReader(new MemoryStream(block.Header)));
+            StoredBlock storedBlock = new StoredBlock(blockHeader);
+
+            storedBlock.Height = block.Height;
+            //todo: fill storedBlock.HasContent
+            //todo: fill storedBlock.TotalWork
+            return storedBlock;
         }
     }
 }

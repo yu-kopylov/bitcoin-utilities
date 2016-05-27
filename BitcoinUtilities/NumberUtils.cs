@@ -55,11 +55,11 @@ namespace BitcoinUtilities
         }
 
         /// <summary>
-        /// Converts a nBits to a target threshold.
+        /// Converts a nBits to a difficulty target threshold.
         /// </summary>
-        /// <remark>Specification: https://bitcoin.org/en/developer-reference#target-nbits</remark>
+        /// <remark>Specification: https://bitcoin.org/en/developer-reference#target-nbits </remark>
         /// <param name="nBits">The nBits to convert.</param>
-        /// <returns>The target threshold as a <see cref="BigInteger"/>.</returns>
+        /// <returns>The difficulty target threshold as a <see cref="BigInteger"/>.</returns>
         public static BigInteger NBitsToTarget(uint nBits)
         {
             int exp = (int) (nBits >> 24) - 3;
@@ -82,6 +82,27 @@ namespace BitcoinUtilities
             }
 
             return res;
+        }
+
+        /// <summary>
+        /// Converts a difficulty target threshold to a nBits value.
+        /// </summary>
+        /// <remark>Specification: https://bitcoin.org/en/developer-reference#target-nbits </remark>
+        /// <param name="target">The difficulty target threshold to convert.</param>
+        /// <returns>The nBits value that can be stored in a block header.</returns>
+        public static uint TargetToNBits(BigInteger target)
+        {
+            byte[] targetBytes = target.ToByteArray();
+
+            int exp = targetBytes.Length;
+
+            int mantissa = 0;
+            for (int i = 0; i < 3 && i < targetBytes.Length; i++)
+            {
+                mantissa += targetBytes[targetBytes.Length - i - 1] << ((2 - i)*8);
+            }
+
+            return (uint) ((exp << 24) + mantissa);
         }
 
         /// <summary>

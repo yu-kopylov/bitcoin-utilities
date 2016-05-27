@@ -15,6 +15,12 @@ namespace BitcoinUtilities.Storage
     {
         //todo: improve XMLDOC for this class
 
+        /* Lower Boundaries:
+         * 2016 - When difficulty changes, we need the 2016th block before the current one. Source: https://en.bitcoin.it/wiki/Protocol_rules#Difficulty_change .
+         * 11 - A timestamp is accepted as valid if it is greater than the median timestamp of previous 11 blocks. Source: https://en.bitcoin.it/wiki/Block_timestamp .
+         */
+        private const int AnalyzedSubchainLength = 2016;
+
         private readonly object lockObject = new object();
 
         private readonly IBlockChainStorage storage;
@@ -123,11 +129,13 @@ namespace BitcoinUtilities.Storage
                 return storedBlock;
             }
 
-            StoredBlock parentBlock = storage.FindBlockByHash(block.Header.PrevBlock);
-            if (parentBlock == null)
+            Subchain parentChain = storage.FindSubchain(block.Header.PrevBlock, AnalyzedSubchainLength);
+            if (parentChain == null)
             {
                 return block;
             }
+
+            StoredBlock parentBlock = parentChain.GetBlockByOffset(0);
 
             double blockWork = NumberUtils.DifficultyTargetToWork(NumberUtils.NBitsToTarget(block.Header.NBits));
 
@@ -135,7 +143,7 @@ namespace BitcoinUtilities.Storage
             block.Height = parentBlock.Height + 1;
             block.TotalWork = parentBlock.Height + blockWork;
 
-            if (!BlockHeaderValidator.IsValid(block, parentBlock))
+            if (!BlockHeaderValidator.IsValid(block, parentChain))
             {
                 throw new BitcoinProtocolViolationException("An invalid header was received.");
             }

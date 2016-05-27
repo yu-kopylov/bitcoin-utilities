@@ -116,6 +116,7 @@
     <Compile Include="SecureRandom.cs" />
     <Compile Include="SignatureUtils.cs" />
     <Compile Include="Storage\StoredBlock.cs" />
+    <Compile Include="Storage\Subchain.cs" />
     <Compile Include="SystemTime.cs" />
     <Compile Include="Threading\BlockingThreadPool.cs" />
     <Compile Include="P2P\GenesisBlock.cs" />

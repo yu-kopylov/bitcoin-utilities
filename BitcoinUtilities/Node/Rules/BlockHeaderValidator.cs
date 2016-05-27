@@ -9,7 +9,8 @@ namespace BitcoinUtilities.Node.Rules
     public static class BlockHeaderValidator
     {
         //todo: use network settings instead?
-        public const int DifficultyAdjustmentInterval = 2016;
+        public const int DifficultyAdjustmentIntervalInBlocks = 2016;
+        public const int DifficultyAdjustmentIntervalInSeconds = 14*24*60*60;
 
         public static bool IsValid(BlockHeader header)
         {
@@ -48,10 +49,12 @@ namespace BitcoinUtilities.Node.Rules
             return true;
         }
 
-        internal static bool IsValid(StoredBlock block, StoredBlock parentBlock)
+        internal static bool IsValid(StoredBlock block, Subchain parentChain)
         {
+            StoredBlock parentBlock = parentChain.GetBlockByOffset(0);
+
             BigInteger blockDifficultyTarget = NumberUtils.NBitsToTarget(block.Header.NBits);
-            if (block.Height%DifficultyAdjustmentInterval != 0)
+            if (block.Height%DifficultyAdjustmentIntervalInBlocks != 0)
             {
                 BigInteger parentBlockDifficultyTarget = NumberUtils.NBitsToTarget(parentBlock.Header.NBits);
                 if (blockDifficultyTarget != parentBlockDifficultyTarget)
@@ -61,8 +64,47 @@ namespace BitcoinUtilities.Node.Rules
             }
             else
             {
-                //todo: calculate new difficulty
+                StoredBlock baseBlock = parentChain.GetBlockByHeight(block.Height - DifficultyAdjustmentIntervalInBlocks);
+
+                // todo: check against non-bugged value and allow some percent-based difference? 
+
+                // Note: There is a known bug here. It known as "off-by-one" or "Time Warp Bug".
+                // Bug Description: http://bitcoin.stackexchange.com/questions/20597/where-exactly-is-the-off-by-one-difficulty-bug
+                // Related Attack Description: https://bitcointalk.org/index.php?topic=43692.msg521772#msg521772
+                uint timeSpent = parentBlock.Header.Timestamp - baseBlock.Header.Timestamp;
+
+                BigInteger oldTarget = NumberUtils.NBitsToTarget(parentBlock.Header.NBits);
+
+                if (timeSpent < DifficultyAdjustmentIntervalInSeconds/4)
+                {
+                    timeSpent = DifficultyAdjustmentIntervalInSeconds/4;
+                }
+                if (timeSpent > DifficultyAdjustmentIntervalInSeconds*4)
+                {
+                    timeSpent = DifficultyAdjustmentIntervalInSeconds*4;
+                }
+
+                BigInteger newTarget = oldTarget*timeSpent/DifficultyAdjustmentIntervalInSeconds;
+
+                // todo: use network settings
+                // min difficulty is defined in https://bitcoin.org/en/developer-reference#target-nbits
+                BigInteger maxDifficultyTarget = NumberUtils.NBitsToTarget(0x1d00ffff);
+
+                if (newTarget > maxDifficultyTarget)
+                {
+                    newTarget = maxDifficultyTarget;
+                }
+
+                // this rounds newTarget value to a value that would fit into NBits
+                uint newNBits = NumberUtils.TargetToNBits(newTarget);
+                newTarget = NumberUtils.NBitsToTarget(newNBits);
+
+                if (blockDifficultyTarget != newTarget)
+                {
+                    return false;
+                }
             }
+
             return true;
         }
     }

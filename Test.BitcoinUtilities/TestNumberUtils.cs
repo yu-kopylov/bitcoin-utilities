@@ -78,6 +78,21 @@ namespace Test.BitcoinUtilities
         }
 
         [Test]
+        public void TestTargetToNBits()
+        {
+            //todo: compare this results with Bitcoin Core implementation
+            Assert.That(NumberUtils.TargetToNBits(0), Is.EqualTo(0x01000000));
+            Assert.That(NumberUtils.TargetToNBits(1), Is.EqualTo(0x01010000));
+            Assert.That(NumberUtils.TargetToNBits(0x12345678), Is.EqualTo(0x04123456));
+            Assert.That(NumberUtils.TargetToNBits(0x81234567), Is.EqualTo(0x05008123));
+
+            Assert.That(NumberUtils.NBitsToTarget(0x01000000), Is.EqualTo(new BigInteger(0)));
+            Assert.That(NumberUtils.NBitsToTarget(0x01010000), Is.EqualTo(new BigInteger(1)));
+            Assert.That(NumberUtils.NBitsToTarget(0x04123456), Is.EqualTo(new BigInteger(0x12345600)));
+            Assert.That(NumberUtils.NBitsToTarget(0x05008123), Is.EqualTo(new BigInteger(0x81230000)));
+        }
+
+        [Test]
         public void TestDifficultyTargetToWork()
         {
             Assert.That(NumberUtils.DifficultyTargetToWork(-BigInteger.Pow(2, 1024)), Is.EqualTo(Math.Pow(2, 256)));
