@@ -1,4 +1,4 @@
-namespace BitcoinUtilities.Storage.Models
+namespace BitcoinUtilities.Storage.SQLite.Models
 {
     public class BinaryData
     {

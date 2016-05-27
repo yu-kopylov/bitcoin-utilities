@@ -4,9 +4,9 @@ using BitcoinUtilities.P2P;
 using BitcoinUtilities.P2P.Messages;
 using BitcoinUtilities.P2P.Primitives;
 using BitcoinUtilities.Scripts;
-using BitcoinUtilities.Storage.Models;
+using BitcoinUtilities.Storage.SQLite.Models;
 
-namespace BitcoinUtilities.Storage.Converters
+namespace BitcoinUtilities.Storage.SQLite.Converters
 {
     public class BlockConverter
     {

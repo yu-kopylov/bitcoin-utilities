@@ -4,6 +4,7 @@ using System.Runtime.CompilerServices;
 using BitcoinUtilities.GUI.Models;
 using BitcoinUtilities.Node;
 using BitcoinUtilities.Storage;
+using BitcoinUtilities.Storage.SQLite;
 
 namespace BitcoinUtilities.GUI.ViewModels
 {
@@ -86,7 +87,7 @@ namespace BitcoinUtilities.GUI.ViewModels
 
         public void StartNode()
         {
-            BlockchainStorage storage = BlockchainStorage.Open(applicationContext.Settings.BlockchainFolder);
+            SQLiteBlockchainStorage storage = SQLiteBlockchainStorage.Open(applicationContext.Settings.BlockchainFolder);
             BitcoinNode node = new BitcoinNode(storage);
             try
             {

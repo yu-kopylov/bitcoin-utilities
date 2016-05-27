@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.Data;
 using System.Data.SQLite;
 using System.Text;
-using BitcoinUtilities.Storage.Models;
+using BitcoinUtilities.Storage.SQLite.Models;
 
-namespace BitcoinUtilities.Storage.Sql
+namespace BitcoinUtilities.Storage.SQLite.Sql
 {
     /// <summary>
     /// A class that groups block-chain related database queries and manages creation and disposal of SQL-commands.

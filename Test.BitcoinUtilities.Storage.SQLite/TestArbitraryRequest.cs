@@ -6,10 +6,10 @@ using BitcoinUtilities;
 using BitcoinUtilities.P2P;
 using BitcoinUtilities.P2P.Messages;
 using BitcoinUtilities.P2P.Primitives;
-using BitcoinUtilities.Storage.Converters;
+using BitcoinUtilities.Storage.SQLite.Converters;
 using NUnit.Framework;
 
-namespace Test.BitcoinUtilities.Storage
+namespace Test.BitcoinUtilities.Storage.SQLite
 {
     [TestFixture]
     public class TestArbitraryRequest

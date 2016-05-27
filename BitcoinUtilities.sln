@@ -1,15 +1,11 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 14
-VisualStudioVersion = 14.0.24720.0
+VisualStudioVersion = 14.0.25123.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BitcoinUtilities", "BitcoinUtilities\BitcoinUtilities.csproj", "{36C6CCB9-5611-40F7-95B5-47FC25EC3B63}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Test.BitcoinUtilities", "Test.BitcoinUtilities\Test.BitcoinUtilities.csproj", "{CBF88519-4383-4B85-8DC3-AB04EB88302A}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BitcoinUtilities.Storage", "BitcoinUtilities.Storage\BitcoinUtilities.Storage.csproj", "{C40E8B76-3F0E-4B16-AA34-136122B985D6}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Test.BitcoinUtilities.Storage", "Test.BitcoinUtilities.Storage\Test.BitcoinUtilities.Storage.csproj", "{DB5647CA-D75E-44A8-A1A2-B849D32A394C}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BitcoinUtilities.GUI", "BitcoinUtilities.GUI\BitcoinUtilities.GUI.csproj", "{A4AA1793-AE7A-44EE-92FA-E37609EE7B3C}"
 EndProject
@@ -22,6 +18,10 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Test.BitcoinUtilities.GUI.Models", "Test.BitcoinUtilities.GUI.Models\Test.BitcoinUtilities.GUI.Models.csproj", "{DA396F9B-FA0E-486C-83F2-52F01DC0F5EC}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestUtilities", "TestUtilities\TestUtilities.csproj", "{63B435D9-2923-4BA1-AC86-576A8BD2AE22}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BitcoinUtilities.Storage.SQLite", "BitcoinUtilities.Storage.SQLite\BitcoinUtilities.Storage.SQLite.csproj", "{C40E8B76-3F0E-4B16-AA34-136122B985D6}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Test.BitcoinUtilities.Storage.SQLite", "Test.BitcoinUtilities.Storage.SQLite\Test.BitcoinUtilities.Storage.SQLite.csproj", "{DB5647CA-D75E-44A8-A1A2-B849D32A394C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -37,14 +37,6 @@ Global
 		{CBF88519-4383-4B85-8DC3-AB04EB88302A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{CBF88519-4383-4B85-8DC3-AB04EB88302A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{CBF88519-4383-4B85-8DC3-AB04EB88302A}.Release|Any CPU.Build.0 = Release|Any CPU
-		{C40E8B76-3F0E-4B16-AA34-136122B985D6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{C40E8B76-3F0E-4B16-AA34-136122B985D6}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{C40E8B76-3F0E-4B16-AA34-136122B985D6}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{C40E8B76-3F0E-4B16-AA34-136122B985D6}.Release|Any CPU.Build.0 = Release|Any CPU
-		{DB5647CA-D75E-44A8-A1A2-B849D32A394C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{DB5647CA-D75E-44A8-A1A2-B849D32A394C}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{DB5647CA-D75E-44A8-A1A2-B849D32A394C}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{DB5647CA-D75E-44A8-A1A2-B849D32A394C}.Release|Any CPU.Build.0 = Release|Any CPU
 		{A4AA1793-AE7A-44EE-92FA-E37609EE7B3C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{A4AA1793-AE7A-44EE-92FA-E37609EE7B3C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A4AA1793-AE7A-44EE-92FA-E37609EE7B3C}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -69,6 +61,14 @@ Global
 		{63B435D9-2923-4BA1-AC86-576A8BD2AE22}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{63B435D9-2923-4BA1-AC86-576A8BD2AE22}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{63B435D9-2923-4BA1-AC86-576A8BD2AE22}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C40E8B76-3F0E-4B16-AA34-136122B985D6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C40E8B76-3F0E-4B16-AA34-136122B985D6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C40E8B76-3F0E-4B16-AA34-136122B985D6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C40E8B76-3F0E-4B16-AA34-136122B985D6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DB5647CA-D75E-44A8-A1A2-B849D32A394C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DB5647CA-D75E-44A8-A1A2-B849D32A394C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DB5647CA-D75E-44A8-A1A2-B849D32A394C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DB5647CA-D75E-44A8-A1A2-B849D32A394C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

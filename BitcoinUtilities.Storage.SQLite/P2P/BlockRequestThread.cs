@@ -5,10 +5,10 @@ using BitcoinUtilities.Collections;
 using BitcoinUtilities.P2P;
 using BitcoinUtilities.P2P.Messages;
 using BitcoinUtilities.P2P.Primitives;
-using BitcoinUtilities.Storage.Converters;
-using BitcoinUtilities.Storage.Models;
+using BitcoinUtilities.Storage.SQLite.Converters;
+using BitcoinUtilities.Storage.SQLite.Models;
 
-namespace BitcoinUtilities.Storage.P2P
+namespace BitcoinUtilities.Storage.SQLite.P2P
 {
     public class BlockRequestThread
     {

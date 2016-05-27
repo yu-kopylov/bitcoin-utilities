@@ -1,8 +1,8 @@
 ﻿using System.IO;
 using BitcoinUtilities.P2P;
 using BitcoinUtilities.P2P.Messages;
-using BitcoinUtilities.Storage.Converters;
-using BitcoinUtilities.Storage.Models;
+using BitcoinUtilities.Storage.SQLite.Converters;
+using BitcoinUtilities.Storage.SQLite.Models;
 using NUnit.Framework;
 
 namespace Test.BitcoinUtilities.Storage.Converters

@@ -8,14 +8,14 @@ using System.Linq;
 using System.Text;
 using BitcoinUtilities.P2P;
 using BitcoinUtilities.P2P.Primitives;
-using BitcoinUtilities.Storage.Converters;
-using BitcoinUtilities.Storage.Models;
-using BitcoinUtilities.Storage.Sql;
+using BitcoinUtilities.Storage.SQLite.Converters;
+using BitcoinUtilities.Storage.SQLite.Models;
+using BitcoinUtilities.Storage.SQLite.Sql;
 using NLog;
 
-namespace BitcoinUtilities.Storage
+namespace BitcoinUtilities.Storage.SQLite
 {
-    public class BlockchainStorage : IBlockchainStorage, IDisposable
+    public class SQLiteBlockchainStorage : IBlockchainStorage, IDisposable
     {
         private static readonly Logger logger = LogManager.GetCurrentClassLogger();
 
@@ -27,7 +27,7 @@ namespace BitcoinUtilities.Storage
         private readonly string storageLocation;
         private readonly SQLiteConnection conn;
 
-        private BlockchainStorage(string storageLocation, SQLiteConnection conn)
+        private SQLiteBlockchainStorage(string storageLocation, SQLiteConnection conn)
         {
             this.storageLocation = storageLocation;
             this.conn = conn;
@@ -39,7 +39,7 @@ namespace BitcoinUtilities.Storage
             conn.Dispose();
         }
 
-        public static BlockchainStorage Open(string storageLocation)
+        public static SQLiteBlockchainStorage Open(string storageLocation)
         {
             if (!Directory.Exists(storageLocation))
             {
@@ -69,7 +69,7 @@ namespace BitcoinUtilities.Storage
             //todo: handle exceptions, describe ant test them
             CheckSchema(conn);
 
-            return new BlockchainStorage(storageLocation, conn);
+            return new SQLiteBlockchainStorage(storageLocation, conn);
         }
 
         private static void AttachDatabase(SQLiteConnection conn, string schema, string path)
@@ -116,7 +116,7 @@ namespace BitcoinUtilities.Storage
             string createSchemaSql;
             using (
                 var stream =
-                    typeof(BlockchainStorage).Assembly.GetManifestResourceStream(
+                    typeof(SQLiteBlockchainStorage).Assembly.GetManifestResourceStream(
                         "BitcoinUtilities.Storage.Sql.create.sql"))
             {
                 using (StreamReader reader = new StreamReader(stream, Encoding.UTF8))

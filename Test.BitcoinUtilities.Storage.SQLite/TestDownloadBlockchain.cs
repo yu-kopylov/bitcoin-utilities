@@ -9,13 +9,14 @@ using BitcoinUtilities.P2P;
 using BitcoinUtilities.P2P.Messages;
 using BitcoinUtilities.P2P.Primitives;
 using BitcoinUtilities.Storage;
-using BitcoinUtilities.Storage.Converters;
-using BitcoinUtilities.Storage.Models;
-using BitcoinUtilities.Storage.P2P;
+using BitcoinUtilities.Storage.SQLite;
+using BitcoinUtilities.Storage.SQLite.Converters;
+using BitcoinUtilities.Storage.SQLite.Models;
+using BitcoinUtilities.Storage.SQLite.P2P;
 using NLog;
 using NUnit.Framework;
 
-namespace Test.BitcoinUtilities.Storage
+namespace Test.BitcoinUtilities.Storage.SQLite
 {
     [TestFixture]
     public class TestDownloadBlockchain
@@ -43,7 +44,7 @@ namespace Test.BitcoinUtilities.Storage
         private BlockRequestThread blockRequestThread;
         private Exception saveThreadError;
 
-        private BlockchainStorage storage;
+        private SQLiteBlockchainStorage storage;
 
         [Test]
         [Explicit]
@@ -118,7 +119,7 @@ namespace Test.BitcoinUtilities.Storage
 
         private void Init()
         {
-            storage = BlockchainStorage.Open(StorageLocation);
+            storage = SQLiteBlockchainStorage.Open(StorageLocation);
             blockLocator = storage.GetCurrentChainLocator();
             Block lastBlock = storage.GetLastBlockHeader();
 

@@ -59,9 +59,9 @@
       <Project>{99D7210D-2CA0-41CE-B576-DBC262339AD9}</Project>
       <Name>BitcoinUtilities.GUI.Models</Name>
     </ProjectReference>
-    <ProjectReference Include="..\BitcoinUtilities.Storage\BitcoinUtilities.Storage.csproj">
+    <ProjectReference Include="..\BitcoinUtilities.Storage.SQLite\BitcoinUtilities.Storage.SQLite.csproj">
       <Project>{C40E8B76-3F0E-4B16-AA34-136122B985D6}</Project>
-      <Name>BitcoinUtilities.Storage</Name>
+      <Name>BitcoinUtilities.Storage.SQLite</Name>
     </ProjectReference>
     <ProjectReference Include="..\BitcoinUtilities\BitcoinUtilities.csproj">
       <Project>{36C6CCB9-5611-40F7-95B5-47FC25EC3B63}</Project>

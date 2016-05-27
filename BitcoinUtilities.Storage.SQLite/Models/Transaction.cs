@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace BitcoinUtilities.Storage.Models
+namespace BitcoinUtilities.Storage.SQLite.Models
 {
     public class Transaction
     {
