@@ -112,7 +112,7 @@ namespace BitcoinUtilities.Storage
             //todo: use network specific genesis block
             StoredBlock genesisBlock = new StoredBlock(GenesisBlock.GetHeader());
 
-            double blockWork = NumberUtils.DifficultyTargetToWork(NumberUtils.NBitsToTarget(genesisBlock.Header.NBits));
+            double blockWork = DifficultyUtils.DifficultyTargetToWork(DifficultyUtils.NBitsToTarget(genesisBlock.Header.NBits));
 
             genesisBlock.Height = 0;
             genesisBlock.TotalWork = blockWork;
@@ -137,7 +137,7 @@ namespace BitcoinUtilities.Storage
 
             StoredBlock parentBlock = parentChain.GetBlockByOffset(0);
 
-            double blockWork = NumberUtils.DifficultyTargetToWork(NumberUtils.NBitsToTarget(block.Header.NBits));
+            double blockWork = DifficultyUtils.DifficultyTargetToWork(DifficultyUtils.NBitsToTarget(block.Header.NBits));
 
             //todo: move this logic to StoredBlock ?
             block.Height = parentBlock.Height + 1;

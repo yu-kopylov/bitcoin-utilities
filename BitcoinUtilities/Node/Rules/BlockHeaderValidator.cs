@@ -8,10 +8,6 @@ namespace BitcoinUtilities.Node.Rules
 {
     public static class BlockHeaderValidator
     {
-        //todo: use network settings instead?
-        public const int DifficultyAdjustmentIntervalInBlocks = 2016;
-        public const int DifficultyAdjustmentIntervalInSeconds = 14*24*60*60;
-
         public static bool IsValid(BlockHeader header)
         {
             return
@@ -34,7 +30,7 @@ namespace BitcoinUtilities.Node.Rules
             byte[] hash = CryptoUtils.DoubleSha256(text);
 
             BigInteger hashAsNumber = NumberUtils.ToBigInteger(hash);
-            BigInteger difficultyTarget = NumberUtils.NBitsToTarget(header.NBits);
+            BigInteger difficultyTarget = DifficultyUtils.NBitsToTarget(header.NBits);
 
             if (hashAsNumber > difficultyTarget)
             {
@@ -53,10 +49,10 @@ namespace BitcoinUtilities.Node.Rules
         {
             StoredBlock parentBlock = parentChain.GetBlockByOffset(0);
 
-            BigInteger blockDifficultyTarget = NumberUtils.NBitsToTarget(block.Header.NBits);
-            if (block.Height%DifficultyAdjustmentIntervalInBlocks != 0)
+            BigInteger blockDifficultyTarget = DifficultyUtils.NBitsToTarget(block.Header.NBits);
+            if (block.Height%DifficultyUtils.DifficultyAdjustmentIntervalInBlocks != 0)
             {
-                BigInteger parentBlockDifficultyTarget = NumberUtils.NBitsToTarget(parentBlock.Header.NBits);
+                BigInteger parentBlockDifficultyTarget = DifficultyUtils.NBitsToTarget(parentBlock.Header.NBits);
                 if (blockDifficultyTarget != parentBlockDifficultyTarget)
                 {
                     return false;
@@ -64,7 +60,7 @@ namespace BitcoinUtilities.Node.Rules
             }
             else
             {
-                StoredBlock baseBlock = parentChain.GetBlockByHeight(block.Height - DifficultyAdjustmentIntervalInBlocks);
+                StoredBlock baseBlock = parentChain.GetBlockByHeight(block.Height - DifficultyUtils.DifficultyAdjustmentIntervalInBlocks);
 
                 // todo: check against non-bugged value and allow some percent-based difference? 
 
@@ -73,31 +69,13 @@ namespace BitcoinUtilities.Node.Rules
                 // Related Attack Description: https://bitcointalk.org/index.php?topic=43692.msg521772#msg521772
                 uint timeSpent = parentBlock.Header.Timestamp - baseBlock.Header.Timestamp;
 
-                BigInteger oldTarget = NumberUtils.NBitsToTarget(parentBlock.Header.NBits);
+                BigInteger oldTarget = DifficultyUtils.NBitsToTarget(parentBlock.Header.NBits);
 
-                if (timeSpent < DifficultyAdjustmentIntervalInSeconds/4)
-                {
-                    timeSpent = DifficultyAdjustmentIntervalInSeconds/4;
-                }
-                if (timeSpent > DifficultyAdjustmentIntervalInSeconds*4)
-                {
-                    timeSpent = DifficultyAdjustmentIntervalInSeconds*4;
-                }
-
-                BigInteger newTarget = oldTarget*timeSpent/DifficultyAdjustmentIntervalInSeconds;
-
-                // todo: use network settings
-                // min difficulty is defined in https://bitcoin.org/en/developer-reference#target-nbits
-                BigInteger maxDifficultyTarget = NumberUtils.NBitsToTarget(0x1d00ffff);
-
-                if (newTarget > maxDifficultyTarget)
-                {
-                    newTarget = maxDifficultyTarget;
-                }
+                var newTarget = DifficultyUtils.CalculateNewTarget(timeSpent, oldTarget);
 
                 // this rounds newTarget value to a value that would fit into NBits
-                uint newNBits = NumberUtils.TargetToNBits(newTarget);
-                newTarget = NumberUtils.NBitsToTarget(newNBits);
+                uint newNBits = DifficultyUtils.TargetToNBits(newTarget);
+                newTarget = DifficultyUtils.NBitsToTarget(newNBits);
 
                 if (blockDifficultyTarget != newTarget)
                 {
