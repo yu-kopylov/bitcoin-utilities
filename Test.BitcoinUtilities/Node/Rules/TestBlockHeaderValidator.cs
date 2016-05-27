@@ -1,8 +1,10 @@
 ﻿using System;
+using System.Collections.Generic;
 using BitcoinUtilities;
 using BitcoinUtilities.Node.Rules;
 using BitcoinUtilities.P2P;
 using BitcoinUtilities.P2P.Primitives;
+using BitcoinUtilities.Storage;
 using NUnit.Framework;
 
 namespace Test.BitcoinUtilities.Node.Rules
@@ -30,7 +32,7 @@ namespace Test.BitcoinUtilities.Node.Rules
         }
 
         [Test]
-        public void TestIsTimestampValid()
+        public void TestIsTimestampValidStatic()
         {
             BlockHeader blockHeader1 = new BlockHeader(
                 genesisBlockHeader.Version,
@@ -49,6 +51,61 @@ namespace Test.BitcoinUtilities.Node.Rules
                 genesisBlockHeader.NBits,
                 genesisBlockHeader.Nonce);
             Assert.False(BlockHeaderValidator.IsTimestampValid(blockHeader2));
+        }
+
+        [Test]
+        public void TestIsTimestampValid()
+        {
+            List<StoredBlock> blocks = new List<StoredBlock>();
+
+            StoredBlock prevBlock = null;
+
+            for (int i = 0; i < 11; i++)
+            {
+                BlockHeader header = new BlockHeader
+                    (
+                    genesisBlockHeader.Version,
+                    prevBlock == null ? new byte[32] : prevBlock.Hash,
+                    new byte[32],
+                    (uint) i,
+                    0x21100000,
+                    0);
+                StoredBlock storedBlock = new StoredBlock(header);
+                blocks.Add(storedBlock);
+                prevBlock = storedBlock;
+            }
+
+            Subchain subchain = new Subchain(blocks);
+
+            {
+                BlockHeader header = new BlockHeader
+                    (
+                    genesisBlockHeader.Version,
+                    new byte[32],
+                    new byte[32],
+                    5,
+                    0x21100000,
+                    0);
+
+                StoredBlock storedBlock = new StoredBlock(header);
+
+                Assert.False(BlockHeaderValidator.IsTimeStampValid(storedBlock, subchain));
+            }
+
+            {
+                BlockHeader header = new BlockHeader
+                    (
+                    genesisBlockHeader.Version,
+                    new byte[32],
+                    new byte[32],
+                    6,
+                    0x21100000,
+                    0);
+
+                StoredBlock storedBlock = new StoredBlock(header);
+
+                Assert.True(BlockHeaderValidator.IsTimeStampValid(storedBlock, subchain));
+            }
         }
     }
 }

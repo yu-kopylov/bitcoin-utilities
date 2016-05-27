@@ -8,6 +8,8 @@ namespace BitcoinUtilities.Node.Rules
 {
     public static class BlockHeaderValidator
     {
+        //todo: split BlockHeaderValidator to static and non-static parts
+
         public static bool IsValid(BlockHeader header)
         {
             return
@@ -15,14 +17,19 @@ namespace BitcoinUtilities.Node.Rules
                 IsHashValid(header);
         }
 
-        /// <remarks>Specification: https://en.bitcoin.it/wiki/Block_timestamp</remarks>
+        /// <summary>
+        /// Checks that timestamp of the block header is not too far in the future.
+        /// </summary>
+        /// <remarks>Specification: https://en.bitcoin.it/wiki/Block_timestamp </remarks>
         internal static bool IsTimestampValid(BlockHeader header)
         {
-            //todo: also compare with previous blocks
             //todo: Specification requires to adjust current time. Why is it necessary?
             return UnixTime.ToDateTime(header.Timestamp) < DateTime.UtcNow.AddHours(2);
         }
 
+        /// <summary>
+        /// Checks that a hash of the header matches nBits field in the block.
+        /// </summary>
         internal static bool IsHashValid(BlockHeader header)
         {
             byte[] text = BitcoinStreamWriter.GetBytes(header.Write);
@@ -37,16 +44,45 @@ namespace BitcoinUtilities.Node.Rules
                 return false;
             }
 
-            //todo: compare nBits with network settings
-
-
-            //todo: add other validations
+            //todo: also compare nBits with network settings (it is a static check)
 
             return true;
         }
 
-        internal static bool IsValid(StoredBlock block, Subchain parentChain)
+        public static bool IsValid(StoredBlock block, Subchain parentChain)
         {
+            return IsTimeStampValid(block, parentChain) && IsNBitsValid(block, parentChain);
+        }
+
+        /// <summary>
+        /// Checks that timestamp of the block is after median time of the last 11 blocks.
+        /// </summary>
+        internal static bool IsTimeStampValid(StoredBlock block, Subchain parentChain)
+        {
+            //todo: use network settings
+            const int medianBlockCount = 11;
+
+            uint[] oldTimestamps = new uint[medianBlockCount];
+
+            for (int i = 0; i < medianBlockCount; i++)
+            {
+                oldTimestamps[i] = parentChain.GetBlockByOffset(i).Header.Timestamp;
+            }
+
+            Array.Sort(oldTimestamps);
+
+            uint medianTimestamp = oldTimestamps[medianBlockCount/2];
+
+            return block.Header.Timestamp > medianTimestamp;
+        }
+
+        /// <summary>
+        /// Checks that the nBits field of a block follow protocol rules.
+        /// </summary>
+        internal static bool IsNBitsValid(StoredBlock block, Subchain parentChain)
+        {
+            //todo: add test for this method
+
             StoredBlock parentBlock = parentChain.GetBlockByOffset(0);
 
             BigInteger blockDifficultyTarget = DifficultyUtils.NBitsToTarget(block.Header.NBits);
