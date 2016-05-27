@@ -75,17 +75,17 @@ namespace BitcoinUtilities.Storage.SQLite
         private static void AttachDatabase(SQLiteConnection conn, string schema, string path)
         {
             string escapedPath = path.Replace("'", "''");
-            ExecuteSql(conn, string.Format("attach '{0}' as {1}", escapedPath, schema));
+            ExecuteSql(conn, $"attach '{escapedPath}' as {schema}");
         }
 
         private static void ApplySchemaSettings(SQLiteConnection conn, string schema)
         {
-            ExecuteSql(conn, string.Format("PRAGMA {0}.journal_mode=wal", schema));
-            ExecuteSql(conn, string.Format("PRAGMA {0}.synchronous=0", schema));
-            ExecuteSql(conn, string.Format("PRAGMA {0}.cache_size=32000", schema));
-            ExecuteSql(conn, string.Format("PRAGMA {0}.wal_autocheckpoint=8192", schema));
-            ExecuteSql(conn, string.Format("PRAGMA {0}.locking_mode=EXCLUSIVE", schema));
-            ExecuteSql(conn, string.Format("PRAGMA {0}.foreign_keys=ON", schema));
+            ExecuteSql(conn, $"PRAGMA {schema}.journal_mode=wal");
+            ExecuteSql(conn, $"PRAGMA {schema}.synchronous=0");
+            ExecuteSql(conn, $"PRAGMA {schema}.cache_size=32000");
+            ExecuteSql(conn, $"PRAGMA {schema}.wal_autocheckpoint=8192");
+            ExecuteSql(conn, $"PRAGMA {schema}.locking_mode=EXCLUSIVE");
+            ExecuteSql(conn, $"PRAGMA {schema}.foreign_keys=ON");
         }
 
         private static void CheckSchema(SQLiteConnection conn)
@@ -529,14 +529,13 @@ namespace BitcoinUtilities.Storage.SQLite
 
                     for (int i = 1; i < length; i++)
                     {
-                        byte[] parentBlockHash = block.Header.PrevBlock;
-                        if (parentBlockHash.All(b => b == 0))
+                        if (block.Header.IsFirst)
                         {
                             //genesis block is reached;
                             break;
                         }
 
-                        dbBlock = repo.FindBlockByHash(parentBlockHash);
+                        dbBlock = repo.FindBlockByHash(block.Header.PrevBlock);
 
                         if (dbBlock == null)
                         {

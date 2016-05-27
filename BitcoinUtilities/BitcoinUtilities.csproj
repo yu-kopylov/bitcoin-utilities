@@ -76,6 +76,7 @@
     <Compile Include="Collections\VirtualDictionaryInternals\VirtualDictionaryContainer.cs" />
     <Compile Include="Collections\VirtualDictionaryTransaction.cs" />
     <Compile Include="Storage\Blockchain.cs" />
+    <Compile Include="Storage\CachingBlockchainStorage.cs" />
     <Compile Include="Storage\IBlockChainStorage.cs" />
     <Compile Include="Node\NodeAddress.cs" />
     <Compile Include="Node\NodeConnection.cs" />

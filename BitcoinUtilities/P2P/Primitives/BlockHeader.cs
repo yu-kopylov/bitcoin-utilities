@@ -1,3 +1,5 @@
+using System.Linq;
+
 namespace BitcoinUtilities.P2P.Primitives
 {
     /// <summary>
@@ -68,6 +70,14 @@ namespace BitcoinUtilities.P2P.Primitives
         public uint Nonce
         {
             get { return nonce; }
+        }
+
+        /// <summary>
+        /// Indicates if <see cref="PrevBlock"/> property points to a previous block or if it is a first block in a chain.
+        /// </summary>
+        public bool IsFirst
+        {
+            get { return prevBlock.All(b => b == 0); }
         }
 
         public void Write(BitcoinStreamWriter writer)

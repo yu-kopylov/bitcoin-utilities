@@ -22,6 +22,11 @@ namespace BitcoinUtilities.Storage
             }
         }
 
+        public int Length
+        {
+            get { return blocks.Count; }
+        }
+
         public void Append(StoredBlock block)
         {
             //todo: add XMLDOC
@@ -35,7 +40,6 @@ namespace BitcoinUtilities.Storage
 
         public void Truncate(int minLength, int maxLength)
         {
-            //todo: use this method?
             if (minLength > maxLength)
             {
                 throw new ArgumentException($"{nameof(minLength)} should not exceed {nameof(maxLength)}.");
@@ -56,6 +60,12 @@ namespace BitcoinUtilities.Storage
         {
             int blockIndex = blocks.Count - 1 - offset;
             return blocks[blockIndex];
+        }
+
+        public Subchain Clone()
+        {
+            //todo: create copy of each block ?
+            return new Subchain(blocks);
         }
     }
 }

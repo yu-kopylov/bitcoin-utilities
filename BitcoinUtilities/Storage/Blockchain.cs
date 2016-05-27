@@ -23,24 +23,26 @@ namespace BitcoinUtilities.Storage
 
         private readonly object lockObject = new object();
 
-        private readonly IBlockchainStorage storage;
+        private readonly CachingBlockchainStorage storage;
 
         public Blockchain(IBlockchainStorage storage)
         {
-            this.storage = storage;
+            this.storage = new CachingBlockchainStorage(storage);
         }
 
         /// <summary>
-        /// Loads required information from storage.
+        /// Resets internal caches and loads required information from a storage.
         /// <para/>
-        /// Initializes storage if necessary.
+        /// Initializes the storage if necessary.
         /// <para/>
-        /// Consecutive calls reloads information from storage.
+        /// Consecutive calls reloads information from the storage.
         /// </summary>
         public void Init()
         {
             lock (lockObject)
             {
+                storage.Reset();
+
                 StoredBlock genesisBlock = storage.FindBlockByHeight(0);
 
                 if (genesisBlock == null)
