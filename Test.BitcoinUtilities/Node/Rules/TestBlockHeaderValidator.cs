@@ -17,6 +17,20 @@ namespace Test.BitcoinUtilities.Node.Rules
         //todo: generate blocks to test BlockHeaderValidator.IsValid method instead of testing each method ?
 
         [Test]
+        public void TestNBitsValidStatic()
+        {
+            Assert.True(BlockHeaderValidator.IsNBitsValid(genesisBlockHeader));
+
+            Assert.False(BlockHeaderValidator.IsNBitsValid(new BlockHeader(
+                genesisBlockHeader.Version,
+                genesisBlockHeader.PrevBlock,
+                genesisBlockHeader.MerkleRoot,
+                genesisBlockHeader.Timestamp,
+                0x1D010000,
+                genesisBlockHeader.Nonce)));
+        }
+
+        [Test]
         public void TestIsHashValid()
         {
             Assert.True(BlockHeaderValidator.IsHashValid(genesisBlockHeader));

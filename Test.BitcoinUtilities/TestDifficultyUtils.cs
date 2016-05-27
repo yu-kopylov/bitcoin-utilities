@@ -83,7 +83,7 @@ namespace Test.BitcoinUtilities
             Assert.That(DifficultyUtils.CalculateNewTarget(difficultyAdjustmentIntervalInSeconds*4, 1000000), Is.EqualTo(new BigInteger(4000000)));
             Assert.That(DifficultyUtils.CalculateNewTarget(difficultyAdjustmentIntervalInSeconds*8, 1000000), Is.EqualTo(new BigInteger(4000000)));
 
-            BigInteger maxTarget = DifficultyUtils.NBitsToTarget(0x1D00FFFF);
+            BigInteger maxTarget = DifficultyUtils.MaxDifficultyTarget;
             Assert.That(DifficultyUtils.CalculateNewTarget(difficultyAdjustmentIntervalInSeconds, maxTarget), Is.EqualTo(maxTarget));
             Assert.That(DifficultyUtils.CalculateNewTarget(difficultyAdjustmentIntervalInSeconds*2, maxTarget), Is.EqualTo(maxTarget));
         }

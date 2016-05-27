@@ -13,6 +13,7 @@ namespace BitcoinUtilities.Node.Rules
         public static bool IsValid(BlockHeader header)
         {
             return
+                IsNBitsValid(header) &&
                 IsTimestampValid(header) &&
                 IsHashValid(header);
         }
@@ -24,7 +25,16 @@ namespace BitcoinUtilities.Node.Rules
         internal static bool IsTimestampValid(BlockHeader header)
         {
             //todo: Specification requires to adjust current time. Why is it necessary?
-            return UnixTime.ToDateTime(header.Timestamp) < DateTime.UtcNow.AddHours(2);
+            return UnixTime.ToDateTime(header.Timestamp) < SystemTime.UtcNow.AddHours(2);
+        }
+
+        /// <summary>
+        /// Checks that the difficulty defined by the nBits field is not lower than the network minimum.
+        /// </summary>
+        internal static bool IsNBitsValid(BlockHeader blockHeader)
+        {
+            BigInteger target = DifficultyUtils.NBitsToTarget(blockHeader.NBits);
+            return target <= DifficultyUtils.MaxDifficultyTarget;
         }
 
         /// <summary>

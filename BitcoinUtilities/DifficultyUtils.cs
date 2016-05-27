@@ -9,6 +9,9 @@ namespace BitcoinUtilities
         public const int DifficultyAdjustmentIntervalInBlocks = 2016;
         public const int DifficultyAdjustmentIntervalInSeconds = 14*24*60*60;
 
+        //todo: use network settings instead?
+        public static readonly BigInteger MaxDifficultyTarget = NBitsToTarget(0x1D00FFFF);
+
         private static readonly BigInteger power256Of2 = BigInteger.Pow(2, 256);
 
         /// <summary>
@@ -111,11 +114,10 @@ namespace BitcoinUtilities
 
             // todo: use network settings
             // min difficulty is defined in https://bitcoin.org/en/developer-reference#target-nbits
-            BigInteger maxDifficultyTarget = NBitsToTarget(0x1D00FFFF);
 
-            if (newTarget > maxDifficultyTarget)
+            if (newTarget > MaxDifficultyTarget)
             {
-                newTarget = maxDifficultyTarget;
+                newTarget = MaxDifficultyTarget;
             }
 
             return newTarget;
