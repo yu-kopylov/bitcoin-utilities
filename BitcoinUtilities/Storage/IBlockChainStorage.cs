@@ -1,7 +1,7 @@
 ﻿namespace BitcoinUtilities.Storage
 {
     //todo: add methods and XMLDOC
-    public interface IBlockChainStorage
+    public interface IBlockchainStorage
     {
         BlockLocator GetCurrentChainLocator();
 

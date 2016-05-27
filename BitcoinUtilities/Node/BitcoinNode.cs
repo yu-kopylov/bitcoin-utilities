@@ -20,7 +20,7 @@ namespace BitcoinUtilities.Node
     {
         private readonly NodeServiceCollection services = new NodeServiceCollection();
 
-        private readonly IBlockChainStorage storage;
+        private readonly IBlockchainStorage storage;
         private readonly Blockchain blockchain;
 
         private NodeAddressCollection addressCollection;
@@ -31,7 +31,7 @@ namespace BitcoinUtilities.Node
         private readonly CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
         private bool started;
 
-        public BitcoinNode(IBlockChainStorage storage)
+        public BitcoinNode(IBlockchainStorage storage)
         {
             this.storage = storage;
             this.blockchain = new Blockchain(storage);
@@ -66,7 +66,7 @@ namespace BitcoinUtilities.Node
             }
         }
 
-        public IBlockChainStorage Storage
+        public IBlockchainStorage Storage
         {
             get { return storage; }
         }

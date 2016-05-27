@@ -43,7 +43,7 @@ namespace Test.BitcoinUtilities.Storage
         private BlockRequestThread blockRequestThread;
         private Exception saveThreadError;
 
-        private BlockChainStorage storage;
+        private BlockchainStorage storage;
 
         [Test]
         [Explicit]
@@ -118,7 +118,7 @@ namespace Test.BitcoinUtilities.Storage
 
         private void Init()
         {
-            storage = BlockChainStorage.Open(StorageLocation);
+            storage = BlockchainStorage.Open(StorageLocation);
             blockLocator = storage.GetCurrentChainLocator();
             Block lastBlock = storage.GetLastBlockHeader();
 

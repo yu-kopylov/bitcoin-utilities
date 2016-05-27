@@ -86,7 +86,7 @@ namespace BitcoinUtilities.GUI.ViewModels
 
         public void StartNode()
         {
-            BlockChainStorage storage = BlockChainStorage.Open(applicationContext.Settings.BlockchainFolder);
+            BlockchainStorage storage = BlockchainStorage.Open(applicationContext.Settings.BlockchainFolder);
             BitcoinNode node = new BitcoinNode(storage);
             try
             {

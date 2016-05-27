@@ -54,8 +54,6 @@ namespace BitcoinUtilities.Node.Rules
                 return false;
             }
 
-            //todo: also compare nBits with network settings (it is a static check)
-
             return true;
         }
 

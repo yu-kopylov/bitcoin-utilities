@@ -23,9 +23,9 @@ namespace BitcoinUtilities.Storage
 
         private readonly object lockObject = new object();
 
-        private readonly IBlockChainStorage storage;
+        private readonly IBlockchainStorage storage;
 
-        public Blockchain(IBlockChainStorage storage)
+        public Blockchain(IBlockchainStorage storage)
         {
             this.storage = storage;
         }
