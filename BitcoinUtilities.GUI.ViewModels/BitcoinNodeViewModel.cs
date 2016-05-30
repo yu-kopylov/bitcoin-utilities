@@ -3,7 +3,6 @@ using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using BitcoinUtilities.GUI.Models;
 using BitcoinUtilities.Node;
-using BitcoinUtilities.Storage;
 using BitcoinUtilities.Storage.SQLite;
 
 namespace BitcoinUtilities.GUI.ViewModels
@@ -103,10 +102,16 @@ namespace BitcoinUtilities.GUI.ViewModels
             applicationContext.BitcoinNode = node;
             if (oldNode != null)
             {
-                oldNode.PropertyChanged -= OnNodePropertyChanged;
+                //todo: unregister handlers?
             }
-            node.PropertyChanged += OnNodePropertyChanged;
-            node.ConnectionCollection.Changed += () => OnNodePropertyChanged(null, null); //todo: unregister?
+
+            //todo: unregister handlers?
+            const string nodeStateChangedEventType = "NodeStateChanged";
+            node.PropertyChanged += (sender, args) => applicationContext.EventManager.Notify(nodeStateChangedEventType);
+            node.ConnectionCollection.Changed += () => applicationContext.EventManager.Notify(nodeStateChangedEventType);
+
+            applicationContext.EventManager.Watch(nodeStateChangedEventType, OnNodePropertyChanged);
+
             UpdateValues();
         }
 
@@ -118,7 +123,7 @@ namespace BitcoinUtilities.GUI.ViewModels
             storage?.Dispose();
         }
 
-        private void OnNodePropertyChanged(object sender, PropertyChangedEventArgs args)
+        private void OnNodePropertyChanged()
         {
             viewContext.Invoke(UpdateValues);
         }
