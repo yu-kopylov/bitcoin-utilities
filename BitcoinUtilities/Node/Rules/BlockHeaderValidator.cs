@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Numerics;
 using BitcoinUtilities.P2P;
 using BitcoinUtilities.P2P.Primitives;
@@ -70,16 +71,16 @@ namespace BitcoinUtilities.Node.Rules
             //todo: use network settings
             const int medianBlockCount = 11;
 
-            uint[] oldTimestamps = new uint[medianBlockCount];
+            List<uint> oldTimestamps = new List<uint>(medianBlockCount);
 
-            for (int i = 0; i < medianBlockCount; i++)
+            for (int i = 0; i < medianBlockCount && i < parentChain.Length; i++)
             {
-                oldTimestamps[i] = parentChain.GetBlockByOffset(i).Header.Timestamp;
+                oldTimestamps.Add(parentChain.GetBlockByOffset(i).Header.Timestamp);
             }
 
-            Array.Sort(oldTimestamps);
+            oldTimestamps.Sort();
 
-            uint medianTimestamp = oldTimestamps[medianBlockCount/2];
+            uint medianTimestamp = oldTimestamps[oldTimestamps.Count/2];
 
             return block.Header.Timestamp > medianTimestamp;
         }

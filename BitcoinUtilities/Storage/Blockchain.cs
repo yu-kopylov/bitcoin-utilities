@@ -25,6 +25,8 @@ namespace BitcoinUtilities.Storage
 
         private readonly CachingBlockchainStorage storage;
 
+        private StoredBlock bestHeader;
+
         public Blockchain(IBlockchainStorage storage)
         {
             this.storage = new CachingBlockchainStorage(storage);

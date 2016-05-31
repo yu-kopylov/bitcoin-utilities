@@ -51,10 +51,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Converters\TestBlockConverter.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="TestArbitraryRequest.cs" />
-    <Compile Include="TestDownloadBlockchain.cs" />
+    <Compile Include="TestSQLiteBlockchainStorage.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="NLog.config">
@@ -73,6 +71,10 @@
     <ProjectReference Include="..\BitcoinUtilities\BitcoinUtilities.csproj">
       <Project>{36C6CCB9-5611-40F7-95B5-47FC25EC3B63}</Project>
       <Name>BitcoinUtilities</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\TestUtilities\TestUtilities.csproj">
+      <Project>{63B435D9-2923-4BA1-AC86-576A8BD2AE22}</Project>
+      <Name>TestUtilities</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

@@ -50,6 +50,18 @@ namespace BitcoinUtilities.Storage
         /// <para/>
         /// False if only the block header is stored.
         /// </summary>
-        public bool HasContent { get; private set; }
+        public bool HasContent { get; set; }
+
+        /// <summary>
+        /// True if the block belongs to the chain with maximum difficulty; otherwise false.
+        /// <para/>
+        /// Chain with maximum difficulty may not match the current blockchain if blocks in that chain are not yet validated.
+        /// </summary>
+        public bool IsInBestHeaderChain { get; set; }
+
+        /// <summary>
+        /// True if the block belongs to current blockchain; otherwise false.
+        /// </summary>
+        public bool IsInBestBlockChain { get; set; }
     }
 }

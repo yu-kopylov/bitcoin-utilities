@@ -2,20 +2,22 @@
 using System.Collections.Generic;
 using System.Data;
 using System.Data.SQLite;
+using System.IO;
 using System.Text;
-using BitcoinUtilities.Storage.SQLite.Models;
+using BitcoinUtilities.P2P;
+using BitcoinUtilities.P2P.Primitives;
 
-namespace BitcoinUtilities.Storage.SQLite.Sql
+namespace BitcoinUtilities.Storage.SQLite
 {
     /// <summary>
     /// A class that groups block-chain related database queries and manages creation and disposal of SQL-commands.
     /// </summary>
-    public class BlockChainRepository : IDisposable
+    internal class BlockchainRepository : IDisposable
     {
         private readonly Dictionary<string, SQLiteCommand> commands = new Dictionary<string, SQLiteCommand>();
         private readonly SQLiteConnection connection;
 
-        public BlockChainRepository(SQLiteConnection connection)
+        public BlockchainRepository(SQLiteConnection connection)
         {
             this.connection = connection;
         }
@@ -41,29 +43,25 @@ namespace BitcoinUtilities.Storage.SQLite.Sql
             return command;
         }
 
-        public void InsertBlock(Block block)
+        public void InsertBlock(StoredBlock block)
         {
-            var command = CreateCommand("insert into Blocks(Hash, Height, Header) values (@Hash, @Height, @Header)");
+            var command = CreateCommand(
+                "insert into Blocks(Header, Hash, Height, TotalWork, HasContent, IsInBestHeaderChain, IsInBestBlockChain)" +
+                "values (@Header, @Hash, @Height, @TotalWork, @HasContent, @IsInBestHeaderChain, @IsInBestBlockChain)");
 
+            command.Parameters.Add("@Header", DbType.Binary).Value = BitcoinStreamWriter.GetBytes(block.Header.Write);
             command.Parameters.Add("@Hash", DbType.Binary).Value = block.Hash;
             command.Parameters.Add("@Height", DbType.Int32).Value = block.Height;
-            command.Parameters.Add("@Header", DbType.Binary).Value = block.Header;
+            command.Parameters.Add("@TotalWork", DbType.Double).Value = block.TotalWork;
+            command.Parameters.Add("@HasContent", DbType.Boolean).Value = block.HasContent;
+            command.Parameters.Add("@IsInBestHeaderChain", DbType.Boolean).Value = block.IsInBestHeaderChain;
+            command.Parameters.Add("@IsInBestBlockChain", DbType.Boolean).Value = block.IsInBestBlockChain;
 
             command.ExecuteNonQuery();
-            block.Id = connection.LastInsertRowId;
+            //todo: block.Id = connection.LastInsertRowId;
         }
 
-        public void InsertBinaryData(BinaryData data)
-        {
-            var command = CreateCommand("insert into BinaryData(Data) values (@Data)");
-
-            command.Parameters.Add("@Data", DbType.Binary).Value = data.Data;
-
-            command.ExecuteNonQuery();
-            data.Id = connection.LastInsertRowId;
-        }
-
-        public Block FindBlockByHash(byte[] hash)
+        public StoredBlock FindBlockByHash(byte[] hash)
         {
             var command = CreateCommand($"select {GetBlockColumns("B")} from Blocks B where B.Hash=@Hash");
             command.Parameters.Add("@Hash", DbType.Binary).Value = hash;
@@ -78,7 +76,7 @@ namespace BitcoinUtilities.Storage.SQLite.Sql
             }
         }
 
-        public Block GetLastBlockHeader()
+        public StoredBlock GetLastBlockHeader()
         {
             var command = CreateCommand($"select {GetBlockColumns("B")} from Blocks B order by B.Height desc limit 1");
             using (SQLiteDataReader reader = command.ExecuteReader())
@@ -91,7 +89,7 @@ namespace BitcoinUtilities.Storage.SQLite.Sql
             }
         }
 
-        public List<Block> ReadHeadersWithHeight(int[] heights)
+        public List<StoredBlock> ReadHeadersWithHeight(int[] heights)
         {
             var command = CreateCommand(
                 $"select {GetBlockColumns("B")} from Blocks B" +
@@ -100,11 +98,11 @@ namespace BitcoinUtilities.Storage.SQLite.Sql
 
             SetInParameters(command, "H", heights);
 
-            List<Block> blocks = new List<Block>();
+            List<StoredBlock> blocks = new List<StoredBlock>();
 
             using (SQLiteDataReader reader = command.ExecuteReader())
             {
-                while(reader.Read())
+                while (reader.Read())
                 {
                     blocks.Add(ReadBlock(reader));
                 }
@@ -115,19 +113,23 @@ namespace BitcoinUtilities.Storage.SQLite.Sql
 
         private string GetBlockColumns(string alias)
         {
-            return $"{alias}.Id, {alias}.Hash, {alias}.Height, {alias}.Header";
+            return $"{alias}.Header, {alias}.Height, {alias}.TotalWork, {alias}.HasContent, {alias}.IsInBestHeaderChain, {alias}.IsInBestBlockChain";
         }
 
-        private Block ReadBlock(SQLiteDataReader reader)
+        private StoredBlock ReadBlock(SQLiteDataReader reader)
         {
-            Block block = new Block();
-
             int col = 0;
 
-            block.Id = reader.GetInt64(col++);
-            block.Hash = ReadBytes(reader, col++);
+            byte[] headerBytes = ReadBytes(reader, col++);
+            BlockHeader header = BlockHeader.Read(new BitcoinStreamReader(new MemoryStream(headerBytes)));
+            StoredBlock block = new StoredBlock(header);
+
+            //block.Hash - calculated from header
             block.Height = reader.GetInt32(col++);
-            block.Header = ReadBytes(reader, col++);
+            block.TotalWork = reader.GetDouble(col++);
+            block.HasContent = reader.GetBoolean(col++);
+            block.IsInBestHeaderChain = reader.GetBoolean(col++);
+            block.IsInBestBlockChain = reader.GetBoolean(col++);
 
             return block;
         }

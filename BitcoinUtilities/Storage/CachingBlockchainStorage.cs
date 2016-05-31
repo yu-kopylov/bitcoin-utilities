@@ -56,8 +56,12 @@ namespace BitcoinUtilities.Storage
         {
             storage.AddBlock(block);
 
-            lastChain.Append(block);
-            lastChain.Truncate(CachedChainMinLength, CachedChainMaxLength);
+            //todo: add tests
+            if (lastChain != null)
+            {
+                lastChain.Append(block);
+                lastChain.Truncate(CachedChainMinLength, CachedChainMaxLength);
+            }
         }
     }
 }

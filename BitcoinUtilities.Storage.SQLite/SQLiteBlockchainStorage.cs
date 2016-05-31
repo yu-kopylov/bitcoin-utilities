@@ -1,16 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Data;
 using System.Data.SQLite;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text;
-using BitcoinUtilities.P2P;
-using BitcoinUtilities.P2P.Primitives;
-using BitcoinUtilities.Storage.SQLite.Converters;
-using BitcoinUtilities.Storage.SQLite.Models;
-using BitcoinUtilities.Storage.SQLite.Sql;
 using NLog;
 
 namespace BitcoinUtilities.Storage.SQLite
@@ -20,9 +14,7 @@ namespace BitcoinUtilities.Storage.SQLite
         private static readonly Logger logger = LogManager.GetCurrentClassLogger();
 
         private const string BlockchainFilename = "blockchain.db";
-        private const string TransactionHashesFilename = "txhash.db";
-        private const string BinaryDataFilename = "binary.db";
-        private const string AddressesFilename = "addr.db";
+        private const string BlocksFilename = "blocks.db";
 
         private readonly string storageLocation;
         private readonly SQLiteConnection conn;
@@ -58,13 +50,9 @@ namespace BitcoinUtilities.Storage.SQLite
             ApplySchemaSettings(conn, "main");
 
             //todo: SQLite in WAL mode does not guarantee atomic commits across all attached databases
-            AttachDatabase(conn, "txhash", Path.Combine(storageLocation, TransactionHashesFilename));
-            AttachDatabase(conn, "bin", Path.Combine(storageLocation, BinaryDataFilename));
-            AttachDatabase(conn, "addr", Path.Combine(storageLocation, AddressesFilename));
+            AttachDatabase(conn, "blocks", Path.Combine(storageLocation, BlocksFilename));
 
-            ApplySchemaSettings(conn, "txhash");
-            ApplySchemaSettings(conn, "bin");
-            ApplySchemaSettings(conn, "addr");
+            ApplySchemaSettings(conn, "blocks");
 
             //todo: handle exceptions, describe ant test them
             CheckSchema(conn);
@@ -94,10 +82,8 @@ namespace BitcoinUtilities.Storage.SQLite
             {
                 long hasTable;
 
-                using (
-                    SQLiteCommand command =
-                        new SQLiteCommand("select count(*) from sqlite_master WHERE type='table' AND name='Blocks'",
-                            conn))
+                using (SQLiteCommand command = new SQLiteCommand(
+                    "select count(*) from sqlite_master WHERE type='table' AND name='Blocks'", conn))
                 {
                     hasTable = (long) command.ExecuteScalar();
                 }
@@ -113,11 +99,12 @@ namespace BitcoinUtilities.Storage.SQLite
 
         private static void CreateSchema(SQLiteConnection conn)
         {
+            //todo: move this method to repository?
+
             string createSchemaSql;
-            using (
-                var stream =
-                    typeof(SQLiteBlockchainStorage).Assembly.GetManifestResourceStream(
-                        "BitcoinUtilities.Storage.Sql.create.sql"))
+            Assembly schemaAssembly = typeof(SQLiteBlockchainStorage).Assembly;
+            string schemaResourceName = $"{typeof(SQLiteBlockchainStorage).Namespace}.Sql.create.sql";
+            using (var stream = schemaAssembly.GetManifestResourceStream(schemaResourceName))
             {
                 using (StreamReader reader = new StreamReader(stream, Encoding.UTF8))
                 {
@@ -128,327 +115,6 @@ namespace BitcoinUtilities.Storage.SQLite
             using (SQLiteCommand command = new SQLiteCommand(createSchemaSql, conn))
             {
                 command.ExecuteNonQuery();
-            }
-
-            //todo: use null for coinbase instead?
-            SaveTransactionHashes(conn, new[] {BlockConverter.CreateTransactionHash(new byte[32])});
-        }
-
-        public void AddBlocks(List<Block> blocks)
-        {
-            Stopwatch sw = Stopwatch.StartNew();
-
-            using (BlockChainRepository repo = new BlockChainRepository(conn))
-            {
-                using (var tx = conn.BeginTransaction())
-                {
-                    SaveBlocks(repo, blocks);
-                    SaveTransactionHashes(conn, blocks.SelectMany(b => b.Transactions).Select(t => t.Hash));
-                    SaveTransactionHashes(conn,
-                        blocks.SelectMany(b => b.Transactions).SelectMany(t => t.Inputs).Select(i => i.OutputHash));
-                    SaveAddresses(conn,
-                        blocks.SelectMany(b => b.Transactions)
-                            .SelectMany(t => t.Outputs)
-                            .Select(o => o.Address)
-                            .Where(a => a != null));
-                    SaveBinaryData(repo,
-                        blocks.SelectMany(b => b.Transactions).SelectMany(t => t.Inputs).Select(i => i.SignatureScript));
-                    SaveBinaryData(repo,
-                        blocks.SelectMany(b => b.Transactions).SelectMany(t => t.Outputs).Select(o => o.PubkeyScript));
-
-                    SaveTransactions(conn, blocks.SelectMany(b => b.Transactions));
-                    SaveOutputs(conn, blocks.SelectMany(b => b.Transactions).SelectMany(t => t.Outputs));
-                    //LinkInputsToOutputs(conn, blocks.SelectMany(b => b.Transactions).SelectMany(t => t.Inputs));
-                    SaveInputs(conn, blocks.SelectMany(b => b.Transactions).SelectMany(t => t.Inputs));
-
-                    tx.Commit();
-                }
-            }
-
-            logger.Debug("AddBlocks took {0}ms for {1} blocks.", sw.ElapsedMilliseconds, blocks.Count);
-        }
-
-        private void SaveBlocks(BlockChainRepository repo, IEnumerable<Block> blocks)
-        {
-            Stopwatch sw = Stopwatch.StartNew();
-
-            int valuesCount = 0;
-
-            foreach (Block block in blocks)
-            {
-                valuesCount++;
-                repo.InsertBlock(block);
-            }
-
-            logger.Debug("SaveBlocks took {0}ms for {1} blocks.", sw.ElapsedMilliseconds, valuesCount);
-        }
-
-        private void SaveTransactions(SQLiteConnection conn, IEnumerable<Transaction> transactions)
-        {
-            Stopwatch sw = Stopwatch.StartNew();
-
-            int valuesCount = 0;
-
-            using (
-                SQLiteCommand command = new SQLiteCommand("insert into Transactions(BlockId, NumberInBlock, HashId)" +
-                                                          "values (@BlockId, @NumberInBlock, @HashId)", conn))
-            {
-                foreach (Transaction transaction in transactions)
-                {
-                    valuesCount++;
-
-                    command.Parameters.Add("@BlockId", DbType.Int64).Value = transaction.Block.Id;
-                    command.Parameters.Add("@NumberInBlock", DbType.Int32).Value = transaction.NumberInBlock;
-                    command.Parameters.Add("@HashId", DbType.Int64).Value = transaction.Hash.Id;
-
-                    command.ExecuteNonQuery();
-
-                    transaction.Id = conn.LastInsertRowId;
-
-                    command.Parameters.Clear();
-                }
-            }
-
-            logger.Debug("SaveTransactions took {0}ms for {1} transactions.", sw.ElapsedMilliseconds, valuesCount);
-        }
-
-        private void SaveOutputs(SQLiteConnection conn, IEnumerable<TransactionOutput> outputs)
-        {
-            Stopwatch sw = Stopwatch.StartNew();
-
-            int valuesCount = 0;
-
-            using (
-                SQLiteCommand command =
-                    new SQLiteCommand(
-                        "insert into TransactionOutputs(TransactionId, NumberInTransaction, Value, PubkeyScriptId, AddressId)" +
-                        "values (@TransactionId, @NumberInTransaction, @Value, @PubkeyScriptId, @AddressId)", conn))
-            {
-                foreach (TransactionOutput output in outputs)
-                {
-                    valuesCount++;
-
-                    command.Parameters.Add("@TransactionId", DbType.Int64).Value = output.Transaction.Id;
-                    command.Parameters.Add("@NumberInTransaction", DbType.Int32).Value = output.NumberInTransaction;
-                    command.Parameters.Add("@Value", DbType.UInt64).Value = output.Value;
-                    command.Parameters.Add("@PubkeyScriptId", DbType.Int64).Value = output.PubkeyScript.Id;
-                    command.Parameters.Add("@AddressId", DbType.Int64).Value = output.Address == null
-                        ? null
-                        : (object) output.Address.Id;
-
-                    command.ExecuteNonQuery();
-
-                    output.Id = conn.LastInsertRowId;
-
-                    command.Parameters.Clear();
-                }
-            }
-
-            logger.Debug("SaveOutputs took {0}ms for {1} outputs.", sw.ElapsedMilliseconds, valuesCount);
-        }
-
-        private void SaveInputs(SQLiteConnection conn, IEnumerable<TransactionInput> inputs)
-        {
-            Stopwatch sw = Stopwatch.StartNew();
-
-            int valuesCount = 0;
-
-            using (
-                SQLiteCommand command =
-                    new SQLiteCommand(
-                        "insert into TransactionInputs(TransactionId, NumberInTransaction, SignatureScriptId, Sequence, OutputHashId, OutputIndex)" +
-                        "values (@TransactionId, @NumberInTransaction, @SignatureScriptId, @Sequence, @OutputHashId, @OutputIndex)",
-                        conn))
-            {
-                foreach (TransactionInput input in inputs)
-                {
-                    valuesCount++;
-
-                    command.Parameters.Add("@TransactionId", DbType.Int64).Value = input.Transaction.Id;
-                    command.Parameters.Add("@NumberInTransaction", DbType.Int32).Value = input.NumberInTransaction;
-                    command.Parameters.Add("@SignatureScriptId", DbType.Int64).Value = input.SignatureScript.Id;
-                    command.Parameters.Add("@Sequence", DbType.UInt32).Value = input.Sequence;
-                    command.Parameters.Add("@OutputHashId", DbType.Int64).Value = input.OutputHash.Id;
-                    command.Parameters.Add("@OutputIndex", DbType.UInt32).Value = input.OutputIndex;
-
-                    command.ExecuteNonQuery();
-
-                    input.Id = conn.LastInsertRowId;
-
-                    command.Parameters.Clear();
-                }
-            }
-
-            logger.Debug("SaveInputs took {0}ms for {1} inputs.", sw.ElapsedMilliseconds, valuesCount);
-        }
-
-        //todo: reimplement
-        //private void LinkInputsToOutputs(SQLiteConnection conn, IEnumerable<TransactionInput> inputs)
-        //{
-        //    int inputCount = 0;
-        //    int outputCount = 0;
-        //    Stopwatch sw = Stopwatch.StartNew();
-        //
-        //    //BIP-30 allows multiple transactions with the same hash, but assumes that the older ones were spent completely.
-        //    //A transaction output can be spent in the same block is was created, but the order of the transactions in the block is fixed. Example: block 91859.
-        //    using (SQLiteCommand command = new SQLiteCommand(@"
-        //        select O.Id from TransactionOutputs O where O.TransactionId=
-        //        (
-        //            select T.Id from Transactions T
-        //            inner join Blocks B on B.Id=T.BlockId
-        //            where T.Hash=@OutputHash
-        //                and (B.Height < @Height or (B.Height == @Height and T.NumberInBlock < @NumberInBlock))
-        //            order by B.Height desc, T.NumberInBlock desc
-        //            limit 1
-        //        )
-        //        and O.NumberInTransaction=@OutputIndex", conn))
-        //    {
-        //        foreach (TransactionInput input in inputs)
-        //        {
-        //            inputCount++;
-        //
-        //            //todo: move coinbase check to a more common place
-        //            if (input.OutputIndex == 0xFFFFFFFF && input.OutputHash.All(b => b == 0))
-        //            {
-        //                // this is a coinbase input
-        //                continue;
-        //            }
-        //
-        //            command.Parameters.Add("@OutputHash", DbType.Binary).Value = input.OutputHash;
-        //            command.Parameters.Add("@OutputIndex", DbType.UInt32).Value = input.OutputIndex;
-        //            command.Parameters.Add("@Height", DbType.Int32).Value = input.Transaction.Block.Height;
-        //            command.Parameters.Add("@NumberInBlock", DbType.Int32).Value = input.Transaction.NumberInBlock;
-        //
-        //            long? outputId = (long?) command.ExecuteScalar();
-        //            if (outputId == null)
-        //            {
-        //                //todo: specify exception in XMLDOC
-        //                throw new Exception(string.Format("A transaction has an incorrect input.\n\tBlock: {0}.\n\tTransaction: {1}.\n\tOutputHash: {2}.\n\tOutputIndex: {3}.",
-        //                    input.Transaction.Block.Height,
-        //                    BitConverter.ToString(input.Transaction.Hash),
-        //                    BitConverter.ToString(input.OutputHash),
-        //                    input.OutputIndex
-        //                    ));
-        //            }
-        //
-        //            input.Output = new TransactionOutput();
-        //            input.Output.Id = outputId.Value;
-        //
-        //            command.Parameters.Clear();
-        //
-        //            outputCount++;
-        //        }
-        //    }
-        //
-        //    logger.Debug("LinkInputsToOutputs took {0}ms for {1} inputs and {2} outputs.", sw.ElapsedMilliseconds, inputCount, outputCount);
-        //}
-
-        private static void SaveBinaryData(BlockChainRepository repo, IEnumerable<BinaryData> values)
-        {
-            Stopwatch sw = Stopwatch.StartNew();
-
-            int valuesCount = 0;
-
-            foreach (BinaryData data in values)
-            {
-                valuesCount++;
-                repo.InsertBinaryData(data);
-            }
-
-            logger.Debug("SaveBinaryData took {0}ms for {1} values.", sw.ElapsedMilliseconds, valuesCount);
-        }
-
-        private static void SaveAddresses(SQLiteConnection conn, IEnumerable<Address> addresses)
-        {
-            Stopwatch sw = Stopwatch.StartNew();
-
-            int valuesCount = 0;
-
-            using (
-                SQLiteCommand findCommand =
-                    new SQLiteCommand(@"select H.Id from Addresses H where H.Value=@Value and H.SemiHash=@SemiHash",
-                        conn))
-            using (
-                SQLiteCommand addCommand =
-                    new SQLiteCommand(@"insert into Addresses(Value, SemiHash) values (@Value, @SemiHash)", conn))
-            {
-                foreach (Address address in addresses)
-                {
-                    valuesCount++;
-
-                    findCommand.Parameters.Add("@Value", DbType.String).Value = address.Value;
-                    findCommand.Parameters.Add("@SemiHash", DbType.UInt32).Value = address.SemiHash;
-                    long? hashId = (long?) findCommand.ExecuteScalar();
-                    findCommand.Parameters.Clear();
-
-                    if (hashId != null)
-                    {
-                        address.Id = hashId.Value;
-                    }
-                    else
-                    {
-                        addCommand.Parameters.Add("@Value", DbType.String).Value = address.Value;
-                        addCommand.Parameters.Add("@SemiHash", DbType.UInt32).Value = address.SemiHash;
-                        addCommand.ExecuteNonQuery();
-                        address.Id = conn.LastInsertRowId;
-                        addCommand.Parameters.Clear();
-                    }
-                }
-            }
-
-            logger.Debug("SaveAddresses took {0}ms for {1} addresses.", sw.ElapsedMilliseconds, valuesCount);
-        }
-
-        private static void SaveTransactionHashes(SQLiteConnection conn, IEnumerable<TransactionHash> hashes)
-        {
-            Stopwatch sw = Stopwatch.StartNew();
-
-            int valuesCount = 0;
-
-            using (
-                SQLiteCommand findCommand =
-                    new SQLiteCommand(
-                        @"select H.Id from TransactionHashes H where H.Hash=@Hash and H.SemiHash=@SemiHash", conn))
-            using (
-                SQLiteCommand addCommand =
-                    new SQLiteCommand(@"insert into TransactionHashes(Hash, SemiHash) values (@Hash, @SemiHash)", conn))
-            {
-                foreach (TransactionHash hash in hashes)
-                {
-                    valuesCount++;
-
-                    findCommand.Parameters.Add("@Hash", DbType.Binary).Value = hash.Hash;
-                    findCommand.Parameters.Add("@SemiHash", DbType.UInt32).Value = hash.SemiHash;
-                    long? hashId = (long?) findCommand.ExecuteScalar();
-                    findCommand.Parameters.Clear();
-
-                    if (hashId != null)
-                    {
-                        hash.Id = hashId.Value;
-                    }
-                    else
-                    {
-                        addCommand.Parameters.Add("@Hash", DbType.Binary).Value = hash.Hash;
-                        addCommand.Parameters.Add("@SemiHash", DbType.UInt32).Value = hash.SemiHash;
-                        addCommand.ExecuteNonQuery();
-                        hash.Id = conn.LastInsertRowId;
-                        addCommand.Parameters.Clear();
-                    }
-                }
-            }
-
-            logger.Debug("SaveTransactionHashes took {0}ms for {1} hashes.", sw.ElapsedMilliseconds, valuesCount);
-        }
-
-        //todo: use locator instead ?
-        public Block GetLastBlockHeader()
-        {
-            using (BlockChainRepository repo = new BlockChainRepository(conn))
-            {
-                using (conn.BeginTransaction())
-                {
-                    return repo.GetLastBlockHeader();
-                }
             }
         }
 
@@ -463,13 +129,13 @@ namespace BitcoinUtilities.Storage.SQLite
 
         public BlockLocator GetCurrentChainLocator()
         {
-            List<Block> headers = new List<Block>();
+            List<StoredBlock> headers = new List<StoredBlock>();
 
-            using (BlockChainRepository repo = new BlockChainRepository(conn))
+            using (BlockchainRepository repo = new BlockchainRepository(conn))
             {
                 using (var tx = conn.BeginTransaction())
                 {
-                    Block lastBlock = repo.GetLastBlockHeader();
+                    StoredBlock lastBlock = repo.GetLastBlockHeader();
                     if (lastBlock != null)
                     {
                         headers = repo.ReadHeadersWithHeight(BlockLocator.GetRequiredBlockHeights(lastBlock.Height));
@@ -480,7 +146,7 @@ namespace BitcoinUtilities.Storage.SQLite
 
             BlockLocator locator = new BlockLocator();
 
-            foreach (Block header in headers)
+            foreach (StoredBlock header in headers)
             {
                 locator.AddHash(header.Height, header.Hash);
             }
@@ -490,41 +156,34 @@ namespace BitcoinUtilities.Storage.SQLite
 
         public StoredBlock FindBlockByHash(byte[] hash)
         {
-            using (BlockChainRepository repo = new BlockChainRepository(conn))
+            using (BlockchainRepository repo = new BlockchainRepository(conn))
             {
                 using (var tx = conn.BeginTransaction())
                 {
-                    Block block = repo.FindBlockByHash(hash);
-
-                    if (block == null)
-                    {
-                        return null;
-                    }
+                    StoredBlock block = repo.FindBlockByHash(hash);
 
                     //todo: is it worth commiting?
                     tx.Commit();
 
-                    return ToStoredBlock(block);
+                    return block;
                 }
             }
         }
 
         public Subchain FindSubchain(byte[] hash, int length)
         {
-            using (BlockChainRepository repo = new BlockChainRepository(conn))
+            using (BlockchainRepository repo = new BlockchainRepository(conn))
             {
                 using (var tx = conn.BeginTransaction())
                 {
-                    Block dbBlock = repo.FindBlockByHash(hash);
+                    StoredBlock block = repo.FindBlockByHash(hash);
 
-                    if (dbBlock == null)
+                    if (block == null)
                     {
                         return null;
                     }
 
                     List<StoredBlock> blocks = new List<StoredBlock>();
-
-                    StoredBlock block = ToStoredBlock(dbBlock);
                     blocks.Add(block);
 
                     for (int i = 1; i < length; i++)
@@ -535,14 +194,13 @@ namespace BitcoinUtilities.Storage.SQLite
                             break;
                         }
 
-                        dbBlock = repo.FindBlockByHash(block.Header.PrevBlock);
+                        block = repo.FindBlockByHash(block.Header.PrevBlock);
 
-                        if (dbBlock == null)
+                        if (block == null)
                         {
                             throw new InvalidOperationException("The storage has a chain that starts with an invalid genesis block.");
                         }
 
-                        block = ToStoredBlock(dbBlock);
                         blocks.Add(block);
                     }
 
@@ -558,58 +216,36 @@ namespace BitcoinUtilities.Storage.SQLite
 
         public StoredBlock FindBlockByHeight(int height)
         {
-            using (BlockChainRepository repo = new BlockChainRepository(conn))
+            using (BlockchainRepository repo = new BlockchainRepository(conn))
             {
                 using (var tx = conn.BeginTransaction())
                 {
                     //todo: rewrite this method
-                    List<Block> blocks = repo.ReadHeadersWithHeight(new int[] {height});
+                    List<StoredBlock> blocks = repo.ReadHeadersWithHeight(new int[] {height});
 
                     if (!blocks.Any())
                     {
                         return null;
                     }
 
-                    Block block = blocks[0];
-
                     //todo: is it worth commiting?
                     tx.Commit();
 
-                    return ToStoredBlock(block);
+                    return blocks[0];
                 }
             }
         }
 
         public void AddBlock(StoredBlock storedBlock)
         {
-            using (BlockChainRepository repo = new BlockChainRepository(conn))
+            using (BlockchainRepository repo = new BlockchainRepository(conn))
             {
                 using (var tx = conn.BeginTransaction())
                 {
-                    //todo: use BlockConverter ?
-                    Block block = new Block();
-                    block.Height = storedBlock.Height;
-                    block.Header = BitcoinStreamWriter.GetBytes(storedBlock.Header.Write);
-                    block.Hash = storedBlock.Hash;
-                    block.Transactions = new List<Transaction>();
-
-                    repo.InsertBlock(block);
-
+                    repo.InsertBlock(storedBlock);
                     tx.Commit();
                 }
             }
-        }
-
-        private static StoredBlock ToStoredBlock(Block block)
-        {
-            //todo: read fields instead?
-            BlockHeader blockHeader = BlockHeader.Read(new BitcoinStreamReader(new MemoryStream(block.Header)));
-            StoredBlock storedBlock = new StoredBlock(blockHeader);
-
-            storedBlock.Height = block.Height;
-            //todo: fill storedBlock.HasContent
-            //todo: fill storedBlock.TotalWork
-            return storedBlock;
         }
     }
 }
