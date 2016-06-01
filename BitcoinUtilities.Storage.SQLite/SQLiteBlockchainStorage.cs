@@ -170,6 +170,22 @@ namespace BitcoinUtilities.Storage.SQLite
             }
         }
 
+        public StoredBlock FindBestHeaderChain()
+        {
+            using (BlockchainRepository repo = new BlockchainRepository(conn))
+            {
+                using (var tx = conn.BeginTransaction())
+                {
+                    StoredBlock block = repo.FindBestHeaderChain();
+
+                    //todo: is it worth commiting?
+                    tx.Commit();
+
+                    return block;
+                }
+            }
+        }
+
         public Subchain FindSubchain(byte[] hash, int length)
         {
             using (BlockchainRepository repo = new BlockchainRepository(conn))
@@ -236,13 +252,25 @@ namespace BitcoinUtilities.Storage.SQLite
             }
         }
 
-        public void AddBlock(StoredBlock storedBlock)
+        public void AddBlock(StoredBlock block)
         {
             using (BlockchainRepository repo = new BlockchainRepository(conn))
             {
                 using (var tx = conn.BeginTransaction())
                 {
-                    repo.InsertBlock(storedBlock);
+                    repo.InsertBlock(block);
+                    tx.Commit();
+                }
+            }
+        }
+
+        public void UpdateBlock(StoredBlock block)
+        {
+            using (BlockchainRepository repo = new BlockchainRepository(conn))
+            {
+                using (var tx = conn.BeginTransaction())
+                {
+                    repo.UpdateBlock(block);
                     tx.Commit();
                 }
             }

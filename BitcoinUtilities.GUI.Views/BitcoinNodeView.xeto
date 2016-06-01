@@ -17,6 +17,14 @@
           </TableRow>
           <TableRow>
             <TableCell>
+              <Label Text="Best Header Height:"/>
+            </TableCell>
+            <TableCell ScaleWidth="True">
+              <Label Text="{Binding BestHeaderHeight}"/>
+            </TableCell>
+          </TableRow>
+          <TableRow>
+            <TableCell>
               <Label Text="Incoming Connections:"/>
             </TableCell>
             <TableCell ScaleWidth="True">

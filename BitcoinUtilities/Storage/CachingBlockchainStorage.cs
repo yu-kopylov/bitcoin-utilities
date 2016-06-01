@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System.Collections.Generic;
+using System.Linq;
 
 namespace BitcoinUtilities.Storage
 {
@@ -35,6 +36,11 @@ namespace BitcoinUtilities.Storage
             return storage.FindBlockByHash(hash);
         }
 
+        public StoredBlock FindBestHeaderChain()
+        {
+            return storage.FindBestHeaderChain();
+        }
+
         public Subchain FindSubchain(byte[] hash, int length)
         {
             if (lastChain == null
@@ -61,6 +67,30 @@ namespace BitcoinUtilities.Storage
             {
                 lastChain.Append(block);
                 lastChain.Truncate(CachedChainMinLength, CachedChainMaxLength);
+            }
+        }
+
+        public void UpdateBlock(StoredBlock block)
+        {
+            //todo: make StoredBlock immutable to avoid accidental changes to cached values?
+            storage.UpdateBlock(block);
+            if (lastChain != null)
+            {
+                //todo: it is a little bit ugly cashing
+                List<StoredBlock> chainBlocks = new List<StoredBlock>(lastChain.Length);
+                for (int i = lastChain.Length - 1; i >= 0; i--)
+                {
+                    StoredBlock chainBlock = lastChain.GetBlockByOffset(i);
+                    if (chainBlock.Hash.SequenceEqual(block.Hash))
+                    {
+                        chainBlocks.Add(block);
+                    }
+                    else
+                    {
+                        chainBlocks.Add(chainBlock);
+                    }
+                }
+                lastChain = new Subchain(chainBlocks);
             }
         }
     }

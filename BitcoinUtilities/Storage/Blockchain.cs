@@ -25,12 +25,20 @@ namespace BitcoinUtilities.Storage
 
         private readonly CachingBlockchainStorage storage;
 
-        private StoredBlock bestHeader;
+        //todo: just volatile here without a lock to avoid delays on GUI, is there a better way?
+        private volatile StoredBlock bestHeader;
 
         public Blockchain(IBlockchainStorage storage)
         {
             this.storage = new CachingBlockchainStorage(storage);
         }
+
+        public StoredBlock BestHeader
+        {
+            get { return bestHeader; }
+        }
+
+        public event Action BestHeaderChanged;
 
         /// <summary>
         /// Resets internal caches and loads required information from a storage.
@@ -56,6 +64,10 @@ namespace BitcoinUtilities.Storage
                     //todo: also check for situation when there is no genisis block in storage, but storage is not empty
                     throw new InvalidOperationException("The genesis block in storage has wrong hash.");
                 }
+
+                bestHeader = storage.FindBestHeaderChain();
+                //todo: event call within a lock?
+                BestHeaderChanged?.Invoke();
             }
         }
 
@@ -120,6 +132,8 @@ namespace BitcoinUtilities.Storage
 
             genesisBlock.Height = 0;
             genesisBlock.TotalWork = blockWork;
+            genesisBlock.IsInBestBlockChain = true;
+            genesisBlock.IsInBestHeaderChain = true;
 
             //todo: also add transactions for this block
             storage.AddBlock(genesisBlock);
@@ -154,7 +168,60 @@ namespace BitcoinUtilities.Storage
 
             storage.AddBlock(block);
 
+            UpdateBestHeadersChain(block);
+
             return block;
+        }
+
+        private void UpdateBestHeadersChain(StoredBlock block)
+        {
+            if (!IsBetterHeaderThan(block, bestHeader))
+            {
+                return;
+            }
+
+            StoredBlock newHead = block;
+            StoredBlock oldHead = bestHeader;
+
+            //todo: this code should be wrapped in transaction, init should be called on failure
+            while (!newHead.Hash.SequenceEqual(oldHead.Hash))
+            {
+                bool markNewHead = newHead.Height >= oldHead.Height;
+                bool markOldHead = oldHead.Height >= newHead.Height;
+
+                if (markNewHead)
+                {
+                    newHead.IsInBestHeaderChain = true;
+                    storage.UpdateBlock(newHead);
+                    newHead = storage.FindBlockByHash(newHead.Header.PrevBlock);
+                }
+
+                if (markOldHead)
+                {
+                    oldHead.IsInBestHeaderChain = false;
+                    storage.UpdateBlock(oldHead);
+                    oldHead = storage.FindBlockByHash(oldHead.Header.PrevBlock);
+                }
+            }
+
+            bestHeader = block;
+
+            //todo: event call within a lock?
+            BestHeaderChanged?.Invoke();
+        }
+
+        private bool IsBetterHeaderThan(StoredBlock block1, StoredBlock block2)
+        {
+            //todo: are there any other conditions?
+            if (block1.TotalWork > block2.TotalWork)
+            {
+                return true;
+            }
+            if (block1.TotalWork < block2.TotalWork)
+            {
+                return false;
+            }
+            return block1.Header.Timestamp < block2.Header.Timestamp;
         }
     }
 }

@@ -61,10 +61,48 @@ namespace BitcoinUtilities.Storage.SQLite
             //todo: block.Id = connection.LastInsertRowId;
         }
 
+        public void UpdateBlock(StoredBlock block)
+        {
+            //todo: Header is not updated. Describe it in XMLDOC?
+            var command = CreateCommand(
+                "update Blocks" +
+                "  set" +
+                "    Height=@Height, " +
+                "    TotalWork=@TotalWork, " +
+                "    HasContent=@HasContent, " +
+                "    IsInBestHeaderChain=@IsInBestHeaderChain, " +
+                "    IsInBestBlockChain=@IsInBestBlockChain" +
+                "  where Hash=@Hash");
+
+            command.Parameters.Add("@Hash", DbType.Binary).Value = block.Hash;
+            command.Parameters.Add("@Height", DbType.Int32).Value = block.Height;
+            command.Parameters.Add("@TotalWork", DbType.Double).Value = block.TotalWork;
+            command.Parameters.Add("@HasContent", DbType.Boolean).Value = block.HasContent;
+            command.Parameters.Add("@IsInBestHeaderChain", DbType.Boolean).Value = block.IsInBestHeaderChain;
+            command.Parameters.Add("@IsInBestBlockChain", DbType.Boolean).Value = block.IsInBestBlockChain;
+
+            command.ExecuteNonQuery();
+        }
+
         public StoredBlock FindBlockByHash(byte[] hash)
         {
             var command = CreateCommand($"select {GetBlockColumns("B")} from Blocks B where B.Hash=@Hash");
+
             command.Parameters.Add("@Hash", DbType.Binary).Value = hash;
+
+            using (SQLiteDataReader reader = command.ExecuteReader())
+            {
+                if (!reader.Read())
+                {
+                    return null;
+                }
+                return ReadBlock(reader);
+            }
+        }
+
+        public StoredBlock FindBestHeaderChain()
+        {
+            var command = CreateCommand($"select {GetBlockColumns("B")} from Blocks B where B.IsInBestHeaderChain=1 order by B.Height desc limit 1");
 
             using (SQLiteDataReader reader = command.ExecuteReader())
             {

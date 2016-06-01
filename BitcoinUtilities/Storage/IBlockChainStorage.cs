@@ -8,6 +8,13 @@
         StoredBlock FindBlockByHash(byte[] hash);
 
         /// <summary>
+        /// Searches for last block from the chain with the maximum total work.
+        /// <para/>
+        /// Chain with the maximum total work may not match the current blockchain if blocks in that chain are not yet validated.
+        /// </summary>
+        StoredBlock FindBestHeaderChain();
+
+        /// <summary>
         /// Reads a subchain from the storage that ends with the block with the given header hash and has the given length.
         /// </summary>
         /// <param name="hash">The expected hash of the last block in chain.</param>
@@ -26,5 +33,8 @@
         StoredBlock FindBlockByHeight(int height);
 
         void AddBlock(StoredBlock block);
+
+        //todo: describe exceptions in XMLDOC
+        void UpdateBlock(StoredBlock block);
     }
 }

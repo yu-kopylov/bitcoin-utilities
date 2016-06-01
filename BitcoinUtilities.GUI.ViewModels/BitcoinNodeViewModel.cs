@@ -1,6 +1,7 @@
 ﻿using System;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using System.Threading;
 using BitcoinUtilities.GUI.Models;
 using BitcoinUtilities.Node;
 using BitcoinUtilities.Storage.SQLite;
@@ -13,6 +14,8 @@ namespace BitcoinUtilities.GUI.ViewModels
         private readonly IViewContext viewContext;
 
         private string state;
+
+        private int bestHeaderHeight;
 
         private int incomingConnectionsCount;
         private int outgoingConnectionsCount;
@@ -33,6 +36,16 @@ namespace BitcoinUtilities.GUI.ViewModels
             private set
             {
                 state = value;
+                OnPropertyChanged();
+            }
+        }
+
+        public int BestHeaderHeight
+        {
+            get { return bestHeaderHeight; }
+            private set
+            {
+                bestHeaderHeight = value;
                 OnPropertyChanged();
             }
         }
@@ -109,7 +122,9 @@ namespace BitcoinUtilities.GUI.ViewModels
             const string nodeStateChangedEventType = "NodeStateChanged";
             node.PropertyChanged += (sender, args) => applicationContext.EventManager.Notify(nodeStateChangedEventType);
             node.ConnectionCollection.Changed += () => applicationContext.EventManager.Notify(nodeStateChangedEventType);
+            node.Blockchain.BestHeaderChanged += () => applicationContext.EventManager.Notify(nodeStateChangedEventType);
 
+            //todo: updates are too frequent, consider adding a delay to EventManager
             applicationContext.EventManager.Watch(nodeStateChangedEventType, OnNodePropertyChanged);
 
             UpdateValues();
@@ -134,6 +149,7 @@ namespace BitcoinUtilities.GUI.ViewModels
             if (node == null)
             {
                 State = "No Node";
+                BestHeaderHeight = 0;
                 IncomingConnectionsCount = 0;
                 OutgoingConnectionsCount = 0;
                 CanStartNode = true;
@@ -141,6 +157,7 @@ namespace BitcoinUtilities.GUI.ViewModels
                 return;
             }
             State = node.Started ? "Started" : "Stopped";
+            BestHeaderHeight = node.Blockchain.BestHeader?.Height ?? 0;
             IncomingConnectionsCount = node.ConnectionCollection.IncomingConnectionsCount;
             OutgoingConnectionsCount = node.ConnectionCollection.OutgoingConnectionsCount;
             CanStartNode = !node.Started;

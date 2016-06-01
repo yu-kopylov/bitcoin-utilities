@@ -53,9 +53,9 @@ namespace BitcoinUtilities.Storage
         public bool HasContent { get; set; }
 
         /// <summary>
-        /// True if the block belongs to the chain with maximum difficulty; otherwise false.
+        /// True if the block belongs to the chain with the maximum total work; otherwise false.
         /// <para/>
-        /// Chain with maximum difficulty may not match the current blockchain if blocks in that chain are not yet validated.
+        /// Chain with the maximum total work may not match the current blockchain if blocks in that chain are not yet validated.
         /// </summary>
         public bool IsInBestHeaderChain { get; set; }
 
