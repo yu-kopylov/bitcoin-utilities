@@ -4,14 +4,16 @@ using System.Collections.Generic;
 namespace BitcoinUtilities.P2P.Messages
 {
     /// <summary>
-    ///  Return an inv packet containing the list of blocks starting right after the last known hash in the block locator object, up to <see cref="HashStop"/> or 500 blocks, whichever comes first.
+    /// Return an inv packet containing the list of blocks starting right after the last known hash in the block locator object, up to <see cref="HashStop"/> or 500 blocks,
+    /// whichever comes first.
     /// <para/>
     /// The <see cref="LocatorHashes"/> are processed by a node in the order as they appear in the message.
-    /// If a block hash is found in the node's main chain, the list of its children is returned back via the inv message and the remaining locators are ignored, no matter if the requested limit was reached, or not.
+    /// If a block hash is found in the node's main chain, the list of its children is returned back via the inv message and the remaining locators are ignored,
+    /// no matter if the requested limit was reached, or not.
     /// <para/>
     /// To receive the next blocks hashes, one needs to issue getblocks again with a new block locator object.
     /// Keep in mind that some clients may provide blocks which are invalid if the block locator object contains a hash on the invalid branch.
-    ///  </summary>
+    /// </summary>
     public class GetBlocksMessage : IBitcoinMessage
     {
         public const string Command = "getblocks";
@@ -78,7 +80,7 @@ namespace BitcoinUtilities.P2P.Messages
                 //todo: handle correctly
                 throw new Exception("Too many locator hashes.");
             }
-            
+
             byte[][] locatorHashes = new byte[count][];
             for (ulong i = 0; i < count; i++)
             {

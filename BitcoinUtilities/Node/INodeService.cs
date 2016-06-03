@@ -24,6 +24,12 @@ namespace BitcoinUtilities.Node
         void OnNodeConnected(BitcoinEndpoint endpoint);
 
         /// <summary>
+        /// This method is called when <see cref="BitcoinNode"/> disconnects from another node in the network.
+        /// </summary>
+        /// <param name="endpoint">The endpoint of the remote node.</param>
+        void OnNodeDisconnected(BitcoinEndpoint endpoint);
+
+        /// <summary>
         /// This method is called when a message is received by the node.
         /// </summary>
         /// <param name="endpoint">The endpoint that sent message.</param>

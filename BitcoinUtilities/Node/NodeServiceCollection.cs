@@ -98,6 +98,18 @@ namespace BitcoinUtilities.Node
             }
         }
 
+        public void OnNodeDisconnected(BitcoinEndpoint endpoint)
+        {
+            //todo: add test and maybe catch exceptions
+
+            //todo: make sure this method is called only after OnNodeConnected
+
+            foreach (NodeServiceInfo serviceInfo in services)
+            {
+                serviceInfo.Service.OnNodeDisconnected(endpoint);
+            }
+        }
+
         public void ProcessMessage(BitcoinEndpoint endpoint, IBitcoinMessage message)
         {
             //todo: add test and catch maybe catch other exceptions

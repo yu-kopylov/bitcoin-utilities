@@ -17,7 +17,7 @@ namespace BitcoinUtilities.Node.Services
 
         public void Run()
         {
-            //todo: implement
+            // this service does not perform any periodic activities
         }
 
         public void OnNodeConnected(BitcoinEndpoint endpoint)
@@ -25,6 +25,10 @@ namespace BitcoinUtilities.Node.Services
             BlockLocator blockLocator = node.Blockchain.GetBlockLocator();
             //todo: check if remote node provides this service?
             RequestHeaders(endpoint, blockLocator);
+        }
+
+        public void OnNodeDisconnected(BitcoinEndpoint endpoint)
+        {
         }
 
         public void ProcessMessage(BitcoinEndpoint endpoint, IBitcoinMessage message)

@@ -211,6 +211,11 @@ namespace Test.BitcoinUtilities.Node
                 //todo: test?
             }
 
+            public void OnNodeDisconnected(BitcoinEndpoint endpoint)
+            {
+                //todo: test?
+            }
+
             public void ProcessMessage(BitcoinEndpoint endpoint, IBitcoinMessage message)
             {
                 //todo: add test for this method
