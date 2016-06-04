@@ -1,4 +1,6 @@
-﻿namespace BitcoinUtilities.Storage
+﻿using System.Collections.Generic;
+
+namespace BitcoinUtilities.Storage
 {
     //todo: add methods and XMLDOC
     public interface IBlockchainStorage
@@ -13,6 +15,18 @@
         /// Chain with the maximum total work may not match the current blockchain if blocks in that chain are not yet validated.
         /// </summary>
         StoredBlock FindBestHeaderChain();
+
+        /// <summary>
+        /// Searches for the oldest blocks on the best header chain that does not have content.
+        /// </summary>
+        /// <param name="maxCount">The maximum number of blocks to return.</param>
+        List<StoredBlock> GetOldestBlocksWithoutContent(int maxCount);
+
+        /// <summary>
+        /// Searches for blocks on the best header chain with given heights.
+        /// </summary>
+        /// <param name="heights">The array of heights.</param>
+        List<StoredBlock> GetBlocksByHeight(int[] heights);
 
         /// <summary>
         /// Reads a subchain from the storage that ends with the block with the given header hash and has the given length.

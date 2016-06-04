@@ -4,6 +4,7 @@ using System.Linq;
 using BitcoinUtilities.Node;
 using BitcoinUtilities.Node.Rules;
 using BitcoinUtilities.P2P;
+using BitcoinUtilities.P2P.Messages;
 using BitcoinUtilities.P2P.Primitives;
 
 namespace BitcoinUtilities.Storage
@@ -84,6 +85,30 @@ namespace BitcoinUtilities.Storage
         }
 
         /// <summary>
+        /// Searches for the oldest blocks on the best header chain that does not have content.
+        /// </summary>
+        /// <param name="maxCount">The maximum number of blocks to return.</param>
+        public List<StoredBlock> GetOldestBlocksWithoutContent(int maxCount)
+        {
+            lock (lockObject)
+            {
+                return storage.GetOldestBlocksWithoutContent(maxCount);
+            }
+        }
+
+        /// <summary>
+        /// Searches for blocks on the best header chain with given heights.
+        /// </summary>
+        /// <param name="heights">The array of heights.</param>
+        public List<StoredBlock> GetBlocksByHeight(int[] heights)
+        {
+            lock (lockObject)
+            {
+                return storage.GetBlocksByHeight(heights);
+            }
+        }
+
+        /// <summary>
         /// Attempts to add the given block headers to this blockchain.
         /// <para/>
         /// Blocks that cannot be appended to this blockchain are ignored.
@@ -121,6 +146,12 @@ namespace BitcoinUtilities.Storage
             }
 
             return res;
+        }
+
+        public void AddBlockContent(BlockMessage blockMessage)
+        {
+            //todo: validate
+            //todo: save
         }
 
         private void AddGenesisBlock()

@@ -41,6 +41,16 @@ namespace BitcoinUtilities.Storage
             return storage.FindBestHeaderChain();
         }
 
+        public List<StoredBlock> GetOldestBlocksWithoutContent(int maxCount)
+        {
+            return storage.GetOldestBlocksWithoutContent(maxCount);
+        }
+
+        public List<StoredBlock> GetBlocksByHeight(int[] heights)
+        {
+            return storage.GetBlocksByHeight(heights);
+        }
+
         public Subchain FindSubchain(byte[] hash, int length)
         {
             if (lastChain == null

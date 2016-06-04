@@ -186,6 +186,38 @@ namespace BitcoinUtilities.Storage.SQLite
             }
         }
 
+        public List<StoredBlock> GetOldestBlocksWithoutContent(int maxCount)
+        {
+            using (BlockchainRepository repo = new BlockchainRepository(conn))
+            {
+                using (var tx = conn.BeginTransaction())
+                {
+                    List<StoredBlock> blocks = repo.GetOldestBlocksWithoutContent(maxCount);
+
+                    //todo: is it worth commiting?
+                    tx.Commit();
+
+                    return blocks;
+                }
+            }
+        }
+
+        public List<StoredBlock> GetBlocksByHeight(int[] heights)
+        {
+            using (BlockchainRepository repo = new BlockchainRepository(conn))
+            {
+                using (var tx = conn.BeginTransaction())
+                {
+                    List<StoredBlock> blocks = repo.ReadHeadersWithHeight(heights);
+
+                    //todo: is it worth commiting?
+                    tx.Commit();
+
+                    return blocks;
+                }
+            }
+        }
+
         public Subchain FindSubchain(byte[] hash, int length)
         {
             using (BlockchainRepository repo = new BlockchainRepository(conn))

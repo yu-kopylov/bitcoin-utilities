@@ -131,10 +131,33 @@ namespace BitcoinUtilities.Storage.SQLite
         {
             var command = CreateCommand(
                 $"select {GetBlockColumns("B")} from Blocks B" +
-                $" where B.Height in ({GetInParameters("H", heights.Length)})" +
+                $" where B.IsInBestHeaderChain=1 and B.Height in ({GetInParameters("H", heights.Length)})" +
                 $" order by B.Height asc");
 
             SetInParameters(command, "H", heights);
+
+            List<StoredBlock> blocks = new List<StoredBlock>();
+
+            using (SQLiteDataReader reader = command.ExecuteReader())
+            {
+                while (reader.Read())
+                {
+                    blocks.Add(ReadBlock(reader));
+                }
+            }
+
+            return blocks;
+        }
+
+        public List<StoredBlock> GetOldestBlocksWithoutContent(int maxCount)
+        {
+            var command = CreateCommand(
+                $"select {GetBlockColumns("B")} from Blocks B" +
+                $" where B.IsInBestHeaderChain=1 and B.HasContent=0" +
+                $" order by B.Height asc" +
+                $" limit @maxCount");
+
+            command.Parameters.Add("@maxCount", DbType.Int32).Value = maxCount;
 
             List<StoredBlock> blocks = new List<StoredBlock>();
 
