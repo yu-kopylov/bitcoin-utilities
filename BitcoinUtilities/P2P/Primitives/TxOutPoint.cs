@@ -6,9 +6,9 @@
     public struct TxOutPoint
     {
         private readonly byte[] hash;
-        private readonly uint index;
+        private readonly int index;
 
-        public TxOutPoint(byte[] hash, uint index)
+        public TxOutPoint(byte[] hash, int index)
         {
             this.hash = hash;
             this.index = index;
@@ -25,7 +25,7 @@
         /// <summary>
         /// The index of the specific output in the transaction. The first output is 0, etc.
         /// </summary>
-        public uint Index
+        public int Index
         {
             get { return index; }
         }
@@ -39,7 +39,7 @@
         public static TxOutPoint Read(BitcoinStreamReader reader)
         {
             byte[] hash = reader.ReadBytes(32);
-            uint index = reader.ReadUInt32();
+            int index = reader.ReadInt32();
             return new TxOutPoint(hash, index);
         }
     }

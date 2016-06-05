@@ -38,7 +38,7 @@ namespace BitcoinUtilities.Node
 
             services.AddFactory(new NodeDiscoveryServiceFactory());
             services.AddFactory(new BlockHeaderDownloadServiceFactory());
-            //services.AddFactory(new BlockContentDownloadServiceFactory());
+            services.AddFactory(new BlockContentDownloadServiceFactory());
         }
 
         public void Dispose()

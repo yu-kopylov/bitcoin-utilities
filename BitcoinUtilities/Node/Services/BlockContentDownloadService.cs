@@ -186,13 +186,15 @@ namespace BitcoinUtilities.Node.Services
             byte[] blockHash = CryptoUtils.DoubleSha256(BitcoinStreamWriter.GetBytes(blockMessage.BlockHeader.Write));
             lock (lockObject)
             {
-                if (RemoveRequiredBlock(blockHash))
+                if (!requiredBlocks.ContainsKey(blockHash))
                 {
-                    //todo: here there is a lock within lock
-                    //todo: if block is invalid don't ask for it again
-                    //todo: if block is invalid truncate headers chain and select other chain if necessary
-                    node.Blockchain.AddBlockContent(blockMessage);
+                    return;
                 }
+                //todo: here there is a lock within lock
+                //todo: if block is invalid don't ask for it again
+                //todo: if block is invalid truncate headers chain and select other chain if necessary
+                node.Blockchain.AddBlockContent(blockMessage);
+                RemoveRequiredBlock(blockHash);
             }
         }
 
@@ -220,12 +222,12 @@ namespace BitcoinUtilities.Node.Services
             }
         }
 
-        private bool RemoveRequiredBlock(byte[] blockHash)
+        private void RemoveRequiredBlock(byte[] blockHash)
         {
             BlockState blockState;
             if (!requiredBlocks.TryGetValue(blockHash, out blockState))
             {
-                return false;
+                return;
             }
 
             foreach (BlockRequest request in blockState.Requests)
@@ -234,8 +236,6 @@ namespace BitcoinUtilities.Node.Services
                 EndpointState endpointState = endpoints[endpoint];
                 endpointState.BlockRequests.Remove(blockHash);
             }
-
-            return true;
         }
 
         private class EndpointState

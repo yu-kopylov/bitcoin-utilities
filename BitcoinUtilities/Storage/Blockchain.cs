@@ -150,13 +150,32 @@ namespace BitcoinUtilities.Storage
 
         public void AddBlockContent(BlockMessage block)
         {
-            if (BlockContentValidator.IsMerkleTreeValid(block))
+            byte[] blockHash = CryptoUtils.DoubleSha256(BitcoinStreamWriter.GetBytes(block.BlockHeader.Write));
+
+            lock (lockObject)
             {
-                // If merkle tree is invalid than we cannot rely on header hash to mark block in storage as invalid.
-                throw new BitcoinProtocolViolationException("Merkle tree did not pass validation.");
+                StoredBlock storedBlock = storage.FindBlockByHash(blockHash);
+                if (storedBlock == null || storedBlock.HasContent)
+                {
+                    return;
+                }
+
+                // since block is already stored in storage we assume that its header is valid
+
+                if (!BlockContentValidator.IsMerkleTreeValid(block))
+                {
+                    // If merkle tree is invalid than we cannot rely on its header hash to mark block in storage as invalid.
+                    throw new BitcoinProtocolViolationException($"Merkle tree did not pass validation (block: {BitConverter.ToString(blockHash)}).");
+                }
+
+                if (!BlockContentValidator.IsValid(storedBlock, block))
+                {
+                    //todo: mark chain as broken
+                    throw new BitcoinProtocolViolationException($"Block content was invalid (block: {BitConverter.ToString(blockHash)}).");
+                }
+
+                //todo: save
             }
-            //todo: validate
-            //todo: save
         }
 
         private void AddGenesisBlock()
@@ -193,9 +212,9 @@ namespace BitcoinUtilities.Storage
 
             double blockWork = DifficultyUtils.DifficultyTargetToWork(DifficultyUtils.NBitsToTarget(block.Header.NBits));
 
-            //todo: move this logic to StoredBlock ?
+            //todo: move this logic to StoredBlock (also add broken chain propagation)?
             block.Height = parentBlock.Height + 1;
-            block.TotalWork = parentBlock.Height + blockWork;
+            block.TotalWork = parentBlock.TotalWork + blockWork;
 
             if (!BlockHeaderValidator.IsValid(block, parentChain))
             {

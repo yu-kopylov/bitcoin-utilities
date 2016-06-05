@@ -2,6 +2,7 @@
 using System.IO;
 using System.Net;
 using System.Text;
+using BitcoinUtilities.P2P.Messages;
 
 namespace BitcoinUtilities.P2P
 {
@@ -106,6 +107,15 @@ namespace BitcoinUtilities.P2P
         {
             byte[] addressBytes = ReadBytes(16);
             return new IPAddress(addressBytes);
+        }
+
+        public static T FromBytes<T>(byte[] data, Func<BitcoinStreamReader, T> readMethod)
+        {
+            MemoryStream mem = new MemoryStream(data);
+            using (BitcoinStreamReader reader = new BitcoinStreamReader(mem))
+            {
+                return readMethod(reader);
+            }
         }
     }
 }
