@@ -49,6 +49,7 @@
     <Compile Include="Collections\TestCompactTreeNode.cs" />
     <Compile Include="Collections\TestLinkedDictionary.cs" />
     <Compile Include="Collections\VirtualDictionaryInternals\TestAtomicStream.cs" />
+    <Compile Include="Node\Rules\TestBlockContentValidator.cs" />
     <Compile Include="Node\Rules\TestBlockHeaderValidator.cs" />
     <Compile Include="Node\TestLimitedNodeAddressDictionary.cs" />
     <Compile Include="Node\TestNodeAddressCollection.cs" />
@@ -78,6 +79,7 @@
     <Compile Include="TestBioRandom.cs" />
     <Compile Include="TestDifficultyUtils.cs" />
     <Compile Include="TestIpUtils.cs" />
+    <Compile Include="TestMerkleTreeUtils.cs" />
     <Compile Include="TestSecureRandom.cs" />
     <Compile Include="TestBase58Check.cs" />
     <Compile Include="TestBip38.cs" />

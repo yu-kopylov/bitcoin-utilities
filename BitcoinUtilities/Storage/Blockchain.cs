@@ -148,8 +148,13 @@ namespace BitcoinUtilities.Storage
             return res;
         }
 
-        public void AddBlockContent(BlockMessage blockMessage)
+        public void AddBlockContent(BlockMessage block)
         {
+            if (BlockContentValidator.IsMerkleTreeValid(block))
+            {
+                // If merkle tree is invalid than we cannot rely on header hash to mark block in storage as invalid.
+                throw new BitcoinProtocolViolationException("Merkle tree did not pass validation.");
+            }
             //todo: validate
             //todo: save
         }
