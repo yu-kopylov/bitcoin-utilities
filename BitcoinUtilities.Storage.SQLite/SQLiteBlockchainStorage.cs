@@ -6,7 +6,6 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Transactions;
-using BitcoinUtilities.P2P.Messages;
 using NLog;
 
 namespace BitcoinUtilities.Storage.SQLite

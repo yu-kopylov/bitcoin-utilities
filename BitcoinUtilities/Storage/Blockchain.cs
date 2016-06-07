@@ -152,6 +152,7 @@ namespace BitcoinUtilities.Storage
                     {
                         res.Add(AddHeader(block));
                     }
+                    // todo reload state on rollback (perform readonly Init)
                     tx.Complete();
                 }
             }
@@ -189,6 +190,7 @@ namespace BitcoinUtilities.Storage
 
                     storage.AddBlockContent(storedBlock.Hash, BitcoinStreamWriter.GetBytes(block.Write));
 
+                    // todo reload state on rollback (perform readonly Init)
                     tx.Complete();
                 }
             }
@@ -206,7 +208,7 @@ namespace BitcoinUtilities.Storage
             genesisBlock.IsInBestBlockChain = true;
             genesisBlock.IsInBestHeaderChain = true;
 
-            //todo: review transaction usage in this class and reset cache on rollback
+            //todo: review transaction usage in this class
             storage.AddBlock(genesisBlock);
             //todo: use network specific genesis block
             storage.AddBlockContent(genesisBlock.Hash, GenesisBlock.Raw);
