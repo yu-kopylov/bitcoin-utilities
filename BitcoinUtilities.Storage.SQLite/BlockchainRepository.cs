@@ -84,6 +84,24 @@ namespace BitcoinUtilities.Storage.SQLite
             command.ExecuteNonQuery();
         }
 
+        public void AddBlockContent(byte[] hash, byte[] content)
+        {
+            StoredBlock block = FindBlockByHash(hash);
+            if (block == null)
+            {
+                //todo: use better approach?
+                throw new IOException($"Block not found in storage (hash: {BitConverter.ToString(hash)}).");
+            }
+            //todo: what if there is content already?
+            block.HasContent = true;
+            UpdateBlock(block);
+
+            var command = CreateCommand("insert into BlockContents (Hash, Content) values (@Hash, @Content)");
+            command.Parameters.Add("@Hash", DbType.Binary).Value = hash;
+            command.Parameters.Add("@Content", DbType.Binary).Value = content;
+            command.ExecuteNonQuery();
+        }
+
         public StoredBlock FindBlockByHash(byte[] hash)
         {
             var command = CreateCommand($"select {GetBlockColumns("B")} from Blocks B where B.Hash=@Hash");

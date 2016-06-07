@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using BitcoinUtilities.P2P.Messages;
 
 namespace BitcoinUtilities.Storage
 {
@@ -50,5 +51,7 @@ namespace BitcoinUtilities.Storage
 
         //todo: describe exceptions in XMLDOC
         void UpdateBlock(StoredBlock block);
+
+        void AddBlockContent(byte[] hash, byte[] content);
     }
 }

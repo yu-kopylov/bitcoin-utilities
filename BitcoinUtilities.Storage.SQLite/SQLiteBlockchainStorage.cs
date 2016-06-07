@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
+using BitcoinUtilities.P2P.Messages;
 using NLog;
 
 namespace BitcoinUtilities.Storage.SQLite
@@ -303,6 +304,19 @@ namespace BitcoinUtilities.Storage.SQLite
                 using (var tx = conn.BeginTransaction())
                 {
                     repo.UpdateBlock(block);
+                    tx.Commit();
+                }
+            }
+        }
+
+        public void AddBlockContent(byte[] hash, byte[] content)
+        {
+            using (BlockchainRepository repo = new BlockchainRepository(conn))
+            {
+                using (var tx = conn.BeginTransaction())
+                {
+                    //todo: what if there is no such block or it already has content ?
+                    repo.AddBlockContent(hash, content);
                     tx.Commit();
                 }
             }

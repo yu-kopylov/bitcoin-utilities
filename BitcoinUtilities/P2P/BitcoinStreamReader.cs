@@ -109,6 +109,7 @@ namespace BitcoinUtilities.P2P
             return new IPAddress(addressBytes);
         }
 
+        //todo: move this method to BlockMessage?
         public static T FromBytes<T>(byte[] data, Func<BitcoinStreamReader, T> readMethod)
         {
             MemoryStream mem = new MemoryStream(data);

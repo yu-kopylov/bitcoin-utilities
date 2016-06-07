@@ -174,7 +174,7 @@ namespace BitcoinUtilities.Storage
                     throw new BitcoinProtocolViolationException($"Block content was invalid (block: {BitConverter.ToString(blockHash)}).");
                 }
 
-                //todo: save
+                storage.AddBlockContent(storedBlock.Hash, BitcoinStreamWriter.GetBytes(block.Write));
             }
         }
 
@@ -192,6 +192,8 @@ namespace BitcoinUtilities.Storage
 
             //todo: also add transactions for this block
             storage.AddBlock(genesisBlock);
+            //todo: use network specific genesis block
+            storage.AddBlockContent(genesisBlock.Hash, GenesisBlock.Raw);
         }
 
         private StoredBlock AddHeader(StoredBlock block)

@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using BitcoinUtilities.P2P.Messages;
 
 namespace BitcoinUtilities.Storage
 {
@@ -101,6 +102,21 @@ namespace BitcoinUtilities.Storage
                     }
                 }
                 lastChain = new Subchain(chainBlocks);
+            }
+        }
+
+        public void AddBlockContent(byte[] hash, byte[] content)
+        {
+            //todo: make StoredBlock immutable to avoid accidental changes to cached values?
+            storage.AddBlockContent(hash, content);
+            if (lastChain != null)
+            {
+                //todo: it is a little bit ugly cashing
+                for (int i = lastChain.Length - 1; i >= 0; i--)
+                {
+                    StoredBlock chainBlock = lastChain.GetBlockByOffset(i);
+                    chainBlock.HasContent = true;
+                }
             }
         }
     }

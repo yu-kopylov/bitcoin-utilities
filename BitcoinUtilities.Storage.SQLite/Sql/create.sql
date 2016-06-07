@@ -20,8 +20,8 @@ CREATE INDEX IX_Blocks_Height ON Blocks(Height);
 CREATE TABLE blocks.BlockContents
 (
     Id			INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
-    BlockId		INTEGER NOT NULL,
+    Hash		BLOB NOT NULL,
     Content		BLOB NOT NULL
 );
 
-CREATE UNIQUE INDEX blocks.UX_BlockContent_BlockId ON BlockContents(BlockId);
+CREATE UNIQUE INDEX blocks.UX_BlockContent_BlockId ON BlockContents(Hash);
