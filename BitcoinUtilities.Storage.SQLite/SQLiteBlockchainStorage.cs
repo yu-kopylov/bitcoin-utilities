@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
+using System.Transactions;
 using BitcoinUtilities.P2P.Messages;
 using NLog;
 
@@ -287,38 +288,39 @@ namespace BitcoinUtilities.Storage.SQLite
 
         public void AddBlock(StoredBlock block)
         {
+            JoinCurrentTransaction();
             using (BlockchainRepository repo = new BlockchainRepository(conn))
             {
-                using (var tx = conn.BeginTransaction())
-                {
-                    repo.InsertBlock(block);
-                    tx.Commit();
-                }
+                repo.InsertBlock(block);
             }
         }
 
         public void UpdateBlock(StoredBlock block)
         {
+            JoinCurrentTransaction();
             using (BlockchainRepository repo = new BlockchainRepository(conn))
             {
-                using (var tx = conn.BeginTransaction())
-                {
-                    repo.UpdateBlock(block);
-                    tx.Commit();
-                }
+                repo.UpdateBlock(block);
             }
         }
 
         public void AddBlockContent(byte[] hash, byte[] content)
         {
+            JoinCurrentTransaction();
             using (BlockchainRepository repo = new BlockchainRepository(conn))
             {
-                using (var tx = conn.BeginTransaction())
-                {
-                    //todo: what if there is no such block or it already has content ?
-                    repo.AddBlockContent(hash, content);
-                    tx.Commit();
-                }
+                //todo: what if there is no such block or it already has content ?
+                repo.AddBlockContent(hash, content);
+            }
+        }
+
+        private void JoinCurrentTransaction()
+        {
+            //todo: add a test to check that storage respects transaction
+            Transaction tx = Transaction.Current;
+            if (tx != null)
+            {
+                conn.EnlistTransaction(tx);
             }
         }
     }

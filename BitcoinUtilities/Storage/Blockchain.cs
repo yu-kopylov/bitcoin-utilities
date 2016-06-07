@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Transactions;
 using BitcoinUtilities.Node;
 using BitcoinUtilities.Node.Rules;
 using BitcoinUtilities.P2P;
@@ -54,19 +55,25 @@ namespace BitcoinUtilities.Storage
             {
                 storage.Reset();
 
-                StoredBlock genesisBlock = storage.FindBlockByHeight(0);
-
-                if (genesisBlock == null)
+                using (var tx = new TransactionScope(TransactionScopeOption.Required))
                 {
-                    AddGenesisBlock();
-                }
-                else if (!GenesisBlock.Hash.SequenceEqual(genesisBlock.Hash))
-                {
-                    //todo: also check for situation when there is no genisis block in storage, but storage is not empty
-                    throw new InvalidOperationException("The genesis block in storage has wrong hash.");
+                    StoredBlock genesisBlock = storage.FindBlockByHeight(0);
+
+                    if (genesisBlock == null)
+                    {
+                        AddGenesisBlock();
+                    }
+                    else if (!GenesisBlock.Hash.SequenceEqual(genesisBlock.Hash))
+                    {
+                        //todo: also check for situation when there is no genisis block in storage, but storage is not empty
+                        throw new InvalidOperationException("The genesis block in storage has wrong hash.");
+                    }
+
+                    bestHeader = storage.FindBestHeaderChain();
+
+                    tx.Complete();
                 }
 
-                bestHeader = storage.FindBestHeaderChain();
                 //todo: event call within a lock?
                 BestHeaderChanged?.Invoke();
             }
@@ -139,9 +146,13 @@ namespace BitcoinUtilities.Storage
             //todo: consider reducing contention by using reader-writer lock
             lock (lockObject)
             {
-                foreach (StoredBlock block in blocks)
+                using (var tx = new TransactionScope(TransactionScopeOption.Required))
                 {
-                    res.Add(AddHeader(block));
+                    foreach (StoredBlock block in blocks)
+                    {
+                        res.Add(AddHeader(block));
+                    }
+                    tx.Complete();
                 }
             }
 
@@ -154,27 +165,32 @@ namespace BitcoinUtilities.Storage
 
             lock (lockObject)
             {
-                StoredBlock storedBlock = storage.FindBlockByHash(blockHash);
-                if (storedBlock == null || storedBlock.HasContent)
+                using (var tx = new TransactionScope(TransactionScopeOption.Required))
                 {
-                    return;
+                    StoredBlock storedBlock = storage.FindBlockByHash(blockHash);
+                    if (storedBlock == null || storedBlock.HasContent)
+                    {
+                        return;
+                    }
+
+                    // since block is already stored in storage we assume that its header is valid
+
+                    if (!BlockContentValidator.IsMerkleTreeValid(block))
+                    {
+                        // If merkle tree is invalid than we cannot rely on its header hash to mark block in storage as invalid.
+                        throw new BitcoinProtocolViolationException($"Merkle tree did not pass validation (block: {BitConverter.ToString(blockHash)}).");
+                    }
+
+                    if (!BlockContentValidator.IsValid(storedBlock, block))
+                    {
+                        //todo: mark chain as broken
+                        throw new BitcoinProtocolViolationException($"Block content was invalid (block: {BitConverter.ToString(blockHash)}).");
+                    }
+
+                    storage.AddBlockContent(storedBlock.Hash, BitcoinStreamWriter.GetBytes(block.Write));
+
+                    tx.Complete();
                 }
-
-                // since block is already stored in storage we assume that its header is valid
-
-                if (!BlockContentValidator.IsMerkleTreeValid(block))
-                {
-                    // If merkle tree is invalid than we cannot rely on its header hash to mark block in storage as invalid.
-                    throw new BitcoinProtocolViolationException($"Merkle tree did not pass validation (block: {BitConverter.ToString(blockHash)}).");
-                }
-
-                if (!BlockContentValidator.IsValid(storedBlock, block))
-                {
-                    //todo: mark chain as broken
-                    throw new BitcoinProtocolViolationException($"Block content was invalid (block: {BitConverter.ToString(blockHash)}).");
-                }
-
-                storage.AddBlockContent(storedBlock.Hash, BitcoinStreamWriter.GetBytes(block.Write));
             }
         }
 
@@ -190,7 +206,7 @@ namespace BitcoinUtilities.Storage
             genesisBlock.IsInBestBlockChain = true;
             genesisBlock.IsInBestHeaderChain = true;
 
-            //todo: also add transactions for this block
+            //todo: review transaction usage in this class and reset cache on rollback
             storage.AddBlock(genesisBlock);
             //todo: use network specific genesis block
             storage.AddBlockContent(genesisBlock.Hash, GenesisBlock.Raw);
