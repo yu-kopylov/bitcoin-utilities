@@ -21,62 +21,41 @@ namespace BitcoinUtilities.Storage
          * 2016 - When difficulty changes, we need the 2016th block before the current one. Source: https://en.bitcoin.it/wiki/Protocol_rules#Difficulty_change .
          * 11 - A timestamp is accepted as valid if it is greater than the median timestamp of previous 11 blocks. Source: https://en.bitcoin.it/wiki/Block_timestamp .
          */
-        private const int AnalyzedSubchainLength = 2016;
+        internal const int AnalyzedSubchainLength = 2016;
 
-        private readonly object lockObject = new object();
+        private readonly object blockchainLock = new object();
 
-        private readonly CachingBlockchainStorage storage;
+        private readonly object stateLock = new object();
 
-        //todo: just volatile here without a lock to avoid delays on GUI, is there a better way?
-        private volatile StoredBlock bestHeader;
+        private readonly InternalBlockchain blockchain;
+
+        private volatile BlockchainState state;
 
         public Blockchain(IBlockchainStorage storage)
         {
-            this.storage = new CachingBlockchainStorage(storage);
+            CachingBlockchainStorage cache = new CachingBlockchainStorage(storage);
+            blockchain = new InternalBlockchain(cache);
         }
 
         public StoredBlock BestHeader
         {
-            get { return bestHeader; }
+            get
+            {
+                lock (stateLock)
+                {
+                    return state.BestHeader;
+                }
+            }
         }
 
-        public event Action BestHeaderChanged;
+        public event Action StateChanged;
 
         /// <summary>
-        /// Resets internal caches and loads required information from a storage.
-        /// <para/>
-        /// Initializes the storage if necessary.
-        /// <para/>
-        /// Consecutive calls reloads information from the storage.
+        /// Loads state required from the storage.
         /// </summary>
         public void Init()
         {
-            lock (lockObject)
-            {
-                storage.Reset();
-
-                using (var tx = new TransactionScope(TransactionScopeOption.Required))
-                {
-                    StoredBlock genesisBlock = storage.FindBlockByHeight(0);
-
-                    if (genesisBlock == null)
-                    {
-                        AddGenesisBlock();
-                    }
-                    else if (!GenesisBlock.Hash.SequenceEqual(genesisBlock.Hash))
-                    {
-                        //todo: also check for situation when there is no genisis block in storage, but storage is not empty
-                        throw new InvalidOperationException("The genesis block in storage has wrong hash.");
-                    }
-
-                    bestHeader = storage.FindBestHeaderChain();
-
-                    tx.Complete();
-                }
-
-                //todo: event call within a lock?
-                BestHeaderChanged?.Invoke();
-            }
+            ExecuteInTransaction(blockchain.Init);
         }
 
         /// <summary>
@@ -85,9 +64,9 @@ namespace BitcoinUtilities.Storage
         public BlockLocator GetBlockLocator()
         {
             //todo: specify what does active in XMLDOC means
-            lock (lockObject)
+            lock (blockchainLock)
             {
-                return storage.GetCurrentChainLocator();
+                return blockchain.GetBlockLocator();
             }
         }
 
@@ -97,9 +76,9 @@ namespace BitcoinUtilities.Storage
         /// <param name="maxCount">The maximum number of blocks to return.</param>
         public List<StoredBlock> GetOldestBlocksWithoutContent(int maxCount)
         {
-            lock (lockObject)
+            lock (blockchainLock)
             {
-                return storage.GetOldestBlocksWithoutContent(maxCount);
+                return blockchain.GetOldestBlocksWithoutContent(maxCount);
             }
         }
 
@@ -109,9 +88,9 @@ namespace BitcoinUtilities.Storage
         /// <param name="heights">The array of heights.</param>
         public List<StoredBlock> GetBlocksByHeight(int[] heights)
         {
-            lock (lockObject)
+            lock (blockchainLock)
             {
-                return storage.GetBlocksByHeight(heights);
+                return blockchain.GetBlocksByHeight(heights);
             }
         }
 
@@ -141,162 +120,49 @@ namespace BitcoinUtilities.Storage
 
             //todo: perform topological sorting of blocks?
 
-            List<StoredBlock> res = new List<StoredBlock>();
+            List<StoredBlock> res = new List<StoredBlock>(blocks.Count);
 
-            //todo: consider reducing contention by using reader-writer lock
-            lock (lockObject)
-            {
-                using (var tx = new TransactionScope(TransactionScopeOption.Required))
-                {
-                    foreach (StoredBlock block in blocks)
-                    {
-                        res.Add(AddHeader(block));
-                    }
-                    // todo reload state on rollback (perform readonly Init)
-                    tx.Complete();
-                }
-            }
+            ExecuteInTransaction(() => res.AddRange(blockchain.AddHeaders(blocks)));
 
             return res;
         }
 
         public void AddBlockContent(BlockMessage block)
         {
-            byte[] blockHash = CryptoUtils.DoubleSha256(BitcoinStreamWriter.GetBytes(block.BlockHeader.Write));
+            ExecuteInTransaction(() => blockchain.AddBlockContent(block));
+        }
 
-            lock (lockObject)
+        private void ExecuteInTransaction(Action action)
+        {
+            lock (blockchainLock)
             {
                 using (var tx = new TransactionScope(TransactionScopeOption.Required))
                 {
-                    StoredBlock storedBlock = storage.FindBlockByHash(blockHash);
-                    if (storedBlock == null || storedBlock.HasContent)
-                    {
-                        return;
-                    }
-
-                    // since block is already stored in storage we assume that its header is valid
-
-                    if (!BlockContentValidator.IsMerkleTreeValid(block))
-                    {
-                        // If merkle tree is invalid than we cannot rely on its header hash to mark block in storage as invalid.
-                        throw new BitcoinProtocolViolationException($"Merkle tree did not pass validation (block: {BitConverter.ToString(blockHash)}).");
-                    }
-
-                    if (!BlockContentValidator.IsValid(storedBlock, block))
-                    {
-                        //todo: mark chain as broken
-                        throw new BitcoinProtocolViolationException($"Block content was invalid (block: {BitConverter.ToString(blockHash)}).");
-                    }
-
-                    storage.AddBlockContent(storedBlock.Hash, BitcoinStreamWriter.GetBytes(block.Write));
-
-                    // todo reload state on rollback (perform readonly Init)
+                    action();
                     tx.Complete();
                 }
             }
+            CheckState();
         }
 
-        private void AddGenesisBlock()
+        private void CheckState()
         {
-            //todo: use network specific genesis block
-            StoredBlock genesisBlock = new StoredBlock(GenesisBlock.GetHeader());
+            BlockchainState newState = blockchain.CommitedState;
 
-            double blockWork = DifficultyUtils.DifficultyTargetToWork(DifficultyUtils.NBitsToTarget(genesisBlock.Header.NBits));
-
-            genesisBlock.Height = 0;
-            genesisBlock.TotalWork = blockWork;
-            genesisBlock.IsInBestBlockChain = true;
-            genesisBlock.IsInBestHeaderChain = true;
-
-            //todo: review transaction usage in this class
-            storage.AddBlock(genesisBlock);
-            //todo: use network specific genesis block
-            storage.AddBlockContent(genesisBlock.Hash, GenesisBlock.Raw);
-        }
-
-        private StoredBlock AddHeader(StoredBlock block)
-        {
-            StoredBlock storedBlock = storage.FindBlockByHash(block.Hash);
-            if (storedBlock != null)
+            bool stateChanged = false;
+            lock (stateLock)
             {
-                return storedBlock;
-            }
-
-            Subchain parentChain = storage.FindSubchain(block.Header.PrevBlock, AnalyzedSubchainLength);
-            if (parentChain == null)
-            {
-                return block;
-            }
-
-            StoredBlock parentBlock = parentChain.GetBlockByOffset(0);
-
-            double blockWork = DifficultyUtils.DifficultyTargetToWork(DifficultyUtils.NBitsToTarget(block.Header.NBits));
-
-            //todo: move this logic to StoredBlock (also add broken chain propagation)?
-            block.Height = parentBlock.Height + 1;
-            block.TotalWork = parentBlock.TotalWork + blockWork;
-
-            if (!BlockHeaderValidator.IsValid(block, parentChain))
-            {
-                throw new BitcoinProtocolViolationException("An invalid header was received.");
-            }
-
-            storage.AddBlock(block);
-
-            UpdateBestHeadersChain(block);
-
-            return block;
-        }
-
-        private void UpdateBestHeadersChain(StoredBlock block)
-        {
-            if (!IsBetterHeaderThan(block, bestHeader))
-            {
-                return;
-            }
-
-            StoredBlock newHead = block;
-            StoredBlock oldHead = bestHeader;
-
-            //todo: this code should be wrapped in transaction, init should be called on failure
-            while (!newHead.Hash.SequenceEqual(oldHead.Hash))
-            {
-                bool markNewHead = newHead.Height >= oldHead.Height;
-                bool markOldHead = oldHead.Height >= newHead.Height;
-
-                if (markNewHead)
+                if (newState != state)
                 {
-                    newHead.IsInBestHeaderChain = true;
-                    storage.UpdateBlock(newHead);
-                    newHead = storage.FindBlockByHash(newHead.Header.PrevBlock);
-                }
-
-                if (markOldHead)
-                {
-                    oldHead.IsInBestHeaderChain = false;
-                    storage.UpdateBlock(oldHead);
-                    oldHead = storage.FindBlockByHash(oldHead.Header.PrevBlock);
+                    state = newState;
+                    stateChanged = true;
                 }
             }
 
-            bestHeader = block;
-
-            //todo: event call within a lock?
-            BestHeaderChanged?.Invoke();
-        }
-
-        private bool IsBetterHeaderThan(StoredBlock block1, StoredBlock block2)
-        {
-            //todo: are there any other conditions?
-            if (block1.TotalWork > block2.TotalWork)
+            if (stateChanged)
             {
-                return true;
+                StateChanged?.Invoke();
             }
-            if (block1.TotalWork < block2.TotalWork)
-            {
-                return false;
-            }
-            return block1.Header.Timestamp < block2.Header.Timestamp;
         }
     }
 }

@@ -4,6 +4,12 @@ namespace TestUtilities
 {
     public static class KnownBlocks
     {
+        public static byte[] Block1 = Convert.FromBase64String(@"
+AQAAAG/ijAq28bNywaaiRq5j90+THoNl4VoInGjWGQAAAAAAmCBR/R5Lp0S7vmgOH+4UZ3uh
+o8NUC/exzbYG6FcjPg5hvGZJ//8AHQHjYpkBAQAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAP////8HBP//AB0BBP////8BAPIFKgEAAABDQQSWtTjoU1GccmoskeYewRYA
+rhOQgTpifGb7i+eUe+Y8Utp1iTeVFdTgpgT4FBeB5iKUchFmv2Iec6gsvyNCyFjurAAAAAA=
+");
         public static byte[] Block100000 = Convert.FromBase64String(@"
 AQAAAFASARkXKmEEIabDAR3TMNnfB7Y2FsLMHxzQAgAAAAAAZlepJSqs1cCylAmW7P+VIijD
 BnzDjUiF77WkrEJH6fM3IhtNTIYEGw8rVxAEAQAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAA

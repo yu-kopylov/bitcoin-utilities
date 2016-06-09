@@ -134,14 +134,10 @@ namespace BitcoinUtilities.Storage.SQLite
 
             using (BlockchainRepository repo = new BlockchainRepository(conn))
             {
-                using (var tx = conn.BeginTransaction())
+                StoredBlock lastBlock = repo.GetLastBlockHeader();
+                if (lastBlock != null)
                 {
-                    StoredBlock lastBlock = repo.GetLastBlockHeader();
-                    if (lastBlock != null)
-                    {
-                        headers = repo.ReadHeadersWithHeight(BlockLocator.GetRequiredBlockHeights(lastBlock.Height));
-                    }
-                    tx.Commit();
+                    headers = repo.ReadHeadersWithHeight(BlockLocator.GetRequiredBlockHeights(lastBlock.Height));
                 }
             }
 
@@ -159,15 +155,7 @@ namespace BitcoinUtilities.Storage.SQLite
         {
             using (BlockchainRepository repo = new BlockchainRepository(conn))
             {
-                using (var tx = conn.BeginTransaction())
-                {
-                    StoredBlock block = repo.FindBlockByHash(hash);
-
-                    //todo: is it worth commiting?
-                    tx.Commit();
-
-                    return block;
-                }
+                return repo.FindBlockByHash(hash);
             }
         }
 
@@ -175,15 +163,7 @@ namespace BitcoinUtilities.Storage.SQLite
         {
             using (BlockchainRepository repo = new BlockchainRepository(conn))
             {
-                using (var tx = conn.BeginTransaction())
-                {
-                    StoredBlock block = repo.FindBestHeaderChain();
-
-                    //todo: is it worth commiting?
-                    tx.Commit();
-
-                    return block;
-                }
+                return repo.FindBestHeaderChain();
             }
         }
 
@@ -191,15 +171,7 @@ namespace BitcoinUtilities.Storage.SQLite
         {
             using (BlockchainRepository repo = new BlockchainRepository(conn))
             {
-                using (var tx = conn.BeginTransaction())
-                {
-                    List<StoredBlock> blocks = repo.GetOldestBlocksWithoutContent(maxCount);
-
-                    //todo: is it worth commiting?
-                    tx.Commit();
-
-                    return blocks;
-                }
+                return repo.GetOldestBlocksWithoutContent(maxCount);
             }
         }
 
@@ -207,59 +179,46 @@ namespace BitcoinUtilities.Storage.SQLite
         {
             using (BlockchainRepository repo = new BlockchainRepository(conn))
             {
-                using (var tx = conn.BeginTransaction())
-                {
-                    List<StoredBlock> blocks = repo.ReadHeadersWithHeight(heights);
-
-                    //todo: is it worth commiting?
-                    tx.Commit();
-
-                    return blocks;
-                }
+                return repo.ReadHeadersWithHeight(heights);
             }
         }
 
         public Subchain FindSubchain(byte[] hash, int length)
         {
+            //todo: move this method to InternalBlockchain ?
             using (BlockchainRepository repo = new BlockchainRepository(conn))
             {
-                using (var tx = conn.BeginTransaction())
+                StoredBlock block = repo.FindBlockByHash(hash);
+
+                if (block == null)
                 {
-                    StoredBlock block = repo.FindBlockByHash(hash);
+                    return null;
+                }
+
+                List<StoredBlock> blocks = new List<StoredBlock>();
+                blocks.Add(block);
+
+                for (int i = 1; i < length; i++)
+                {
+                    if (block.Header.IsFirst)
+                    {
+                        //genesis block is reached;
+                        break;
+                    }
+
+                    block = repo.FindBlockByHash(block.Header.PrevBlock);
 
                     if (block == null)
                     {
-                        return null;
+                        throw new InvalidOperationException("The storage has a chain that starts with an invalid genesis block.");
                     }
 
-                    List<StoredBlock> blocks = new List<StoredBlock>();
                     blocks.Add(block);
-
-                    for (int i = 1; i < length; i++)
-                    {
-                        if (block.Header.IsFirst)
-                        {
-                            //genesis block is reached;
-                            break;
-                        }
-
-                        block = repo.FindBlockByHash(block.Header.PrevBlock);
-
-                        if (block == null)
-                        {
-                            throw new InvalidOperationException("The storage has a chain that starts with an invalid genesis block.");
-                        }
-
-                        blocks.Add(block);
-                    }
-
-                    //todo: is it worth commiting?
-                    tx.Commit();
-
-                    blocks.Reverse();
-
-                    return new Subchain(blocks);
                 }
+
+                blocks.Reverse();
+
+                return new Subchain(blocks);
             }
         }
 
@@ -267,21 +226,15 @@ namespace BitcoinUtilities.Storage.SQLite
         {
             using (BlockchainRepository repo = new BlockchainRepository(conn))
             {
-                using (var tx = conn.BeginTransaction())
+                //todo: rewrite this method
+                List<StoredBlock> blocks = repo.ReadHeadersWithHeight(new int[] { height });
+
+                if (!blocks.Any())
                 {
-                    //todo: rewrite this method
-                    List<StoredBlock> blocks = repo.ReadHeadersWithHeight(new int[] {height});
-
-                    if (!blocks.Any())
-                    {
-                        return null;
-                    }
-
-                    //todo: is it worth commiting?
-                    tx.Commit();
-
-                    return blocks[0];
+                    return null;
                 }
+
+                return blocks[0];
             }
         }
 

@@ -79,7 +79,9 @@
     <Compile Include="Collections\VirtualDictionaryTransaction.cs" />
     <Compile Include="Node\Rules\BlockContentValidator.cs" />
     <Compile Include="Node\Services\BlockContentDownloadService.cs" />
+    <Compile Include="Storage\InternalBlockchain.cs" />
     <Compile Include="Storage\Blockchain.cs" />
+    <Compile Include="Storage\BlockchainState.cs" />
     <Compile Include="Storage\CachingBlockchainStorage.cs" />
     <Compile Include="Storage\IBlockChainStorage.cs" />
     <Compile Include="Node\NodeAddress.cs" />
@@ -123,6 +125,7 @@
     <Compile Include="SignatureUtils.cs" />
     <Compile Include="Storage\StoredBlock.cs" />
     <Compile Include="Storage\Subchain.cs" />
+    <Compile Include="Storage\TransactionalResource.cs" />
     <Compile Include="SystemTime.cs" />
     <Compile Include="Threading\BlockingThreadPool.cs" />
     <Compile Include="P2P\GenesisBlock.cs" />

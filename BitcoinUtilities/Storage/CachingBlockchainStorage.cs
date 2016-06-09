@@ -1,7 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
-using System.Transactions;
 
 namespace BitcoinUtilities.Storage
 {
@@ -15,20 +13,29 @@ namespace BitcoinUtilities.Storage
         private int CachedChainMinLength = 2048;
         private int CachedChainMaxLength = 4096;
 
-        private readonly TransactionListener transactionListener;
-
-        /// <summary>
-        /// Clears cached values.
-        /// </summary>
-        public void Reset()
-        {
-            lastChain = null;
-        }
+        private readonly TransactionalResource transactionalResource;
 
         public CachingBlockchainStorage(IBlockchainStorage storage)
         {
             this.storage = storage;
-            transactionListener = new TransactionListener(this);
+            transactionalResource = new TransactionalResource(OnCommit, OnRollback);
+        }
+
+        private void OnCommit()
+        {
+        }
+
+        private void OnRollback()
+        {
+            Reset();
+        }
+
+        /// <summary>
+        /// Clears cached values.
+        /// </summary>
+        private void Reset()
+        {
+            lastChain = null;
         }
 
         public BlockLocator GetCurrentChainLocator()
@@ -75,7 +82,7 @@ namespace BitcoinUtilities.Storage
 
         public void AddBlock(StoredBlock block)
         {
-            transactionListener.Enlist();
+            transactionalResource.Enlist();
 
             storage.AddBlock(block);
 
@@ -89,7 +96,7 @@ namespace BitcoinUtilities.Storage
 
         public void UpdateBlock(StoredBlock block)
         {
-            transactionListener.Enlist();
+            transactionalResource.Enlist();
 
             //todo: make StoredBlock immutable to avoid accidental changes to cached values?
             storage.UpdateBlock(block);
@@ -115,7 +122,7 @@ namespace BitcoinUtilities.Storage
 
         public void AddBlockContent(byte[] hash, byte[] content)
         {
-            transactionListener.Enlist();
+            transactionalResource.Enlist();
 
             //todo: make StoredBlock immutable to avoid accidental changes to cached values?
             storage.AddBlockContent(hash, content);
@@ -127,63 +134,6 @@ namespace BitcoinUtilities.Storage
                     StoredBlock chainBlock = lastChain.GetBlockByOffset(i);
                     chainBlock.HasContent = true;
                 }
-            }
-        }
-
-        private class TransactionListener : IEnlistmentNotification
-        {
-            private readonly CachingBlockchainStorage cache;
-
-            private Transaction currentTransaction;
-
-            public TransactionListener(CachingBlockchainStorage cache)
-            {
-                this.cache = cache;
-            }
-
-            public void Enlist()
-            {
-                Transaction tx = Transaction.Current;
-                if (tx == null)
-                {
-                    //todo: describe this exception in XMLDOC and add test
-                    throw new InvalidOperationException("Methods that modify storage content should be called within a transaction.");
-                }
-                if (currentTransaction != null)
-                {
-                    if (currentTransaction != tx)
-                    {
-                        throw new InvalidOperationException($"{nameof(CachingBlockchainStorage)} is already enlisted in a transaction.");
-                    }
-                    return;
-                }
-                currentTransaction = tx;
-                tx.EnlistVolatile(this, EnlistmentOptions.None);
-            }
-
-            public void Prepare(PreparingEnlistment enlistment)
-            {
-                enlistment.Prepared();
-            }
-
-            public void Commit(Enlistment enlistment)
-            {
-                currentTransaction = null;
-                enlistment.Done();
-            }
-
-            public void Rollback(Enlistment enlistment)
-            {
-                cache.Reset();
-                currentTransaction = null;
-                enlistment.Done();
-            }
-
-            public void InDoubt(Enlistment enlistment)
-            {
-                cache.Reset();
-                currentTransaction = null;
-                enlistment.Done();
             }
         }
     }

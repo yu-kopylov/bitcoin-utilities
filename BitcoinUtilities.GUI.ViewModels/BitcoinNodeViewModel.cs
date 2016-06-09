@@ -122,7 +122,7 @@ namespace BitcoinUtilities.GUI.ViewModels
             const string nodeStateChangedEventType = "NodeStateChanged";
             node.PropertyChanged += (sender, args) => applicationContext.EventManager.Notify(nodeStateChangedEventType);
             node.ConnectionCollection.Changed += () => applicationContext.EventManager.Notify(nodeStateChangedEventType);
-            node.Blockchain.BestHeaderChanged += () => applicationContext.EventManager.Notify(nodeStateChangedEventType);
+            node.Blockchain.StateChanged += () => applicationContext.EventManager.Notify(nodeStateChangedEventType);
 
             //todo: updates are too frequent, consider adding a delay to EventManager
             applicationContext.EventManager.Watch(nodeStateChangedEventType, OnNodePropertyChanged);

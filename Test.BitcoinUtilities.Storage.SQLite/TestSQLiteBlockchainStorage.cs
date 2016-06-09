@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Transactions;
 using BitcoinUtilities.P2P;
+using BitcoinUtilities.P2P.Primitives;
 using BitcoinUtilities.Storage;
 using BitcoinUtilities.Storage.SQLite;
 using NUnit.Framework;
@@ -45,8 +47,7 @@ namespace Test.BitcoinUtilities.Storage.SQLite
         [Test]
         public void TestTransactionsWithCache()
         {
-            //todo: define specific per storage name when moving to abstract test class
-            string testFolder = TestUtils.PrepareTestFolder(typeof(TestSQLiteBlockchainStorage), $"{nameof(TestTransactionsWithCache)}", "*.db");
+            string testFolder = TestUtils.PrepareTestFolder(GetType(), $"{nameof(TestTransactionsWithCache)}", "*.db");
 
             using (SQLiteBlockchainStorage storage = SQLiteBlockchainStorage.Open(testFolder))
             {
@@ -120,6 +121,42 @@ namespace Test.BitcoinUtilities.Storage.SQLite
 
                 Assert.True(cache.FindBlockByHash(block.Hash).HasContent);
                 Assert.True(cache.FindSubchain(block.Hash, 10).GetBlockByOffset(0).HasContent);
+            }
+        }
+
+        [Test]
+        public void TestTransactionsWithInternalBlockchain()
+        {
+            string testFolder = TestUtils.PrepareTestFolder(GetType(), $"{nameof(TestTransactionsWithCache)}", "*.db");
+
+            using (SQLiteBlockchainStorage storage = SQLiteBlockchainStorage.Open(testFolder))
+            {
+                CachingBlockchainStorage cache = new CachingBlockchainStorage(storage);
+                InternalBlockchain blockchain = new InternalBlockchain(cache);
+
+                using (var tx = new TransactionScope(TransactionScopeOption.Required))
+                {
+                    blockchain.Init();
+                    tx.Complete();
+                }
+
+                using (new TransactionScope(TransactionScopeOption.Required))
+                {
+                    Assert.That(blockchain.CommitedState.BestHeader.Height, Is.EqualTo(0));
+                    blockchain.AddHeaders(new List<StoredBlock> {new StoredBlock(BitcoinStreamReader.FromBytes(KnownBlocks.Block1, BlockHeader.Read))});
+                }
+
+                using (var tx = new TransactionScope(TransactionScopeOption.Required))
+                {
+                    Assert.That(blockchain.CommitedState.BestHeader.Height, Is.EqualTo(0));
+                    blockchain.AddHeaders(new List<StoredBlock> {new StoredBlock(BitcoinStreamReader.FromBytes(KnownBlocks.Block1, BlockHeader.Read))});
+                    tx.Complete();
+                }
+
+                using (new TransactionScope(TransactionScopeOption.Required))
+                {
+                    Assert.That(blockchain.CommitedState.BestHeader.Height, Is.EqualTo(1));
+                }
             }
         }
     }
