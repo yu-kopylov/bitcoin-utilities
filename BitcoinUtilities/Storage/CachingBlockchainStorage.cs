@@ -147,7 +147,7 @@ namespace BitcoinUtilities.Storage
                 if (tx == null)
                 {
                     //todo: describe this exception in XMLDOC and add test
-                    throw new InvalidOperationException("Methods that modify storage content should be called within transaction.");
+                    throw new InvalidOperationException("Methods that modify storage content should be called within a transaction.");
                 }
                 if (currentTransaction != null)
                 {
