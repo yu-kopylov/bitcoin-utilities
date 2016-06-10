@@ -53,7 +53,8 @@ namespace BitcoinUtilities.Node.Services
                 if (requiredBlocks.Any())
                 {
                     int minRequiredBlockHeight = requiredBlocks.Values.Min(b => b.Height);
-                    List<StoredBlock> parentBlocks = node.Blockchain.GetBlocksByHeight(BlockLocator.GetRequiredBlockHeights(minRequiredBlockHeight));
+                    int locatorHeight = minRequiredBlockHeight - 1;
+                    List<StoredBlock> parentBlocks = node.Blockchain.GetBlocksByHeight(BlockLocator.GetRequiredBlockHeights(locatorHeight));
                     locator = new BlockLocator();
                     foreach (StoredBlock block in parentBlocks)
                     {
