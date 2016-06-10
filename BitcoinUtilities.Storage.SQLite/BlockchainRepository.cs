@@ -14,38 +14,21 @@ namespace BitcoinUtilities.Storage.SQLite
     /// </summary>
     internal class BlockchainRepository : IDisposable
     {
-        private readonly Dictionary<string, SQLiteCommand> commands = new Dictionary<string, SQLiteCommand>();
-        private readonly SQLiteConnection connection;
+        private readonly CommandCache commandCache;
 
         public BlockchainRepository(SQLiteConnection connection)
         {
-            this.connection = connection;
+            this.commandCache = new CommandCache(connection);
         }
 
         public void Dispose()
         {
-            foreach (var command in commands.Values)
-            {
-                command.Dispose();
-            }
-        }
-
-        private SQLiteCommand CreateCommand(string sql)
-        {
-            //todo: use separate class as cache for commands (it is not a responsibility of repositories)
-            SQLiteCommand command;
-            if (!commands.TryGetValue(sql, out command))
-            {
-                command = new SQLiteCommand(sql, connection);
-                commands.Add(sql, command);
-            }
-            command.Parameters.Clear();
-            return command;
+            commandCache.Dispose();
         }
 
         public void InsertBlock(StoredBlock block)
         {
-            var command = CreateCommand(
+            var command = commandCache.CreateCommand(
                 "insert into Blocks(Header, Hash, Height, TotalWork, HasContent, IsInBestHeaderChain, IsInBestBlockChain)" +
                 "values (@Header, @Hash, @Height, @TotalWork, @HasContent, @IsInBestHeaderChain, @IsInBestBlockChain)");
 
@@ -241,6 +224,11 @@ namespace BitcoinUtilities.Storage.SQLite
         private byte[] ReadBytes(SQLiteDataReader reader, int col)
         {
             return (byte[]) reader[col];
+        }
+
+        private SQLiteCommand CreateCommand(string sql)
+        {
+            return commandCache.CreateCommand(sql);
         }
     }
 }
