@@ -57,6 +57,7 @@
     <Compile Include="BioRandom.cs" />
     <Compile Include="Bip38.cs" />
     <Compile Include="BitcoinAddress.cs" />
+    <Compile Include="Collections\CollectionUtils.cs" />
     <Compile Include="DifficultyUtils.cs" />
     <Compile Include="IpUtils.cs" />
     <Compile Include="MerkleTreeUtils.cs" />

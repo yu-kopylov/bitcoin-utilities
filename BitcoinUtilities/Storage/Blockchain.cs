@@ -1,10 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Transactions;
+using BitcoinUtilities.Collections;
 using BitcoinUtilities.Node;
 using BitcoinUtilities.Node.Rules;
-using BitcoinUtilities.P2P;
 using BitcoinUtilities.P2P.Messages;
 using BitcoinUtilities.P2P.Primitives;
 
@@ -22,6 +21,8 @@ namespace BitcoinUtilities.Storage
          * 11 - A timestamp is accepted as valid if it is greater than the median timestamp of previous 11 blocks. Source: https://en.bitcoin.it/wiki/Block_timestamp .
          */
         internal const int AnalyzedSubchainLength = 2016;
+
+        private const int AddHeadersBatchSize = 50;
 
         private readonly object blockchainLock = new object();
 
@@ -122,7 +123,10 @@ namespace BitcoinUtilities.Storage
 
             List<StoredBlock> res = new List<StoredBlock>(blocks.Count);
 
-            ExecuteInTransaction(() => res.AddRange(blockchain.AddHeaders(blocks)));
+            foreach (List<StoredBlock> batch in blocks.Split(AddHeadersBatchSize))
+            {
+                ExecuteInTransaction(() => res.AddRange(blockchain.AddHeaders(batch)));
+            }
 
             return res;
         }
