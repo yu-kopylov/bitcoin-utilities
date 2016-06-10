@@ -127,7 +127,7 @@ namespace Test.BitcoinUtilities.Storage.SQLite
         [Test]
         public void TestTransactionsWithInternalBlockchain()
         {
-            string testFolder = TestUtils.PrepareTestFolder(GetType(), $"{nameof(TestTransactionsWithCache)}", "*.db");
+            string testFolder = TestUtils.PrepareTestFolder(GetType(), $"{nameof(TestTransactionsWithInternalBlockchain)}", "*.db");
 
             using (SQLiteBlockchainStorage storage = SQLiteBlockchainStorage.Open(testFolder))
             {

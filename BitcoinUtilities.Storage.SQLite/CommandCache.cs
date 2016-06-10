@@ -6,6 +6,8 @@ namespace BitcoinUtilities.Storage.SQLite
 {
     internal class CommandCache : IDisposable
     {
+        //todo: limit cache size?
+
         private readonly SQLiteConnection connection;
 
         private readonly Dictionary<string, SQLiteCommand> commands = new Dictionary<string, SQLiteCommand>();
@@ -25,7 +27,6 @@ namespace BitcoinUtilities.Storage.SQLite
 
         public SQLiteCommand CreateCommand(string sql)
         {
-            //todo: use separate class as cache for commands (it is not a responsibility of repositories)
             SQLiteCommand command;
             if (!commands.TryGetValue(sql, out command))
             {
