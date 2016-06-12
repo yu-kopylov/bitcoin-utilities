@@ -1,5 +1,5 @@
-﻿using System.Collections.Generic;
-using BitcoinUtilities.P2P.Messages;
+﻿using System;
+using System.Collections.Generic;
 
 namespace BitcoinUtilities.Storage
 {
@@ -9,6 +9,14 @@ namespace BitcoinUtilities.Storage
         BlockLocator GetCurrentChainLocator();
 
         StoredBlock FindBlockByHash(byte[] hash);
+
+        /// <summary>
+        /// Finds first block that matches a given selector.
+        /// </summary>
+        /// <param name="selector">The selector.</param>
+        /// <returns>The first block that matches selector; or null if there is no such block.</returns>
+        /// <exception cref="ArgumentException">If the sort order is not defined.</exception>
+        StoredBlock FindFirst(BlockSelector selector);
 
         /// <summary>
         /// Searches for last block from the chain with the maximum total work.

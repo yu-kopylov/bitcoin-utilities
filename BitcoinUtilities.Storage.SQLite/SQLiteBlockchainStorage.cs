@@ -159,6 +159,14 @@ namespace BitcoinUtilities.Storage.SQLite
             }
         }
 
+        public StoredBlock FindFirst(BlockSelector selector)
+        {
+            using (BlockchainRepository repo = new BlockchainRepository(conn))
+            {
+                return repo.FindFirst(selector);
+            }
+        }
+
         public StoredBlock FindBestHeaderChain()
         {
             using (BlockchainRepository repo = new BlockchainRepository(conn))

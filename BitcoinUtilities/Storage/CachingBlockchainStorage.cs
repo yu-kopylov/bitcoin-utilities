@@ -48,6 +48,11 @@ namespace BitcoinUtilities.Storage
             return storage.FindBlockByHash(hash);
         }
 
+        public StoredBlock FindFirst(BlockSelector selector)
+        {
+            return storage.FindFirst(selector);
+        }
+
         public StoredBlock FindBestHeaderChain()
         {
             return storage.FindBestHeaderChain();
@@ -65,6 +70,8 @@ namespace BitcoinUtilities.Storage
 
         public Subchain FindSubchain(byte[] hash, int length)
         {
+            // enlistment in transaction is not necessary, since cached data would remain valid until modifying method is called
+
             if (lastChain == null
                 || (lastChain.Length < length && !lastChain.GetBlockByOffset(lastChain.Length - 1).Header.IsFirst)
                 || !lastChain.GetBlockByOffset(0).Hash.SequenceEqual(hash))

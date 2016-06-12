@@ -22,6 +22,13 @@ namespace Test.BitcoinUtilities.Storage.SQLite
             {
                 Assert.Null(storage.FindBlockByHash(GenesisBlock.Hash));
                 Assert.Null(storage.FindBestHeaderChain());
+                Assert.Null(storage.FindFirst(new BlockSelector
+                {
+                    IsInBestHeaderChain = true,
+                    IsInBestBlockChain = true,
+                    Order = BlockSelector.SortOrder.Height,
+                    Direction = BlockSelector.SortDirection.Desc
+                }));
 
                 StoredBlock block = new StoredBlock(GenesisBlock.GetHeader());
                 block.IsInBestHeaderChain = true;
@@ -41,6 +48,28 @@ namespace Test.BitcoinUtilities.Storage.SQLite
 
                 Assert.NotNull(block);
                 Assert.That(block.Hash, Is.EqualTo(GenesisBlock.Hash));
+
+                block = storage.FindFirst(new BlockSelector
+                {
+                    IsInBestHeaderChain = true,
+                    IsInBestBlockChain = true,
+                    Order = BlockSelector.SortOrder.Height,
+                    Direction = BlockSelector.SortDirection.Desc
+                });
+
+                Assert.NotNull(block);
+                Assert.That(block.Hash, Is.EqualTo(GenesisBlock.Hash));
+            }
+        }
+
+        [Test]
+        public void TestFindFirstError()
+        {
+            string testFolder = TestUtils.PrepareTestFolder(typeof(TestSQLiteBlockchainStorage), $"{nameof(TestSmoke)}", "*.db");
+
+            using (SQLiteBlockchainStorage storage = SQLiteBlockchainStorage.Open(testFolder))
+            {
+                Assert.Throws<ArgumentException>(() => storage.FindFirst(new BlockSelector()));
             }
         }
 

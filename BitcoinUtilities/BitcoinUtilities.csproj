@@ -80,6 +80,7 @@
     <Compile Include="Collections\VirtualDictionaryTransaction.cs" />
     <Compile Include="Node\Rules\BlockContentValidator.cs" />
     <Compile Include="Node\Services\BlockContentDownloadService.cs" />
+    <Compile Include="Storage\BlockSelector.cs" />
     <Compile Include="Storage\InternalBlockchain.cs" />
     <Compile Include="Storage\Blockchain.cs" />
     <Compile Include="Storage\BlockchainState.cs" />

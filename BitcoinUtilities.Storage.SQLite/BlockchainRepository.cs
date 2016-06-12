@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Data.SQLite;
 using System.IO;
+using System.Linq;
 using System.Text;
 using BitcoinUtilities.P2P;
 using BitcoinUtilities.P2P.Primitives;
@@ -99,6 +100,72 @@ namespace BitcoinUtilities.Storage.SQLite
                 }
                 return ReadBlock(reader);
             }
+        }
+
+        public StoredBlock FindFirst(BlockSelector selector)
+        {
+            string whereClause = GetWhereClause("B", selector);
+            string orderByClause = GetOrderByClause("B", selector);
+
+            var command = CreateCommand($"select {GetBlockColumns("B")} from Blocks B {whereClause} {orderByClause} limit 1");
+
+            SetParameters(command, selector);
+
+            using (SQLiteDataReader reader = command.ExecuteReader())
+            {
+                if (!reader.Read())
+                {
+                    return null;
+                }
+                return ReadBlock(reader);
+            }
+        }
+
+        private string GetWhereClause(string blocksAlias, BlockSelector selector)
+        {
+            List<string> criteria = new List<string>();
+            if (selector.HasContent != null)
+            {
+                criteria.Add($"{blocksAlias}.HasContent=@HasContent");
+            }
+            if (selector.IsInBestHeaderChain != null)
+            {
+                criteria.Add($"{blocksAlias}.IsInBestHeaderChain=@IsInBestHeaderChain");
+            }
+            if (selector.IsInBestBlockChain != null)
+            {
+                criteria.Add($"{blocksAlias}.IsInBestBlockChain=@IsInBestBlockChain");
+            }
+            if (!criteria.Any())
+            {
+                return "";
+            }
+            return "where " + String.Join(" AND ", criteria);
+        }
+
+        private void SetParameters(SQLiteCommand command, BlockSelector selector)
+        {
+            if (selector.HasContent != null)
+            {
+                command.Parameters.Add("@HasContent", DbType.Boolean).Value = selector.HasContent;
+            }
+            if (selector.IsInBestHeaderChain != null)
+            {
+                command.Parameters.Add("@IsInBestHeaderChain", DbType.Boolean).Value = selector.IsInBestHeaderChain;
+            }
+            if (selector.IsInBestBlockChain != null)
+            {
+                command.Parameters.Add("@IsInBestBlockChain", DbType.Boolean).Value = selector.IsInBestBlockChain;
+            }
+        }
+
+        private string GetOrderByClause(string blocksAlias, BlockSelector selector)
+        {
+            if (selector.Order == null || selector.Direction == null)
+            {
+                throw new ArgumentException("The sort order is not defined.", nameof(selector));
+            }
+            return $"order by {blocksAlias}.{selector.Order} {selector.Direction}";
         }
 
         public StoredBlock FindBestHeaderChain()
