@@ -148,7 +148,37 @@ namespace BitcoinUtilities.Storage
 
         public void AddBlockContent(BlockMessage block)
         {
+            //todo: add XMLDOC
             ExecuteInTransaction(() => blockchain.AddBlockContent(block));
+        }
+
+        /// <summary>
+        /// Adds the block with the given hash to main chain.
+        /// </summary>
+        public void Include(byte[] hash)
+        {
+            ExecuteInTransaction(() => blockchain.Include(hash));
+        }
+
+        /// <summary>
+        /// Performs fast truncation of the main chain to the given block using available rollback data.
+        /// </summary>
+        /// <param name="hash">The hash of the last block in the remaining chain.</param>
+        /// <returns>true if chain was truncated; false if there is no data available for a fast rollback to the given block.</returns>
+        /// <exception cref="InvalidOperationException">If the block with the given hash does not exist in main chain.</exception>
+        public bool TruncateTo(byte[] hash)
+        {
+            bool res = false;
+            ExecuteInTransaction(() => { res = blockchain.TruncateTo(hash); });
+            return res;
+        }
+
+        /// <summary>
+        /// Truncates the main chain to the genesis block.
+        /// </summary>
+        public void Truncate()
+        {
+            ExecuteInTransaction(blockchain.Truncate);
         }
 
         private void ExecuteInTransaction(Action action)

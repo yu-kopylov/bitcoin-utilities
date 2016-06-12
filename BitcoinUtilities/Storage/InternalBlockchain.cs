@@ -140,6 +140,51 @@ namespace BitcoinUtilities.Storage
             storage.AddBlockContent(storedBlock.Hash, BitcoinStreamWriter.GetBytes(block.Write));
         }
 
+        public bool Include(byte[] hash)
+        {
+            transactionalResource.Enlist();
+
+            StoredBlock block = storage.FindBlockByHash(hash);
+            if (block == null || !block.HasContent)
+            {
+                return false;
+            }
+            if (block.IsInBestBlockChain)
+            {
+                // todo: what to return in this scenario
+                return true;
+            }
+            if (!currentState.BestChain.Hash.SequenceEqual(block.Header.PrevBlock))
+            {
+                return false;
+            }
+
+            // todo: validate content and process transactions
+
+            //todo: make blocks immutable
+            block.IsInBestBlockChain = true;
+            storage.UpdateBlock(block);
+
+            currentState = currentState.SetBestChain(block);
+
+            return true;
+        }
+
+        public bool TruncateTo(byte[] hash)
+        {
+            transactionalResource.Enlist();
+
+            //todo: implement
+            return false;
+        }
+
+        public void Truncate()
+        {
+            transactionalResource.Enlist();
+
+            throw new NotImplementedException();
+        }
+
         private void AddGenesisBlock()
         {
             //todo: use network specific genesis block
