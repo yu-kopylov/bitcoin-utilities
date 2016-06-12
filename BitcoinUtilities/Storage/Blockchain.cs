@@ -60,6 +60,21 @@ namespace BitcoinUtilities.Storage
         }
 
         /// <summary>
+        /// Finds first block that matches a given selector.
+        /// </summary>
+        /// <param name="selector">The selector.</param>
+        /// <returns>The first block that matches selector; or null if there is no such block.</returns>
+        /// <exception cref="ArgumentException">If the sort order is not defined.</exception>
+        public StoredBlock FindFirst(BlockSelector selector)
+        {
+            //todo: use transaction?
+            lock (blockchainLock)
+            {
+                return blockchain.FindFirst(selector);
+            }
+        }
+
+        /// <summary>
         /// Returns <see cref="BlockLocator"/> for current active chain.
         /// </summary>
         public BlockLocator GetBlockLocator()
