@@ -166,12 +166,14 @@ namespace Test.BitcoinUtilities.Storage.SQLite
                 using (new TransactionScope(TransactionScopeOption.Required))
                 {
                     Assert.That(blockchain.CommitedState.BestHeader.Height, Is.EqualTo(0));
+                    Assert.That(blockchain.CommitedState.BestChain.Height, Is.EqualTo(0));
                     blockchain.AddHeaders(new List<StoredBlock> {new StoredBlock(BitcoinStreamReader.FromBytes(KnownBlocks.Block1, BlockHeader.Read))});
                 }
 
                 using (var tx = new TransactionScope(TransactionScopeOption.Required))
                 {
                     Assert.That(blockchain.CommitedState.BestHeader.Height, Is.EqualTo(0));
+                    Assert.That(blockchain.CommitedState.BestChain.Height, Is.EqualTo(0));
                     blockchain.AddHeaders(new List<StoredBlock> {new StoredBlock(BitcoinStreamReader.FromBytes(KnownBlocks.Block1, BlockHeader.Read))});
                     tx.Complete();
                 }
@@ -179,6 +181,7 @@ namespace Test.BitcoinUtilities.Storage.SQLite
                 using (new TransactionScope(TransactionScopeOption.Required))
                 {
                     Assert.That(blockchain.CommitedState.BestHeader.Height, Is.EqualTo(1));
+                    Assert.That(blockchain.CommitedState.BestChain.Height, Is.EqualTo(0));
                 }
             }
         }

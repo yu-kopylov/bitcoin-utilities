@@ -1,7 +1,6 @@
 ﻿using System;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
-using System.Threading;
 using BitcoinUtilities.GUI.Models;
 using BitcoinUtilities.Node;
 using BitcoinUtilities.Storage.SQLite;
@@ -16,6 +15,7 @@ namespace BitcoinUtilities.GUI.ViewModels
         private string state;
 
         private int bestHeaderHeight;
+        private int bestChainHeight;
 
         private int incomingConnectionsCount;
         private int outgoingConnectionsCount;
@@ -46,6 +46,16 @@ namespace BitcoinUtilities.GUI.ViewModels
             private set
             {
                 bestHeaderHeight = value;
+                OnPropertyChanged();
+            }
+        }
+
+        public int BestChainHeight
+        {
+            get { return bestChainHeight; }
+            set
+            {
+                bestChainHeight = value;
                 OnPropertyChanged();
             }
         }
@@ -150,6 +160,7 @@ namespace BitcoinUtilities.GUI.ViewModels
             {
                 State = "No Node";
                 BestHeaderHeight = 0;
+                BestChainHeight = 0;
                 IncomingConnectionsCount = 0;
                 OutgoingConnectionsCount = 0;
                 CanStartNode = true;
@@ -157,7 +168,8 @@ namespace BitcoinUtilities.GUI.ViewModels
                 return;
             }
             State = node.Started ? "Started" : "Stopped";
-            BestHeaderHeight = node.Blockchain.BestHeader?.Height ?? 0;
+            BestHeaderHeight = node.Blockchain?.State?.BestHeader?.Height ?? 0;
+            BestChainHeight = node.Blockchain?.State?.BestChain?.Height ?? 0;
             IncomingConnectionsCount = node.ConnectionCollection.IncomingConnectionsCount;
             OutgoingConnectionsCount = node.ConnectionCollection.OutgoingConnectionsCount;
             CanStartNode = !node.Started;

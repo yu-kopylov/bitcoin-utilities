@@ -75,7 +75,8 @@ namespace BitcoinUtilities.Storage
                 throw new InvalidOperationException("The genesis block in storage has wrong hash.");
             }
             var bestHeader = storage.FindFirst(BlockSelector.LastBestHeader);
-            currentState = new BlockchainState(bestHeader);
+            var bestChain = storage.FindFirst(BlockSelector.LastChainBlock);
+            currentState = new BlockchainState(bestHeader, bestChain);
         }
 
         public BlockLocator GetBlockLocator()

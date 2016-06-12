@@ -25,6 +25,14 @@
           </TableRow>
           <TableRow>
             <TableCell>
+              <Label Text="Best Chain Height:"/>
+            </TableCell>
+            <TableCell ScaleWidth="True">
+              <Label Text="{Binding BestChainHeight}"/>
+            </TableCell>
+          </TableRow>
+          <TableRow>
+            <TableCell>
               <Label Text="Incoming Connections:"/>
             </TableCell>
             <TableCell ScaleWidth="True">

@@ -29,5 +29,15 @@
             Order = SortOrder.Height,
             Direction = SortDirection.Desc
         };
+
+        /// <summary>
+        /// Returns a new selector for the blocks with maximum height in the current chain.
+        /// </summary>
+        public static BlockSelector LastChainBlock => new BlockSelector
+        {
+            IsInBestBlockChain = true,
+            Order = SortOrder.Height,
+            Direction = SortDirection.Desc
+        };
     }
 }

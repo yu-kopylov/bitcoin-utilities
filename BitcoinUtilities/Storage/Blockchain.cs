@@ -38,13 +38,13 @@ namespace BitcoinUtilities.Storage
             blockchain = new InternalBlockchain(cache);
         }
 
-        public StoredBlock BestHeader
+        public BlockchainState State
         {
             get
             {
                 lock (stateLock)
                 {
-                    return state.BestHeader;
+                    return state;
                 }
             }
         }
