@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Transactions;
 using BitcoinUtilities.P2P;
 using BitcoinUtilities.P2P.Primitives;
@@ -16,7 +17,7 @@ namespace Test.BitcoinUtilities.Storage.SQLite
         [Test]
         public void TestSmoke()
         {
-            string testFolder = TestUtils.PrepareTestFolder(typeof(TestSQLiteBlockchainStorage), $"{nameof(TestSmoke)}", "*.db");
+            string testFolder = TestUtils.PrepareTestFolder(GetType(), $"{nameof(TestSmoke)}", "*.db");
 
             using (SQLiteBlockchainStorage storage = SQLiteBlockchainStorage.Open(testFolder))
             {
@@ -28,8 +29,16 @@ namespace Test.BitcoinUtilities.Storage.SQLite
                     Order = BlockSelector.SortOrder.Height,
                     Direction = BlockSelector.SortDirection.Desc
                 }));
+                Assert.That(storage.Find(new BlockSelector
+                {
+                    Heights = new int[] {0, 1},
+                    IsInBestHeaderChain = true,
+                    Order = BlockSelector.SortOrder.Height,
+                    Direction = BlockSelector.SortDirection.Asc
+                }, 100).Select(b => b.Height).ToList(), Is.EqualTo(new int[] {}));
 
                 StoredBlock block = new StoredBlock(GenesisBlock.GetHeader());
+                block.Height = 0;
                 block.IsInBestHeaderChain = true;
                 block.IsInBestBlockChain = true;
 
@@ -53,17 +62,41 @@ namespace Test.BitcoinUtilities.Storage.SQLite
 
                 Assert.NotNull(block);
                 Assert.That(block.Hash, Is.EqualTo(GenesisBlock.Hash));
+
+                Assert.That(storage.Find(new BlockSelector
+                {
+                    Heights = new int[] {0, 1},
+                    IsInBestHeaderChain = true,
+                    Order = BlockSelector.SortOrder.Height,
+                    Direction = BlockSelector.SortDirection.Asc
+                }, 100).Select(b => b.Height).ToList(), Is.EqualTo(new int[] {0}));
             }
         }
 
         [Test]
-        public void TestFindFirstError()
+        public void TestFindFirstErrors()
         {
-            string testFolder = TestUtils.PrepareTestFolder(typeof(TestSQLiteBlockchainStorage), $"{nameof(TestSmoke)}", "*.db");
+            string testFolder = TestUtils.PrepareTestFolder(GetType(), $"{nameof(TestFindFirstErrors)}", "*.db");
 
             using (SQLiteBlockchainStorage storage = SQLiteBlockchainStorage.Open(testFolder))
             {
                 Assert.Throws<ArgumentException>(() => storage.FindFirst(new BlockSelector()));
+            }
+        }
+
+        [Test]
+        public void TestFindErrors()
+        {
+            string testFolder = TestUtils.PrepareTestFolder(GetType(), $"{nameof(TestFindErrors)}", "*.db");
+
+            using (SQLiteBlockchainStorage storage = SQLiteBlockchainStorage.Open(testFolder))
+            {
+                Assert.Throws<ArgumentException>(() => storage.Find(new BlockSelector(), 1));
+
+                Assert.Throws<ArgumentException>(() => storage.Find(BlockSelector.LastBestHeader, 0));
+                Assert.That(storage.Find(BlockSelector.LastBestHeader, 1).Count, Is.EqualTo(0));
+                Assert.That(storage.Find(BlockSelector.LastBestHeader, 256).Count, Is.EqualTo(0));
+                Assert.Throws<ArgumentException>(() => storage.Find(BlockSelector.LastBestHeader, 257));
             }
         }
 

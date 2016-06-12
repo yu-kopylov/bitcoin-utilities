@@ -19,6 +19,15 @@ namespace BitcoinUtilities.Storage
         StoredBlock FindFirst(BlockSelector selector);
 
         /// <summary>
+        /// Finds first blocks that match a given selector.
+        /// </summary>
+        /// <param name="selector">The selector.</param>
+        /// <param name="count">The number of blocks to return. Should be greater than 0 and less then or equal to 256.</param>
+        /// <returns>A list of blocks that match selector.</returns>
+        /// <exception cref="ArgumentException">If the sort order is not defined, or if count is not valid.</exception>
+        List<StoredBlock> Find(BlockSelector selector, int count);
+
+        /// <summary>
         /// Searches for the oldest blocks on the best header chain that does not have content.
         /// </summary>
         /// <param name="maxCount">The maximum number of blocks to return.</param>

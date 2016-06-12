@@ -121,9 +121,36 @@ namespace BitcoinUtilities.Storage.SQLite
             }
         }
 
+        public List<StoredBlock> Find(BlockSelector selector, int count)
+        {
+            string whereClause = GetWhereClause("B", selector);
+            string orderByClause = GetOrderByClause("B", selector);
+
+            var command = CreateCommand($"select {GetBlockColumns("B")} from Blocks B {whereClause} {orderByClause} limit @limit");
+
+            SetParameters(command, selector);
+            command.Parameters.Add("@limit", DbType.Int32).Value = count;
+
+            List<StoredBlock> blocks = new List<StoredBlock>();
+
+            using (SQLiteDataReader reader = command.ExecuteReader())
+            {
+                while (reader.Read())
+                {
+                    blocks.Add(ReadBlock(reader));
+                }
+            }
+
+            return blocks;
+        }
+
         private string GetWhereClause(string blocksAlias, BlockSelector selector)
         {
             List<string> criteria = new List<string>();
+            if (selector.Heights != null)
+            {
+                criteria.Add($"{blocksAlias}.Height in ({GetInParameters("H", selector.Heights.Length)})");
+            }
             if (selector.HasContent != null)
             {
                 criteria.Add($"{blocksAlias}.HasContent=@HasContent");
@@ -140,11 +167,15 @@ namespace BitcoinUtilities.Storage.SQLite
             {
                 return "";
             }
-            return "where " + String.Join(" AND ", criteria);
+            return "where " + string.Join(" AND ", criteria);
         }
 
         private void SetParameters(SQLiteCommand command, BlockSelector selector)
         {
+            if (selector.Heights != null)
+            {
+                SetInParameters(command, "H", selector.Heights);
+            }
             if (selector.HasContent != null)
             {
                 command.Parameters.Add("@HasContent", DbType.Boolean).Value = selector.HasContent;

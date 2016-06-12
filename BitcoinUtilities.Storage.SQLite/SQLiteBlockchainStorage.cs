@@ -167,6 +167,18 @@ namespace BitcoinUtilities.Storage.SQLite
             }
         }
 
+        public List<StoredBlock> Find(BlockSelector selector, int count)
+        {
+            if (count <= 0 || count > 256)
+            {
+                throw new ArgumentException($"The parameter '{nameof(count)}' is not within its bounds.", nameof(count));
+            }
+            using (BlockchainRepository repo = new BlockchainRepository(conn))
+            {
+                return repo.Find(selector, count);
+            }
+        }
+
         public List<StoredBlock> GetOldestBlocksWithoutContent(int maxCount)
         {
             using (BlockchainRepository repo = new BlockchainRepository(conn))

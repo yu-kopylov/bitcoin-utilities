@@ -10,10 +10,11 @@
 
         public enum SortDirection
         {
-            Acs,
+            Asc,
             Desc
         }
 
+        public int[] Heights { get; set; }
         public bool? HasContent { get; set; }
         public bool? IsInBestHeaderChain { get; set; }
         public bool? IsInBestBlockChain { get; set; }

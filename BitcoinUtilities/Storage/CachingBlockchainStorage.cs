@@ -53,6 +53,11 @@ namespace BitcoinUtilities.Storage
             return storage.FindFirst(selector);
         }
 
+        public List<StoredBlock> Find(BlockSelector selector, int count)
+        {
+            return storage.Find(selector, count);
+        }
+
         public List<StoredBlock> GetOldestBlocksWithoutContent(int maxCount)
         {
             return storage.GetOldestBlocksWithoutContent(maxCount);
