@@ -74,7 +74,7 @@ namespace BitcoinUtilities.Storage
                 //todo: also check for situation when there is no genisis block in storage, but storage is not empty
                 throw new InvalidOperationException("The genesis block in storage has wrong hash.");
             }
-            var bestHeader = storage.FindBestHeaderChain();
+            var bestHeader = storage.FindFirst(BlockSelector.LastBestHeader);
             currentState = new BlockchainState(bestHeader);
         }
 

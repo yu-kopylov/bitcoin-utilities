@@ -168,20 +168,6 @@ namespace BitcoinUtilities.Storage.SQLite
             return $"order by {blocksAlias}.{selector.Order} {selector.Direction}";
         }
 
-        public StoredBlock FindBestHeaderChain()
-        {
-            var command = CreateCommand($"select {GetBlockColumns("B")} from Blocks B where B.IsInBestHeaderChain=1 order by B.Height desc limit 1");
-
-            using (SQLiteDataReader reader = command.ExecuteReader())
-            {
-                if (!reader.Read())
-                {
-                    return null;
-                }
-                return ReadBlock(reader);
-            }
-        }
-
         public StoredBlock GetLastBlockHeader()
         {
             var command = CreateCommand($"select {GetBlockColumns("B")} from Blocks B order by B.Height desc limit 1");

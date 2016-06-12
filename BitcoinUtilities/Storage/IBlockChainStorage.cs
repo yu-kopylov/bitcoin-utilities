@@ -19,13 +19,6 @@ namespace BitcoinUtilities.Storage
         StoredBlock FindFirst(BlockSelector selector);
 
         /// <summary>
-        /// Searches for last block from the chain with the maximum total work.
-        /// <para/>
-        /// Chain with the maximum total work may not match the current blockchain if blocks in that chain are not yet validated.
-        /// </summary>
-        StoredBlock FindBestHeaderChain();
-
-        /// <summary>
         /// Searches for the oldest blocks on the best header chain that does not have content.
         /// </summary>
         /// <param name="maxCount">The maximum number of blocks to return.</param>

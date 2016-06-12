@@ -167,14 +167,6 @@ namespace BitcoinUtilities.Storage.SQLite
             }
         }
 
-        public StoredBlock FindBestHeaderChain()
-        {
-            using (BlockchainRepository repo = new BlockchainRepository(conn))
-            {
-                return repo.FindBestHeaderChain();
-            }
-        }
-
         public List<StoredBlock> GetOldestBlocksWithoutContent(int maxCount)
         {
             using (BlockchainRepository repo = new BlockchainRepository(conn))

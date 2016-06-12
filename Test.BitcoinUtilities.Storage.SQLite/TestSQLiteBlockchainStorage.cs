@@ -21,7 +21,6 @@ namespace Test.BitcoinUtilities.Storage.SQLite
             using (SQLiteBlockchainStorage storage = SQLiteBlockchainStorage.Open(testFolder))
             {
                 Assert.Null(storage.FindBlockByHash(GenesisBlock.Hash));
-                Assert.Null(storage.FindBestHeaderChain());
                 Assert.Null(storage.FindFirst(new BlockSelector
                 {
                     IsInBestHeaderChain = true,
@@ -40,11 +39,6 @@ namespace Test.BitcoinUtilities.Storage.SQLite
             using (SQLiteBlockchainStorage storage = SQLiteBlockchainStorage.Open(testFolder))
             {
                 StoredBlock block = storage.FindBlockByHash(GenesisBlock.Hash);
-
-                Assert.NotNull(block);
-                Assert.That(block.Hash, Is.EqualTo(GenesisBlock.Hash));
-
-                block = storage.FindBestHeaderChain();
 
                 Assert.NotNull(block);
                 Assert.That(block.Hash, Is.EqualTo(GenesisBlock.Hash));

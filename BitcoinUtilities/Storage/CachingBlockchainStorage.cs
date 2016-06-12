@@ -53,11 +53,6 @@ namespace BitcoinUtilities.Storage
             return storage.FindFirst(selector);
         }
 
-        public StoredBlock FindBestHeaderChain()
-        {
-            return storage.FindBestHeaderChain();
-        }
-
         public List<StoredBlock> GetOldestBlocksWithoutContent(int maxCount)
         {
             return storage.GetOldestBlocksWithoutContent(maxCount);
