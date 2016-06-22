@@ -126,9 +126,13 @@
     <Compile Include="P2P\BitcoinStreamWriter.cs" />
     <Compile Include="SecureRandom.cs" />
     <Compile Include="SignatureUtils.cs" />
+    <Compile Include="Storage\IUnspentOutputStorage.cs" />
+    <Compile Include="Storage\SpentOutput.cs" />
     <Compile Include="Storage\StoredBlock.cs" />
     <Compile Include="Storage\Subchain.cs" />
     <Compile Include="Storage\TransactionalResource.cs" />
+    <Compile Include="Storage\UnspentOutput.cs" />
+    <Compile Include="Storage\UnspentOutputsUpdate.cs" />
     <Compile Include="SystemTime.cs" />
     <Compile Include="Threading\BlockingThreadPool.cs" />
     <Compile Include="P2P\GenesisBlock.cs" />

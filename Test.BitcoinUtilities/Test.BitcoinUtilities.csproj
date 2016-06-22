@@ -77,6 +77,7 @@
     <Compile Include="P2P\TestBitcoinStreamWriter.cs" />
     <Compile Include="P2P\TestDnsSeeds.cs" />
     <Compile Include="Scripts\TestBitcoinScript.cs" />
+    <Compile Include="Storage\TestUnspentOutputsUpdate.cs" />
     <Compile Include="TestBioRandom.cs" />
     <Compile Include="TestDifficultyUtils.cs" />
     <Compile Include="TestIpUtils.cs" />
