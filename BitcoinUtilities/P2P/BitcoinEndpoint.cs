@@ -18,7 +18,7 @@ namespace BitcoinUtilities.P2P
     /// </remarks>
     public class BitcoinEndpoint : IDisposable
     {
-        private static readonly Logger logger = LogManager.GetCurrentClassLogger();
+        private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
 
         private const string UserAgent = "/BitcoinUtilities:0.0.1/";
         private readonly int protocolVersion = 70002;

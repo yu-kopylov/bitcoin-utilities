@@ -5,6 +5,8 @@ using BitcoinUtilities.Node;
 using BitcoinUtilities.Node.Rules;
 using BitcoinUtilities.P2P;
 using BitcoinUtilities.P2P.Messages;
+using BitcoinUtilities.P2P.Primitives;
+using NLog;
 
 namespace BitcoinUtilities.Storage
 {
@@ -16,6 +18,8 @@ namespace BitcoinUtilities.Storage
     public class InternalBlockchain
     {
         //todo: make this class internal and move related generic storage tests to TestUtils
+
+        private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
 
         private readonly IBlockchainStorage storage;
 
@@ -154,12 +158,28 @@ namespace BitcoinUtilities.Storage
                 // todo: what to return in this scenario
                 return true;
             }
-            if (!currentState.BestChain.Hash.SequenceEqual(block.Header.PrevBlock))
+            if (block.Height != currentState.BestChain.Height + 1 || !currentState.BestChain.Hash.SequenceEqual(block.Header.PrevBlock))
             {
                 return false;
             }
 
-            // todo: validate content and process transactions
+            byte[] content = storage.GetBlockContent(block.Hash);
+
+            BlockMessage blockMessage = BitcoinStreamReader.FromBytes(content, BlockMessage.Read);
+
+            UnspentOutputsUpdate unspentOutputsUpdate;
+            try
+            {
+                unspentOutputsUpdate = PrepareUnspentOutputsUpdate(block, blockMessage);
+            }
+            catch (BitcoinProtocolViolationException ex)
+            {
+                logger.Warn(ex, "The block with height {0} was not included to the blockchain because of validation errors.", block.Height);
+                //todo: mark block as invalid and update best headers chain
+                return false;
+            }
+
+            unspentOutputsUpdate.Persist();
 
             //todo: make blocks immutable
             block.IsInBestBlockChain = true;
@@ -168,6 +188,114 @@ namespace BitcoinUtilities.Storage
             currentState = currentState.SetBestChain(block);
 
             return true;
+        }
+
+        private UnspentOutputsUpdate PrepareUnspentOutputsUpdate(StoredBlock block, BlockMessage blockMessage)
+        {
+            ulong inputsSum = GetBlockReward(block);
+            ulong outputsSum = 0;
+
+            UnspentOutputsUpdate update = new UnspentOutputsUpdate(storage);
+
+            for (int transactionNumber = 0; transactionNumber < blockMessage.Transactions.Length; transactionNumber++)
+            {
+                Tx transaction = blockMessage.Transactions[transactionNumber];
+
+                ulong transactionInputsSum = 0;
+                ulong transactionOutputsSum = 0;
+
+                byte[] transactionHash = CryptoUtils.DoubleSha256(BitcoinStreamWriter.GetBytes(transaction.Write));
+
+                List<UnspentOutput> unspentOutputs = update.FindUnspentOutputs(transactionHash);
+                if (unspentOutputs.Any())
+                {
+                    //todo: use network settings
+                    if (block.Height == 91842 || block.Height == 91880)
+                    {
+                        // this blocks are exceptions from BIP-30
+                        foreach (UnspentOutput unspentOutput in unspentOutputs)
+                        {
+                            update.Spend(unspentOutput.TransactionHash, unspentOutput.OutputNumber, block);
+                        }
+                    }
+                    else
+                    {
+                        throw new BitcoinProtocolViolationException(
+                            $"The transaction '{BitConverter.ToString(transactionHash)}'" +
+                            $" in block '{BitConverter.ToString(block.Hash)}'" +
+                            $" has same hash as an existing unspent transaction (see BIP-30).");
+                    }
+                }
+
+                //todo: check transaction hash against genesis block transaction hash
+                if (transactionNumber != 0)
+                {
+                    foreach (TxIn input in transaction.Inputs)
+                    {
+                        UnspentOutput output = update.FindUnspentOutput(input.PreviousOutput.Hash, input.PreviousOutput.Index);
+                        if (output == null)
+                        {
+                            throw new BitcoinProtocolViolationException(
+                                $"The input of the transaction '{BitConverter.ToString(transactionHash)}'" +
+                                $" in block '{BitConverter.ToString(block.Hash)}'" +
+                                $" has been already spent or did not exist.");
+                        }
+                        //todo: check for overflow
+                        transactionInputsSum += output.Sum;
+
+                        //todo: check signature for the output
+                        update.Spend(output.TransactionHash, output.OutputNumber, block);
+                    }
+                }
+
+                for (int outputNumber = 0; outputNumber < transaction.Outputs.Length; outputNumber++)
+                {
+                    TxOut output = transaction.Outputs[outputNumber];
+                    //todo: check for overflow
+                    transactionOutputsSum += output.Value;
+
+                    UnspentOutput unspentOutput = UnspentOutput.Create(block, transaction, outputNumber);
+                    update.Add(unspentOutput);
+                }
+
+                if (transactionNumber != 0 && transactionInputsSum < transactionOutputsSum)
+                {
+                    // for coinbase transaction output sum is checked later as part of total block inputs, outputs and reward sums equation
+                    throw new BitcoinProtocolViolationException(
+                        $"The sum of the inputs in the transaction '{BitConverter.ToString(transactionHash)}'" +
+                        $" in block '{BitConverter.ToString(block.Hash)}'" +
+                        $" is less than the sum of the outputs.");
+                }
+
+                //todo: check for overflow
+                inputsSum += transactionInputsSum;
+                //todo: check for overflow
+                outputsSum += transactionOutputsSum;
+            }
+
+            if (inputsSum != outputsSum)
+            {
+                throw new BitcoinProtocolViolationException(
+                    $"The sum of the inputs and the reward" +
+                    $" in the block '{BitConverter.ToString(block.Hash)}'" +
+                    $" does not match the sum of the outputs.");
+            }
+
+            return update;
+        }
+
+        private ulong GetBlockReward(StoredBlock block)
+        {
+            //todo: use network settings
+            ulong reward = 5000000000;
+            int height = block.Height;
+            //todo: use network settings
+            while (height >= 210000)
+            {
+                height -= 210000;
+                reward /= 2;
+            }
+            return reward;
         }
 
         public bool TruncateTo(byte[] hash)

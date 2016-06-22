@@ -13,7 +13,7 @@ namespace BitcoinUtilities.Threading
     /// </summary>
     public class BlockingThreadPool
     {
-        private static readonly Logger logger = LogManager.GetCurrentClassLogger();
+        private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
 
         private readonly Thread[] threads;
         private volatile bool running;
@@ -85,7 +85,7 @@ namespace BitcoinUtilities.Threading
 
             EnqueueTask(task);
             dequeSemaphore.Release();
-            
+
             return true;
         }
 

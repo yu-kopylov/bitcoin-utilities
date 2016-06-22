@@ -12,7 +12,7 @@ namespace BitcoinUtilities.Storage.SQLite
 {
     public class SQLiteBlockchainStorage : IBlockchainStorage, IDisposable
     {
-        private static readonly Logger logger = LogManager.GetCurrentClassLogger();
+        private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
 
         private const string BlockchainFilename = "blockchain.db";
         private const string BlocksFilename = "blocks.db";

@@ -18,7 +18,7 @@ namespace BitcoinUtilities.P2P
     /// </remarks>
     public class BitcoinConnection : IDisposable
     {
-        private static readonly Logger logger = LogManager.GetCurrentClassLogger();
+        private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
 
         private const int MessageHeaderLength = 24;
         private const int MaxCommandLength = 12;
