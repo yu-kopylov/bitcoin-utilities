@@ -16,6 +16,7 @@ namespace BitcoinUtilities.Storage.SQLite
 
         private const string BlockchainFilename = "blockchain.db";
         private const string BlocksFilename = "blocks.db";
+        private const string UtxoFilename = "utxo.db";
 
         private readonly string storageLocation;
         private readonly SQLiteConnection conn;
@@ -52,8 +53,10 @@ namespace BitcoinUtilities.Storage.SQLite
 
             //todo: SQLite in WAL mode does not guarantee atomic commits across all attached databases
             AttachDatabase(conn, "blocks", Path.Combine(storageLocation, BlocksFilename));
+            AttachDatabase(conn, "utxo", Path.Combine(storageLocation, UtxoFilename));
 
             ApplySchemaSettings(conn, "blocks");
+            ApplySchemaSettings(conn, "utxo");
 
             //todo: handle exceptions, describe ant test them
             CheckSchema(conn);
@@ -239,7 +242,7 @@ namespace BitcoinUtilities.Storage.SQLite
             using (BlockchainRepository repo = new BlockchainRepository(conn))
             {
                 //todo: rewrite this method
-                List<StoredBlock> blocks = repo.ReadHeadersWithHeight(new int[] { height });
+                List<StoredBlock> blocks = repo.ReadHeadersWithHeight(new int[] {height});
 
                 if (!blocks.Any())
                 {
@@ -275,6 +278,51 @@ namespace BitcoinUtilities.Storage.SQLite
             {
                 //todo: what if there is no such block or it already has content ?
                 repo.AddBlockContent(hash, content);
+            }
+        }
+
+        // todo: add test
+        public byte[] GetBlockContent(byte[] hash)
+        {
+            using (BlockchainRepository repo = new BlockchainRepository(conn))
+            {
+                //todo: what if there is no such block or it already has content ?
+                return repo.GetBlockContent(hash);
+            }
+        }
+
+        public List<UnspentOutput> FindUnspentOutputs(byte[] transactionHash)
+        {
+            using (BlockchainRepository repo = new BlockchainRepository(conn))
+            {
+                return repo.FindUnspentOutputs(transactionHash);
+            }
+        }
+
+        public void AddUnspentOutput(UnspentOutput unspentOutput)
+        {
+            JoinCurrentTransaction();
+            using (BlockchainRepository repo = new BlockchainRepository(conn))
+            {
+                repo.AddUnspentOutput(unspentOutput);
+            }
+        }
+
+        public void RemoveUnspentOutput(byte[] transactionHash, int outputNumber)
+        {
+            JoinCurrentTransaction();
+            using (BlockchainRepository repo = new BlockchainRepository(conn))
+            {
+                repo.RemoveUnspentOutput(transactionHash, outputNumber);
+            }
+        }
+
+        public void AddSpentOutput(SpentOutput spentOutput)
+        {
+            JoinCurrentTransaction();
+            using (BlockchainRepository repo = new BlockchainRepository(conn))
+            {
+                repo.AddSpentOutput(spentOutput);
             }
         }
 

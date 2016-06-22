@@ -17,7 +17,7 @@ namespace Test.BitcoinUtilities.Storage.SQLite
         [Test]
         public void TestSmoke()
         {
-            string testFolder = TestUtils.PrepareTestFolder(GetType(), $"{nameof(TestSmoke)}", "*.db");
+            string testFolder = TestUtils.PrepareTestFolder(GetType(), nameof(TestSmoke), "*.db");
 
             using (SQLiteBlockchainStorage storage = SQLiteBlockchainStorage.Open(testFolder))
             {
@@ -76,7 +76,7 @@ namespace Test.BitcoinUtilities.Storage.SQLite
         [Test]
         public void TestFindFirstErrors()
         {
-            string testFolder = TestUtils.PrepareTestFolder(GetType(), $"{nameof(TestFindFirstErrors)}", "*.db");
+            string testFolder = TestUtils.PrepareTestFolder(GetType(), nameof(TestFindFirstErrors), "*.db");
 
             using (SQLiteBlockchainStorage storage = SQLiteBlockchainStorage.Open(testFolder))
             {
@@ -103,7 +103,7 @@ namespace Test.BitcoinUtilities.Storage.SQLite
         [Test]
         public void TestTransactionsWithCache()
         {
-            string testFolder = TestUtils.PrepareTestFolder(GetType(), $"{nameof(TestTransactionsWithCache)}", "*.db");
+            string testFolder = TestUtils.PrepareTestFolder(GetType(), nameof(TestTransactionsWithCache), "*.db");
 
             using (SQLiteBlockchainStorage storage = SQLiteBlockchainStorage.Open(testFolder))
             {
@@ -183,7 +183,7 @@ namespace Test.BitcoinUtilities.Storage.SQLite
         [Test]
         public void TestTransactionsWithInternalBlockchain()
         {
-            string testFolder = TestUtils.PrepareTestFolder(GetType(), $"{nameof(TestTransactionsWithInternalBlockchain)}", "*.db");
+            string testFolder = TestUtils.PrepareTestFolder(GetType(), nameof(TestTransactionsWithInternalBlockchain), "*.db");
 
             using (SQLiteBlockchainStorage storage = SQLiteBlockchainStorage.Open(testFolder))
             {
@@ -216,6 +216,36 @@ namespace Test.BitcoinUtilities.Storage.SQLite
                     Assert.That(blockchain.CommitedState.BestHeader.Height, Is.EqualTo(1));
                     Assert.That(blockchain.CommitedState.BestChain.Height, Is.EqualTo(0));
                 }
+            }
+        }
+
+        [Test]
+        public void TestUnspentOutputs()
+        {
+            string testFolder = TestUtils.PrepareTestFolder(GetType(), nameof(TestUnspentOutputs), "*.db");
+
+            using (SQLiteBlockchainStorage storage = SQLiteBlockchainStorage.Open(testFolder))
+            {
+                byte[] transactionHash = new byte[32];
+                transactionHash[0] = 1;
+
+                UnspentOutput output = new UnspentOutput(1, transactionHash, 0, 100, new byte[10]);
+                storage.AddUnspentOutput(output);
+
+                List<UnspentOutput> dbOutputs = storage.FindUnspentOutputs(transactionHash);
+                Assert.That(dbOutputs.Count, Is.EqualTo(1));
+
+                UnspentOutput dbOutput = dbOutputs[0];
+                Assert.That(dbOutput.SourceBlockHeight, Is.EqualTo(output.SourceBlockHeight));
+                Assert.That(dbOutput.TransactionHash, Is.EqualTo(output.TransactionHash));
+                Assert.That(dbOutput.OutputNumber, Is.EqualTo(output.OutputNumber));
+                Assert.That(dbOutput.Sum, Is.EqualTo(output.Sum));
+                Assert.That(dbOutput.PublicScript, Is.EqualTo(output.PublicScript));
+
+                storage.RemoveUnspentOutput(transactionHash, 0);
+                Assert.That(storage.FindUnspentOutputs(transactionHash), Is.Empty);
+
+                storage.AddSpentOutput(SpentOutput.Create(new StoredBlock(GenesisBlock.GetHeader()) {Height = 2}, dbOutput));
             }
         }
     }

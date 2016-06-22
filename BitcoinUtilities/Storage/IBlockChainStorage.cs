@@ -4,7 +4,7 @@ using System.Collections.Generic;
 namespace BitcoinUtilities.Storage
 {
     //todo: add methods and XMLDOC
-    public interface IBlockchainStorage
+    public interface IBlockchainStorage : IUnspentOutputStorage
     {
         BlockLocator GetCurrentChainLocator();
 
@@ -63,5 +63,7 @@ namespace BitcoinUtilities.Storage
         void UpdateBlock(StoredBlock block);
 
         void AddBlockContent(byte[] hash, byte[] content);
+
+        byte[] GetBlockContent(byte[] hash);
     }
 }

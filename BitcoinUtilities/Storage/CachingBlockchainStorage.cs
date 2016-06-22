@@ -143,5 +143,36 @@ namespace BitcoinUtilities.Storage
                 }
             }
         }
+
+        public byte[] GetBlockContent(byte[] hash)
+        {
+            return storage.GetBlockContent(hash);
+        }
+
+        public List<UnspentOutput> FindUnspentOutputs(byte[] transactionHash)
+        {
+            return storage.FindUnspentOutputs(transactionHash);
+        }
+
+        public void AddUnspentOutput(UnspentOutput unspentOutput)
+        {
+            transactionalResource.Enlist();
+
+            storage.AddUnspentOutput(unspentOutput);
+        }
+
+        public void RemoveUnspentOutput(byte[] transactionHash, int outputNumber)
+        {
+            transactionalResource.Enlist();
+
+            storage.RemoveUnspentOutput(transactionHash, outputNumber);
+        }
+
+        public void AddSpentOutput(SpentOutput spentOutput)
+        {
+            transactionalResource.Enlist();
+
+            storage.AddSpentOutput(spentOutput);
+        }
     }
 }

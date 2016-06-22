@@ -86,6 +86,22 @@ namespace BitcoinUtilities.Storage.SQLite
             command.ExecuteNonQuery();
         }
 
+        public byte[] GetBlockContent(byte[] hash)
+        {
+            var command = CreateCommand($"select C.Content from BlockContents C where C.Hash=@Hash");
+
+            command.Parameters.Add("@Hash", DbType.Binary).Value = hash;
+
+            using (SQLiteDataReader reader = command.ExecuteReader())
+            {
+                if (!reader.Read())
+                {
+                    return null;
+                }
+                return ReadBytes(reader, 0);
+            }
+        }
+
         public StoredBlock FindBlockByHash(byte[] hash)
         {
             var command = CreateCommand($"select {GetBlockColumns("B")} from Blocks B where B.Hash=@Hash");
@@ -278,6 +294,87 @@ namespace BitcoinUtilities.Storage.SQLite
             block.IsInBestBlockChain = reader.GetBoolean(col++);
 
             return block;
+        }
+
+        //todo: move UTXO-related methods to other repository?
+        public List<UnspentOutput> FindUnspentOutputs(byte[] transactionHash)
+        {
+            var command = CreateCommand(
+                $"select {GetUnspentOutputColumns("U")} from UnspentOutputs U" +
+                $" where U.TransactionHash=@transactionHash");
+
+            command.Parameters.Add("@transactionHash", DbType.Binary).Value = transactionHash;
+
+            List<UnspentOutput> outputs = new List<UnspentOutput>();
+
+            using (SQLiteDataReader reader = command.ExecuteReader())
+            {
+                while (reader.Read())
+                {
+                    outputs.Add(ReadUnspentOutput(reader));
+                }
+            }
+
+            return outputs;
+        }
+
+        public void AddUnspentOutput(UnspentOutput unspentOutput)
+        {
+            var command = CreateCommand(
+                "insert into UnspentOutputs (SourceBlockHeight, TransactionHash, OutputNumber, Sum, PublicScript)" +
+                "values (@SourceBlockHeight, @TransactionHash, @OutputNumber, @Sum, @PublicScript)");
+
+            command.Parameters.Add("@SourceBlockHeight", DbType.Int32).Value = unspentOutput.SourceBlockHeight;
+            command.Parameters.Add("@TransactionHash", DbType.Binary).Value = unspentOutput.TransactionHash;
+            command.Parameters.Add("@OutputNumber", DbType.Int32).Value = unspentOutput.OutputNumber;
+            command.Parameters.Add("@Sum", DbType.UInt64).Value = unspentOutput.Sum;
+            command.Parameters.Add("@PublicScript", DbType.Binary).Value = unspentOutput.PublicScript;
+
+            command.ExecuteNonQuery();
+        }
+
+        public void RemoveUnspentOutput(byte[] transactionHash, int outputNumber)
+        {
+            var command = CreateCommand("delete from UnspentOutputs where TransactionHash=@TransactionHash and OutputNumber=@OutputNumber");
+
+            command.Parameters.Add("@TransactionHash", DbType.Binary).Value = transactionHash;
+            command.Parameters.Add("@OutputNumber", DbType.Int32).Value = outputNumber;
+
+            command.ExecuteNonQuery();
+        }
+
+        public void AddSpentOutput(SpentOutput spentOutput)
+        {
+            var command = CreateCommand(
+                "insert into SpentOutputs (SourceBlockHeight, SpentBlockHeight, TransactionHash, OutputNumber, Sum, PublicScript)" +
+                "values (@SourceBlockHeight, @SpentBlockHeight, @TransactionHash, @OutputNumber, @Sum, @PublicScript)");
+
+            command.Parameters.Add("@SourceBlockHeight", DbType.Int32).Value = spentOutput.SourceBlockHeight;
+            command.Parameters.Add("@SpentBlockHeight", DbType.Int32).Value = spentOutput.SpentBlockHeight;
+            command.Parameters.Add("@TransactionHash", DbType.Binary).Value = spentOutput.TransactionHash;
+            command.Parameters.Add("@OutputNumber", DbType.Int32).Value = spentOutput.OutputNumber;
+            command.Parameters.Add("@Sum", DbType.UInt64).Value = spentOutput.Sum;
+            command.Parameters.Add("@PublicScript", DbType.Binary).Value = spentOutput.PublicScript;
+
+            command.ExecuteNonQuery();
+        }
+
+        private string GetUnspentOutputColumns(string alias)
+        {
+            return $"{alias}.SourceBlockHeight, {alias}.TransactionHash, {alias}.OutputNumber, {alias}.Sum, {alias}.PublicScript";
+        }
+
+        private UnspentOutput ReadUnspentOutput(SQLiteDataReader reader)
+        {
+            int col = 0;
+
+            int sourceBlockHeight = reader.GetInt32(col++);
+            byte[] transactionHash = ReadBytes(reader, col++);
+            int outputNumber = reader.GetInt32(col++);
+            ulong sum = (ulong) reader.GetInt64(col++);
+            byte[] publicScript = ReadBytes(reader, col++);
+
+            return new UnspentOutput(sourceBlockHeight, transactionHash, outputNumber, sum, publicScript);
         }
 
         //todo: move to utils?
