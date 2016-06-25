@@ -11,15 +11,30 @@ namespace BitcoinUtilities.Scripts
         /// <summary>
         /// The next opcode bytes is data to be pushed onto the stack.
         /// </summary>
-        public const byte OP_PUSHBYTES_MIN = 0x01;
+        public const byte OP_PUSHDATA_LEN_1 = 0x01;
 
         /// <summary>
         /// The next opcode bytes is data to be pushed onto the stack.
         /// </summary>
-        public const byte OP_PUSHBYTES_MAX = 0x4b;
+        public const byte OP_PUSHDATA_LEN_75 = 0x4b;
 
         /// <summary>
-        /// Marks transaction as invalid if top stack value is not true.
+        /// The next byte contains the number of bytes to be pushed onto the stack.
+        /// </summary>
+        public const byte OP_PUSHDATA1 = 0x4c;
+
+        /// <summary>
+        /// The next two bytes contain the number of bytes to be pushed onto the stack.
+        /// </summary>
+        public const byte OP_PUSHDATA2 = 0x4d;
+
+        /// <summary>
+        /// The next four bytes contain the number of bytes to be pushed onto the stack.
+        /// </summary>
+        public const byte OP_PUSHDATA4 = 0x4e;
+
+        /// <summary>
+        /// The number 1 is pushed onto the stack.
         /// </summary>
         public const byte OP_TRUE = 0x51;
 
