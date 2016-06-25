@@ -9,6 +9,11 @@ namespace BitcoinUtilities.Scripts
         // ---------------------------------------------------------------------------------------
 
         /// <summary>
+        /// An empty array of bytes is pushed onto the stack.
+        /// </summary>
+        public const byte OP_FALSE = 0x00;
+
+        /// <summary>
         /// The next opcode bytes is data to be pushed onto the stack.
         /// </summary>
         public const byte OP_PUSHDATA_LEN_1 = 0x01;
@@ -34,13 +39,43 @@ namespace BitcoinUtilities.Scripts
         public const byte OP_PUSHDATA4 = 0x4e;
 
         /// <summary>
+        /// The number -1 is pushed onto the stack.
+        /// </summary>
+        public const byte OP_1NEGATE = 0x4f;
+
+        /// <summary>
         /// The number 1 is pushed onto the stack.
         /// </summary>
         public const byte OP_TRUE = 0x51;
 
+        /// <summary>
+        /// The number 2 is pushed onto the stack.
+        /// </summary>
+        public const byte OP_2 = 0x52;
+
+        /// <summary>
+        /// The number 16 is pushed onto the stack.
+        /// </summary>
+        public const byte OP_16 = 0x60;
+
         // ---------------------------------------------------------------------------------------
         // ---- Flow control ---------------------------------------------------------------------
         // ---------------------------------------------------------------------------------------
+
+        /// <summary>
+        /// Does nothing.
+        /// </summary>
+        public const byte OP_NOP = 0x61;
+
+        /// <summary>
+        /// If the top stack value is not 0, the statements are executed. The top stack value is removed.
+        /// </summary>
+        public const byte OP_IF = 0x63;
+
+        /// <summary>
+        /// Ends an if/else block. All blocks must end, or the transaction is invalid. An OP_ENDIF without OP_IF earlier is also invalid.
+        /// </summary>
+        public const byte OP_ENDIF = 0x68;
 
         /// <summary>
         /// Marks transaction as invalid if top stack value is not true.

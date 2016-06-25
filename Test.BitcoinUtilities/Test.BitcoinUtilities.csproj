@@ -56,6 +56,7 @@
     <Compile Include="Node\TestNodeAddressCollection.cs" />
     <Compile Include="Node\TestNodeServiceCollection.cs" />
     <Compile Include="Scripts\TestScriptParser.cs" />
+    <Compile Include="Scripts\TestScriptProcessor.cs" />
     <Compile Include="Storage\TestBlockLocator.cs" />
     <Compile Include="P2P\Messages\TestHeadersMessage.cs" />
     <Compile Include="P2P\Messages\TestPongMessage.cs" />

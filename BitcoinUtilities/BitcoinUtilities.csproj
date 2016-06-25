@@ -83,6 +83,7 @@
     <Compile Include="Node\Services\BlockValidationService.cs" />
     <Compile Include="Scripts\ScriptCommand.cs" />
     <Compile Include="Scripts\ScriptParser.cs" />
+    <Compile Include="Scripts\ScriptProcessor.cs" />
     <Compile Include="Storage\BlockSelector.cs" />
     <Compile Include="Storage\InternalBlockchain.cs" />
     <Compile Include="Storage\Blockchain.cs" />
