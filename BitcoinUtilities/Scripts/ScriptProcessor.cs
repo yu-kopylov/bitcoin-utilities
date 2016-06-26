@@ -18,6 +18,7 @@ namespace BitcoinUtilities.Scripts
 
         private bool valid;
         private Tx transaction;
+        private int transactionInputNumber;
 
         public ScriptProcessor()
         {
@@ -32,6 +33,7 @@ namespace BitcoinUtilities.Scripts
             controlStack.Clear();
             valid = true;
             transaction = default(Tx);
+            transactionInputNumber = 0;
         }
 
         //todo: add XMLDOC
@@ -40,10 +42,29 @@ namespace BitcoinUtilities.Scripts
             get { return valid; }
         }
 
+        public bool Success
+        {
+            //todo: choose better name and write tests
+            get
+            {
+                if (dataStack.Count == 0)
+                {
+                    return false;
+                }
+                return IsTrue(dataStack[dataStack.Count - 1]);
+            }
+        }
+
         public Tx Transaction
         {
             get { return transaction; }
             set { transaction = value; }
+        }
+
+        public int TransactionInputNumber
+        {
+            get { return transactionInputNumber; }
+            set { transactionInputNumber = value; }
         }
 
         /// <summary>
@@ -267,12 +288,19 @@ namespace BitcoinUtilities.Scripts
             {
                 writer.Write(transaction.Version);
                 writer.WriteCompact((ulong) transaction.Inputs.Length);
-                foreach (TxIn input in transaction.Inputs)
+                for (int i = 0; i < transaction.Inputs.Length; i++)
                 {
-                    //input.Write(writer);
+                    TxIn input = transaction.Inputs[i];
                     input.PreviousOutput.Write(writer);
-                    writer.WriteCompact((ulong) subScript.Length);
-                    writer.Write(subScript);
+                    if (transactionInputNumber == i)
+                    {
+                        writer.WriteCompact((ulong) subScript.Length);
+                        writer.Write(subScript);
+                    }
+                    else
+                    {
+                        writer.WriteCompact(0);
+                    }
                     writer.Write(input.Sequence);
                 }
                 writer.WriteArray(transaction.Outputs, (w, v) => v.Write(writer));
