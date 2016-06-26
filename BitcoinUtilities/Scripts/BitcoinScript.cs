@@ -44,6 +44,11 @@ namespace BitcoinUtilities.Scripts
         public const byte OP_1NEGATE = 0x4f;
 
         /// <summary>
+        /// Transaction is invalid unless occuring in an unexecuted OP_IF branch.
+        /// </summary>
+        public const byte OP_RESERVED = 0x50;
+
+        /// <summary>
         /// The number 1 is pushed onto the stack.
         /// </summary>
         public const byte OP_TRUE = 0x51;

@@ -6,6 +6,7 @@ using BitcoinUtilities.Node.Rules;
 using BitcoinUtilities.P2P;
 using BitcoinUtilities.P2P.Messages;
 using BitcoinUtilities.P2P.Primitives;
+using BitcoinUtilities.Scripts;
 using NLog;
 
 namespace BitcoinUtilities.Storage
@@ -192,6 +193,8 @@ namespace BitcoinUtilities.Storage
 
         private UnspentOutputsUpdate PrepareUnspentOutputsUpdate(StoredBlock block, BlockMessage blockMessage)
         {
+            ScriptParser parser = new ScriptParser();
+
             ulong inputsSum = GetBlockReward(block);
             ulong outputsSum = 0;
 
@@ -243,6 +246,22 @@ namespace BitcoinUtilities.Storage
                         //todo: check for overflow
                         transactionInputsSum += output.Sum;
 
+                        List<ScriptCommand> inputCommands;
+                        if (!parser.TryParse(input.SignatureScript, out inputCommands))
+                        {
+                            throw new BitcoinProtocolViolationException(
+                                $"The transaction '{BitConverter.ToString(transactionHash)}'" +
+                                $" in block '{BitConverter.ToString(block.Hash)}'" +
+                                $" has an invalid signature script.");
+                        }
+                        if (inputCommands.Any(c => !IsValidSignatureCommand(c.Code)))
+                        {
+                            throw new BitcoinProtocolViolationException(
+                                $"The transaction '{BitConverter.ToString(transactionHash)}'" +
+                                $" in block '{BitConverter.ToString(block.Hash)}'" +
+                                $" has forbidden commands in the signature script.");
+                        }
+
                         //todo: check signature for the output
                         update.Spend(output.TransactionHash, output.OutputNumber, block);
                     }
@@ -282,6 +301,12 @@ namespace BitcoinUtilities.Storage
             }
 
             return update;
+        }
+
+        private bool IsValidSignatureCommand(byte code)
+        {
+            // note: OP_RESERVED (0x50) is considered to be a push-only command
+            return code <= BitcoinScript.OP_16;
         }
 
         private ulong GetBlockReward(StoredBlock block)
