@@ -11,7 +11,7 @@ namespace BitcoinUtilities.Scripts
         private readonly CommandDefinition[] commandDefinitions = new CommandDefinition[256];
 
         private readonly List<byte[]> dataStack = new List<byte[]>();
-        private readonly Stack<ControlFrame> controlStack = new Stack<ControlFrame>();
+        private readonly ControlStack controlStack = new ControlStack();
         private bool valid;
 
         public ScriptProcessor()
@@ -59,7 +59,7 @@ namespace BitcoinUtilities.Scripts
                 Execute(script, command);
             }
 
-            if (controlStack.Any())
+            if (!controlStack.IsEmpty)
             {
                 valid = false;
             }
@@ -73,7 +73,7 @@ namespace BitcoinUtilities.Scripts
                 //todo: make sure that this exception is never thrown
                 throw new InvalidOperationException($"Command '0x{command.Code:X2}' is not supported.");
             }
-            if (!commandDefinition.IsControlCommand && controlStack.Any() && !controlStack.Peek().ExecuteBranch)
+            if (!commandDefinition.IsControlCommand && !controlStack.ExecuteBranch)
             {
                 return;
             }
@@ -104,11 +104,21 @@ namespace BitcoinUtilities.Scripts
 
             commandDefinitions[BitcoinScript.OP_NOP] = new CommandDefinition(false, (script, command) => { });
             commandDefinitions[BitcoinScript.OP_IF] = new CommandDefinition(true, ExecuteIf);
+            commandDefinitions[BitcoinScript.OP_NOTIF] = new CommandDefinition(true, ExecuteIf);
+            commandDefinitions[BitcoinScript.OP_ELSE] = new CommandDefinition(true, ExecuteElse);
             commandDefinitions[BitcoinScript.OP_ENDIF] = new CommandDefinition(true, ExecuteEndIf);
+            commandDefinitions[BitcoinScript.OP_VERIFY] = new CommandDefinition(false, ExecuteVerify);
+            commandDefinitions[BitcoinScript.OP_RETURN] = new CommandDefinition(false, ExecuteReturn);
         }
 
         private void ExecuteIf(byte[] script, ScriptCommand command)
         {
+            if (!controlStack.ExecuteBranch)
+            {
+                controlStack.Push(false);
+                return;
+            }
+
             bool condition;
             if (!dataStack.Any())
             {
@@ -123,17 +133,60 @@ namespace BitcoinUtilities.Scripts
                 dataStack.RemoveAt(index);
                 condition = IsTrue(data);
             }
-            controlStack.Push(new ControlFrame(true, condition));
+            if (command.Code == BitcoinScript.OP_NOTIF)
+            {
+                condition = !condition;
+            }
+            controlStack.Push(condition);
+        }
+
+        private void ExecuteElse(byte[] script, ScriptCommand command)
+        {
+            if (controlStack.IsEmpty)
+            {
+                valid = false;
+                return;
+            }
+            bool executeBranch = !controlStack.ExecuteBranch;
+            controlStack.Pop();
+            controlStack.Push(executeBranch);
         }
 
         private void ExecuteEndIf(byte[] script, ScriptCommand command)
         {
-            if (!controlStack.Any())
+            if (controlStack.IsEmpty)
             {
                 valid = false;
                 return;
             }
             controlStack.Pop();
+        }
+
+        private void ExecuteVerify(byte[] script, ScriptCommand command)
+        {
+            if (!dataStack.Any())
+            {
+                valid = false;
+                return;
+                //todo: terminate execution?
+            }
+            //todo: add method for pop
+            int index = dataStack.Count - 1;
+            byte[] data = dataStack[index];
+            if (!IsTrue(data))
+            {
+                valid = false;
+            }
+            else
+            {
+                dataStack.RemoveAt(index);
+            }
+        }
+
+        private void ExecuteReturn(byte[] script, ScriptCommand command)
+        {
+            valid = false;
+            //todo: terminate execution?
         }
 
         private void PushData(byte[] script, ScriptCommand command)
@@ -188,18 +241,6 @@ namespace BitcoinUtilities.Scripts
             return false;
         }
 
-        private struct ControlFrame
-        {
-            public ControlFrame(bool mainBranch, bool executeBranch)
-            {
-                MainBranch = mainBranch;
-                ExecuteBranch = executeBranch;
-            }
-
-            public bool MainBranch { get; }
-            public bool ExecuteBranch { get; }
-        }
-
         private class CommandDefinition
         {
             private readonly Action<byte[], ScriptCommand> action;
@@ -210,6 +251,9 @@ namespace BitcoinUtilities.Scripts
                 this.action = action;
             }
 
+            /// <summary>
+            /// Indicates that command should be executed even when occuring in an unexecuted OP_IF branch.
+            /// </summary>
             public bool IsControlCommand { get; }
 
             public void Execute(byte[] script, ScriptCommand command)

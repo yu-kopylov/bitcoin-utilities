@@ -81,6 +81,7 @@
     <Compile Include="Node\Rules\BlockContentValidator.cs" />
     <Compile Include="Node\Services\BlockContentDownloadService.cs" />
     <Compile Include="Node\Services\BlockValidationService.cs" />
+    <Compile Include="Scripts\ControlStack.cs" />
     <Compile Include="Scripts\ScriptCommand.cs" />
     <Compile Include="Scripts\ScriptParser.cs" />
     <Compile Include="Scripts\ScriptProcessor.cs" />

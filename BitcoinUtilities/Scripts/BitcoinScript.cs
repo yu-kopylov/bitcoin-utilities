@@ -54,6 +54,11 @@ namespace BitcoinUtilities.Scripts
         public const byte OP_2 = 0x52;
 
         /// <summary>
+        /// The number 3 is pushed onto the stack.
+        /// </summary>
+        public const byte OP_3 = 0x53;
+
+        /// <summary>
         /// The number 16 is pushed onto the stack.
         /// </summary>
         public const byte OP_16 = 0x60;
@@ -73,6 +78,17 @@ namespace BitcoinUtilities.Scripts
         public const byte OP_IF = 0x63;
 
         /// <summary>
+        /// If the top stack value is 0, the statements are executed. The top stack value is removed.
+        /// </summary>
+        public const byte OP_NOTIF = 0x64;
+
+        /// <summary>
+        /// If the preceding OP_IF or OP_NOTIF or OP_ELSE was not executed then these statements are
+        /// and if the preceding OP_IF or OP_NOTIF or OP_ELSE was executed then these statements are not.
+        /// </summary>
+        public const byte OP_ELSE = 0x67;
+
+        /// <summary>
         /// Ends an if/else block. All blocks must end, or the transaction is invalid. An OP_ENDIF without OP_IF earlier is also invalid.
         /// </summary>
         public const byte OP_ENDIF = 0x68;
@@ -81,6 +97,16 @@ namespace BitcoinUtilities.Scripts
         /// Marks transaction as invalid if top stack value is not true.
         /// </summary>
         public const byte OP_VERIFY = 0x69;
+
+        /// <summary>
+        /// Marks transaction as invalid.
+        /// A standard way of attaching extra data to transactions is to add a zero-value output with a scriptPubKey
+        /// consisting of OP_RETURN followed by exactly one pushdata op.
+        /// Such outputs are provably unspendable, reducing their cost to the network.
+        /// Currently it is usually considered non-standard (though valid) for a transaction to have more than one OP_RETURN output
+        /// or an OP_RETURN output with more than one pushdata op.
+        /// </summary>
+        public const byte OP_RETURN = 0x6a;
 
         // ---------------------------------------------------------------------------------------
         // ---- Stack ----------------------------------------------------------------------------
