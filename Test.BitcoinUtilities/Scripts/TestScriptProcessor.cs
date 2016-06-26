@@ -164,6 +164,29 @@ namespace Test.BitcoinUtilities.Scripts
 
             Assert.True(processor.Valid);
             Assert.That(processor.GetStack(), Is.EqualTo(new byte[][] {new byte[] {3}}));
+
+            // Bitcoin Core allows multiple OP_ELSE for a single OP_IF
+            processor.Reset();
+            processor.Execute(new byte[]
+            {
+                BitcoinScript.OP_TRUE,
+                BitcoinScript.OP_IF,
+                BitcoinScript.OP_2,
+                BitcoinScript.OP_ELSE,
+                BitcoinScript.OP_3,
+                BitcoinScript.OP_ELSE,
+                BitcoinScript.OP_4,
+                BitcoinScript.OP_ELSE,
+                BitcoinScript.OP_5,
+                BitcoinScript.OP_ENDIF
+            });
+
+            Assert.True(processor.Valid);
+            Assert.That(processor.GetStack(), Is.EqualTo(new byte[][]
+            {
+                new byte[] {4},
+                new byte[] {2}
+            }));
         }
 
         [Test]

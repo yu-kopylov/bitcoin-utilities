@@ -59,6 +59,16 @@ namespace BitcoinUtilities.Scripts
         public const byte OP_3 = 0x53;
 
         /// <summary>
+        /// The number 4 is pushed onto the stack.
+        /// </summary>
+        public const byte OP_4 = 0x54;
+
+        /// <summary>
+        /// The number 5 is pushed onto the stack.
+        /// </summary>
+        public const byte OP_5 = 0x55;
+
+        /// <summary>
         /// The number 16 is pushed onto the stack.
         /// </summary>
         public const byte OP_16 = 0x60;
