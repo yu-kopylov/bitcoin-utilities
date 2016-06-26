@@ -127,6 +127,29 @@ namespace BitcoinUtilities
             return recoveredAddress == address;
         }
 
+        public static bool Verify(byte[] signedData, byte[] publicKey, byte[] signature)
+        {
+            //todo: add tests and XMLDOC
+            //todo: validate input
+            byte[] hash = CryptoUtils.DoubleSha256(signedData);
+            Signature parsedSignature = new Signature();
+            //todo: use better DER parsing
+            //todo: check other BigInteger constructors
+            parsedSignature.R = new BigInteger(1, signature, 4, signature[3]);
+            parsedSignature.S = new BigInteger(1, signature, 6 + signature[3], signature[5 + signature[3]]);
+            // use normal verification algorithm
+            for (int i = 0; i < 8; i++)
+            {
+                parsedSignature.PublicKeyMask = i;
+                byte[] recoveredPublicKey = RecoverPublicKeyFromSignature(hash, parsedSignature);
+                if (recoveredPublicKey != null && recoveredPublicKey.SequenceEqual(publicKey))
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
         /// <summary>
         /// Normalizes the S-component of a signature according to the BIP-62.
         /// <para/>

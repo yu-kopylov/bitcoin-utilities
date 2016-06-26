@@ -1,6 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using BitcoinUtilities.P2P;
+using BitcoinUtilities.P2P.Primitives;
 
 namespace BitcoinUtilities.Scripts
 {
@@ -12,7 +15,9 @@ namespace BitcoinUtilities.Scripts
 
         private readonly List<byte[]> dataStack = new List<byte[]>();
         private readonly ControlStack controlStack = new ControlStack();
+
         private bool valid;
+        private Tx transaction;
 
         public ScriptProcessor()
         {
@@ -26,12 +31,19 @@ namespace BitcoinUtilities.Scripts
             dataStack.Clear();
             controlStack.Clear();
             valid = true;
+            transaction = default(Tx);
         }
 
         //todo: add XMLDOC
         public bool Valid
         {
             get { return valid; }
+        }
+
+        public Tx Transaction
+        {
+            get { return transaction; }
+            set { transaction = value; }
         }
 
         /// <summary>
@@ -109,6 +121,10 @@ namespace BitcoinUtilities.Scripts
             commandDefinitions[BitcoinScript.OP_ENDIF] = new CommandDefinition(true, ExecuteEndIf);
             commandDefinitions[BitcoinScript.OP_VERIFY] = new CommandDefinition(false, ExecuteVerify);
             commandDefinitions[BitcoinScript.OP_RETURN] = new CommandDefinition(false, ExecuteReturn);
+
+            // Crypto
+
+            commandDefinitions[BitcoinScript.OP_CHECKSIG] = new CommandDefinition(false, CheckSig);
         }
 
         private void ExecuteIf(byte[] script, ScriptCommand command)
@@ -218,6 +234,57 @@ namespace BitcoinUtilities.Scripts
             byte[] data = new byte[dataLength];
             Array.Copy(script, command.Offset + 5, data, 0, dataLength);
             dataStack.Add(data);
+        }
+
+        private void CheckSig(byte[] script, ScriptCommand command)
+        {
+            if (dataStack.Count < 2)
+            {
+                valid = false;
+                return;
+            }
+
+            byte[] pubKey = dataStack[dataStack.Count - 1];
+            dataStack.RemoveAt(dataStack.Count - 1);
+
+            byte[] signatureBlock = dataStack[dataStack.Count - 1];
+            dataStack.RemoveAt(dataStack.Count - 1);
+
+            //todo: validate length first
+            byte hashtype = signatureBlock[signatureBlock.Length - 1];
+            byte[] signature = new byte[signatureBlock.Length - 1];
+            Array.Copy(signatureBlock, 0, signature, 0, signatureBlock.Length - 1);
+
+            //todo: process hashtype
+
+            MemoryStream mem = new MemoryStream();
+
+            // todo: remove signatures from script
+            // todo: process OP_CODESEPARATOR
+            byte[] subScript = script;
+
+            using (BitcoinStreamWriter writer = new BitcoinStreamWriter(mem))
+            {
+                writer.Write(transaction.Version);
+                writer.WriteCompact((ulong) transaction.Inputs.Length);
+                foreach (TxIn input in transaction.Inputs)
+                {
+                    //input.Write(writer);
+                    input.PreviousOutput.Write(writer);
+                    writer.WriteCompact((ulong) subScript.Length);
+                    writer.Write(subScript);
+                    writer.Write(input.Sequence);
+                }
+                writer.WriteArray(transaction.Outputs, (w, v) => v.Write(writer));
+                writer.Write(transaction.LockTime);
+                writer.Write((uint) hashtype);
+            }
+
+            byte[] signedData = mem.ToArray();
+
+            bool success = SignatureUtils.Verify(signedData, pubKey, signature);
+
+            dataStack.Add(success ? new byte[] {1} : new byte[0]);
         }
 
         private bool IsTrue(byte[] data)
