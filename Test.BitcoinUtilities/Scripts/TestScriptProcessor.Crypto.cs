@@ -9,6 +9,155 @@ namespace Test.BitcoinUtilities.Scripts
     public partial class TestScriptProcessor
     {
         [Test]
+        public void TestRipeMd160()
+        {
+            ScriptProcessor processor = new ScriptProcessor();
+
+            processor.Execute(new byte[]
+            {
+                BitcoinScript.OP_RIPEMD160
+            });
+
+            Assert.False(processor.Valid);
+            Assert.That(processor.GetStack(), Is.Empty);
+
+            processor.Reset();
+            processor.Execute(new byte[]
+            {
+                BitcoinScript.OP_PUSHDATA_LEN_1 + 4, (byte) 'h', (byte) 'e', (byte) 'l', (byte) 'l', (byte) 'o',
+                BitcoinScript.OP_RIPEMD160
+            });
+
+            Assert.True(processor.Valid);
+            Assert.That(processor.GetStack(), Is.EqualTo(new byte[][]
+            {
+                new byte[]
+                {
+                    0x10, 0x8F, 0x07, 0xB8, 0x38, 0x24, 0x12, 0x61, 0x2C, 0x04, 0x8D, 0x07, 0xD1, 0x3F, 0x81, 0x41, 0x18, 0x44, 0x5A, 0xCD
+                }
+            }));
+        }
+
+        [Test]
+        public void TestSha1()
+        {
+            ScriptProcessor processor = new ScriptProcessor();
+
+            processor.Execute(new byte[]
+            {
+                BitcoinScript.OP_SHA1
+            });
+
+            Assert.False(processor.Valid);
+            Assert.That(processor.GetStack(), Is.Empty);
+
+            processor.Reset();
+            processor.Execute(new byte[]
+            {
+                BitcoinScript.OP_PUSHDATA_LEN_1 + 4, (byte) 'h', (byte) 'e', (byte) 'l', (byte) 'l', (byte) 'o',
+                BitcoinScript.OP_SHA1
+            });
+
+            Assert.True(processor.Valid);
+            Assert.That(processor.GetStack(), Is.EqualTo(new byte[][]
+            {
+                new byte[]
+                {
+                    0xAA, 0xF4, 0xC6, 0x1D, 0xDC, 0xC5, 0xE8, 0xA2, 0xDA, 0xBE, 0xDE, 0x0F, 0x3B, 0x48, 0x2C, 0xD9, 0xAE, 0xA9, 0x43, 0x4D
+                }
+            }));
+        }
+
+        [Test]
+        public void TestSha256()
+        {
+            ScriptProcessor processor = new ScriptProcessor();
+
+            processor.Execute(new byte[]
+            {
+                BitcoinScript.OP_SHA256
+            });
+
+            Assert.False(processor.Valid);
+            Assert.That(processor.GetStack(), Is.Empty);
+
+            processor.Reset();
+            processor.Execute(new byte[]
+            {
+                BitcoinScript.OP_PUSHDATA_LEN_1 + 4, (byte) 'h', (byte) 'e', (byte) 'l', (byte) 'l', (byte) 'o',
+                BitcoinScript.OP_SHA256
+            });
+
+            Assert.True(processor.Valid);
+            Assert.That(processor.GetStack(), Is.EqualTo(new byte[][]
+            {
+                new byte[]
+                {
+                    0x2C, 0xF2, 0x4D, 0xBA, 0x5F, 0xB0, 0xA3, 0x0E, 0x26, 0xE8, 0x3B, 0x2A, 0xC5, 0xB9, 0xE2, 0x9E,
+                    0x1B, 0x16, 0x1E, 0x5C, 0x1F, 0xA7, 0x42, 0x5E, 0x73, 0x04, 0x33, 0x62, 0x93, 0x8B, 0x98, 0x24
+                }
+            }));
+        }
+
+        [Test]
+        public void TestHash160()
+        {
+            ScriptProcessor processor = new ScriptProcessor();
+
+            processor.Execute(new byte[]
+            {
+                BitcoinScript.OP_HASH160
+            });
+
+            Assert.False(processor.Valid);
+            Assert.That(processor.GetStack(), Is.Empty);
+
+            processor.Reset();
+            processor.Execute(new byte[]
+            {
+                BitcoinScript.OP_PUSHDATA_LEN_1 + 4, (byte) 'h', (byte) 'e', (byte) 'l', (byte) 'l', (byte) 'o',
+                BitcoinScript.OP_HASH160
+            });
+
+            Assert.True(processor.Valid);
+            Assert.That(processor.GetStack(), Is.EqualTo(new byte[][]
+            {
+                new byte[] {0xB6, 0xA9, 0xC8, 0xC2, 0x30, 0x72, 0x2B, 0x7C, 0x74, 0x83, 0x31, 0xA8, 0xB4, 0x50, 0xF0, 0x55, 0x66, 0xDC, 0x7D, 0x0F},
+            }));
+        }
+
+        [Test]
+        public void TestHash256()
+        {
+            ScriptProcessor processor = new ScriptProcessor();
+
+            processor.Execute(new byte[]
+            {
+                BitcoinScript.OP_HASH256
+            });
+
+            Assert.False(processor.Valid);
+            Assert.That(processor.GetStack(), Is.Empty);
+
+            processor.Reset();
+            processor.Execute(new byte[]
+            {
+                BitcoinScript.OP_PUSHDATA_LEN_1 + 4, (byte) 'h', (byte) 'e', (byte) 'l', (byte) 'l', (byte) 'o',
+                BitcoinScript.OP_HASH256
+            });
+
+            Assert.True(processor.Valid);
+            Assert.That(processor.GetStack(), Is.EqualTo(new byte[][]
+            {
+                new byte[]
+                {
+                    0x95, 0x95, 0xC9, 0xDF, 0x90, 0x07, 0x51, 0x48, 0xEB, 0x06, 0x86, 0x03, 0x65, 0xDF, 0x33, 0x58,
+                    0x4B, 0x75, 0xBF, 0xF7, 0x82, 0xA5, 0x10, 0xC6, 0xCD, 0x48, 0x83, 0xA4, 0x19, 0x83, 0x3D, 0x50
+                }
+            }));
+        }
+
+        [Test]
         public void TestCheckSig()
         {
             // this is the transaction '4b96658d39f7fd4241442e6dc9877c8ee0fe0d82477e6014e1681d1efe052c8d' from block 2754

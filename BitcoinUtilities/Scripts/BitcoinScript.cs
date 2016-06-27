@@ -21,27 +21,27 @@ namespace BitcoinUtilities.Scripts
         /// <summary>
         /// The next opcode bytes is data to be pushed onto the stack.
         /// </summary>
-        public const byte OP_PUSHDATA_LEN_75 = 0x4b;
+        public const byte OP_PUSHDATA_LEN_75 = 0x4B;
 
         /// <summary>
         /// The next byte contains the number of bytes to be pushed onto the stack.
         /// </summary>
-        public const byte OP_PUSHDATA1 = 0x4c;
+        public const byte OP_PUSHDATA1 = 0x4C;
 
         /// <summary>
         /// The next two bytes contain the number of bytes to be pushed onto the stack.
         /// </summary>
-        public const byte OP_PUSHDATA2 = 0x4d;
+        public const byte OP_PUSHDATA2 = 0x4D;
 
         /// <summary>
         /// The next four bytes contain the number of bytes to be pushed onto the stack.
         /// </summary>
-        public const byte OP_PUSHDATA4 = 0x4e;
+        public const byte OP_PUSHDATA4 = 0x4E;
 
         /// <summary>
         /// The number -1 is pushed onto the stack.
         /// </summary>
-        public const byte OP_1NEGATE = 0x4f;
+        public const byte OP_1NEGATE = 0x4F;
 
         /// <summary>
         /// Transaction is invalid unless occuring in an unexecuted OP_IF branch.
@@ -121,7 +121,7 @@ namespace BitcoinUtilities.Scripts
         /// Currently it is usually considered non-standard (though valid) for a transaction to have more than one OP_RETURN output
         /// or an OP_RETURN output with more than one pushdata op.
         /// </summary>
-        public const byte OP_RETURN = 0x6a;
+        public const byte OP_RETURN = 0x6A;
 
         // ---------------------------------------------------------------------------------------
         // ---- Stack ----------------------------------------------------------------------------
@@ -151,15 +151,63 @@ namespace BitcoinUtilities.Scripts
         // ---------------------------------------------------------------------------------------
 
         /// <summary>
+        /// The input is hashed using RIPEMD-160.
+        /// </summary>
+        public const byte OP_RIPEMD160 = 0xA6;
+
+        /// <summary>
+        /// The input is hashed using SHA-1.
+        /// </summary>
+        public const byte OP_SHA1 = 0xA7;
+
+        /// <summary>
+        /// The input is hashed using SHA-256.
+        /// </summary>
+        public const byte OP_SHA256 = 0xA8;
+
+        /// <summary>
         /// The input is hashed twice: first with SHA-256 and then with RIPEMD-160.
         /// </summary>
         public const byte OP_HASH160 = 0xA9;
+
+        /// <summary>
+        /// The input is hashed two times with SHA-256.
+        /// </summary>
+        public const byte OP_HASH256 = 0xAA;
+
+        /// <summary>
+        /// All of the signature checking words will only match signatures to the data after the most recently-executed OP_CODESEPARATOR.
+        /// </summary>
+        public const byte OP_CODESEPARATOR = 0xAB;
 
         /// <summary>
         /// The entire transaction's outputs, inputs, and script (from the most recently-executed OP_CODESEPARATOR to the end) are hashed.
         /// The signature used by OP_CHECKSIG must be a valid signature for this hash and public key. If it is, 1 is returned, 0 otherwise.
         /// </summary>
         public const byte OP_CHECKSIG = 0xAC;
+
+        /// <summary>
+        /// Same as OP_CHECKSIG, but OP_VERIFY is executed afterward.
+        /// </summary>
+        public const byte OP_CHECKSIGVERIFY = 0xAD;
+
+        /// <summary>
+        /// Compares the first signature against each public key until it finds an ECDSA match.
+        /// Starting with the subsequent public key, it compares the second signature against each remaining public key until it finds an ECDSA match.
+        /// The process is repeated until all signatures have been checked or not enough public keys remain to produce a successful result.
+        /// All signatures need to match a public key.
+        /// <para/>
+        /// Because public keys are not checked again if they fail any signature comparison,
+        /// signatures must be placed in the scriptSig using the same order as their corresponding public keys were placed in the scriptPubKey or redeemScript.
+        /// <para/>
+        /// If all signatures are valid, 1 is returned, 0 otherwise. Due to a bug, one extra unused value is removed from the stack.
+        /// </summary>
+        public const byte OP_CHECKMULTISIG = 0XAE;
+
+        /// <summary>
+        /// Same as OP_CHECKMULTISIG, but OP_VERIFY is executed afterward.
+        /// </summary>
+        public const byte OP_CHECKMULTISIGVERIFY = 0xAF;
 
         /// <summary>
         /// Extracts an address from the given pubkey script if it has a known format.

@@ -19,6 +19,7 @@ namespace BitcoinUtilities.Scripts
         private bool valid;
         private Tx transaction;
         private int transactionInputNumber;
+        private int lastCodeSeparator = -1;
 
         public ScriptProcessor()
         {
@@ -34,6 +35,7 @@ namespace BitcoinUtilities.Scripts
             valid = true;
             transaction = default(Tx);
             transactionInputNumber = 0;
+            lastCodeSeparator = -1;
         }
 
         //todo: add XMLDOC
@@ -145,7 +147,16 @@ namespace BitcoinUtilities.Scripts
 
             // Crypto
 
-            commandDefinitions[BitcoinScript.OP_CHECKSIG] = new CommandDefinition(false, CheckSig);
+            commandDefinitions[BitcoinScript.OP_RIPEMD160] = new CommandDefinition(false, ExecuteRipeMd160);
+            commandDefinitions[BitcoinScript.OP_SHA1] = new CommandDefinition(false, ExecuteSha1);
+            commandDefinitions[BitcoinScript.OP_SHA256] = new CommandDefinition(false, ExecuteSha256);
+            commandDefinitions[BitcoinScript.OP_HASH160] = new CommandDefinition(false, ExecuteHash160);
+            commandDefinitions[BitcoinScript.OP_HASH256] = new CommandDefinition(false, ExecuteHash256);
+            commandDefinitions[BitcoinScript.OP_CODESEPARATOR] = new CommandDefinition(false, ExecuteCodeSeparator);
+            commandDefinitions[BitcoinScript.OP_CHECKSIG] = new CommandDefinition(false, ExecuteCheckSig);
+            commandDefinitions[BitcoinScript.OP_CHECKSIGVERIFY] = new CommandDefinition(false, ExecuteCheckSigVerify);
+            commandDefinitions[BitcoinScript.OP_CHECKMULTISIG] = new CommandDefinition(false, ExecuteCheckMultiSig);
+            commandDefinitions[BitcoinScript.OP_CHECKMULTISIGVERIFY] = new CommandDefinition(false, ExecuteCheckMultiSigVerify);
         }
 
         private void ExecuteIf(byte[] script, ScriptCommand command)
@@ -201,22 +212,16 @@ namespace BitcoinUtilities.Scripts
 
         private void ExecuteVerify(byte[] script, ScriptCommand command)
         {
-            if (!dataStack.Any())
+            byte[] data = PopData();
+            if (data == null)
             {
                 valid = false;
                 return;
-                //todo: terminate execution?
             }
-            //todo: add method for pop
-            int index = dataStack.Count - 1;
-            byte[] data = dataStack[index];
             if (!IsTrue(data))
             {
                 valid = false;
-            }
-            else
-            {
-                dataStack.RemoveAt(index);
+                dataStack.Add(data);
             }
         }
 
@@ -257,19 +262,105 @@ namespace BitcoinUtilities.Scripts
             dataStack.Add(data);
         }
 
-        private void CheckSig(byte[] script, ScriptCommand command)
+        private void ExecuteRipeMd160(byte[] script, ScriptCommand command)
         {
-            if (dataStack.Count < 2)
+            byte[] data = PopData();
+            if (data == null)
             {
                 valid = false;
                 return;
             }
+            dataStack.Add(CryptoUtils.RipeMd160(data));
+        }
 
-            byte[] pubKey = dataStack[dataStack.Count - 1];
-            dataStack.RemoveAt(dataStack.Count - 1);
+        private void ExecuteSha1(byte[] script, ScriptCommand command)
+        {
+            byte[] data = PopData();
+            if (data == null)
+            {
+                valid = false;
+                return;
+            }
+            dataStack.Add(CryptoUtils.Sha1(data));
+        }
 
-            byte[] signatureBlock = dataStack[dataStack.Count - 1];
-            dataStack.RemoveAt(dataStack.Count - 1);
+        private void ExecuteSha256(byte[] script, ScriptCommand command)
+        {
+            byte[] data = PopData();
+            if (data == null)
+            {
+                valid = false;
+                return;
+            }
+            dataStack.Add(CryptoUtils.Sha256(data));
+        }
+
+        private void ExecuteHash160(byte[] script, ScriptCommand command)
+        {
+            byte[] data = PopData();
+            if (data == null)
+            {
+                valid = false;
+                return;
+            }
+            dataStack.Add(CryptoUtils.RipeMd160(CryptoUtils.Sha256(data)));
+        }
+
+        private void ExecuteHash256(byte[] script, ScriptCommand command)
+        {
+            byte[] data = PopData();
+            if (data == null)
+            {
+                valid = false;
+                return;
+            }
+            dataStack.Add(CryptoUtils.DoubleSha256(data));
+        }
+
+        private void ExecuteCodeSeparator(byte[] script, ScriptCommand command)
+        {
+            // todo: add tests
+            lastCodeSeparator = command.Offset;
+        }
+
+        private void ExecuteCheckSig(byte[] script, ScriptCommand command)
+        {
+            bool success = CheckSig(script);
+            dataStack.Add(success ? new byte[] {1} : new byte[0]);
+        }
+
+        private void ExecuteCheckSigVerify(byte[] script, ScriptCommand command)
+        {
+            //todo: add test
+            bool success = CheckSig(script);
+            if (success)
+            {
+                return;
+            }
+            valid = false;
+            dataStack.Add(new byte[0]);
+        }
+
+        private void ExecuteCheckMultiSig(byte[] script, ScriptCommand command)
+        {
+            throw new NotImplementedException("OP_CHECKMULTISIG is not implemented yet.");
+        }
+
+        private void ExecuteCheckMultiSigVerify(byte[] script, ScriptCommand command)
+        {
+            throw new NotImplementedException("OP_CHECKMULTISIGVERIFY is not implemented yet.");
+        }
+
+        private bool CheckSig(byte[] script)
+        {
+            byte[] pubKey = PopData();
+            byte[] signatureBlock = PopData();
+
+            if (pubKey == null || signatureBlock == null)
+            {
+                valid = false;
+                return false;
+            }
 
             //todo: validate length first
             byte hashtype = signatureBlock[signatureBlock.Length - 1];
@@ -281,11 +372,17 @@ namespace BitcoinUtilities.Scripts
             MemoryStream mem = new MemoryStream();
 
             // todo: remove signatures from script
-            // todo: process OP_CODESEPARATOR
+            // todo: also remove all OP_CODESEPARATORs from script
             byte[] subScript = script;
+            if (lastCodeSeparator >= 0)
+            {
+                subScript = new byte[script.Length - lastCodeSeparator - 1];
+                Array.Copy(script, lastCodeSeparator + 1, subScript, 0, script.Length - lastCodeSeparator - 1);
+            }
 
             using (BitcoinStreamWriter writer = new BitcoinStreamWriter(mem))
             {
+                //todo: check if transaction exists
                 writer.Write(transaction.Version);
                 writer.WriteCompact((ulong) transaction.Inputs.Length);
                 for (int i = 0; i < transaction.Inputs.Length; i++)
@@ -310,9 +407,19 @@ namespace BitcoinUtilities.Scripts
 
             byte[] signedData = mem.ToArray();
 
-            bool success = SignatureUtils.Verify(signedData, pubKey, signature);
+            return SignatureUtils.Verify(signedData, pubKey, signature);
+        }
 
-            dataStack.Add(success ? new byte[] {1} : new byte[0]);
+        private byte[] PopData()
+        {
+            if (dataStack.Count == 0)
+            {
+                return null;
+            }
+            int index = dataStack.Count - 1;
+            byte[] res = dataStack[index];
+            dataStack.RemoveAt(index);
+            return res;
         }
 
         private bool IsTrue(byte[] data)
