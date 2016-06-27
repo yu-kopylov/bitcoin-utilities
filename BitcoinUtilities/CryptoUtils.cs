@@ -13,6 +13,12 @@ namespace BitcoinUtilities
         private static readonly object sha512Lock = new object();
         private static SHA512 sha512Alg;
 
+        private static readonly object sha1Lock = new object();
+        private static SHA1 sha1Alg;
+
+        private static readonly object ripeMd160Lock = new object();
+        private static RIPEMD160 ripeMd160Alg;
+
         public static byte[] DoubleSha256(byte[] text)
         {
             lock (sha256Lock)
@@ -99,6 +105,32 @@ namespace BitcoinUtilities
                 sha512Alg.TransformFinalBlock(new byte[0], 0, 0);
 
                 return sha512Alg.Hash;
+            }
+        }
+
+        public static byte[] Sha1(byte[] text)
+        {
+            lock (sha1Lock)
+            {
+                if (sha1Alg == null)
+                {
+                    sha1Alg = SHA1.Create();
+                }
+                sha1Alg.Initialize();
+                return sha1Alg.ComputeHash(text);
+            }
+        }
+
+        public static byte[] RipeMd160(byte[] text)
+        {
+            lock (ripeMd160Lock)
+            {
+                if (ripeMd160Alg == null)
+                {
+                    ripeMd160Alg = RIPEMD160.Create();
+                }
+                ripeMd160Alg.Initialize();
+                return ripeMd160Alg.ComputeHash(text);
             }
         }
     }

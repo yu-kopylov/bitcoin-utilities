@@ -115,5 +115,43 @@ namespace Test.BitcoinUtilities
             Assert.Throws<ArgumentNullException>(() => CryptoUtils.Sha512(null));
             Assert.That(CryptoUtils.Sha512(Encoding.ASCII.GetBytes("123")), Is.EqualTo(originalHash));
         }
+
+        [Test]
+        public void TestSha1()
+        {
+            byte[] hash = CryptoUtils.Sha1(Encoding.ASCII.GetBytes("The quick brown fox jumps over the lazy dog"));
+            Assert.That(hash, Is.EqualTo(new byte[]
+            {
+                0x2f, 0xd4, 0xe1, 0xc6, 0x7a, 0x2d, 0x28, 0xfc, 0xed, 0x84, 0x9e, 0xe1, 0xbb, 0x76, 0xe7, 0x39, 0x1b, 0x93, 0xeb, 0x12
+            }));
+        }
+
+        [Test]
+        public void TestSha1Exceptions()
+        {
+            byte[] originalHash = CryptoUtils.Sha1(Encoding.ASCII.GetBytes("123"));
+
+            Assert.Throws<ArgumentNullException>(() => CryptoUtils.Sha1(null));
+            Assert.That(CryptoUtils.Sha1(Encoding.ASCII.GetBytes("123")), Is.EqualTo(originalHash));
+        }
+
+        [Test]
+        public void TestRipeMd160()
+        {
+            byte[] hash = CryptoUtils.RipeMd160(Encoding.ASCII.GetBytes("The quick brown fox jumps over the lazy dog"));
+            Assert.That(hash, Is.EqualTo(new byte[]
+            {
+                0x37, 0xf3, 0x32, 0xf6, 0x8d, 0xb7, 0x7b, 0xd9, 0xd7, 0xed, 0xd4, 0x96, 0x95, 0x71, 0xad, 0x67, 0x1c, 0xf9, 0xdd, 0x3b
+            }));
+        }
+
+        [Test]
+        public void TestRipeMd160Exceptions()
+        {
+            byte[] originalHash = CryptoUtils.RipeMd160(Encoding.ASCII.GetBytes("123"));
+
+            Assert.Throws<ArgumentNullException>(() => CryptoUtils.RipeMd160(null));
+            Assert.That(CryptoUtils.RipeMd160(Encoding.ASCII.GetBytes("123")), Is.EqualTo(originalHash));
+        }
     }
 }
