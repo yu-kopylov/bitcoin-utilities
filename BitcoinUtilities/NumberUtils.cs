@@ -48,7 +48,7 @@ namespace BitcoinUtilities
         {
             byte[] unsignedBytes = new byte[bytes.Length + 1];
             Array.Copy(bytes, unsignedBytes, bytes.Length);
-            return new BigInteger(bytes);
+            return new BigInteger(unsignedBytes);
         }
     }
 }
