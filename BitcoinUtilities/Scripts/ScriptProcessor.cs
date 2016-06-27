@@ -170,6 +170,15 @@ namespace BitcoinUtilities.Scripts
             commandDefinitions[BitcoinScript.OP_SWAP] = new CommandDefinition(false, ExecuteSwap);
             commandDefinitions[BitcoinScript.OP_TUCK] = new CommandDefinition(false, ExecuteTuck);
 
+            // Bitwise Logic
+
+            commandDefinitions[BitcoinScript.OP_INVERT] = new CommandDefinition(true, ExecuteDisabled);
+            commandDefinitions[BitcoinScript.OP_AND] = new CommandDefinition(true, ExecuteDisabled);
+            commandDefinitions[BitcoinScript.OP_OR] = new CommandDefinition(true, ExecuteDisabled);
+            commandDefinitions[BitcoinScript.OP_XOR] = new CommandDefinition(true, ExecuteDisabled);
+            commandDefinitions[BitcoinScript.OP_EQUAL] = new CommandDefinition(false, ExecuteEqual);
+            commandDefinitions[BitcoinScript.OP_EQUALVERIFY] = new CommandDefinition(false, ExecuteEqualVerify);
+
             // Crypto
 
             commandDefinitions[BitcoinScript.OP_RIPEMD160] = new CommandDefinition(false, ExecuteRipeMd160);
@@ -182,6 +191,11 @@ namespace BitcoinUtilities.Scripts
             commandDefinitions[BitcoinScript.OP_CHECKSIGVERIFY] = new CommandDefinition(false, ExecuteCheckSigVerify);
             commandDefinitions[BitcoinScript.OP_CHECKMULTISIG] = new CommandDefinition(false, ExecuteCheckMultiSig);
             commandDefinitions[BitcoinScript.OP_CHECKMULTISIGVERIFY] = new CommandDefinition(false, ExecuteCheckMultiSigVerify);
+        }
+
+        private void ExecuteDisabled(byte[] script, ScriptCommand command)
+        {
+            valid = false;
         }
 
         #region Constants Commands
@@ -584,6 +598,43 @@ namespace BitcoinUtilities.Scripts
 
         #endregion
 
+        #region Bitwise Logic Commands
+
+        private void ExecuteEqual(byte[] script, ScriptCommand command)
+        {
+            if (dataStack.Count < 2)
+            {
+                valid = false;
+                return;
+            }
+            byte[] item1 = PopData();
+            byte[] item2 = PopData();
+
+            bool equal = item1.SequenceEqual(item2);
+            dataStack.Add(equal ? new byte[] {1} : new byte[0]);
+        }
+
+        private void ExecuteEqualVerify(byte[] script, ScriptCommand command)
+        {
+            if (dataStack.Count < 2)
+            {
+                valid = false;
+                return;
+            }
+            byte[] item1 = PopData();
+            byte[] item2 = PopData();
+
+            bool equal = item1.SequenceEqual(item2);
+
+            if (!equal)
+            {
+                valid = false;
+                dataStack.Add(new byte[0]);
+            }
+        }
+
+        #endregion
+
         #region Crypto Commands
 
         private void ExecuteRipeMd160(byte[] script, ScriptCommand command)
@@ -657,12 +708,11 @@ namespace BitcoinUtilities.Scripts
         {
             //todo: add test
             bool success = CheckSig(script);
-            if (success)
+            if (!success)
             {
-                return;
+                valid = false;
+                dataStack.Add(new byte[0]);
             }
-            valid = false;
-            dataStack.Add(new byte[0]);
         }
 
         private void ExecuteCheckMultiSig(byte[] script, ScriptCommand command)
@@ -677,14 +727,14 @@ namespace BitcoinUtilities.Scripts
 
         private bool CheckSig(byte[] script)
         {
-            byte[] pubKey = PopData();
-            byte[] signatureBlock = PopData();
-
-            if (pubKey == null || signatureBlock == null)
+            if (dataStack.Count < 2)
             {
                 valid = false;
                 return false;
             }
+
+            byte[] pubKey = PopData();
+            byte[] signatureBlock = PopData();
 
             //todo: validate length first
             byte hashtype = signatureBlock[signatureBlock.Length - 1];
@@ -740,6 +790,7 @@ namespace BitcoinUtilities.Scripts
         {
             if (dataStack.Count == 0)
             {
+                // todo: throw exception instead?
                 return null;
             }
             int index = dataStack.Count - 1;

@@ -59,6 +59,7 @@
     <Compile Include="Scripts\TestScriptParser.cs" />
     <Compile Include="Scripts\TestScriptProcessor.cs" />
     <Compile Include="Scripts\TestScriptProcessor.Crypto.cs" />
+    <Compile Include="Scripts\TestScriptProcessor.BitwiseLogic.cs" />
     <Compile Include="Scripts\TestScriptProcessor.FlowControl.cs" />
     <Compile Include="Scripts\TestScriptProcessor.Constants.cs" />
     <Compile Include="Storage\TestBlockLocator.cs" />

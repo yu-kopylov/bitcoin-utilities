@@ -227,12 +227,44 @@ namespace BitcoinUtilities.Scripts
         // ---------------------------------------------------------------------------------------
 
         /// <summary>
+        /// Flips all of the bits in the input.
+        /// </summary>
+        /// <remarks>
+        /// This command is disabled.
+        /// </remarks>
+        public const byte OP_INVERT = 0x83;
+
+        /// <summary>
+        /// Boolean and between each bit in the inputs.
+        /// </summary>
+        /// <remarks>
+        /// This command is disabled.
+        /// </remarks>
+        public const byte OP_AND = 0x84;
+
+        /// <summary>
+        /// Boolean or between each bit in the inputs.
+        /// </summary>
+        /// <remarks>
+        /// This command is disabled.
+        /// </remarks>
+        public const byte OP_OR = 0x85;
+
+        /// <summary>
+        /// Boolean exclusive or between each bit in the inputs.
+        /// </summary>
+        /// <remarks>
+        /// This command is disabled.
+        /// </remarks>
+        public const byte OP_XOR = 0x86;
+
+        /// <summary>
         /// Returns 1 if the inputs are exactly equal, 0 otherwise.
         /// </summary>
         public const byte OP_EQUAL = 0x87;
 
         /// <summary>
-        /// Same as OP_EQUAL, but runs OP_VERIFY afterward.
+        /// Same as <see cref="OP_EQUAL"/>, but runs <see cref="OP_VERIFY"/> afterwards.
         /// </summary>
         public const byte OP_EQUALVERIFY = 0x88;
 
@@ -271,13 +303,13 @@ namespace BitcoinUtilities.Scripts
         public const byte OP_CODESEPARATOR = 0xAB;
 
         /// <summary>
-        /// The entire transaction's outputs, inputs, and script (from the most recently-executed OP_CODESEPARATOR to the end) are hashed.
+        /// The entire transaction's outputs, inputs, and script (from the most recently-executed <see cref="OP_CODESEPARATOR"/> to the end) are hashed.
         /// The signature used by OP_CHECKSIG must be a valid signature for this hash and public key. If it is, 1 is returned, 0 otherwise.
         /// </summary>
         public const byte OP_CHECKSIG = 0xAC;
 
         /// <summary>
-        /// Same as OP_CHECKSIG, but OP_VERIFY is executed afterward.
+        /// Same as <see cref="OP_CHECKSIG"/>, but <see cref="OP_VERIFY"/> is executed afterwards.
         /// </summary>
         public const byte OP_CHECKSIGVERIFY = 0xAD;
 
