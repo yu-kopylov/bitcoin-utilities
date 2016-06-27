@@ -273,6 +273,16 @@ namespace BitcoinUtilities.Storage
                     //todo: check for overflow
                     transactionOutputsSum += output.Value;
 
+                    List<ScriptCommand> commands;
+                    if (!parser.TryParse(output.PubkeyScript, out commands))
+                    {
+                        //todo: how Bitcoin Core works in this scenario?
+                        throw new BitcoinProtocolViolationException(
+                            $"The output of transaction '{BitConverter.ToString(transactionHash)}'" +
+                            $" in block '{BitConverter.ToString(block.Hash)}'" +
+                            $" has an invalid pubkey script script.");
+                    }
+
                     UnspentOutput unspentOutput = UnspentOutput.Create(block, transaction, outputNumber);
                     update.Add(unspentOutput);
                 }
