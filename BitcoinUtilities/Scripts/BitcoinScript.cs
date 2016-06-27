@@ -128,9 +128,99 @@ namespace BitcoinUtilities.Scripts
         // ---------------------------------------------------------------------------------------
 
         /// <summary>
+        /// Puts the input onto the top of the alt stack.Removes it from the main stack.
+        /// </summary>
+        public const byte OP_TOALTSTACK = 0x6b;
+
+        /// <summary>
+        /// Puts the input onto the top of the main stack.Removes it from the alt stack.
+        /// </summary>
+        public const byte OP_FROMALTSTACK = 0x6c;
+
+        /// <summary>
+        /// Removes the top two stack items.
+        /// </summary>
+        public const byte OP_2DROP = 0x6d;
+
+        /// <summary>
+        /// Duplicates the top two stack items.
+        /// </summary>
+        public const byte OP_2DUP = 0x6e;
+
+        /// <summary>
+        /// Duplicates the top three stack items.
+        /// </summary>
+        public const byte OP_3DUP = 0x6f;
+
+        /// <summary>
+        /// Copies the pair of items two spaces back in the stack to the front.
+        /// </summary>
+        public const byte OP_2OVER = 0x70;
+
+        /// <summary>
+        /// The fifth and sixth items back are moved to the top of the stack.
+        /// </summary>
+        public const byte OP_2ROT = 0x71;
+
+        /// <summary>
+        /// Swaps the top two pairs of items.
+        /// </summary>
+        public const byte OP_2SWAP = 0x72;
+
+        /// <summary>
+        /// If the top stack value is not 0, duplicate it.
+        /// </summary>
+        public const byte OP_IFDUP = 0x73;
+
+        /// <summary>
+        /// Puts the number of stack items onto the stack.
+        /// </summary>
+        public const byte OP_DEPTH = 0x74;
+
+        /// <summary>
+        /// Removes the top stack item.
+        /// </summary>
+        public const byte OP_DROP = 0x75;
+
+        /// <summary>
         /// Duplicates the top stack item.
         /// </summary>
         public const byte OP_DUP = 0x76;
+
+        /// <summary>
+        /// Removes the second-to-top stack item.
+        /// </summary>
+        public const byte OP_NIP = 0x77;
+
+        /// <summary>
+        /// Copies the second-to-top stack item to the top.
+        /// </summary>
+        public const byte OP_OVER = 0x78;
+
+        /// <summary>
+        /// The item n back in the stack is copied to the top.
+        /// </summary>
+        public const byte OP_PICK = 0x79;
+
+        /// <summary>
+        /// The item n back in the stack is moved to the top.
+        /// </summary>
+        public const byte OP_ROLL = 0x7a;
+
+        /// <summary>
+        /// The top three items on the stack are rotated to the left.
+        /// </summary>
+        public const byte OP_ROT = 0x7b;
+
+        /// <summary>
+        /// The top two items on the stack are swapped.
+        /// </summary>
+        public const byte OP_SWAP = 0x7c;
+
+        /// <summary>
+        /// The item at the top of the stack is copied and inserted before the second-to-top item.
+        /// </summary>
+        public const byte OP_TUCK = 0x7d;
 
         // ---------------------------------------------------------------------------------------
         // ---- Bitwise logic --------------------------------------------------------------------

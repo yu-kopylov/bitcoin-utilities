@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Numerics;
 using BitcoinUtilities.P2P;
 using BitcoinUtilities.P2P.Primitives;
 
@@ -14,6 +15,7 @@ namespace BitcoinUtilities.Scripts
         private readonly CommandDefinition[] commandDefinitions = new CommandDefinition[256];
 
         private readonly List<byte[]> dataStack = new List<byte[]>();
+        private readonly Stack<byte[]> altDataStack = new Stack<byte[]>();
         private readonly ControlStack controlStack = new ControlStack();
 
         private bool valid;
@@ -31,6 +33,7 @@ namespace BitcoinUtilities.Scripts
         public void Reset()
         {
             dataStack.Clear();
+            altDataStack.Clear();
             controlStack.Clear();
             valid = true;
             transaction = default(Tx);
@@ -135,7 +138,7 @@ namespace BitcoinUtilities.Scripts
                 commandDefinitions[op] = new CommandDefinition(false, (script, command) => dataStack.Add(new byte[] {val}));
             }
 
-            //Flow control
+            // Flow control
 
             commandDefinitions[BitcoinScript.OP_NOP] = new CommandDefinition(false, (script, command) => { });
             commandDefinitions[BitcoinScript.OP_IF] = new CommandDefinition(true, ExecuteIf);
@@ -144,6 +147,28 @@ namespace BitcoinUtilities.Scripts
             commandDefinitions[BitcoinScript.OP_ENDIF] = new CommandDefinition(true, ExecuteEndIf);
             commandDefinitions[BitcoinScript.OP_VERIFY] = new CommandDefinition(false, ExecuteVerify);
             commandDefinitions[BitcoinScript.OP_RETURN] = new CommandDefinition(false, ExecuteReturn);
+
+            // Stack
+
+            commandDefinitions[BitcoinScript.OP_TOALTSTACK] = new CommandDefinition(false, ExecuteToAltStack);
+            commandDefinitions[BitcoinScript.OP_FROMALTSTACK] = new CommandDefinition(false, ExecuteFromAltStack);
+            commandDefinitions[BitcoinScript.OP_2DROP] = new CommandDefinition(false, Execute2Drop);
+            commandDefinitions[BitcoinScript.OP_2DUP] = new CommandDefinition(false, Execute2Dup);
+            commandDefinitions[BitcoinScript.OP_3DUP] = new CommandDefinition(false, Execute3Dup);
+            commandDefinitions[BitcoinScript.OP_2OVER] = new CommandDefinition(false, Execute2Over);
+            commandDefinitions[BitcoinScript.OP_2ROT] = new CommandDefinition(false, Execute2Rot);
+            commandDefinitions[BitcoinScript.OP_2SWAP] = new CommandDefinition(false, Execute2Swap);
+            commandDefinitions[BitcoinScript.OP_IFDUP] = new CommandDefinition(false, ExecuteIfDup);
+            commandDefinitions[BitcoinScript.OP_DEPTH] = new CommandDefinition(false, ExecuteDepth);
+            commandDefinitions[BitcoinScript.OP_DROP] = new CommandDefinition(false, ExecuteDrop);
+            commandDefinitions[BitcoinScript.OP_DUP] = new CommandDefinition(false, ExecuteDup);
+            commandDefinitions[BitcoinScript.OP_NIP] = new CommandDefinition(false, ExecuteNip);
+            commandDefinitions[BitcoinScript.OP_OVER] = new CommandDefinition(false, ExecuteOver);
+            commandDefinitions[BitcoinScript.OP_PICK] = new CommandDefinition(false, ExecutePick);
+            commandDefinitions[BitcoinScript.OP_ROLL] = new CommandDefinition(false, ExecuteRoll);
+            commandDefinitions[BitcoinScript.OP_ROT] = new CommandDefinition(false, ExecuteRot);
+            commandDefinitions[BitcoinScript.OP_SWAP] = new CommandDefinition(false, ExecuteSwap);
+            commandDefinitions[BitcoinScript.OP_TUCK] = new CommandDefinition(false, ExecuteTuck);
 
             // Crypto
 
@@ -158,6 +183,43 @@ namespace BitcoinUtilities.Scripts
             commandDefinitions[BitcoinScript.OP_CHECKMULTISIG] = new CommandDefinition(false, ExecuteCheckMultiSig);
             commandDefinitions[BitcoinScript.OP_CHECKMULTISIGVERIFY] = new CommandDefinition(false, ExecuteCheckMultiSigVerify);
         }
+
+        #region Constants Commands
+
+        private void PushData(byte[] script, ScriptCommand command)
+        {
+            byte[] data = new byte[command.Code];
+            Array.Copy(script, command.Offset + 1, data, 0, command.Code);
+            dataStack.Add(data);
+        }
+
+        private void PushData1(byte[] script, ScriptCommand command)
+        {
+            int dataLength = command.Length - 2;
+            byte[] data = new byte[dataLength];
+            Array.Copy(script, command.Offset + 2, data, 0, dataLength);
+            dataStack.Add(data);
+        }
+
+        private void PushData2(byte[] script, ScriptCommand command)
+        {
+            int dataLength = command.Length - 3;
+            byte[] data = new byte[dataLength];
+            Array.Copy(script, command.Offset + 3, data, 0, dataLength);
+            dataStack.Add(data);
+        }
+
+        private void PushData4(byte[] script, ScriptCommand command)
+        {
+            int dataLength = command.Length - 5;
+            byte[] data = new byte[dataLength];
+            Array.Copy(script, command.Offset + 5, data, 0, dataLength);
+            dataStack.Add(data);
+        }
+
+        #endregion
+
+        #region Flow Control Commands
 
         private void ExecuteIf(byte[] script, ScriptCommand command)
         {
@@ -231,36 +293,298 @@ namespace BitcoinUtilities.Scripts
             //todo: terminate execution?
         }
 
-        private void PushData(byte[] script, ScriptCommand command)
+        #endregion
+
+        #region Stack Commands
+
+        private void ExecuteToAltStack(byte[] script, ScriptCommand command)
         {
-            byte[] data = new byte[command.Code];
-            Array.Copy(script, command.Offset + 1, data, 0, command.Code);
+            //todo: add tests
+            byte[] data = PopData();
+            if (data == null)
+            {
+                valid = false;
+                return;
+            }
+            altDataStack.Push(data);
+        }
+
+        private void ExecuteFromAltStack(byte[] script, ScriptCommand command)
+        {
+            //todo: add tests
+            if (altDataStack.Count == 0)
+            {
+                valid = false;
+                return;
+            }
+            byte[] data = altDataStack.Pop();
             dataStack.Add(data);
         }
 
-        private void PushData1(byte[] script, ScriptCommand command)
+        private void Execute2Drop(byte[] script, ScriptCommand command)
         {
-            int dataLength = command.Length - 2;
-            byte[] data = new byte[dataLength];
-            Array.Copy(script, command.Offset + 2, data, 0, dataLength);
-            dataStack.Add(data);
+            //todo: add tests
+            if (dataStack.Count < 2)
+            {
+                valid = false;
+                return;
+            }
+            PopData();
+            PopData();
         }
 
-        private void PushData2(byte[] script, ScriptCommand command)
+        private void Execute2Dup(byte[] script, ScriptCommand command)
         {
-            int dataLength = command.Length - 3;
-            byte[] data = new byte[dataLength];
-            Array.Copy(script, command.Offset + 3, data, 0, dataLength);
-            dataStack.Add(data);
+            //todo: add tests
+            if (dataStack.Count < 2)
+            {
+                valid = false;
+                return;
+            }
+            byte[] item1 = dataStack[dataStack.Count - 1];
+            byte[] item2 = dataStack[dataStack.Count - 2];
+            dataStack.Add(item2);
+            dataStack.Add(item1);
         }
 
-        private void PushData4(byte[] script, ScriptCommand command)
+        private void Execute3Dup(byte[] script, ScriptCommand command)
         {
-            int dataLength = command.Length - 5;
-            byte[] data = new byte[dataLength];
-            Array.Copy(script, command.Offset + 5, data, 0, dataLength);
-            dataStack.Add(data);
+            //todo: add tests
+            if (dataStack.Count < 3)
+            {
+                valid = false;
+                return;
+            }
+            byte[] item1 = dataStack[dataStack.Count - 1];
+            byte[] item2 = dataStack[dataStack.Count - 2];
+            byte[] item3 = dataStack[dataStack.Count - 3];
+            dataStack.Add(item3);
+            dataStack.Add(item2);
+            dataStack.Add(item1);
         }
+
+        private void Execute2Over(byte[] script, ScriptCommand command)
+        {
+            //todo: add tests
+            if (dataStack.Count < 4)
+            {
+                valid = false;
+                return;
+            }
+            byte[] item1 = dataStack[dataStack.Count - 3];
+            byte[] item2 = dataStack[dataStack.Count - 4];
+            dataStack.Add(item2);
+            dataStack.Add(item1);
+        }
+
+        private void Execute2Rot(byte[] script, ScriptCommand command)
+        {
+            //todo: add tests
+            if (dataStack.Count < 6)
+            {
+                valid = false;
+                return;
+            }
+
+            byte[] item1 = PopData();
+            byte[] item2 = PopData();
+            byte[] item3 = PopData();
+            byte[] item4 = PopData();
+            byte[] item5 = PopData();
+            byte[] item6 = PopData();
+
+            dataStack.Add(item4);
+            dataStack.Add(item3);
+            dataStack.Add(item2);
+            dataStack.Add(item1);
+
+            dataStack.Add(item6);
+            dataStack.Add(item5);
+        }
+
+        private void Execute2Swap(byte[] script, ScriptCommand command)
+        {
+            //todo: add tests
+            if (dataStack.Count < 4)
+            {
+                valid = false;
+                return;
+            }
+
+            byte[] item1 = PopData();
+            byte[] item2 = PopData();
+            byte[] item3 = PopData();
+            byte[] item4 = PopData();
+
+            dataStack.Add(item2);
+            dataStack.Add(item1);
+
+            dataStack.Add(item4);
+            dataStack.Add(item3);
+        }
+
+        private void ExecuteIfDup(byte[] script, ScriptCommand command)
+        {
+            //todo: add tests
+            byte[] item = PopData();
+
+            if (item == null)
+            {
+                valid = false;
+                return;
+            }
+
+            dataStack.Add(item);
+
+            if (IsTrue(item))
+            {
+                dataStack.Add(item);
+            }
+        }
+
+        private void ExecuteDepth(byte[] script, ScriptCommand command)
+        {
+            //todo: add tests
+            BigInteger val = dataStack.Count;
+            byte[] item = val.ToByteArray();
+            dataStack.Add(item);
+        }
+
+        private void ExecuteDrop(byte[] script, ScriptCommand command)
+        {
+            //todo: add tests
+            byte[] item = PopData();
+            if (item == null)
+            {
+                valid = false;
+            }
+        }
+
+        private void ExecuteDup(byte[] script, ScriptCommand command)
+        {
+            //todo: add tests
+            byte[] item = PopData();
+            if (item == null)
+            {
+                valid = false;
+            }
+            dataStack.Add(item);
+            dataStack.Add(item);
+        }
+
+        private void ExecuteNip(byte[] script, ScriptCommand command)
+        {
+            //todo: add tests
+            if (dataStack.Count < 2)
+            {
+                valid = false;
+                return;
+            }
+            dataStack.RemoveAt(dataStack.Count - 2);
+        }
+
+        private void ExecuteOver(byte[] script, ScriptCommand command)
+        {
+            //todo: add tests
+            if (dataStack.Count < 2)
+            {
+                valid = false;
+                return;
+            }
+            byte[] item = dataStack[dataStack.Count - 2];
+            dataStack.Add(item);
+        }
+
+        private void ExecutePick(byte[] script, ScriptCommand command)
+        {
+            //todo: add tests
+            if (dataStack.Count < 2)
+            {
+                valid = false;
+                return;
+            }
+            byte[] numAsBytes = PopData();
+            BigInteger numAsBigInt = new BigInteger(numAsBytes);
+            if (numAsBigInt < 0 || numAsBigInt >= dataStack.Count)
+            {
+                valid = false;
+                return;
+            }
+            // We assume that dataStack.Count is always less then int.MaxValue. Therefore, this conversion should never fail.
+            int num = (int) numAsBigInt;
+            byte[] item = dataStack[dataStack.Count - num];
+            dataStack.Add(item);
+        }
+
+        private void ExecuteRoll(byte[] script, ScriptCommand command)
+        {
+            //todo: add tests
+            if (dataStack.Count < 2)
+            {
+                valid = false;
+                return;
+            }
+            byte[] numAsBytes = PopData();
+            BigInteger numAsBigInt = new BigInteger(numAsBytes);
+            if (numAsBigInt < 0 || numAsBigInt >= dataStack.Count)
+            {
+                valid = false;
+                return;
+            }
+            // We assume that dataStack.Count is always less then int.MaxValue. Therefore, this conversion should never fail.
+            int num = (int) numAsBigInt;
+            byte[] item = dataStack[dataStack.Count - num];
+            dataStack.RemoveAt(dataStack.Count - num);
+            dataStack.Add(item);
+        }
+
+        private void ExecuteRot(byte[] script, ScriptCommand command)
+        {
+            //todo: add tests
+            if (dataStack.Count < 3)
+            {
+                valid = false;
+                return;
+            }
+
+            byte[] item3 = dataStack[dataStack.Count - 3];
+            dataStack.RemoveAt(dataStack.Count - 3);
+            dataStack.Add(item3);
+        }
+
+        private void ExecuteSwap(byte[] script, ScriptCommand command)
+        {
+            //todo: add tests
+            if (dataStack.Count < 2)
+            {
+                valid = false;
+                return;
+            }
+
+            byte[] item1 = PopData();
+            byte[] item2 = PopData();
+
+            dataStack.Add(item1);
+            dataStack.Add(item2);
+        }
+
+        private void ExecuteTuck(byte[] script, ScriptCommand command)
+        {
+            //todo: add tests
+            if (dataStack.Count < 2)
+            {
+                valid = false;
+                return;
+            }
+
+            byte[] item = dataStack[dataStack.Count - 1];
+            ;
+            dataStack.Insert(dataStack.Count - 2, item);
+        }
+
+        #endregion
+
+        #region Crypto Commands
 
         private void ExecuteRipeMd160(byte[] script, ScriptCommand command)
         {
@@ -409,6 +733,8 @@ namespace BitcoinUtilities.Scripts
 
             return SignatureUtils.Verify(signedData, pubKey, signature);
         }
+
+        #endregion
 
         private byte[] PopData()
         {
