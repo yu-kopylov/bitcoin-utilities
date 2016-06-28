@@ -13,8 +13,8 @@ namespace Test.BitcoinUtilities.Storage
         private static readonly byte[] Hash1 = new byte[32];
         private static readonly byte[] Hash2 = new byte[32];
 
-        private static readonly StoredBlock Block1 = new StoredBlock(GenesisBlock.GetHeader()) {Height = 1};
-        private static readonly StoredBlock Block2 = new StoredBlock(GenesisBlock.GetHeader()) {Height = 2};
+        private static readonly StoredBlock Block1 = new StoredBlockBuilder(GenesisBlock.GetHeader()) {Height = 1}.Build();
+        private static readonly StoredBlock Block2 = new StoredBlockBuilder(GenesisBlock.GetHeader()) {Height = 2}.Build();
 
         static TestUnspentOutputsUpdate()
         {

@@ -68,7 +68,7 @@ namespace BitcoinUtilities.Storage.SQLite
             command.ExecuteNonQuery();
         }
 
-        public void AddBlockContent(byte[] hash, byte[] content)
+        public StoredBlock AddBlockContent(byte[] hash, byte[] content)
         {
             StoredBlock block = FindBlockByHash(hash);
             if (block == null)
@@ -77,13 +77,15 @@ namespace BitcoinUtilities.Storage.SQLite
                 throw new IOException($"Block not found in storage (hash: {BitConverter.ToString(hash)}).");
             }
             //todo: what if there is content already?
-            block.HasContent = true;
+            block = block.AddContent();
             UpdateBlock(block);
 
             var command = CreateCommand("insert into BlockContents (Hash, Content) values (@Hash, @Content)");
             command.Parameters.Add("@Hash", DbType.Binary).Value = hash;
             command.Parameters.Add("@Content", DbType.Binary).Value = content;
             command.ExecuteNonQuery();
+
+            return block;
         }
 
         public byte[] GetBlockContent(byte[] hash)
@@ -275,23 +277,25 @@ namespace BitcoinUtilities.Storage.SQLite
 
         private string GetBlockColumns(string alias)
         {
-            return $"{alias}.Header, {alias}.Height, {alias}.TotalWork, {alias}.HasContent, {alias}.IsInBestHeaderChain, {alias}.IsInBestBlockChain";
+            return $"{alias}.Header, {alias}.Hash, {alias}.Height, {alias}.TotalWork, {alias}.HasContent, {alias}.IsInBestHeaderChain, {alias}.IsInBestBlockChain";
         }
 
         private StoredBlock ReadBlock(SQLiteDataReader reader)
         {
             int col = 0;
 
-            byte[] headerBytes = ReadBytes(reader, col++);
-            BlockHeader header = BlockHeader.Read(new BitcoinStreamReader(new MemoryStream(headerBytes)));
-            StoredBlock block = new StoredBlock(header);
+            StoredBlockBuilder blockBuilder = new StoredBlockBuilder();
 
-            //block.Hash - calculated from header
-            block.Height = reader.GetInt32(col++);
-            block.TotalWork = reader.GetDouble(col++);
-            block.HasContent = reader.GetBoolean(col++);
-            block.IsInBestHeaderChain = reader.GetBoolean(col++);
-            block.IsInBestBlockChain = reader.GetBoolean(col++);
+            byte[] headerBytes = ReadBytes(reader, col++);
+            blockBuilder.Header = BlockHeader.Read(new BitcoinStreamReader(new MemoryStream(headerBytes)));
+            blockBuilder.Hash = ReadBytes(reader, col++);
+            blockBuilder.Height = reader.GetInt32(col++);
+            blockBuilder.TotalWork = reader.GetDouble(col++);
+            blockBuilder.HasContent = reader.GetBoolean(col++);
+            blockBuilder.IsInBestHeaderChain = reader.GetBoolean(col++);
+            blockBuilder.IsInBestBlockChain = reader.GetBoolean(col++);
+
+            StoredBlock block = blockBuilder.Build();
 
             return block;
         }

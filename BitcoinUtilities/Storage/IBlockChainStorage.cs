@@ -62,7 +62,7 @@ namespace BitcoinUtilities.Storage
         //todo: describe exceptions in XMLDOC
         void UpdateBlock(StoredBlock block);
 
-        void AddBlockContent(byte[] hash, byte[] content);
+        StoredBlock AddBlockContent(byte[] hash, byte[] content);
 
         byte[] GetBlockContent(byte[] hash);
     }

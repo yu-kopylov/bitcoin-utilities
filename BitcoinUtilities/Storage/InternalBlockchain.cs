@@ -142,7 +142,9 @@ namespace BitcoinUtilities.Storage
                 throw new BitcoinProtocolViolationException($"Block content was invalid (block: {BitConverter.ToString(blockHash)}).");
             }
 
-            storage.AddBlockContent(storedBlock.Hash, BitcoinStreamWriter.GetBytes(block.Write));
+            StoredBlock updatedBlock = storage.AddBlockContent(storedBlock.Hash, BitcoinStreamWriter.GetBytes(block.Write));
+            //todo: test state updates
+            currentState = currentState.Update(storedBlock, updatedBlock);
         }
 
         public bool Include(byte[] hash)
@@ -182,8 +184,7 @@ namespace BitcoinUtilities.Storage
 
             unspentOutputsUpdate.Persist();
 
-            //todo: make blocks immutable
-            block.IsInBestBlockChain = true;
+            block = SetIsInBestBlockChain(block, true);
             storage.UpdateBlock(block);
 
             currentState = currentState.SetBestChain(block);
@@ -351,14 +352,16 @@ namespace BitcoinUtilities.Storage
         private void AddGenesisBlock()
         {
             //todo: use network specific genesis block
-            StoredBlock genesisBlock = new StoredBlock(GenesisBlock.GetHeader());
+            StoredBlockBuilder blockBuilder = new StoredBlockBuilder(GenesisBlock.GetHeader());
 
-            double blockWork = DifficultyUtils.DifficultyTargetToWork(DifficultyUtils.NBitsToTarget(genesisBlock.Header.NBits));
+            double blockWork = DifficultyUtils.DifficultyTargetToWork(DifficultyUtils.NBitsToTarget(blockBuilder.Header.NBits));
 
-            genesisBlock.Height = 0;
-            genesisBlock.TotalWork = blockWork;
-            genesisBlock.IsInBestBlockChain = true;
-            genesisBlock.IsInBestHeaderChain = true;
+            blockBuilder.Height = 0;
+            blockBuilder.TotalWork = blockWork;
+            blockBuilder.IsInBestBlockChain = true;
+            blockBuilder.IsInBestHeaderChain = true;
+
+            StoredBlock genesisBlock = blockBuilder.Build();
 
             //todo: review transaction usage in this class
             storage.AddBlock(genesisBlock);
@@ -382,11 +385,7 @@ namespace BitcoinUtilities.Storage
 
             StoredBlock parentBlock = parentChain.GetBlockByOffset(0);
 
-            double blockWork = DifficultyUtils.DifficultyTargetToWork(DifficultyUtils.NBitsToTarget(block.Header.NBits));
-
-            //todo: move this logic to StoredBlock (also add broken chain propagation)?
-            block.Height = parentBlock.Height + 1;
-            block.TotalWork = parentBlock.TotalWork + blockWork;
+            block = block.AppendAfter(parentBlock);
 
             if (!BlockHeaderValidator.IsValid(block, parentChain))
             {
@@ -418,20 +417,42 @@ namespace BitcoinUtilities.Storage
 
                 if (markNewHead)
                 {
-                    newHead.IsInBestHeaderChain = true;
+                    newHead = SetIsInBestHeaderChain(newHead, true);
                     storage.UpdateBlock(newHead);
                     newHead = storage.FindBlockByHash(newHead.Header.PrevBlock);
                 }
 
                 if (markOldHead)
                 {
-                    oldHead.IsInBestHeaderChain = false;
+                    oldHead = SetIsInBestHeaderChain(oldHead, false);
                     storage.UpdateBlock(oldHead);
                     oldHead = storage.FindBlockByHash(oldHead.Header.PrevBlock);
                 }
             }
 
             currentState = currentState.SetBestHeader(block);
+        }
+
+        private StoredBlock SetIsInBestHeaderChain(StoredBlock block, bool val)
+        {
+            StoredBlockBuilder builder = new StoredBlockBuilder(block);
+            builder.IsInBestHeaderChain = val;
+            StoredBlock newBlock = builder.Build();
+
+            currentState = currentState.Update(block, newBlock);
+
+            return newBlock;
+        }
+
+        private StoredBlock SetIsInBestBlockChain(StoredBlock block, bool val)
+        {
+            StoredBlockBuilder builder = new StoredBlockBuilder(block);
+            builder.IsInBestBlockChain = val;
+            StoredBlock newBlock = builder.Build();
+
+            currentState = currentState.Update(block, newBlock);
+
+            return newBlock;
         }
 
         private bool IsBetterHeaderThan(StoredBlock block1, StoredBlock block2)

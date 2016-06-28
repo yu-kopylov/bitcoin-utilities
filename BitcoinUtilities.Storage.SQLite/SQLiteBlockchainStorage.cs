@@ -271,13 +271,13 @@ namespace BitcoinUtilities.Storage.SQLite
             }
         }
 
-        public void AddBlockContent(byte[] hash, byte[] content)
+        public StoredBlock AddBlockContent(byte[] hash, byte[] content)
         {
             JoinCurrentTransaction();
             using (BlockchainRepository repo = new BlockchainRepository(conn))
             {
                 //todo: what if there is no such block or it already has content ?
-                repo.AddBlockContent(hash, content);
+                return repo.AddBlockContent(hash, content);
             }
         }
 

@@ -28,7 +28,7 @@ namespace Test.BitcoinUtilities.Node.Rules
             {
                 BlockMessage block = BlockMessage.Read(new BitcoinStreamReader(new MemoryStream(rawBlock)));
                 Assert.True(BlockContentValidator.IsMerkleTreeValid(block));
-                Assert.True(BlockContentValidator.IsValid(new StoredBlock(block.BlockHeader), block));
+                Assert.True(BlockContentValidator.IsValid(new StoredBlockBuilder(block.BlockHeader).Build(), block));
             }
         }
 

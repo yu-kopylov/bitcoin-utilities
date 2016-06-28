@@ -84,7 +84,7 @@ namespace Test.BitcoinUtilities.Node.Rules
                     (uint) i,
                     0x21100000,
                     0);
-                StoredBlock storedBlock = new StoredBlock(header);
+                StoredBlock storedBlock = new StoredBlockBuilder(header).Build();
                 blocks.Add(storedBlock);
                 prevBlock = storedBlock;
             }
@@ -101,7 +101,7 @@ namespace Test.BitcoinUtilities.Node.Rules
                     0x21100000,
                     0);
 
-                StoredBlock storedBlock = new StoredBlock(header);
+                StoredBlock storedBlock = new StoredBlockBuilder(header).Build();
 
                 Assert.False(BlockHeaderValidator.IsTimeStampValid(storedBlock, subchain));
             }
@@ -116,7 +116,7 @@ namespace Test.BitcoinUtilities.Node.Rules
                     0x21100000,
                     0);
 
-                StoredBlock storedBlock = new StoredBlock(header);
+                StoredBlock storedBlock = new StoredBlockBuilder(header).Build();
 
                 Assert.True(BlockHeaderValidator.IsTimeStampValid(storedBlock, subchain));
             }

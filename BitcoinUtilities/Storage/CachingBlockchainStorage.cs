@@ -105,11 +105,11 @@ namespace BitcoinUtilities.Storage
         {
             transactionalResource.Enlist();
 
-            //todo: make StoredBlock immutable to avoid accidental changes to cached values?
             storage.UpdateBlock(block);
+
             if (lastChain != null)
             {
-                //todo: it is a little bit ugly cashing
+                //todo: cashing is a little bit ugly
                 List<StoredBlock> chainBlocks = new List<StoredBlock>(lastChain.Length);
                 for (int i = lastChain.Length - 1; i >= 0; i--)
                 {
@@ -127,21 +127,32 @@ namespace BitcoinUtilities.Storage
             }
         }
 
-        public void AddBlockContent(byte[] hash, byte[] content)
+        public StoredBlock AddBlockContent(byte[] hash, byte[] content)
         {
             transactionalResource.Enlist();
 
-            //todo: make StoredBlock immutable to avoid accidental changes to cached values?
-            storage.AddBlockContent(hash, content);
+            StoredBlock updatedBlock = storage.AddBlockContent(hash, content);
+
             if (lastChain != null)
             {
-                //todo: it is a little bit ugly cashing
+                //todo: cashing is a little bit ugly
+                List<StoredBlock> chainBlocks = new List<StoredBlock>(lastChain.Length);
                 for (int i = lastChain.Length - 1; i >= 0; i--)
                 {
                     StoredBlock chainBlock = lastChain.GetBlockByOffset(i);
-                    chainBlock.HasContent = true;
+                    if (chainBlock.Hash.SequenceEqual(updatedBlock.Hash))
+                    {
+                        chainBlocks.Add(updatedBlock);
+                    }
+                    else
+                    {
+                        chainBlocks.Add(chainBlock);
+                    }
                 }
+                lastChain = new Subchain(chainBlocks);
             }
+
+            return updatedBlock;
         }
 
         public byte[] GetBlockContent(byte[] hash)

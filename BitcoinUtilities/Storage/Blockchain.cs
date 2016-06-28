@@ -130,8 +130,7 @@ namespace BitcoinUtilities.Storage
                 {
                     throw new BitcoinProtocolViolationException("An invalid header was received.");
                 }
-                //todo: also check nBits against current network difficulty
-                blocks.Add(new StoredBlock(header));
+                blocks.Add(new StoredBlockBuilder(header).Build());
             }
 
             //todo: perform topological sorting of blocks?

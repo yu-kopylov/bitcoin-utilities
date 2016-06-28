@@ -37,12 +37,12 @@ namespace Test.BitcoinUtilities.Storage.SQLite
                     Direction = BlockSelector.SortDirection.Asc
                 }, 100).Select(b => b.Height).ToList(), Is.EqualTo(new int[] {}));
 
-                StoredBlock block = new StoredBlock(GenesisBlock.GetHeader());
-                block.Height = 0;
-                block.IsInBestHeaderChain = true;
-                block.IsInBestBlockChain = true;
+                StoredBlockBuilder blockBuilder = new StoredBlockBuilder(GenesisBlock.GetHeader());
+                blockBuilder.Height = 0;
+                blockBuilder.IsInBestHeaderChain = true;
+                blockBuilder.IsInBestBlockChain = true;
 
-                storage.AddBlock(block);
+                storage.AddBlock(blockBuilder.Build());
             }
 
             using (SQLiteBlockchainStorage storage = SQLiteBlockchainStorage.Open(testFolder))
@@ -109,9 +109,10 @@ namespace Test.BitcoinUtilities.Storage.SQLite
             {
                 CachingBlockchainStorage cache = new CachingBlockchainStorage(storage);
 
-                StoredBlock block = new StoredBlock(GenesisBlock.GetHeader());
-                block.IsInBestHeaderChain = true;
-                block.IsInBestBlockChain = false;
+                StoredBlockBuilder blockBuilder = new StoredBlockBuilder(GenesisBlock.GetHeader());
+                blockBuilder.IsInBestHeaderChain = true;
+                blockBuilder.IsInBestBlockChain = false;
+                StoredBlock block = blockBuilder.Build();
 
                 Assert.Throws<InvalidOperationException>(() => cache.AddBlock(block));
 
@@ -134,7 +135,9 @@ namespace Test.BitcoinUtilities.Storage.SQLite
                 Assert.That(cache.FindBlockByHash(block.Hash), Is.Not.Null);
                 Assert.That(cache.FindSubchain(block.Hash, 10), Is.Not.Null);
 
-                block.IsInBestBlockChain = true;
+                blockBuilder = new StoredBlockBuilder(block);
+                blockBuilder.IsInBestBlockChain = true;
+                block = blockBuilder.Build();
 
                 Assert.Throws<InvalidOperationException>(() => cache.UpdateBlock(block));
 
@@ -200,14 +203,14 @@ namespace Test.BitcoinUtilities.Storage.SQLite
                 {
                     Assert.That(blockchain.CommitedState.BestHeader.Height, Is.EqualTo(0));
                     Assert.That(blockchain.CommitedState.BestChain.Height, Is.EqualTo(0));
-                    blockchain.AddHeaders(new List<StoredBlock> {new StoredBlock(BitcoinStreamReader.FromBytes(KnownBlocks.Block1, BlockHeader.Read))});
+                    blockchain.AddHeaders(new List<StoredBlock> {new StoredBlockBuilder(BitcoinStreamReader.FromBytes(KnownBlocks.Block1, BlockHeader.Read)).Build()});
                 }
 
                 using (var tx = new TransactionScope(TransactionScopeOption.Required))
                 {
                     Assert.That(blockchain.CommitedState.BestHeader.Height, Is.EqualTo(0));
                     Assert.That(blockchain.CommitedState.BestChain.Height, Is.EqualTo(0));
-                    blockchain.AddHeaders(new List<StoredBlock> {new StoredBlock(BitcoinStreamReader.FromBytes(KnownBlocks.Block1, BlockHeader.Read))});
+                    blockchain.AddHeaders(new List<StoredBlock> {new StoredBlockBuilder(BitcoinStreamReader.FromBytes(KnownBlocks.Block1, BlockHeader.Read)).Build()});
                     tx.Complete();
                 }
 
@@ -245,7 +248,7 @@ namespace Test.BitcoinUtilities.Storage.SQLite
                 storage.RemoveUnspentOutput(transactionHash, 0);
                 Assert.That(storage.FindUnspentOutputs(transactionHash), Is.Empty);
 
-                storage.AddSpentOutput(SpentOutput.Create(new StoredBlock(GenesisBlock.GetHeader()) {Height = 2}, dbOutput));
+                storage.AddSpentOutput(SpentOutput.Create(new StoredBlockBuilder(GenesisBlock.GetHeader()) {Height = 2}.Build(), dbOutput));
             }
         }
     }
