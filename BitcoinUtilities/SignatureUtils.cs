@@ -58,10 +58,9 @@ namespace BitcoinUtilities
             var hash = GetMessageHash(message);
 
             BigInteger[] signatureArray = signer.GenerateSignature(hash);
-            BigInteger r = signatureArray[0];
-            BigInteger s = signatureArray[1];
-
-            s = NormalizeS(s);
+            EcdsaSignature ecdsaSignature = new EcdsaSignature();
+            ecdsaSignature.R = signatureArray[0];
+            ecdsaSignature.S = NormalizeS(signatureArray[1]);
 
             byte[] encodedPublicKey = BitcoinPrivateKey.ToEncodedPublicKey(privateKey, useCompressedPublicKey);
 
@@ -73,8 +72,7 @@ namespace BitcoinUtilities
             {
                 Signature candidateSignature = new Signature();
                 candidateSignature.PublicKeyMask = i + pubKeyMaskOffset;
-                candidateSignature.R = r;
-                candidateSignature.S = s;
+                candidateSignature.EcdsaSignature = ecdsaSignature;
 
                 byte[] recoveredPublicKey = RecoverPublicKeyFromSignature(hash, candidateSignature);
                 if (recoveredPublicKey != null && recoveredPublicKey.SequenceEqual(encodedPublicKey))
@@ -127,21 +125,71 @@ namespace BitcoinUtilities
             return recoveredAddress == address;
         }
 
+        //todo: add tests, parameter validation and xml-doc
+        public static byte[] Sign(byte[] signedData, byte[] privateKey, bool useCompressedPublicKey)
+        {
+            ECPrivateKeyParameters parameters = new ECPrivateKeyParameters(new BigInteger(1, privateKey), domainParameters);
+
+            ECDsaSigner signer = new ECDsaSigner(new HMacDsaKCalculator(new Sha256Digest()));
+            signer.Init(true, parameters);
+
+            byte[] hash = CryptoUtils.DoubleSha256(signedData);
+
+            BigInteger[] signatureArray = signer.GenerateSignature(hash);
+            EcdsaSignature ecdsaSignature = new EcdsaSignature();
+            ecdsaSignature.R = signatureArray[0];
+            ecdsaSignature.S = NormalizeS(signatureArray[1]);
+
+            byte[] encodedPublicKey = BitcoinPrivateKey.ToEncodedPublicKey(privateKey, useCompressedPublicKey);
+
+            int pubKeyMaskOffset = useCompressedPublicKey ? 4 : 0;
+
+            Signature signature = null;
+
+            for (int i = 0; i < 4; i++)
+            {
+                Signature candidateSignature = new Signature();
+                candidateSignature.PublicKeyMask = i + pubKeyMaskOffset;
+                candidateSignature.EcdsaSignature = ecdsaSignature;
+
+                byte[] recoveredPublicKey = RecoverPublicKeyFromSignature(hash, candidateSignature);
+                if (recoveredPublicKey != null && recoveredPublicKey.SequenceEqual(encodedPublicKey))
+                {
+                    signature = candidateSignature;
+                    break;
+                }
+            }
+
+            if (signature == null)
+            {
+                // this should not happen
+                throw new Exception("The public key is not recoverable from signature.");
+            }
+
+            return signature.EcdsaSignature.ToDER();
+        }
+
+        //todo: add tests, parameter validation and xml-doc
         public static bool Verify(byte[] signedData, byte[] publicKey, byte[] signature)
         {
+            EcdsaSignature ecdsaSignature;
+            if (!EcdsaSignature.ParseDER(signature, out ecdsaSignature))
+            {
+                return false;
+            }
+
             //todo: add tests and XMLDOC
             //todo: validate input
             byte[] hash = CryptoUtils.DoubleSha256(signedData);
-            Signature parsedSignature = new Signature();
-            //todo: use better DER parsing
-            //todo: check other BigInteger constructors
-            parsedSignature.R = new BigInteger(1, signature, 4, signature[3]);
-            parsedSignature.S = new BigInteger(1, signature, 6 + signature[3], signature[5 + signature[3]]);
-            // use normal verification algorithm
+
+            Signature candidateSignature = new Signature();
+            candidateSignature.EcdsaSignature = ecdsaSignature;
+
+            // todo: use normal verification algorithm
             for (int i = 0; i < 8; i++)
             {
-                parsedSignature.PublicKeyMask = i;
-                byte[] recoveredPublicKey = RecoverPublicKeyFromSignature(hash, parsedSignature);
+                candidateSignature.PublicKeyMask = i;
+                byte[] recoveredPublicKey = RecoverPublicKeyFromSignature(hash, candidateSignature);
                 if (recoveredPublicKey != null && recoveredPublicKey.SequenceEqual(publicKey))
                 {
                     return true;
@@ -200,7 +248,7 @@ namespace BitcoinUtilities
 
             BigInteger e = new BigInteger(1, hash);
 
-            byte[] rBytes = signature.R.ToByteArrayUnsigned();
+            byte[] rBytes = signature.EcdsaSignature.R.ToByteArrayUnsigned();
             byte[] rPointEncoded = new byte[33];
             rPointEncoded[0] = encodedRPrefix;
             Array.Copy(rBytes, 0, rPointEncoded, 33 - rBytes.Length, rBytes.Length);
@@ -220,14 +268,14 @@ namespace BitcoinUtilities
                 return null;
             }
 
-            ECPoint q = rPoint.Multiply(signature.S).Subtract(curveParameters.G.Multiply(e)).Multiply(signature.R.ModInverse(curveParameters.N));
+            ECPoint q = rPoint.Multiply(signature.EcdsaSignature.S).Subtract(curveParameters.G.Multiply(e)).Multiply(signature.EcdsaSignature.R.ModInverse(curveParameters.N));
             return q.GetEncoded(useCompressedPublicKey);
         }
 
         private static string EncodeSignature(Signature signature)
         {
-            byte[] r = signature.R.ToByteArrayUnsigned();
-            byte[] s = signature.S.ToByteArrayUnsigned();
+            byte[] r = signature.EcdsaSignature.R.ToByteArrayUnsigned();
+            byte[] s = signature.EcdsaSignature.S.ToByteArrayUnsigned();
 
             Contract.Assert(r.Length <= 32);
             Contract.Assert(s.Length <= 32);
@@ -271,10 +319,13 @@ namespace BitcoinUtilities
                 return false;
             }
 
+            EcdsaSignature ecdsaSignature = new EcdsaSignature();
+            ecdsaSignature.R = new BigInteger(1, signatureBytes, 1, 32);
+            ecdsaSignature.S = new BigInteger(1, signatureBytes, 33, 32);
+
             signature = new Signature();
             signature.PublicKeyMask = header - 0x1B;
-            signature.R = new BigInteger(1, signatureBytes, 1, 32);
-            signature.S = new BigInteger(1, signatureBytes, 33, 32);
+            signature.EcdsaSignature = ecdsaSignature;
 
             return true;
         }
@@ -282,8 +333,76 @@ namespace BitcoinUtilities
         private class Signature
         {
             public int PublicKeyMask { get; set; }
+            public EcdsaSignature EcdsaSignature { get; set; }
+        }
+
+        //todo: add tests and xml-doc, consider using structure
+        private class EcdsaSignature
+        {
             public BigInteger R { get; set; }
             public BigInteger S { get; set; }
+
+            public byte[] ToDER()
+            {
+                //todo: compare ToByteArray and ToByteArrayUnsigned
+                byte[] rBytes = R.ToByteArray();
+                byte[] sBytes = S.ToByteArray();
+
+                byte[] signatureBytes = new byte[6 + rBytes.Length + sBytes.Length];
+
+                signatureBytes[0] = 0x30; // SEQUENCE 
+                signatureBytes[1] = (byte) (4 + rBytes.Length + sBytes.Length); // SEQUENCE LENGTH
+
+                signatureBytes[2] = 0x02; // INTEGER
+                signatureBytes[3] = (byte) rBytes.Length; // INTEGER LENGTH
+                Array.Copy(rBytes, 0, signatureBytes, 4, rBytes.Length);
+
+                signatureBytes[4 + rBytes.Length] = 0x02; // INTEGER
+                signatureBytes[5 + rBytes.Length] = (byte) sBytes.Length; // INTEGER LENGTH
+                Array.Copy(sBytes, 0, signatureBytes, 6 + rBytes.Length, sBytes.Length);
+
+                return signatureBytes;
+            }
+
+            /// <summary>
+            /// Parses DER-encoded signature.
+            /// </summary>
+            /// <param name="encoded">A byte array with encoded signature.</param>
+            /// <param name="ecdsaSignature">The decoded signature, or null if the given array is not a valid DER-encoded signature.</param>
+            /// <returns>true if the signature was decoded successfully; otherwise, false.</returns>
+            public static bool ParseDER(byte[] encoded, out EcdsaSignature ecdsaSignature)
+            {
+                ecdsaSignature = null;
+
+                //todo: is zero length possible for R and S?
+                if (encoded == null || encoded.Length < 6)
+                {
+                    return false;
+                }
+
+                if (encoded[0] != 0x30 || encoded[1] != encoded.Length - 2 || encoded[2] != 0x02)
+                {
+                    return false;
+                }
+
+                int rLength = encoded[3];
+                if (5 + rLength >= encoded.Length)
+                {
+                    return false;
+                }
+                int sLength = encoded[5 + rLength];
+                if (6 + rLength + sLength != encoded.Length)
+                {
+                    return false;
+                }
+
+                ecdsaSignature = new EcdsaSignature();
+                //todo: check other BigInteger constructors (signed / unsigned)
+                ecdsaSignature.R = new BigInteger(1, encoded, 4, rLength);
+                ecdsaSignature.S = new BigInteger(1, encoded, 6 + rLength, sLength);
+
+                return true;
+            }
         }
     }
 }

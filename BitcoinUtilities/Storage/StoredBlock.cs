@@ -69,6 +69,7 @@ namespace BitcoinUtilities.Storage
         /// <returns></returns>
         public StoredBlock AddContent()
         {
+            // todo: some fields are updated through StoredBlock methods and some are updated manually (IsInBestHeaderChain, IsInBestBlockChain)
             StoredBlockBuilder builder = new StoredBlockBuilder(this);
             builder.HasContent = true;
             return builder.Build();

@@ -481,6 +481,7 @@ namespace BitcoinUtilities.Scripts
             if (item == null)
             {
                 valid = false;
+                return;
             }
             dataStack.Add(item);
             dataStack.Add(item);
@@ -743,8 +744,6 @@ namespace BitcoinUtilities.Scripts
 
             //todo: process hashtype
 
-            MemoryStream mem = new MemoryStream();
-
             // todo: remove signatures from script
             // todo: also remove all OP_CODESEPARATORs from script
             byte[] subScript = script;
@@ -754,6 +753,15 @@ namespace BitcoinUtilities.Scripts
                 Array.Copy(script, lastCodeSeparator + 1, subScript, 0, script.Length - lastCodeSeparator - 1);
             }
 
+            byte[] signedData = GetSignedData(transaction, transactionInputNumber, subScript, hashtype);
+
+            return SignatureUtils.Verify(signedData, pubKey, signature);
+        }
+
+        //todo: document and move to more appropriate class
+        public static byte[] GetSignedData(Tx transaction, int transactionInputNumber, byte[] subScript, byte hashtype)
+        {
+            MemoryStream mem = new MemoryStream();
             using (BitcoinStreamWriter writer = new BitcoinStreamWriter(mem))
             {
                 //todo: check if transaction exists
@@ -779,9 +787,7 @@ namespace BitcoinUtilities.Scripts
                 writer.Write((uint) hashtype);
             }
 
-            byte[] signedData = mem.ToArray();
-
-            return SignatureUtils.Verify(signedData, pubKey, signature);
+            return mem.ToArray();
         }
 
         #endregion

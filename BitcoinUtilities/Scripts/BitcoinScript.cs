@@ -373,5 +373,39 @@ namespace BitcoinUtilities.Scripts
                 pubkeyScript[23] == OP_EQUALVERIFY &&
                 pubkeyScript[24] == OP_CHECKSIG;
         }
+
+        // todo: add tests and xml-doc
+        public static byte[] CreatePayToPubkeyHash(string address)
+        {
+            byte[] addressBytes;
+            if (!Base58Check.TryDecode(address, out addressBytes))
+            {
+                throw new ArgumentException("Address is not in Base58Check format.", nameof(address));
+            }
+
+            byte[] pubkeyScript = new byte[addressBytes.Length + 4];
+
+            pubkeyScript[0] = OP_DUP;
+            pubkeyScript[1] = OP_HASH160;
+            // First byte is a version byte.
+            pubkeyScript[2] = (byte) (addressBytes.Length - 1);
+            Array.Copy(addressBytes, 1, pubkeyScript, 3, addressBytes.Length - 1);
+            pubkeyScript[addressBytes.Length + 2] = OP_EQUALVERIFY;
+            pubkeyScript[addressBytes.Length + 3] = OP_CHECKSIG;
+
+            return pubkeyScript;
+        }
+
+        // todo: add tests and xml-doc, validate parameters (including length up to OP_PUSHDATA_LEN_75)
+        public static byte[] CreatePayToPubkeyHashSignature(byte[] signature, byte[] publicKey, byte hashtype)
+        {
+            byte[] script = new byte[3 + signature.Length + publicKey.Length];
+            script[0] = (byte) (signature.Length + 1);
+            Array.Copy(signature, 0, script, 1, signature.Length);
+            script[1 + signature.Length] = hashtype;
+            script[2 + signature.Length] = (byte) publicKey.Length;
+            Array.Copy(publicKey, 0, script, 3 + signature.Length, publicKey.Length);
+            return script;
+        }
     }
 }

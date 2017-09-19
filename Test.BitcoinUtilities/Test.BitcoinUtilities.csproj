@@ -101,6 +101,7 @@
     <Compile Include="TestNumberUtils.cs" />
     <Compile Include="TestSignatureUtils.cs" />
     <Compile Include="TestSystemTime.cs" />
+    <Compile Include="TestTransactionBuilder.cs" />
     <Compile Include="TestUnixTime.cs" />
     <Compile Include="TestWif.cs" />
     <Compile Include="Threading\TestBlockingThreadPool.cs" />
