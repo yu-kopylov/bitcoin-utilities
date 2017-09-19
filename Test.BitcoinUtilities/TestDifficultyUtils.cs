@@ -58,10 +58,10 @@ namespace Test.BitcoinUtilities
             Assert.That(DifficultyUtils.DifficultyTargetToWork(-1), Is.EqualTo(Math.Pow(2, 256)));
             Assert.That(DifficultyUtils.DifficultyTargetToWork(0), Is.EqualTo(Math.Pow(2, 256)));
             Assert.That(DifficultyUtils.DifficultyTargetToWork(1), Is.EqualTo(Math.Pow(2, 255)));
-            Assert.That(DifficultyUtils.DifficultyTargetToWork(2), Is.EqualTo(Math.Pow(2, 256)/3).Within(1e-12).Percent);
+            Assert.That(DifficultyUtils.DifficultyTargetToWork(2), Is.EqualTo(Math.Pow(2, 256)/3).Within(1e-10).Percent);
             Assert.That(DifficultyUtils.DifficultyTargetToWork(3), Is.EqualTo(Math.Pow(2, 254)));
             Assert.That(DifficultyUtils.DifficultyTargetToWork(BigInteger.Pow(2, 254)), Is.EqualTo(4));
-            Assert.That(DifficultyUtils.DifficultyTargetToWork(BigInteger.Pow(2, 256)/3), Is.EqualTo(3).Within(1e-12).Percent);
+            Assert.That(DifficultyUtils.DifficultyTargetToWork(BigInteger.Pow(2, 256)/3), Is.EqualTo(3).Within(1e-10).Percent);
             Assert.That(DifficultyUtils.DifficultyTargetToWork(BigInteger.Pow(2, 255)), Is.EqualTo(2));
             Assert.That(DifficultyUtils.DifficultyTargetToWork(BigInteger.Pow(2, 256)), Is.EqualTo(1));
             Assert.That(DifficultyUtils.DifficultyTargetToWork(BigInteger.Pow(2, 257)), Is.EqualTo(1));
