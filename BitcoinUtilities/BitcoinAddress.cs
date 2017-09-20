@@ -24,25 +24,26 @@ namespace BitcoinUtilities
 
             byte[] encodedPublicKey = BitcoinPrivateKey.ToEncodedPublicKey(privateKey, useCompressedPublicKey);
 
-            return FromPublicKey(encodedPublicKey);
+            return FromPublicKey(encodedPublicKey, BitcoinNetworkKind.Main);
         }
 
         /// <summary>
-        /// Converts a bitcoin address for the Main Network from the public key.
+        /// Converts a public key to a bitcoin address for the given network type.
         /// <para/>
         /// This method does not validate the public key.
         /// </summary>
         /// <param name="publicKey">The array of bytes of the public key.</param>
+        /// <param name="networkKind">The kind of the network in which address will be used.</param>
         /// <returns>Bitcoin address in Base58Check encoding; or null if the public key is null.</returns>
-        public static string FromPublicKey(byte[] publicKey)
+        public static string FromPublicKey(byte[] publicKey, BitcoinNetworkKind networkKind)
         {
             if (publicKey == null)
             {
                 return null;
             }
 
-            //todo: set first byte according to the Network type (0x00 for Main Network)
             byte[] addressBytes = new byte[21];
+            addressBytes[0] = GetAddressVersion(networkKind);
             using (SHA256 sha256Alg = SHA256.Create())
             {
                 using (RIPEMD160 ripemd160Alg = RIPEMD160.Create())
@@ -53,6 +54,22 @@ namespace BitcoinUtilities
             }
 
             return Base58Check.Encode(addressBytes);
+        }
+
+        /// <summary>
+        /// Specification: https://en.bitcoin.it/wiki/List_of_address_prefixes
+        /// </summary>
+        private static byte GetAddressVersion(BitcoinNetworkKind networkKind)
+        {
+            if (networkKind == BitcoinNetworkKind.Main)
+            {
+                return 0x00;
+            }
+            if (networkKind == BitcoinNetworkKind.Test)
+            {
+                return 0x6F;
+            }
+            throw new ArgumentException($"Unexpected network kind: {networkKind}", nameof(networkKind));
         }
     }
 }

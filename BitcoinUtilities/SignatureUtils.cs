@@ -120,7 +120,7 @@ namespace BitcoinUtilities
                 return false;
             }
 
-            string recoveredAddress = BitcoinAddress.FromPublicKey(recoveredPublicKey);
+            string recoveredAddress = BitcoinAddress.FromPublicKey(recoveredPublicKey, BitcoinNetworkKind.Main);
 
             return recoveredAddress == address;
         }

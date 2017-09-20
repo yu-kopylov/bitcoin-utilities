@@ -81,7 +81,7 @@ namespace Test.BitcoinUtilities
             Assert.That(Wif.Decode(null, out decodedPrivateKey, out decodedCompressionFlag), Is.False);
             Assert.That(Wif.Decode("", out decodedPrivateKey, out decodedCompressionFlag), Is.False);
 
-            //incorrect network
+            //incorrect address version
             Assert.That(Wif.Decode("5ZTbc84Pfm9mK6cMeYB4onZ6PGg13HJyvBCQxwRsQju2YRkyoe2", out decodedPrivateKey, out decodedCompressionFlag), Is.False);
 
             //icorrect compressed public key flag

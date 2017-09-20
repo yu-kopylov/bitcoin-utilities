@@ -76,7 +76,7 @@ namespace BitcoinUtilities
                 {
                     string outputAddress = BitcoinScript.GetAddressFromPubkeyScript(input.PubkeyScript);
                     byte[] publicKey = BitcoinPrivateKey.ToEncodedPublicKey(input.PrivateKey, input.IsCompressedAddress);
-                    string privateKeyAddress = BitcoinAddress.FromPublicKey(publicKey);
+                    string privateKeyAddress = BitcoinAddress.FromPublicKey(publicKey, BitcoinNetworkKind.Main);
                     if (outputAddress != privateKeyAddress)
                     {
                         throw new InvalidOperationException($"Address in PubkeyScript does not match private key address for input #{i}: '{outputAddress}', '{privateKeyAddress}'.");
