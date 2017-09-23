@@ -16,15 +16,15 @@ namespace Test.BitcoinUtilities
         {
             byte[] sourcePrivateKey;
             bool sourceAddressCompressed;
-            Wif.Decode("KwDiBf89QgGbjEhKnhXJuH7LrciVrZi3qYjgd9M7rFU8MZejxwYf", out sourcePrivateKey, out sourceAddressCompressed);
+            Assert.True(Wif.TryDecode(BitcoinNetworkKind.Main, "KwDiBf89QgGbjEhKnhXJuH7LrciVrZi3qYjgd9M7rFU8MZejxwYf", out sourcePrivateKey, out sourceAddressCompressed));
             byte[] sourceTransactionHash = CryptoUtils.DoubleSha256(new byte[] {1, 2, 3});
-            string sourceAddress = BitcoinAddress.FromPrivateKey(sourcePrivateKey, sourceAddressCompressed);
+            string sourceAddress = BitcoinAddress.FromPrivateKey(BitcoinNetworkKind.Main, sourcePrivateKey, sourceAddressCompressed);
             byte[] sourcePubkeyScript = BitcoinScript.CreatePayToPubkeyHash(sourceAddress);
 
             byte[] destPrivateKey;
             bool destAddressCompressed;
-            Wif.Decode("KwDiBf89QgGbjEhKnhXJuH7LrciVrZi3qYjgd9M7rFU868E4dnmx", out destPrivateKey, out destAddressCompressed);
-            string destAddress = BitcoinAddress.FromPrivateKey(destPrivateKey, destAddressCompressed);
+            Assert.True(Wif.TryDecode(BitcoinNetworkKind.Main, "KwDiBf89QgGbjEhKnhXJuH7LrciVrZi3qYjgd9M7rFU868E4dnmx", out destPrivateKey, out destAddressCompressed));
+            string destAddress = BitcoinAddress.FromPrivateKey(BitcoinNetworkKind.Main, destPrivateKey, destAddressCompressed);
             byte[] destPubkeyScript = BitcoinScript.CreatePayToPubkeyHash(destAddress);
 
             TransactionBuilder builder = new TransactionBuilder();

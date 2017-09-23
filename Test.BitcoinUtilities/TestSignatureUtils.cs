@@ -24,14 +24,14 @@ namespace Test.BitcoinUtilities
             // wrong private key
             byte[] corruptedPrivateKey;
             bool compressed;
-            Assert.True(Wif.Decode(wif, out corruptedPrivateKey, out compressed));
+            Assert.True(Wif.TryDecode(BitcoinNetworkKind.Main, wif, out corruptedPrivateKey, out compressed));
             corruptedPrivateKey[17]++;
-            Assert.False(SignatureUtils.VerifyMessage(BitcoinAddress.FromPrivateKey(corruptedPrivateKey, compressed), message, signature));
+            Assert.False(SignatureUtils.VerifyMessage(BitcoinAddress.FromPrivateKey(BitcoinNetworkKind.Main, corruptedPrivateKey, compressed), message, signature));
 
             // wrong compression
             byte[] privateKey;
-            Assert.True(Wif.Decode(wif, out privateKey, out compressed));
-            Assert.False(SignatureUtils.VerifyMessage(BitcoinAddress.FromPrivateKey(privateKey, !compressed), message, signature));
+            Assert.True(Wif.TryDecode(BitcoinNetworkKind.Main, wif, out privateKey, out compressed));
+            Assert.False(SignatureUtils.VerifyMessage(BitcoinAddress.FromPrivateKey(BitcoinNetworkKind.Main, privateKey, !compressed), message, signature));
 
             // corruprted signature header
             for (byte header = 0x1A; header <= 0x23; header++)
@@ -155,13 +155,13 @@ namespace Test.BitcoinUtilities
 
         private void SignAndVerify(string message, byte[] key, bool useCompressedPublicKey, string expectedSignature)
         {
-            string address = BitcoinAddress.FromPrivateKey(key, useCompressedPublicKey);
+            string address = BitcoinAddress.FromPrivateKey(BitcoinNetworkKind.Main, key, useCompressedPublicKey);
 
             string signature = SignatureUtils.SingMesssage(message, key, useCompressedPublicKey);
 
             Console.WriteLine("---- SignAndVerify ----");
             Console.WriteLine("Address:\t{0}", address);
-            Console.WriteLine("WIF:\t\t{0}", Wif.Encode(key, useCompressedPublicKey));
+            Console.WriteLine("WIF:\t\t{0}", Wif.Encode(BitcoinNetworkKind.Main, key, useCompressedPublicKey));
             Console.WriteLine("Message:\t{0}", message);
             Console.WriteLine("Signature:\t{0}", signature);
             Console.WriteLine("Signature Header:\t0x{0:X2}", Convert.FromBase64String(signature)[0]);

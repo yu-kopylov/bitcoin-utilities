@@ -9,13 +9,14 @@ namespace BitcoinUtilities
     public static class BitcoinAddress
     {
         /// <summary>
-        /// Creates a bitcoin address for the Main Network from the private key.
+        /// Creates a bitcoin address for the given network kind from the private key.
         /// </summary>
+        /// <param name="networkKind">The kind of the network in which address will be used.</param>
         /// <param name="privateKey">The array of 32 bytes of the private key.</param>
         /// <param name="useCompressedPublicKey">true to specify that the public key should have the compressed format; otherwise, false.</param>
         /// <exception cref="ArgumentException">The private key is invalid.</exception>
         /// <returns>Bitcoin address in Base58Check encoding.</returns>
-        public static string FromPrivateKey(byte[] privateKey, bool useCompressedPublicKey)
+        public static string FromPrivateKey(BitcoinNetworkKind networkKind, byte[] privateKey, bool useCompressedPublicKey)
         {
             if (!BitcoinPrivateKey.IsValid(privateKey))
             {
@@ -24,18 +25,18 @@ namespace BitcoinUtilities
 
             byte[] encodedPublicKey = BitcoinPrivateKey.ToEncodedPublicKey(privateKey, useCompressedPublicKey);
 
-            return FromPublicKey(encodedPublicKey, BitcoinNetworkKind.Main);
+            return FromPublicKey(networkKind, encodedPublicKey);
         }
 
         /// <summary>
-        /// Converts a public key to a bitcoin address for the given network type.
+        /// Converts a public key to a bitcoin address for the given network kind.
         /// <para/>
         /// This method does not validate the public key.
         /// </summary>
-        /// <param name="publicKey">The array of bytes of the public key.</param>
         /// <param name="networkKind">The kind of the network in which address will be used.</param>
+        /// <param name="publicKey">The array of bytes of the public key.</param>
         /// <returns>Bitcoin address in Base58Check encoding; or null if the public key is null.</returns>
-        public static string FromPublicKey(byte[] publicKey, BitcoinNetworkKind networkKind)
+        public static string FromPublicKey(BitcoinNetworkKind networkKind, byte[] publicKey)
         {
             if (publicKey == null)
             {

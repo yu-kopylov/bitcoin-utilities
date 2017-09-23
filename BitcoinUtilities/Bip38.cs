@@ -55,7 +55,7 @@ namespace BitcoinUtilities
             }
             result[2] = flagByte;
 
-            string address = BitcoinAddress.FromPrivateKey(privateKey, useCompressedPublicKey);
+            string address = BitcoinAddress.FromPrivateKey(BitcoinNetworkKind.Main, privateKey, useCompressedPublicKey);
             byte[] addressBytes = Encoding.ASCII.GetBytes(address);
 
             byte[] addressHash = new byte[4];
@@ -171,7 +171,7 @@ namespace BitcoinUtilities
                 return false;
             }
 
-            string address = BitcoinAddress.FromPrivateKey(result, useCompressedPublicKey);
+            string address = BitcoinAddress.FromPrivateKey(BitcoinNetworkKind.Main, result, useCompressedPublicKey);
             byte[] addressBytes = Encoding.ASCII.GetBytes(address);
 
             using (SHA256 sha256Alg = SHA256.Create())

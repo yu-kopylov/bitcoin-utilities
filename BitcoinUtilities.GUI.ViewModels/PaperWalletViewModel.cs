@@ -87,7 +87,7 @@ namespace BitcoinUtilities.GUI.ViewModels
             byte[] privateKeyBytes;
             bool compressed;
 
-            if (!Wif.Decode(privateKey, out privateKeyBytes, out compressed))
+            if (!Wif.TryDecode(BitcoinNetworkKind.Main, privateKey, out privateKeyBytes, out compressed))
             {
                 return;
             }
