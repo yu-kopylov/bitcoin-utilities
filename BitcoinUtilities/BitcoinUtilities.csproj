@@ -60,6 +60,7 @@
     <Compile Include="BitcoinNetworkKind.cs" />
     <Compile Include="Collections\CollectionUtils.cs" />
     <Compile Include="DifficultyUtils.cs" />
+    <Compile Include="HexUtils.cs" />
     <Compile Include="IpUtils.cs" />
     <Compile Include="MerkleTreeUtils.cs" />
     <Compile Include="Node\BitcoinProtocolViolationException.cs" />
