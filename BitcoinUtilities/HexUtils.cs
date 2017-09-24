@@ -32,7 +32,7 @@ namespace BitcoinUtilities
         /// <summary>
         /// Converts a hexadecimal string to a byte array.
         /// </summary>
-        /// <param name="hex">The string to convert.</param>
+        /// <param name="hex">The string to convert. The only allowed characters are 0-9, a-z, A-Z.</param>
         /// <param name="result">A byte array converted from the given string; or null if conversion faled.</param>
         /// <returns>true if string was converted to bytes; otherwise, false.</returns>
         /// <exception cref="ArgumentNullException">If the given string is null.</exception>
