@@ -185,9 +185,11 @@ namespace Test.BitcoinUtilities.Scripts
                 0x7F, 0xA5, 0xAC
             };
 
+            BitcoinCoreSigHashCalculator sigHashCalculator = new BitcoinCoreSigHashCalculator(tx);
+
             ScriptProcessor processor = new ScriptProcessor();
-            processor.Transaction = tx;
-            processor.TransactionInputNumber = 0;
+            processor.SigHashCalculator = sigHashCalculator;
+            sigHashCalculator.InputIndex = 0;
 
             processor.Execute(tx.Inputs[0].SignatureScript);
             processor.Execute(pubScript);
@@ -198,9 +200,10 @@ namespace Test.BitcoinUtilities.Scripts
             Tx corruptedTx = BitcoinStreamReader.FromBytes(txText, Tx.Read);
             corruptedTx.Inputs[0].SignatureScript[10] = 0xAA;
 
+            sigHashCalculator = new BitcoinCoreSigHashCalculator(corruptedTx);
             processor.Reset();
-            processor.Transaction = corruptedTx;
-            processor.TransactionInputNumber = 0;
+            processor.SigHashCalculator = sigHashCalculator;
+            sigHashCalculator.InputIndex = 0;
 
             processor.Execute(corruptedTx.Inputs[0].SignatureScript);
             processor.Execute(pubScript);
@@ -274,14 +277,15 @@ namespace Test.BitcoinUtilities.Scripts
                 }
             };
 
+            BitcoinCoreSigHashCalculator sigHashCalculator = new BitcoinCoreSigHashCalculator(tx);
+
             ScriptProcessor processor = new ScriptProcessor();
-            processor.Transaction = tx;
 
             for (int i = 0; i < tx.Inputs.Length; i++)
             {
                 processor.Reset();
-                processor.Transaction = tx;
-                processor.TransactionInputNumber = i;
+                processor.SigHashCalculator = sigHashCalculator;
+                sigHashCalculator.InputIndex = i;
 
                 processor.Execute(tx.Inputs[i].SignatureScript);
                 processor.Execute(pubScripts[i]);
@@ -290,8 +294,8 @@ namespace Test.BitcoinUtilities.Scripts
                 Assert.True(processor.Success, $"Input #{i}");
 
                 processor.Reset();
-                processor.Transaction = tx;
-                processor.TransactionInputNumber = (i + 1)%tx.Inputs.Length;
+                processor.SigHashCalculator = sigHashCalculator;
+                sigHashCalculator.InputIndex = (i + 1) % tx.Inputs.Length;
 
                 processor.Execute(tx.Inputs[i].SignatureScript);
                 processor.Execute(pubScripts[i]);

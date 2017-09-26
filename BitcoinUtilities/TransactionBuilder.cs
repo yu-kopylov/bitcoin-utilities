@@ -66,6 +66,8 @@ namespace BitcoinUtilities
             // todo: review constant
             Tx transaction = new Tx(1, txInputs, txOutputs, 0xFFFFFFFF);
 
+            BitcoinCoreSigHashCalculator hashCalculator = new BitcoinCoreSigHashCalculator(transaction);
+
             for (int i = 0; i < inputs.Count; i++)
             {
                 Input input = inputs[i];
@@ -82,10 +84,11 @@ namespace BitcoinUtilities
                         throw new InvalidOperationException($"Address in PubkeyScript does not match private key address for input #{i}: '{outputAddress}', '{privateKeyAddress}'.");
                     }
 
-                    // todo: is SIGHASH_ALL defined by output PubkeyScript ?
-                    byte[] signedData = ScriptProcessor.GetSignedData(transaction, 0, input.PubkeyScript, 1 /*SIGHASH_ALL*/);
+                    hashCalculator.InputIndex = i;
+
+                    byte[] signedData = hashCalculator.Calculate(SigHashType.All, input.PubkeyScript);
                     byte[] signature = SignatureUtils.Sign(signedData, input.PrivateKey, input.IsCompressedAddress);
-                    signatureScript = BitcoinScript.CreatePayToPubkeyHashSignature(signature, publicKey, 1 /*SIGHASH_ALL*/);
+                    signatureScript = BitcoinScript.CreatePayToPubkeyHashSignature(SigHashType.All, publicKey, signature);
                 }
                 else
                 {

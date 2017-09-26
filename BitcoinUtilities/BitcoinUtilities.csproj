@@ -84,9 +84,12 @@
     <Compile Include="Node\Services\BlockContentDownloadService.cs" />
     <Compile Include="Node\Services\BlockValidationService.cs" />
     <Compile Include="Scripts\ControlStack.cs" />
+    <Compile Include="Scripts\ISigHashCalculator.cs" />
     <Compile Include="Scripts\ScriptCommand.cs" />
     <Compile Include="Scripts\ScriptParser.cs" />
     <Compile Include="Scripts\ScriptProcessor.cs" />
+    <Compile Include="Scripts\SigHashType.cs" />
+    <Compile Include="Scripts\BitcoinCoreSigHashCalculator.cs" />
     <Compile Include="Storage\BlockSelector.cs" />
     <Compile Include="Storage\InternalBlockchain.cs" />
     <Compile Include="Storage\Blockchain.cs" />

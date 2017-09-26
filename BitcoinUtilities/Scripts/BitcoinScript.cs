@@ -387,7 +387,7 @@ namespace BitcoinUtilities.Scripts
 
             pubkeyScript[0] = OP_DUP;
             pubkeyScript[1] = OP_HASH160;
-            // First byte is a version byte.
+            // First byte in the addressBytes is a version byte.
             pubkeyScript[2] = (byte) (addressBytes.Length - 1);
             Array.Copy(addressBytes, 1, pubkeyScript, 3, addressBytes.Length - 1);
             pubkeyScript[addressBytes.Length + 2] = OP_EQUALVERIFY;
@@ -397,12 +397,12 @@ namespace BitcoinUtilities.Scripts
         }
 
         // todo: add tests and xml-doc, validate parameters (including length up to OP_PUSHDATA_LEN_75)
-        public static byte[] CreatePayToPubkeyHashSignature(byte[] signature, byte[] publicKey, byte hashtype)
+        public static byte[] CreatePayToPubkeyHashSignature(SigHashType hashType, byte[] publicKey, byte[] signature)
         {
             byte[] script = new byte[3 + signature.Length + publicKey.Length];
             script[0] = (byte) (signature.Length + 1);
             Array.Copy(signature, 0, script, 1, signature.Length);
-            script[1 + signature.Length] = hashtype;
+            script[1 + signature.Length] = (byte) hashType;
             script[2 + signature.Length] = (byte) publicKey.Length;
             Array.Copy(publicKey, 0, script, 3 + signature.Length, publicKey.Length);
             return script;

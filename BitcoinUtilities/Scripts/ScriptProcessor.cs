@@ -1,15 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Numerics;
-using BitcoinUtilities.P2P;
-using BitcoinUtilities.P2P.Primitives;
 
 namespace BitcoinUtilities.Scripts
 {
     public class ScriptProcessor
     {
+        // todo: convert ScriptParser to a static class ?
         private readonly ScriptParser parser = new ScriptParser();
 
         private readonly CommandDefinition[] commandDefinitions = new CommandDefinition[256];
@@ -18,13 +16,14 @@ namespace BitcoinUtilities.Scripts
         private readonly Stack<byte[]> altDataStack = new Stack<byte[]>();
         private readonly ControlStack controlStack = new ControlStack();
 
+        private ISigHashCalculator sigHashCalculator;
+
         private bool valid;
-        private Tx transaction;
-        private int transactionInputNumber;
         private int lastCodeSeparator = -1;
 
         public ScriptProcessor()
         {
+            // todo: move to a static constructor?
             CreateCommandDefinitions();
 
             valid = true;
@@ -32,12 +31,12 @@ namespace BitcoinUtilities.Scripts
 
         public void Reset()
         {
+            // todo: add xml doc, describe SigHashCalculator usage
             dataStack.Clear();
             altDataStack.Clear();
             controlStack.Clear();
             valid = true;
-            transaction = default(Tx);
-            transactionInputNumber = 0;
+            sigHashCalculator = null;
             lastCodeSeparator = -1;
         }
 
@@ -60,16 +59,10 @@ namespace BitcoinUtilities.Scripts
             }
         }
 
-        public Tx Transaction
+        public ISigHashCalculator SigHashCalculator
         {
-            get { return transaction; }
-            set { transaction = value; }
-        }
-
-        public int TransactionInputNumber
-        {
-            get { return transactionInputNumber; }
-            set { transactionInputNumber = value; }
+            get { return sigHashCalculator; }
+            set { sigHashCalculator = value; }
         }
 
         /// <summary>
@@ -738,11 +731,9 @@ namespace BitcoinUtilities.Scripts
             byte[] signatureBlock = PopData();
 
             //todo: validate length first
-            byte hashtype = signatureBlock[signatureBlock.Length - 1];
+            SigHashType hashType = (SigHashType) signatureBlock[signatureBlock.Length - 1];
             byte[] signature = new byte[signatureBlock.Length - 1];
             Array.Copy(signatureBlock, 0, signature, 0, signatureBlock.Length - 1);
-
-            //todo: process hashtype
 
             // todo: remove signatures from script
             // todo: also remove all OP_CODESEPARATORs from script
@@ -753,41 +744,14 @@ namespace BitcoinUtilities.Scripts
                 Array.Copy(script, lastCodeSeparator + 1, subScript, 0, script.Length - lastCodeSeparator - 1);
             }
 
-            byte[] signedData = GetSignedData(transaction, transactionInputNumber, subScript, hashtype);
-
-            return SignatureUtils.Verify(signedData, pubKey, signature);
-        }
-
-        //todo: document and move to more appropriate class
-        public static byte[] GetSignedData(Tx transaction, int transactionInputNumber, byte[] subScript, byte hashtype)
-        {
-            MemoryStream mem = new MemoryStream();
-            using (BitcoinStreamWriter writer = new BitcoinStreamWriter(mem))
+            if (sigHashCalculator == null)
             {
-                //todo: check if transaction exists
-                writer.Write(transaction.Version);
-                writer.WriteCompact((ulong) transaction.Inputs.Length);
-                for (int i = 0; i < transaction.Inputs.Length; i++)
-                {
-                    TxIn input = transaction.Inputs[i];
-                    input.PreviousOutput.Write(writer);
-                    if (transactionInputNumber == i)
-                    {
-                        writer.WriteCompact((ulong) subScript.Length);
-                        writer.Write(subScript);
-                    }
-                    else
-                    {
-                        writer.WriteCompact(0);
-                    }
-                    writer.Write(input.Sequence);
-                }
-                writer.WriteArray(transaction.Outputs, (w, v) => v.Write(writer));
-                writer.Write(transaction.LockTime);
-                writer.Write((uint) hashtype);
+                throw new InvalidOperationException($"{nameof(SigHashCalculator)} is required for signature verification.");
             }
 
-            return mem.ToArray();
+            byte[] signedData = sigHashCalculator.Calculate(hashType, subScript);
+
+            return SignatureUtils.Verify(signedData, pubKey, signature);
         }
 
         #endregion

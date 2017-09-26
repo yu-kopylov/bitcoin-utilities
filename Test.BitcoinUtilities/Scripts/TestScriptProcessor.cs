@@ -55,6 +55,8 @@ namespace Test.BitcoinUtilities.Scripts
             Assert.True(HexUtils.TryGetBytes(spendingTransactionHex, out spendingTransactionRaw));
             Tx spendingTransaction = BitcoinStreamReader.FromBytes(spendingTransactionRaw, Tx.Read);
 
+            BitcoinCoreSigHashCalculator sigHashCalculator = new BitcoinCoreSigHashCalculator(spendingTransaction);
+
             for (int i = 0; i < spendingTransaction.Inputs.Length; i++)
             {
                 TxIn input = spendingTransaction.Inputs[i];
@@ -62,8 +64,8 @@ namespace Test.BitcoinUtilities.Scripts
                 TxOut sourceTransactionOutput = sourceTransaction.Outputs[input.PreviousOutput.Index];
 
                 ScriptProcessor processor = new ScriptProcessor();
-                processor.Transaction = spendingTransaction;
-                processor.TransactionInputNumber = i;
+                processor.SigHashCalculator = sigHashCalculator;
+                sigHashCalculator.InputIndex = i;
                 processor.Execute(input.SignatureScript);
                 processor.Execute(sourceTransactionOutput.PubkeyScript);
                 Assert.True(processor.Valid, $"Is Valid #{i}");
@@ -94,14 +96,16 @@ namespace Test.BitcoinUtilities.Scripts
             Assert.True(HexUtils.TryGetBytes(spendingTransactionHex, out spendingTransactionRaw));
             Tx spendingTransaction = BitcoinStreamReader.FromBytes(spendingTransactionRaw, Tx.Read);
 
+            BitcoinCoreSigHashCalculator sigHashCalculator = new BitcoinCoreSigHashCalculator(spendingTransaction);
+
             for (int i = 0; i < spendingTransaction.Inputs.Length; i++)
             {
                 TxIn input = spendingTransaction.Inputs[i];
                 TxOut sourceTransactionOutput = sourceTransaction.Outputs[input.PreviousOutput.Index];
 
                 ScriptProcessor processor = new ScriptProcessor();
-                processor.Transaction = spendingTransaction;
-                processor.TransactionInputNumber = i;
+                processor.SigHashCalculator = sigHashCalculator;
+                sigHashCalculator.InputIndex = i;
                 processor.Execute(input.SignatureScript);
                 processor.Execute(sourceTransactionOutput.PubkeyScript);
                 Assert.True(processor.Valid, $"Is Valid #{i}");

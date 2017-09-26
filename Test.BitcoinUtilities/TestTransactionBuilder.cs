@@ -39,9 +39,11 @@ namespace Test.BitcoinUtilities
             Assert.That(BitcoinScript.IsPayToPubkeyHash(tx.Outputs[0].PubkeyScript));
             Assert.That(BitcoinScript.GetAddressFromPubkeyScript(tx.Outputs[0].PubkeyScript), Is.EqualTo(destAddress));
 
+            BitcoinCoreSigHashCalculator sigHashCalculator = new BitcoinCoreSigHashCalculator(tx);
+            sigHashCalculator.InputIndex = 0;
+
             ScriptProcessor scriptProcessor = new ScriptProcessor();
-            scriptProcessor.Transaction = tx;
-            scriptProcessor.TransactionInputNumber = 0;
+            scriptProcessor.SigHashCalculator = sigHashCalculator;
 
             scriptProcessor.Execute(tx.Inputs[0].SignatureScript);
             scriptProcessor.Execute(sourcePubkeyScript);
