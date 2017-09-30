@@ -1,10 +1,13 @@
-﻿namespace BitcoinUtilities.Scripts
+﻿using System;
+
+namespace BitcoinUtilities.Scripts
 {
     /// <summary>
-    /// A flag to Bitcoin signatures that indicates what parts of the transaction the signature signs.
+    /// A flag for Bitcoin signatures that indicates which parts of a transaction the signature signs.
     /// <para/>
     /// Specification: https://en.bitcoin.it/wiki/OP_CHECKSIG
     /// </summary>
+    [Flags]
     public enum SigHashType : byte
     {
         /// <summary>
@@ -21,6 +24,11 @@
         /// Sign one of the outputs. Think as: I don't care where the other outputs go.
         /// </summary>
         Single = 0x03,
+
+        /// <summary>
+        /// Indicates that the Bitcoin Cash digest algorithm is used for signature.
+        /// </summary>
+        ForkId = 0x40,
 
         /// <summary>
         /// Think as: Let other people add inputs to this transaction, I don't care where the rest of the bitcoins come from.

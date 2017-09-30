@@ -83,6 +83,7 @@
     <Compile Include="Node\Rules\BlockContentValidator.cs" />
     <Compile Include="Node\Services\BlockContentDownloadService.cs" />
     <Compile Include="Node\Services\BlockValidationService.cs" />
+    <Compile Include="Scripts\BitcoinCashSigHashCalculator.cs" />
     <Compile Include="Scripts\ControlStack.cs" />
     <Compile Include="Scripts\ISigHashCalculator.cs" />
     <Compile Include="Scripts\ScriptCommand.cs" />

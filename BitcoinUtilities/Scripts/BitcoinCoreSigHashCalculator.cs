@@ -1,9 +1,13 @@
 ﻿using System.IO;
+using BitcoinUtilities.Node;
 using BitcoinUtilities.P2P;
 using BitcoinUtilities.P2P.Primitives;
 
 namespace BitcoinUtilities.Scripts
 {
+    /// <summary>
+    /// Specification: https://en.bitcoin.it/wiki/OP_CHECKSIG
+    /// </summary>
     public class BitcoinCoreSigHashCalculator : ISigHashCalculator
     {
         private readonly Tx transaction;
@@ -24,6 +28,12 @@ namespace BitcoinUtilities.Scripts
         {
             // todo: add XMLDOC and test
             // todo: support hashtypes other than SigHashType.All
+            if (sigHashType != SigHashType.All)
+            {
+                //todo: exception type?
+                throw new BitcoinProtocolViolationException($"Unexpected sigHashType: {sigHashType}");
+            }
+
             MemoryStream mem = new MemoryStream();
             using (BitcoinStreamWriter writer = new BitcoinStreamWriter(mem))
             {
