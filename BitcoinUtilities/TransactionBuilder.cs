@@ -7,10 +7,17 @@ namespace BitcoinUtilities
 {
     public class TransactionBuilder
     {
+        private readonly BitcoinFork fork;
+
         private readonly List<Input> inputs = new List<Input>();
         private readonly List<Output> outputs = new List<Output>();
 
-        public void AddInput(byte[] outputTransactionHash, int outputNumber, byte[] pubkeyScript, byte[] privateKey, bool isCompressedAddress)
+        public TransactionBuilder(BitcoinFork fork)
+        {
+            this.fork = fork;
+        }
+
+        public void AddInput(byte[] outputTransactionHash, int outputNumber, byte[] pubkeyScript, ulong value, byte[] privateKey, bool isCompressedAddress)
         {
             // todo: validate all parameters
             // todo: add xml-doc
@@ -19,6 +26,7 @@ namespace BitcoinUtilities
 
             input.OutputTransactionHash = outputTransactionHash;
             input.OutputNumber = outputNumber;
+            input.Value = value;
             input.PubkeyScript = pubkeyScript;
             input.PrivateKey = privateKey;
             input.IsCompressedAddress = isCompressedAddress;
@@ -66,7 +74,7 @@ namespace BitcoinUtilities
             // todo: review constant
             Tx transaction = new Tx(1, txInputs, txOutputs, 0xFFFFFFFF);
 
-            BitcoinCoreSigHashCalculator hashCalculator = new BitcoinCoreSigHashCalculator(transaction);
+            ISigHashCalculator hashCalculator = CreateSigHashCalculator(transaction);
 
             for (int i = 0; i < inputs.Count; i++)
             {
@@ -85,10 +93,14 @@ namespace BitcoinUtilities
                     }
 
                     hashCalculator.InputIndex = i;
+                    hashCalculator.Value = input.Value;
 
-                    byte[] signedData = hashCalculator.Calculate(SigHashType.All, input.PubkeyScript);
+                    SigHashType hashType = GetHashType();
+
+                    byte[] signedData = hashCalculator.Calculate(hashType, input.PubkeyScript);
                     byte[] signature = SignatureUtils.Sign(signedData, input.PrivateKey, input.IsCompressedAddress);
-                    signatureScript = BitcoinScript.CreatePayToPubkeyHashSignature(SigHashType.All, publicKey, signature);
+
+                    signatureScript = BitcoinScript.CreatePayToPubkeyHashSignature(hashType, publicKey, signature);
                 }
                 else
                 {
@@ -101,10 +113,39 @@ namespace BitcoinUtilities
             return transaction;
         }
 
+        private ISigHashCalculator CreateSigHashCalculator(Tx transaction)
+        {
+            if (fork == BitcoinFork.Core)
+            {
+                return new BitcoinCoreSigHashCalculator(transaction);
+            }
+            if (fork == BitcoinFork.Cash)
+            {
+                return new BitcoinCashSigHashCalculator(transaction);
+            }
+            // todo: exception type?
+            throw new InvalidOperationException($"Unexpected fork: '{fork}'.");
+        }
+
+        private SigHashType GetHashType()
+        {
+            if (fork == BitcoinFork.Core)
+            {
+                return SigHashType.All;
+            }
+            if (fork == BitcoinFork.Cash)
+            {
+                return SigHashType.All | SigHashType.ForkId;
+            }
+            // todo: exception type?
+            throw new InvalidOperationException($"Unexpected fork: '{fork}'.");
+        }
+
         private class Input
         {
             public byte[] OutputTransactionHash { get; set; }
             public int OutputNumber { get; set; }
+            public ulong Value { get; set; }
             public byte[] PubkeyScript { get; set; }
             public byte[] PrivateKey { get; set; }
             public bool IsCompressedAddress { get; set; }

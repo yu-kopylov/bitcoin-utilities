@@ -1,5 +1,5 @@
-﻿using System.IO;
-using BitcoinUtilities.Node;
+﻿using System;
+using System.IO;
 using BitcoinUtilities.P2P;
 using BitcoinUtilities.P2P.Primitives;
 
@@ -40,7 +40,7 @@ namespace BitcoinUtilities.Scripts
             if (!sigHashType.HasFlag(SigHashType.ForkId))
             {
                 //todo: exception type?
-                throw new BitcoinProtocolViolationException("Bitcoin Cash transactions should have SIGHASH_FORKID flag set in hash type.");
+                throw new InvalidOperationException("Bitcoin Cash transactions should have SIGHASH_FORKID flag set in hash type.");
             }
 
             sigHashType = sigHashType & ~SigHashType.ForkId;
@@ -84,7 +84,7 @@ namespace BitcoinUtilities.Scripts
                 else
                 {
                     //todo: exception type?
-                    throw new BitcoinProtocolViolationException($"Unexpected sigHashType: {sigHashType}");
+                    throw new InvalidOperationException($"Unexpected sigHashType: '{sigHashType}'.");
                 }
 
                 //todo: check if transaction exists

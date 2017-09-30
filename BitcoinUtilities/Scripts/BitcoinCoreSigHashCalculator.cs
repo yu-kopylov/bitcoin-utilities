@@ -1,5 +1,5 @@
-﻿using System.IO;
-using BitcoinUtilities.Node;
+﻿using System;
+using System.IO;
 using BitcoinUtilities.P2P;
 using BitcoinUtilities.P2P.Primitives;
 
@@ -24,6 +24,15 @@ namespace BitcoinUtilities.Scripts
             set { inputIndex = value; }
         }
 
+        /// <summary>
+        /// Bitcoin Core does not sign output values from original transactions.
+        /// </summary>
+        public ulong Value
+        {
+            get { return 0; }
+            set { }
+        }
+
         public byte[] Calculate(SigHashType sigHashType, byte[] subScript)
         {
             // todo: add XMLDOC and test
@@ -31,7 +40,7 @@ namespace BitcoinUtilities.Scripts
             if (sigHashType != SigHashType.All)
             {
                 //todo: exception type?
-                throw new BitcoinProtocolViolationException($"Unexpected sigHashType: {sigHashType}");
+                throw new InvalidOperationException($"Unexpected sigHashType: '{sigHashType}'.");
             }
 
             MemoryStream mem = new MemoryStream();

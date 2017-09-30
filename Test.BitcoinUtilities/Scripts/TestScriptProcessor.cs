@@ -55,7 +55,7 @@ namespace Test.BitcoinUtilities.Scripts
             Assert.True(HexUtils.TryGetBytes(spendingTransactionHex, out spendingTransactionRaw));
             Tx spendingTransaction = BitcoinStreamReader.FromBytes(spendingTransactionRaw, Tx.Read);
 
-            BitcoinCoreSigHashCalculator sigHashCalculator = new BitcoinCoreSigHashCalculator(spendingTransaction);
+            ISigHashCalculator sigHashCalculator = new BitcoinCoreSigHashCalculator(spendingTransaction);
 
             for (int i = 0; i < spendingTransaction.Inputs.Length; i++)
             {
@@ -96,7 +96,7 @@ namespace Test.BitcoinUtilities.Scripts
             Assert.True(HexUtils.TryGetBytes(spendingTransactionHex, out spendingTransactionRaw));
             Tx spendingTransaction = BitcoinStreamReader.FromBytes(spendingTransactionRaw, Tx.Read);
 
-            BitcoinCoreSigHashCalculator sigHashCalculator = new BitcoinCoreSigHashCalculator(spendingTransaction);
+            ISigHashCalculator sigHashCalculator = new BitcoinCoreSigHashCalculator(spendingTransaction);
 
             for (int i = 0; i < spendingTransaction.Inputs.Length; i++)
             {
@@ -146,7 +146,7 @@ namespace Test.BitcoinUtilities.Scripts
             Assert.True(HexUtils.TryGetBytes(spendingTransactionHex, out spendingTransactionRaw));
             Tx spendingTransaction = BitcoinStreamReader.FromBytes(spendingTransactionRaw, Tx.Read);
 
-            BitcoinCashSigHashCalculator sigHashCalculator = new BitcoinCashSigHashCalculator(spendingTransaction);
+            ISigHashCalculator sigHashCalculator = new BitcoinCashSigHashCalculator(spendingTransaction);
 
             for (int i = 0; i < spendingTransaction.Inputs.Length; i++)
             {
@@ -188,7 +188,7 @@ namespace Test.BitcoinUtilities.Scripts
             Assert.True(HexUtils.TryGetBytes(spendingTransactionHex, out spendingTransactionRaw));
             Tx spendingTransaction = BitcoinStreamReader.FromBytes(spendingTransactionRaw, Tx.Read);
 
-            BitcoinCashSigHashCalculator sigHashCalculator = new BitcoinCashSigHashCalculator(spendingTransaction);
+            ISigHashCalculator sigHashCalculator = new BitcoinCashSigHashCalculator(spendingTransaction);
 
             for (int i = 0; i < spendingTransaction.Inputs.Length; i++)
             {
