@@ -19,7 +19,9 @@ namespace BitcoinUtilities.P2P.Primitives
         /// <summary>
         /// Number of satoshis to spend. May be zero.
         /// <para/>
-        /// The sum of all outputs may not exceed the sum of satoshis previously spent to the outpoints provided in the input section. 
+        /// The sum of all outputs may not exceed the sum of satoshis previously spent to the outpoints provided in the input section.
+        /// <para/>
+        /// The satoshi is one hundred millionth of a single bitcoin (10e-8 of bitcoin).
         /// </summary>
         public ulong Value
         {

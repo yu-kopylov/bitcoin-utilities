@@ -80,6 +80,9 @@ namespace BitcoinUtilities
             {
                 Input input = inputs[i];
 
+                hashCalculator.InputIndex = i;
+                hashCalculator.Value = input.Value;
+
                 byte[] signatureScript;
 
                 if (BitcoinScript.IsPayToPubkeyHash(input.PubkeyScript))
@@ -91,9 +94,6 @@ namespace BitcoinUtilities
                     {
                         throw new InvalidOperationException($"Address in PubkeyScript does not match private key address for input #{i}: '{outputAddress}', '{privateKeyAddress}'.");
                     }
-
-                    hashCalculator.InputIndex = i;
-                    hashCalculator.Value = input.Value;
 
                     SigHashType hashType = GetHashType();
 
