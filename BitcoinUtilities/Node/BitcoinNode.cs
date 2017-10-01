@@ -20,6 +20,7 @@ namespace BitcoinUtilities.Node
     {
         private readonly NodeServiceCollection services = new NodeServiceCollection();
 
+        private readonly NetworkParameters networkParameters;
         private readonly IBlockchainStorage storage;
         private readonly Blockchain blockchain;
 
@@ -33,6 +34,7 @@ namespace BitcoinUtilities.Node
 
         public BitcoinNode(NetworkParameters networkParameters, IBlockchainStorage storage)
         {
+            this.networkParameters = networkParameters;
             this.storage = storage;
             this.blockchain = new Blockchain(networkParameters, storage);
 
@@ -66,6 +68,11 @@ namespace BitcoinUtilities.Node
                 started = value;
                 OnPropertyChanged();
             }
+        }
+
+        public NetworkParameters NetworkParameters
+        {
+            get { return networkParameters; }
         }
 
         public IBlockchainStorage Storage

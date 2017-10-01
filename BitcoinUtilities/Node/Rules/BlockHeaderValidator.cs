@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Numerics;
 using BitcoinUtilities.P2P;
 using BitcoinUtilities.P2P.Primitives;
@@ -79,13 +80,15 @@ namespace BitcoinUtilities.Node.Rules
 
             oldTimestamps.Sort();
 
-            uint medianTimestamp = oldTimestamps[oldTimestamps.Count/2];
+            uint medianTimestamp = oldTimestamps[oldTimestamps.Count / 2];
 
             return block.Header.Timestamp > medianTimestamp;
         }
 
         /// <summary>
         /// Checks that the nBits field of a block follow protocol rules.
+        /// <para/>
+        /// 12 hours adjustment algorithm: https://github.com/Bitcoin-ABC/bitcoin-abc/blob/master/src/pow.cpp
         /// </summary>
         internal static bool IsNBitsValid(StoredBlock block, Subchain parentChain)
         {
@@ -94,10 +97,32 @@ namespace BitcoinUtilities.Node.Rules
             StoredBlock parentBlock = parentChain.GetBlockByOffset(0);
 
             BigInteger blockDifficultyTarget = DifficultyUtils.NBitsToTarget(block.Header.NBits);
-            if (block.Height%DifficultyUtils.DifficultyAdjustmentIntervalInBlocks != 0)
+            if (block.Height % DifficultyUtils.DifficultyAdjustmentIntervalInBlocks != 0)
             {
-                BigInteger parentBlockDifficultyTarget = DifficultyUtils.NBitsToTarget(parentBlock.Header.NBits);
-                if (blockDifficultyTarget != parentBlockDifficultyTarget)
+                BigInteger expectedTarget = DifficultyUtils.NBitsToTarget(parentBlock.Header.NBits);
+
+                // todo: Apply this 12-hour adjustment rule only to Bitcoin Cash chain.
+                // todo: In the Bitcoin Core chain such delays were happening only in the beginning, thus first 24000 blocks are excluded from this adjustment rule.
+                // todo: Also implement the 12-hour adjustment rule for scenario with fast block generation.
+                if (parentBlock.Height >= 24000)
+                {
+                    // If producing the last 6 block took more than 12h, increase the difficulty
+                    // target by 25% (which reduces the difficulty by 20%). This ensure the
+                    // chain do not get stuck in case we lose hashrate abruptly.
+
+                    // todo: test, adjustment happened for block 478577
+                    uint timeSpent6 = GetMedianTimePast(parentChain, parentBlock.Height) - GetMedianTimePast(parentChain, parentBlock.Height - 6);
+
+                    if (timeSpent6 >= 12 * 3600)
+                    {
+                        // todo: check that that target is not bigger than maximum
+                        expectedTarget = expectedTarget + (expectedTarget >> 2);
+                        uint newNBits = DifficultyUtils.TargetToNBits(expectedTarget);
+                        expectedTarget = DifficultyUtils.NBitsToTarget(newNBits);
+                    }
+                }
+
+                if (blockDifficultyTarget != expectedTarget)
                 {
                     return false;
                 }
@@ -128,6 +153,19 @@ namespace BitcoinUtilities.Node.Rules
             }
 
             return true;
+        }
+
+        private static uint GetMedianTimePast(Subchain chain, int blockHeight)
+        {
+            int medianArraySize = Math.Min(11, blockHeight + 1);
+
+            uint[] values = new uint[medianArraySize];
+            for (int i = 0; i < medianArraySize; i++)
+            {
+                values[i] = chain.GetBlockByHeight(blockHeight - i).Header.Timestamp;
+            }
+            Array.Sort(values);
+            return values[medianArraySize / 2];
         }
     }
 }

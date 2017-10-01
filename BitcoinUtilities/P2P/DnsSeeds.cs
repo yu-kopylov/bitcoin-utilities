@@ -7,28 +7,16 @@ namespace BitcoinUtilities.P2P
 {
     public static class DnsSeeds
     {
-        // source: https://github.com/bitcoinxt/bitcoinxt/blob/0.11E/src/chainparams.cpp
-        private static readonly string[] seeds = new string[]
-        {
-            "seed.bitcoin.sipa.be", // Pieter Wiulle
-            "dnsseed.bluematt.me", // Matt Corallo
-            "dnsseed.bitcoin.dashjr.org", // Luke Dashjr
-            "seed.bitcoinstats.com", // Christian Decker
-            "seed.bitnodes.io", // Addy Yeow
-            "dnsseed.vinumeris.com", // Mike Hearn
-            "seed.bitcoin.jonasschnelli.ch" // Jonas Schnelli
-        };
-
         /// <summary>
-        /// Queries DNS seeds for nodes' addresses.
+        /// Queries the given DNS seeds for IP addresses of known nodes.
         /// </summary>
-        /// <returns>List of nodes' addresses returned by the seeds.</returns>
-        public static List<IPAddress> GetNodeAddresses()
+        /// <param name="dnsSeeds">The list of DNS seeds.</param>
+        /// <returns>List of IP addresses returned by the seeds.</returns>
+        public static List<IPAddress> GetNodeAddresses(string[] dnsSeeds)
         {
-            //todo: differentiate between Main and Test networks
             HashSet<IPAddress> res = new HashSet<IPAddress>();
 
-            foreach (string dnsSeed in seeds)
+            foreach (string dnsSeed in dnsSeeds)
             {
                 var addresses = QueryDns(dnsSeed);
                 foreach (IPAddress address in addresses)
