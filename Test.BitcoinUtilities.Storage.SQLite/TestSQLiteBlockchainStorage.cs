@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Transactions;
+using BitcoinUtilities;
 using BitcoinUtilities.P2P;
 using BitcoinUtilities.P2P.Primitives;
 using BitcoinUtilities.Storage;
@@ -191,7 +192,7 @@ namespace Test.BitcoinUtilities.Storage.SQLite
             using (SQLiteBlockchainStorage storage = SQLiteBlockchainStorage.Open(testFolder))
             {
                 CachingBlockchainStorage cache = new CachingBlockchainStorage(storage);
-                InternalBlockchain blockchain = new InternalBlockchain(cache);
+                InternalBlockchain blockchain = new InternalBlockchain(NetworkParameters.BitcoinCoreMain, cache);
 
                 using (var tx = new TransactionScope(TransactionScopeOption.Required))
                 {

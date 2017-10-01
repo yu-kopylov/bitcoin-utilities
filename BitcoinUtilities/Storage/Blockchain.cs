@@ -32,10 +32,10 @@ namespace BitcoinUtilities.Storage
 
         private volatile BlockchainState state;
 
-        public Blockchain(IBlockchainStorage storage)
+        public Blockchain(NetworkParameters networkParameters, IBlockchainStorage storage)
         {
             CachingBlockchainStorage cache = new CachingBlockchainStorage(storage);
-            blockchain = new InternalBlockchain(cache);
+            blockchain = new InternalBlockchain(networkParameters, cache);
         }
 
         public BlockchainState State

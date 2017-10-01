@@ -64,6 +64,7 @@
     <Compile Include="HexUtils.cs" />
     <Compile Include="IpUtils.cs" />
     <Compile Include="MerkleTreeUtils.cs" />
+    <Compile Include="NetworkParameters.cs" />
     <Compile Include="Node\BitcoinProtocolViolationException.cs" />
     <Compile Include="Node\INodeServiceFactory.cs" />
     <Compile Include="Node\LimitedNodeAddressDictionary.cs" />

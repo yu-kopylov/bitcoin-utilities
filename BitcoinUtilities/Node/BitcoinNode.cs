@@ -31,10 +31,10 @@ namespace BitcoinUtilities.Node
         private readonly CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
         private bool started;
 
-        public BitcoinNode(IBlockchainStorage storage)
+        public BitcoinNode(NetworkParameters networkParameters, IBlockchainStorage storage)
         {
             this.storage = storage;
-            this.blockchain = new Blockchain(storage);
+            this.blockchain = new Blockchain(networkParameters, storage);
 
             services.AddFactory(new NodeDiscoveryServiceFactory());
             services.AddFactory(new BlockHeaderDownloadServiceFactory());

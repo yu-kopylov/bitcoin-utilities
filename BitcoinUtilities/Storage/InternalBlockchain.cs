@@ -22,6 +22,8 @@ namespace BitcoinUtilities.Storage
 
         private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
 
+        private readonly NetworkParameters networkParameters;
+
         private readonly IBlockchainStorage storage;
 
         private readonly TransactionalResource transactionalResource;
@@ -32,8 +34,9 @@ namespace BitcoinUtilities.Storage
 
         private BlockchainState currentState;
 
-        public InternalBlockchain(IBlockchainStorage storage)
+        public InternalBlockchain(NetworkParameters networkParameters, IBlockchainStorage storage)
         {
+            this.networkParameters = networkParameters;
             this.storage = storage;
             transactionalResource = new TransactionalResource(OnCommit, OnRollback);
         }
@@ -386,6 +389,18 @@ namespace BitcoinUtilities.Storage
             StoredBlock parentBlock = parentChain.GetBlockByOffset(0);
 
             block = block.AppendAfter(parentBlock);
+
+            byte[] checkpointHash = networkParameters.GetCheckpointHash(block.Height);
+            if (checkpointHash != null && !ByteArrayComparer.Instance.Equals(block.Hash, checkpointHash))
+            {
+                throw new BitcoinProtocolViolationException(string.Format(
+                    "Header hash '{0}' does not match hash for checkpoint '{1}' at height {2}.",
+                    // todo: reverse byte order ?
+                    HexUtils.GetString(block.Hash),
+                    HexUtils.GetString(checkpointHash),
+                    block.Height
+                ));
+            }
 
             if (!BlockHeaderValidator.IsValid(block, parentChain))
             {
