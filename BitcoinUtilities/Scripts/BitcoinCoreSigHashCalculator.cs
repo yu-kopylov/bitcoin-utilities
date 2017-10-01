@@ -27,7 +27,7 @@ namespace BitcoinUtilities.Scripts
         /// <summary>
         /// Bitcoin Core does not sign output values from original transactions.
         /// </summary>
-        public ulong Value
+        public ulong Amount
         {
             get { return 0; }
             set { }

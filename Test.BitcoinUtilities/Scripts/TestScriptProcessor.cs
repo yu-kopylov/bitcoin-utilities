@@ -157,7 +157,7 @@ namespace Test.BitcoinUtilities.Scripts
                 ScriptProcessor processor = new ScriptProcessor();
                 processor.SigHashCalculator = sigHashCalculator;
                 sigHashCalculator.InputIndex = i;
-                sigHashCalculator.Value = sourceTransactionOutput.Value;
+                sigHashCalculator.Amount = sourceTransactionOutput.Value;
                 processor.Execute(input.SignatureScript);
                 processor.Execute(sourceTransactionOutput.PubkeyScript);
                 Assert.True(processor.Valid, $"Is Valid #{i}");
@@ -198,7 +198,7 @@ namespace Test.BitcoinUtilities.Scripts
                 ScriptProcessor processor = new ScriptProcessor();
                 processor.SigHashCalculator = sigHashCalculator;
                 sigHashCalculator.InputIndex = i;
-                sigHashCalculator.Value = sourceTransactionOutput.Value;
+                sigHashCalculator.Amount = sourceTransactionOutput.Value;
                 processor.Execute(input.SignatureScript);
                 processor.Execute(sourceTransactionOutput.PubkeyScript);
                 Assert.True(processor.Valid, $"Is Valid #{i}");

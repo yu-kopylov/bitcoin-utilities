@@ -82,7 +82,7 @@ namespace Test.BitcoinUtilities
 
             ISigHashCalculator sigHashCalculator = new BitcoinCashSigHashCalculator(tx);
             sigHashCalculator.InputIndex = 0;
-            sigHashCalculator.Value = 0xF123456789012345;
+            sigHashCalculator.Amount = 0xF123456789012345;
 
             ScriptProcessor scriptProcessor = new ScriptProcessor();
             scriptProcessor.SigHashCalculator = sigHashCalculator;

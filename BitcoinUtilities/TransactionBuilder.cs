@@ -81,7 +81,7 @@ namespace BitcoinUtilities
                 Input input = inputs[i];
 
                 hashCalculator.InputIndex = i;
-                hashCalculator.Value = input.Value;
+                hashCalculator.Amount = input.Value;
 
                 byte[] signatureScript;
 

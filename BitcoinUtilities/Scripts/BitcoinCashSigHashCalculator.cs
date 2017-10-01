@@ -6,13 +6,13 @@ using BitcoinUtilities.P2P.Primitives;
 namespace BitcoinUtilities.Scripts
 {
     /// <summary>
-    /// Specifivation: https://github.com/Bitcoin-UAHF/spec/blob/master/replay-protected-sighash.md
+    /// Specification: https://github.com/Bitcoin-UAHF/spec/blob/master/replay-protected-sighash.md
     /// </summary>
     public class BitcoinCashSigHashCalculator : ISigHashCalculator
     {
         private readonly Tx transaction;
         private int inputIndex;
-        private ulong value;
+        private ulong amount;
 
         private byte[] cachedPrevoutHash;
         private byte[] cachedSequenceHash;
@@ -29,10 +29,10 @@ namespace BitcoinUtilities.Scripts
             set { inputIndex = value; }
         }
 
-        public ulong Value
+        public ulong Amount
         {
-            get { return value; }
-            set { this.value = value; }
+            get { return amount; }
+            set { amount = value; }
         }
 
         public byte[] Calculate(SigHashType sigHashType, byte[] subScript)
@@ -94,7 +94,7 @@ namespace BitcoinUtilities.Scripts
                 input.PreviousOutput.Write(writer);
                 writer.WriteCompact((ulong) subScript.Length);
                 writer.Write(subScript);
-                writer.Write(value);
+                writer.Write(amount);
                 writer.Write(input.Sequence);
                 writer.Write(outputsHash);
                 writer.Write(transaction.LockTime);
