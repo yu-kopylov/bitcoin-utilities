@@ -152,7 +152,7 @@ namespace BitcoinUtilities.Storage
         }
 
         /// <summary>
-        /// Adds the block with the given hash to main chain.
+        /// Adds the block with the given hash to the main chain.
         /// </summary>
         public void Include(byte[] hash)
         {

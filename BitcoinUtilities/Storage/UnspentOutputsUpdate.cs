@@ -4,7 +4,7 @@ using System.Collections.Generic;
 namespace BitcoinUtilities.Storage
 {
     /// <summary>
-    /// This class allows to perform operations on the UTXO set avoiding changes to the underlying unstorage.
+    /// This class allows to perform operations on the UTXO set avoiding changes to the underlying storage.
     /// </summary>
     public class UnspentOutputsUpdate
     {
