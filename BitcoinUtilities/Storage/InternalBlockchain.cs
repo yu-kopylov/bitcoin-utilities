@@ -402,7 +402,7 @@ namespace BitcoinUtilities.Storage
                 ));
             }
 
-            if (!BlockHeaderValidator.IsValid(block, parentChain))
+            if (!BlockHeaderValidator.IsValid(networkParameters.Fork, block, parentChain))
             {
                 throw new BitcoinProtocolViolationException("An invalid header was received.");
             }

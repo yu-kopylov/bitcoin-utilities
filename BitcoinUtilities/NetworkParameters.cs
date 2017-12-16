@@ -8,6 +8,8 @@ namespace BitcoinUtilities
     /// </summary>
     public class NetworkParameters
     {
+        private readonly BitcoinFork fork;
+
         private readonly string name;
 
         private readonly List<string> dnsSeeds = new List<string>();
@@ -17,13 +19,15 @@ namespace BitcoinUtilities
         /// <summary>
         /// Creates a new parameters object.
         /// </summary>
+        /// <param name="fork">The fork that is used in the network.</param>
         /// <param name="name">
         /// The name of the network.
         /// <para/>
         /// It must be a valid file name, because it is used as part of the path to blockchain data.
         /// </param>
-        public NetworkParameters(string name)
+        public NetworkParameters(BitcoinFork fork, string name)
         {
+            this.fork = fork;
             this.name = name;
         }
 
@@ -31,7 +35,7 @@ namespace BitcoinUtilities
         {
             get
             {
-                var parameters = new NetworkParameters("bitcoin-core-main");
+                var parameters = new NetworkParameters(BitcoinFork.Core, "bitcoin-core-main");
 
                 // DNS seeds taken from: https://github.com/bitcoin/bitcoin/blob/master/src/chainparams.cpp
                 parameters.AddDnsSeed("seed.bitcoin.sipa.be"); // Pieter Wuille
@@ -61,7 +65,7 @@ namespace BitcoinUtilities
         {
             get
             {
-                var parameters = new NetworkParameters("bitcoin-cash-main");
+                var parameters = new NetworkParameters(BitcoinFork.Cash, "bitcoin-cash-main");
 
                 // DNS seeds taken from: https://github.com/bitcoinclassic/bitcoinclassic/blob/master/src/chainparams.cpp
                 parameters.AddDnsSeed("cash-seed.bitcoin.thomaszander.se");
@@ -92,9 +96,19 @@ namespace BitcoinUtilities
                 parameters.AddCheckpoint(400000, "000000000000000004ec466ce4732fe6f1ed1cddc2ed4b328fff5224276e3f6f");
                 parameters.AddCheckpoint(478558, "0000000000000000011865af4122fe3b144e2cbeea86142e8ff2fb4107352d43");
                 parameters.AddCheckpoint(478559, "000000000000000000651ef99cb9fcbe0dadde1d424bd9f15ff20136191a5eec");
+                parameters.AddCheckpoint(500000, "000000000000000005e14d3f9fdfb70745308706615cfa9edca4f4558332b201");
+                parameters.AddCheckpoint(504032, "00000000000000000343e9875012f2062554c8752929892c82a0c0743ac7dcfd");
 
                 return parameters;
             }
+        }
+
+        /// <summary>
+        /// The fork that is used in the network.
+        /// </summary>
+        public BitcoinFork Fork
+        {
+            get { return fork; }
         }
 
         /// <summary>
