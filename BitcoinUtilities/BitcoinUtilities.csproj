@@ -71,17 +71,6 @@
     <Compile Include="Node\NodeAddressCollection.cs" />
     <Compile Include="Node\BitcoinNode.cs" />
     <Compile Include="BitcoinPrivateKey.cs" />
-    <Compile Include="Collections\CompactTree.cs" />
-    <Compile Include="Collections\CompactTreeNode.cs" />
-    <Compile Include="Collections\VirtualDictionary.cs" />
-    <Compile Include="Collections\VirtualDictionaryInternals\AtomicStream.cs" />
-    <Compile Include="Collections\VirtualDictionaryInternals\Block.cs" />
-    <Compile Include="Collections\VirtualDictionaryInternals\ByteArrayRef.cs" />
-    <Compile Include="Collections\VirtualDictionaryInternals\Record.cs" />
-    <Compile Include="Collections\VirtualDictionaryInternals\SplitTreeNode.cs" />
-    <Compile Include="Collections\VirtualDictionaryInternals\BlockBatch.cs" />
-    <Compile Include="Collections\VirtualDictionaryInternals\VirtualDictionaryContainer.cs" />
-    <Compile Include="Collections\VirtualDictionaryTransaction.cs" />
     <Compile Include="Node\Rules\BlockContentValidator.cs" />
     <Compile Include="Node\Services\BlockContentDownloadService.cs" />
     <Compile Include="Node\Services\BlockValidationService.cs" />
