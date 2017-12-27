@@ -6,5 +6,6 @@ bin
 *.suo
 
 *.userprefs
+.vs
 
 packages
