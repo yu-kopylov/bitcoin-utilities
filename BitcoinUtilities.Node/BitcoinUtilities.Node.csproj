@@ -1,14 +1,14 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="14.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{99D7210D-2CA0-41CE-B576-DBC262339AD9}</ProjectGuid>
+    <ProjectGuid>{BE18ED30-1B79-483D-9A26-C840F0DD624A}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>BitcoinUtilities.GUI.Models</RootNamespace>
-    <AssemblyName>BitcoinUtilities.GUI.Models</AssemblyName>
+    <RootNamespace>BitcoinUtilities.Node</RootNamespace>
+    <AssemblyName>BitcoinUtilities.Node</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
   </PropertyGroup>
@@ -32,11 +32,9 @@
   <ItemGroup>
     <Reference Include="NLog, Version=4.0.0.0, Culture=neutral, PublicKeyToken=5120e14c03d0593c, processorArchitecture=MSIL">
       <HintPath>..\packages\NLog.4.2.2\lib\net45\NLog.dll</HintPath>
-      <Private>True</Private>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
-    <Reference Include="System.Runtime.Serialization" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -45,17 +43,16 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="ApplicationContext.cs" />
+    <Compile Include="BitcoinNode.cs" />
+    <Compile Include="INodeServiceFactory.cs" />
+    <Compile Include="NodeServiceCollection.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Settings.cs" />
-    <Compile Include="Formats\SettingsFormat.cs" />
-    <Compile Include="EventManager.cs" />
+    <Compile Include="Services\BlockContentDownloadService.cs" />
+    <Compile Include="Services\BlockHeaderDownloadService.cs" />
+    <Compile Include="Services\BlockValidationService.cs" />
+    <Compile Include="Services\NodeDiscoveryService.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\BitcoinUtilities.Node\BitcoinUtilities.Node.csproj">
-      <Project>{BE18ED30-1B79-483D-9A26-C840F0DD624A}</Project>
-      <Name>BitcoinUtilities.Node</Name>
-    </ProjectReference>
     <ProjectReference Include="..\BitcoinUtilities\BitcoinUtilities.csproj">
       <Project>{36C6CCB9-5611-40F7-95B5-47FC25EC3B63}</Project>
       <Name>BitcoinUtilities</Name>
@@ -65,11 +62,4 @@
     <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
-  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
-       Other similar extension points exist, see Microsoft.Common.targets.
-  <Target Name="BeforeBuild">
-  </Target>
-  <Target Name="AfterBuild">
-  </Target>
-  -->
 </Project>

@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 14
-VisualStudioVersion = 14.0.25123.0
+# Visual Studio 15
+VisualStudioVersion = 15.0.27130.2010
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BitcoinUtilities", "BitcoinUtilities\BitcoinUtilities.csproj", "{36C6CCB9-5611-40F7-95B5-47FC25EC3B63}"
 EndProject
@@ -22,6 +22,10 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BitcoinUtilities.Storage.SQLite", "BitcoinUtilities.Storage.SQLite\BitcoinUtilities.Storage.SQLite.csproj", "{C40E8B76-3F0E-4B16-AA34-136122B985D6}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Test.BitcoinUtilities.Storage.SQLite", "Test.BitcoinUtilities.Storage.SQLite\Test.BitcoinUtilities.Storage.SQLite.csproj", "{DB5647CA-D75E-44A8-A1A2-B849D32A394C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BitcoinUtilities.Node", "BitcoinUtilities.Node\BitcoinUtilities.Node.csproj", "{BE18ED30-1B79-483D-9A26-C840F0DD624A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Test.BitcoinUtilities.Node", "Test.BitcoinUtilities.Node\Test.BitcoinUtilities.Node.csproj", "{696D7E46-3DE9-4FA0-90A1-81FBEC2FEA68}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -69,8 +73,19 @@ Global
 		{DB5647CA-D75E-44A8-A1A2-B849D32A394C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DB5647CA-D75E-44A8-A1A2-B849D32A394C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{DB5647CA-D75E-44A8-A1A2-B849D32A394C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BE18ED30-1B79-483D-9A26-C840F0DD624A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BE18ED30-1B79-483D-9A26-C840F0DD624A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BE18ED30-1B79-483D-9A26-C840F0DD624A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BE18ED30-1B79-483D-9A26-C840F0DD624A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{696D7E46-3DE9-4FA0-90A1-81FBEC2FEA68}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{696D7E46-3DE9-4FA0-90A1-81FBEC2FEA68}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{696D7E46-3DE9-4FA0-90A1-81FBEC2FEA68}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{696D7E46-3DE9-4FA0-90A1-81FBEC2FEA68}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {2387570B-DAB5-41B3-A32C-8C0E3055C1D8}
 	EndGlobalSection
 EndGlobal

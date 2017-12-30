@@ -66,14 +66,10 @@
     <Compile Include="MerkleTreeUtils.cs" />
     <Compile Include="NetworkParameters.cs" />
     <Compile Include="Node\BitcoinProtocolViolationException.cs" />
-    <Compile Include="Node\INodeServiceFactory.cs" />
     <Compile Include="Node\LimitedNodeAddressDictionary.cs" />
     <Compile Include="Node\NodeAddressCollection.cs" />
-    <Compile Include="Node\BitcoinNode.cs" />
     <Compile Include="BitcoinPrivateKey.cs" />
     <Compile Include="Node\Rules\BlockContentValidator.cs" />
-    <Compile Include="Node\Services\BlockContentDownloadService.cs" />
-    <Compile Include="Node\Services\BlockValidationService.cs" />
     <Compile Include="Scripts\BitcoinCashSigHashCalculator.cs" />
     <Compile Include="Scripts\ControlStack.cs" />
     <Compile Include="Scripts\ISigHashCalculator.cs" />
@@ -92,10 +88,7 @@
     <Compile Include="Node\NodeConnection.cs" />
     <Compile Include="Node\NodeConnectionCollection.cs" />
     <Compile Include="Node\NodeConnectionDirection.cs" />
-    <Compile Include="Node\NodeServiceCollection.cs" />
     <Compile Include="Node\Rules\BlockHeaderValidator.cs" />
-    <Compile Include="Node\Services\BlockHeaderDownloadService.cs" />
-    <Compile Include="Node\Services\NodeDiscoveryService.cs" />
     <Compile Include="Node\INodeService.cs" />
     <Compile Include="P2P\BitcoinNetworkException.cs" />
     <Compile Include="P2P\BitcoinPeerInfo.cs" />
