@@ -9,7 +9,7 @@
 );
 
 CREATE UNIQUE INDEX UX_Blocks_Hash ON Blocks(Hash);
-CREATE INDEX UX_Blocks_Received ON Blocks(Requested, Received);
+CREATE INDEX IX_Blocks_Requested ON Blocks(Requested, Id);
 
 CREATE TABLE BlockRequests
 (
