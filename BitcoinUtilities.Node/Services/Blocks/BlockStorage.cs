@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Data;
 using System.Data.SQLite;
 using System.IO;
@@ -137,6 +138,106 @@ namespace BitcoinUtilities.Node.Services.Blocks
                 {
                     command.Parameters.Add("@Hash", DbType.Binary).Value = hash;
                     return (byte[]) command.ExecuteScalar();
+                }
+            }
+        }
+
+        public void UpdateRequests(string token, List<byte[]> hashes)
+        {
+            List<byte[]> existingRequests = new List<byte[]>();
+
+            using (var tx = conn.BeginTransaction())
+            {
+                using (SQLiteCommand command = new SQLiteCommand(
+                    "select Hash from BlockRequests where Token=@Token",
+                    conn
+                ))
+                {
+                    command.Parameters.Add("@Token", DbType.String).Value = token;
+                    using (var reader = command.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            existingRequests.Add((byte[]) reader[0]);
+                        }
+                    }
+                }
+
+                HashSet<byte[]> addedRequests = new HashSet<byte[]>(hashes, ByteArrayComparer.Instance);
+                addedRequests.ExceptWith(existingRequests);
+
+                HashSet<byte[]> removedRequests = new HashSet<byte[]>(existingRequests, ByteArrayComparer.Instance);
+                removedRequests.ExceptWith(hashes);
+
+                using (SQLiteCommand command = new SQLiteCommand(
+                    "insert into BlockRequests(Token, Hash) values (@Token, @Hash)",
+                    conn
+                ))
+                {
+                    foreach (byte[] hash in addedRequests)
+                    {
+                        command.Parameters.Add("@Token", DbType.String).Value = token;
+                        command.Parameters.Add("@Hash", DbType.Binary).Value = hash;
+                        command.ExecuteNonQuery();
+                        command.Parameters.Clear();
+                    }
+                }
+
+                using (SQLiteCommand command = new SQLiteCommand(
+                    "delete from BlockRequests where Token=@Token and Hash=@Hash",
+                    conn
+                ))
+                {
+                    foreach (byte[] hash in removedRequests)
+                    {
+                        command.Parameters.Add("@Token", DbType.String).Value = token;
+                        command.Parameters.Add("@Hash", DbType.Binary).Value = hash;
+                        command.ExecuteNonQuery();
+                        command.Parameters.Clear();
+                    }
+                }
+
+                using (SQLiteCommand command = new SQLiteCommand(
+                    "update Blocks set Requested=1 where Hash=@Hash",
+                    conn
+                ))
+                {
+                    foreach (byte[] hash in addedRequests)
+                    {
+                        command.Parameters.Add("@Hash", DbType.Binary).Value = hash;
+                        command.ExecuteNonQuery();
+                        command.Parameters.Clear();
+                    }
+                }
+
+                using (SQLiteCommand command = new SQLiteCommand(
+                    "update Blocks set Requested=0 where Hash=@Hash" +
+                    " and not exists(select 1 from BlockRequests R where R.Hash=@Hash)",
+                    conn
+                ))
+                {
+                    foreach (byte[] hash in removedRequests)
+                    {
+                        command.Parameters.Add("@Hash", DbType.Binary).Value = hash;
+                        command.ExecuteNonQuery();
+                        command.Parameters.Clear();
+                    }
+                }
+
+                tx.Commit();
+            }
+        }
+
+        public long GetUnrequestedVolume()
+        {
+            using (conn.BeginTransaction())
+            {
+                using (SQLiteCommand command = new SQLiteCommand(
+                    "select ifnull(sum(Size), 0) from Blocks where Requested=0",
+                    conn
+                ))
+                {
+                    return (long) command.ExecuteScalar();
                 }
             }
         }
