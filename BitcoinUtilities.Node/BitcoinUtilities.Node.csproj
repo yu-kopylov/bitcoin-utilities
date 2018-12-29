@@ -49,6 +49,8 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="BitcoinNode.cs" />
+    <Compile Include="Events\MessageEvent.cs" />
+    <Compile Include="INodeEventServiceFactory.cs" />
     <Compile Include="INodeServiceFactory.cs" />
     <Compile Include="NodeServiceCollection.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -56,7 +58,9 @@
     <Compile Include="Services\BlockHeaderDownloadService.cs" />
     <Compile Include="Services\Blocks\BlockStorage.cs" />
     <Compile Include="Services\BlockValidationService.cs" />
+    <Compile Include="Services\HeaderDowloadService.cs" />
     <Compile Include="Services\NodeDiscoveryService.cs" />
+    <Compile Include="Services\NodeEventHandlingService.cs" />
     <Compile Include="Services\SqliteUtils.cs" />
   </ItemGroup>
   <ItemGroup>

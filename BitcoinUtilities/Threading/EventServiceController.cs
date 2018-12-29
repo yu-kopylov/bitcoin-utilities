@@ -16,6 +16,9 @@ namespace BitcoinUtilities.Threading
         private readonly object monitor = new object();
         private readonly List<ServiceThread> services = new List<ServiceThread>();
 
+        // todo: do we need thread-safety for service registration?
+        private volatile bool started = false;
+
         public void Dispose()
         {
             Stop();
@@ -28,6 +31,7 @@ namespace BitcoinUtilities.Threading
 
         public void Start()
         {
+            started = true;
             foreach (var service in services)
             {
                 service.Start();
@@ -36,6 +40,7 @@ namespace BitcoinUtilities.Threading
 
         public void Stop()
         {
+            started = false;
             foreach (var service in services)
             {
                 service.Stop();
@@ -49,7 +54,13 @@ namespace BitcoinUtilities.Threading
 
         public void AddService(IEventHandlingService service)
         {
-            services.Add(new ServiceThread(service));
+            var serviceThread = new ServiceThread(service);
+            services.Add(serviceThread);
+            if (started)
+            {
+                // todo: add test
+                serviceThread.Start();
+            }
         }
 
         public void Raise(object evt)
@@ -140,6 +151,16 @@ namespace BitcoinUtilities.Threading
 
             private void ServiceLoop()
             {
+                try
+                {
+                    service.OnStart();
+                }
+                catch (Exception ex)
+                {
+                    logger.Error(ex, CultureInfo.InvariantCulture, "Error during startup of service '{0}'.", service);
+                    throw;
+                }
+
                 while (!stopped)
                 {
                     object evt = DequeEvent();
@@ -159,6 +180,16 @@ namespace BitcoinUtilities.Threading
                     {
                         stateChangedEvent.WaitOne();
                     }
+                }
+
+                try
+                {
+                    service.OnTearDown();
+                }
+                catch (Exception ex)
+                {
+                    logger.Error(ex, CultureInfo.InvariantCulture, "Error during tear-down of service '{0}'.", service);
+                    throw;
                 }
             }
 
@@ -185,7 +216,7 @@ namespace BitcoinUtilities.Threading
                 var handler = service.GetHandler(evt);
                 if (handler == null)
                 {
-                    throw new InvalidOperationException(string.Format(CultureInfo.InvariantCulture, "Handler not found for event '{0}' in service {1}.", evt, service));
+                    throw new InvalidOperationException(string.Format(CultureInfo.InvariantCulture, "Handler not found for event '{0}' in service '{1}'.", evt, service));
                 }
 
                 handler(evt);

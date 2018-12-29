@@ -4,6 +4,7 @@ using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using BitcoinUtilities.P2P;
+using BitcoinUtilities.Threading;
 
 namespace BitcoinUtilities.Node.Services
 {

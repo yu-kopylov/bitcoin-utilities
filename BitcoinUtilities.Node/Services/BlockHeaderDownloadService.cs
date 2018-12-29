@@ -47,7 +47,7 @@ namespace BitcoinUtilities.Node.Services
             //todo: save blockLocator per node between requests?
             BlockLocator blockLocator = new BlockLocator();
 
-            //todo: what should happen if message contains headers from different branchas?
+            //todo: what should happen if message contains headers from different branches?
             bool hasSavedHeaders = false;
             foreach (StoredBlock block in storedBlocks)
             {

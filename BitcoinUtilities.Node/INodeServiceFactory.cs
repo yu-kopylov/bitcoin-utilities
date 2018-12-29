@@ -3,8 +3,9 @@
 namespace BitcoinUtilities.Node
 {
     /// <summary>
-    /// A factory that produces 
+    /// A factory that produces services.
     /// </summary>
+    //todo: replace with INodeEventServiceFactory
     public interface INodeServiceFactory
     {
         /// <summary>

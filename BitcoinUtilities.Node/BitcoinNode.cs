@@ -5,11 +5,13 @@ using System.Linq;
 using System.Net;
 using System.Runtime.CompilerServices;
 using System.Threading;
+using BitcoinUtilities.Node.Events;
 using BitcoinUtilities.Node.Services;
 using BitcoinUtilities.P2P;
 using BitcoinUtilities.P2P.Messages;
 using BitcoinUtilities.P2P.Primitives;
 using BitcoinUtilities.Storage;
+using BitcoinUtilities.Threading;
 
 namespace BitcoinUtilities.Node
 {
@@ -19,11 +21,13 @@ namespace BitcoinUtilities.Node
     public class BitcoinNode : INotifyPropertyChanged, IDisposable
     {
         private readonly NodeServiceCollection services = new NodeServiceCollection();
+        private readonly List<INodeEventServiceFactory> eventServiceFactories = new List<INodeEventServiceFactory>();
 
         private readonly NetworkParameters networkParameters;
         private readonly IBlockchainStorage storage;
         private readonly Blockchain blockchain;
 
+        private readonly EventServiceController eventServiceController = new EventServiceController();
         private NodeAddressCollection addressCollection;
         private NodeConnectionCollection connectionCollection;
 
@@ -39,9 +43,10 @@ namespace BitcoinUtilities.Node
             this.blockchain = new Blockchain(networkParameters, storage);
 
             services.AddFactory(new NodeDiscoveryServiceFactory());
-            services.AddFactory(new BlockHeaderDownloadServiceFactory());
+            //services.AddFactory(new BlockHeaderDownloadServiceFactory());
             services.AddFactory(new BlockContentDownloadServiceFactory());
             services.AddFactory(new BlockValidationServiceFactory());
+            eventServiceFactories.Add(new HeaderDowloadServiceFactory());
         }
 
         public void Dispose()
@@ -110,8 +115,34 @@ namespace BitcoinUtilities.Node
             listener.Start();
 
             services.Start();
+            eventServiceController.Start();
 
             Started = true;
+        }
+
+        public void Stop()
+        {
+            if (!Started)
+            {
+                throw new InvalidOperationException($"{nameof(BitcoinNode)} is not running.");
+            }
+
+            cancellationTokenSource.Cancel();
+
+            listener?.Stop();
+
+            //todo: use parameter for timeout?
+            TimeSpan stopTimeout = TimeSpan.FromSeconds(30);
+            bool servicesTerminated = services.Join(stopTimeout);
+            //todo: use value of servicesTerminated
+
+            // todo: add timeout
+            // todo: remove and dispose if necessary services from eventServiceController
+            eventServiceController.Stop();
+
+            services.DisposeServices();
+
+            Started = false;
         }
 
         public void ConnectTo(NodeAddress address)
@@ -154,8 +185,15 @@ namespace BitcoinUtilities.Node
                 return;
             }
 
+            // todo: have to guarantee that no message is processed before service is added
+            foreach (var factory in eventServiceFactories)
+            {
+                eventServiceController.AddService(factory.CreateForEndpoint(this, endpoint));
+            }
+
             services.OnNodeConnected(endpoint);
             //todo: make sure that OnNodeConnected is always called before OnNodeDisconnected and before message processing
+            //todo: remove associated services from eventServiceController
             endpoint.Disconnected += () => services.OnNodeDisconnected(endpoint);
         }
 
@@ -170,8 +208,15 @@ namespace BitcoinUtilities.Node
                 return;
             }
 
+            // todo: have to guarantee that no message is processed before service is added
+            foreach (var factory in eventServiceFactories)
+            {
+                eventServiceController.AddService(factory.CreateForEndpoint(this, endpoint));
+            }
+
             services.OnNodeConnected(endpoint);
             //todo: make sure that OnNodeConnected is always called before OnNodeDisconnected and before message processing
+            //todo: remove associated services from eventServiceController
             endpoint.Disconnected += () => services.OnNodeDisconnected(endpoint);
         }
 
@@ -182,6 +227,7 @@ namespace BitcoinUtilities.Node
                 SaveReceivedAddresses((AddrMessage) message);
                 return true;
             }
+
             //todo: send GetAddr message sometimes
             //todo: see 0.10.1 Change log: Ignore getaddr messages on Outbound connections.
             if (message is GetAddrMessage)
@@ -191,30 +237,10 @@ namespace BitcoinUtilities.Node
             }
 
             services.ProcessMessage(endpoint, message);
+            eventServiceController.Raise(new MessageEvent(endpoint, message));
             //todo: handle getaddr message
             //todo: implement
             return true;
-        }
-
-        public void Stop()
-        {
-            if (!Started)
-            {
-                throw new InvalidOperationException($"{nameof(BitcoinNode)} is not running.");
-            }
-
-            cancellationTokenSource.Cancel();
-
-            listener?.Stop();
-
-            //todo: use parameter for timeout?
-            TimeSpan stopTimeout = TimeSpan.FromSeconds(30);
-            bool servicesTerminated = services.Join(stopTimeout);
-            //todo: use value of servicesTerminated
-
-            services.DisposeServices();
-
-            Started = false;
         }
 
         private void SaveReceivedAddresses(AddrMessage addrMessage)
@@ -242,6 +268,7 @@ namespace BitcoinUtilities.Node
                     (ushort) endpoint.PeerInfo.IpEndpoint.Port);
                 addresses.Add(addr);
             }
+
             AddrMessage addrMessage = new AddrMessage(addresses.Take(AddrMessage.MaxAddressesPerMessage).ToArray());
             endpoint.WriteMessage(addrMessage);
         }
