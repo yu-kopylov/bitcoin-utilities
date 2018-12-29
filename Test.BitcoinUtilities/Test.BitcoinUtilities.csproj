@@ -101,6 +101,7 @@
     <Compile Include="TestUnixTime.cs" />
     <Compile Include="TestWif.cs" />
     <Compile Include="Threading\TestBlockingThreadPool.cs" />
+    <Compile Include="Threading\TestEventServiceController.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

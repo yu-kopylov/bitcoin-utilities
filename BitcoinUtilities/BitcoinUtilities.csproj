@@ -146,6 +146,8 @@
     <Compile Include="P2P\Primitives\TxOut.cs" />
     <Compile Include="P2P\Primitives\TxOutPoint.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Threading\EventServiceController.cs" />
+    <Compile Include="Threading\IEventHandlingService.cs" />
     <Compile Include="TransactionBuilder.cs" />
     <Compile Include="UnixTime.cs" />
     <Compile Include="Wif.cs" />
