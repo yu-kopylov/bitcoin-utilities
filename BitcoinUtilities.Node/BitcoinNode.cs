@@ -7,6 +7,7 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 using BitcoinUtilities.Node.Events;
 using BitcoinUtilities.Node.Services;
+using BitcoinUtilities.Node.Services.Headers;
 using BitcoinUtilities.P2P;
 using BitcoinUtilities.P2P.Messages;
 using BitcoinUtilities.P2P.Primitives;

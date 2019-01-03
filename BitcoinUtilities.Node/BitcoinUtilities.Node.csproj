@@ -58,7 +58,9 @@
     <Compile Include="Services\BlockHeaderDownloadService.cs" />
     <Compile Include="Services\Blocks\BlockStorage.cs" />
     <Compile Include="Services\BlockValidationService.cs" />
-    <Compile Include="Services\HeaderDowloadService.cs" />
+    <Compile Include="Services\Headers\DbHeader.cs" />
+    <Compile Include="Services\Headers\HeaderDowloadService.cs" />
+    <Compile Include="Services\Headers\HeaderStorage.cs" />
     <Compile Include="Services\NodeDiscoveryService.cs" />
     <Compile Include="Services\NodeEventHandlingService.cs" />
     <Compile Include="Services\SqliteUtils.cs" />
@@ -74,6 +76,9 @@
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Services\Blocks\create.sql" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Services\Headers\headers-create.sql" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="..\packages\System.Data.SQLite.Core.1.0.99.0\build\net45\System.Data.SQLite.Core.targets" Condition="Exists('..\packages\System.Data.SQLite.Core.1.0.99.0\build\net45\System.Data.SQLite.Core.targets')" />

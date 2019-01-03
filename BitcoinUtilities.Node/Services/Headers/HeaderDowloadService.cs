@@ -6,7 +6,7 @@ using BitcoinUtilities.P2P.Primitives;
 using BitcoinUtilities.Storage;
 using BitcoinUtilities.Threading;
 
-namespace BitcoinUtilities.Node.Services
+namespace BitcoinUtilities.Node.Services.Headers
 {
     public class HeaderDowloadServiceFactory : INodeEventServiceFactory
     {
