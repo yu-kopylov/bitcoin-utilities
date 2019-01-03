@@ -204,14 +204,14 @@ namespace Test.BitcoinUtilities.Storage.SQLite
                 {
                     Assert.That(blockchain.CommitedState.BestHeader.Height, Is.EqualTo(0));
                     Assert.That(blockchain.CommitedState.BestChain.Height, Is.EqualTo(0));
-                    blockchain.AddHeaders(new List<StoredBlock> {new StoredBlockBuilder(BitcoinStreamReader.FromBytes(KnownBlocks.Block1, BlockHeader.Read)).Build()});
+                    blockchain.AddHeaders(new List<StoredBlock> {new StoredBlockBuilder(KnownBlocks.Block1.Header).Build()});
                 }
 
                 using (var tx = new TransactionScope(TransactionScopeOption.Required))
                 {
                     Assert.That(blockchain.CommitedState.BestHeader.Height, Is.EqualTo(0));
                     Assert.That(blockchain.CommitedState.BestChain.Height, Is.EqualTo(0));
-                    blockchain.AddHeaders(new List<StoredBlock> {new StoredBlockBuilder(BitcoinStreamReader.FromBytes(KnownBlocks.Block1, BlockHeader.Read)).Build()});
+                    blockchain.AddHeaders(new List<StoredBlock> {new StoredBlockBuilder(KnownBlocks.Block1.Header).Build()});
                     tx.Complete();
                 }
 

@@ -49,13 +49,13 @@ namespace BitcoinUtilities.Node.Services.Headers
             return new HeaderStorage(conn);
         }
 
-        public List<DbHeader> ReadAll()
+        public IReadOnlyCollection<DbHeader> ReadAll()
         {
             List<DbHeader> res = new List<DbHeader>();
 
             using (var tx = conn.BeginTransaction())
             {
-                using (SQLiteCommand command = new SQLiteCommand($"select Header, Hash, Height, TotalWork from Headers order by Height asc", conn))
+                using (SQLiteCommand command = new SQLiteCommand("select Header, Hash, Height, TotalWork, IsValid from Headers order by Height asc", conn))
                 {
                     using (var reader = command.ExecuteReader())
                     {
@@ -67,8 +67,9 @@ namespace BitcoinUtilities.Node.Services.Headers
                             byte[] hash = (byte[]) reader[col++];
                             int height = reader.GetInt32(col++);
                             double totalWork = reader.GetDouble(col++);
+                            bool isValid = reader.GetBoolean(col++);
 
-                            res.Add(new DbHeader(header, hash, height, totalWork));
+                            res.Add(new DbHeader(header, hash, height, totalWork, isValid));
                         }
                     }
                 }
@@ -84,8 +85,8 @@ namespace BitcoinUtilities.Node.Services.Headers
             using (var tx = conn.BeginTransaction())
             {
                 using (SQLiteCommand command = new SQLiteCommand(
-                    "insert into Headers (Header, Hash, Height, TotalWork)" +
-                    "values (@Header, @Hash, @Height, @TotalWork)",
+                    "insert into Headers (Header, Hash, Height, TotalWork, IsValid)" +
+                    "values (@Header, @Hash, @Height, @TotalWork, @IsValid)",
                     conn))
                 {
                     foreach (var header in headers)
@@ -94,6 +95,28 @@ namespace BitcoinUtilities.Node.Services.Headers
                         command.Parameters.Add("@Hash", DbType.Binary).Value = header.Hash;
                         command.Parameters.Add("@Height", DbType.Int32).Value = header.Height;
                         command.Parameters.Add("@TotalWork", DbType.Double).Value = header.TotalWork;
+                        command.Parameters.Add("@IsValid", DbType.Double).Value = header.IsValid;
+
+                        command.ExecuteNonQuery();
+                        command.Parameters.Clear();
+                    }
+                }
+
+                tx.Commit();
+            }
+        }
+
+        public void MarkInvalid(IReadOnlyCollection<DbHeader> headers)
+        {
+            using (var tx = conn.BeginTransaction())
+            {
+                using (SQLiteCommand command = new SQLiteCommand(
+                    "update Headers set IsValid=0 where Hash=@Hash",
+                    conn))
+                {
+                    foreach (var header in headers)
+                    {
+                        command.Parameters.Add("@Hash", DbType.Binary).Value = header.Hash;
 
                         command.ExecuteNonQuery();
                         command.Parameters.Clear();

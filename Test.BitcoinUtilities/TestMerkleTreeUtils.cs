@@ -34,7 +34,7 @@ namespace Test.BitcoinUtilities
         [Test]
         public void TestGetTreeRootOnBlock100000()
         {
-            BlockMessage block = BlockMessage.Read(new BitcoinStreamReader(new MemoryStream(KnownBlocks.Block100000)));
+            BlockMessage block = KnownBlocks.Block100000.Block;
             byte[] calculatedHash = MerkleTreeUtils.GetTreeRoot(block.Transactions);
             Assert.That(calculatedHash, Is.EqualTo(block.BlockHeader.MerkleRoot));
         }
@@ -42,7 +42,7 @@ namespace Test.BitcoinUtilities
         [Test]
         public void TestGetTreeRootOnBlock100001()
         {
-            BlockMessage block = BlockMessage.Read(new BitcoinStreamReader(new MemoryStream(KnownBlocks.Block100001)));
+            BlockMessage block = KnownBlocks.Block100001.Block;
             byte[] calculatedHash = MerkleTreeUtils.GetTreeRoot(block.Transactions);
             Assert.That(calculatedHash, Is.EqualTo(block.BlockHeader.MerkleRoot));
         }
@@ -50,7 +50,7 @@ namespace Test.BitcoinUtilities
         [Test]
         public void TestGetTreeRootOnBlock100002()
         {
-            BlockMessage block = BlockMessage.Read(new BitcoinStreamReader(new MemoryStream(KnownBlocks.Block100002)));
+            BlockMessage block = KnownBlocks.Block100002.Block;
             byte[] calculatedHash = MerkleTreeUtils.GetTreeRoot(block.Transactions);
             Assert.That(calculatedHash, Is.EqualTo(block.BlockHeader.MerkleRoot));
         }

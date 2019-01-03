@@ -1,16 +1,21 @@
 ﻿using System;
+using BitcoinUtilities;
+using BitcoinUtilities.P2P;
+using BitcoinUtilities.P2P.Messages;
+using BitcoinUtilities.P2P.Primitives;
 
 namespace TestUtilities
 {
     public static class KnownBlocks
     {
-        public static byte[] Block1 = Convert.FromBase64String(@"
+        public static KnownBlock Block1 = new KnownBlock(@"
 AQAAAG/ijAq28bNywaaiRq5j90+THoNl4VoInGjWGQAAAAAAmCBR/R5Lp0S7vmgOH+4UZ3uh
 o8NUC/exzbYG6FcjPg5hvGZJ//8AHQHjYpkBAQAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 AAAAAAAAAAAAAP////8HBP//AB0BBP////8BAPIFKgEAAABDQQSWtTjoU1GccmoskeYewRYA
 rhOQgTpifGb7i+eUe+Y8Utp1iTeVFdTgpgT4FBeB5iKUchFmv2Iec6gsvyNCyFjurAAAAAA=
 ");
-        public static byte[] Block100000 = Convert.FromBase64String(@"
+
+        public static KnownBlock Block100000 = new KnownBlock(@"
 AQAAAFASARkXKmEEIabDAR3TMNnfB7Y2FsLMHxzQAgAAAAAAZlepJSqs1cCylAmW7P+VIijD
 BnzDjUiF77WkrEJH6fM3IhtNTIYEGw8rVxAEAQAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 AAAAAAAAAAAAAP////8IBEyGBBsCBgL/////AQDyBSoBAAAAQ0EEGw6MJWfBJTaqEzV7eaBz
@@ -31,7 +36,7 @@ GFyB4qosQasXVAfAlITOlpS0SVP8t1EgZWSpwk3QlNQv2/3VqtPgY85q9M+q6k6hT7v/////
 AUBCDwAAAAAAGXapFDmqPVaeBqHXkm3EvhGTyZvy657giKwAAAAA
 ");
 
-        public static byte[] Block100001 = Convert.FromBase64String(@"
+        public static KnownBlock Block100001 = new KnownBlock(@"
 AQAAAAblM/0a2oY5Hz9sNDIEsNJ41KrsHAsgqie6AwAAAAAAaruz6z1zOp/hiWf9fUwRfkzL
 usW+xNkQ2QCzrgeT539UJBtNTIYEG0CJzJsMAQAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 AAAAAAAAAAAAAP////8HBEyGBBsBDf////8BAPIFKgEAAABDQQSyf36Udcz12aQxy4bWZbgw
@@ -96,7 +101,7 @@ AwAAABl2qRQ25YhCFffTBEvl03vdjJh9nZQshIisQEtMAAAAAAAZdqkUYAhdaDj4pEohoN5W
 /5Y8+mJCqWGIrAAAAAA=
 ");
 
-        public static byte[] Block100002 = Convert.FromBase64String(@"
+        public static KnownBlock Block100002 = new KnownBlock(@"
 AQAAAJDwqfEQcC+Aghnr6hFzBWBCpxS61RuRbLaAAAAAAAAAUnUolVj1HJlmaZQEriKUcww8
 n5vaU1I85Q6bleVY2i/bJhtNTIYEGxqxv5MJAQAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 AAAAAAAAAAAAAP////8HBEyGBBsBRv////8BAPIFKgEAAABDQQThj3r75HIVgOgehBT8jCTX
@@ -155,5 +160,21 @@ hI4YJRYS+JQIdbKwjQbm3HO5hA6IYMBmt+h0MsR36aWaRT5x5tdtX+NAWLgAoJj8F0DOMBLo
 /IoAyWr5Zv////8CwOHkAAAAAAAZdqkUQTTnWm/LYEIDSqteGFcM8fhE9UeIrEBLTAAAAAAA
 GXapFCtrp8nXlrde73lC/JKI7dN8MvXDiKwAAAAA
 ");
+
+        public class KnownBlock
+        {
+            public KnownBlock(string contentBase64)
+            {
+                Content = Convert.FromBase64String(contentBase64);
+                Block = BitcoinStreamReader.FromBytes(Content, BlockMessage.Read);
+                Header = Block.BlockHeader;
+                Hash = CryptoUtils.DoubleSha256(BitcoinStreamWriter.GetBytes(Header.Write));
+            }
+
+            public byte[] Hash { get; }
+            public byte[] Content { get; }
+            public BlockHeader Header { get; }
+            public BlockMessage Block { get; }
+        }
     }
 }

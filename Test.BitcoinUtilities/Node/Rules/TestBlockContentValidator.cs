@@ -20,9 +20,9 @@ namespace Test.BitcoinUtilities.Node.Rules
         {
             List<byte[]> knownBlocks = new List<byte[]>();
             knownBlocks.Add(GenesisBlock.Raw);
-            knownBlocks.Add(KnownBlocks.Block100000);
-            knownBlocks.Add(KnownBlocks.Block100001);
-            knownBlocks.Add(KnownBlocks.Block100002);
+            knownBlocks.Add(KnownBlocks.Block100000.Content);
+            knownBlocks.Add(KnownBlocks.Block100001.Content);
+            knownBlocks.Add(KnownBlocks.Block100002.Content);
 
             foreach (byte[] rawBlock in knownBlocks)
             {
@@ -42,8 +42,8 @@ namespace Test.BitcoinUtilities.Node.Rules
         [Test]
         public void TestWrongMerkleTreeRoot()
         {
-            BlockMessage validBlock1 = BlockMessage.Read(new BitcoinStreamReader(new MemoryStream(KnownBlocks.Block100001)));
-            BlockMessage validBlock2 = BlockMessage.Read(new BitcoinStreamReader(new MemoryStream(KnownBlocks.Block100002)));
+            BlockMessage validBlock1 = KnownBlocks.Block100001.Block;
+            BlockMessage validBlock2 = KnownBlocks.Block100002.Block;
             Assert.That(BlockContentValidator.IsMerkleTreeValid(validBlock1));
             Assert.That(BlockContentValidator.IsMerkleTreeValid(validBlock2));
 
@@ -56,8 +56,8 @@ namespace Test.BitcoinUtilities.Node.Rules
         [Test]
         public void TestDuplicateTransaction()
         {
-            BlockMessage validBlock1 = BlockMessage.Read(new BitcoinStreamReader(new MemoryStream(KnownBlocks.Block100001)));
-            BlockMessage validBlock2 = BlockMessage.Read(new BitcoinStreamReader(new MemoryStream(KnownBlocks.Block100002)));
+            BlockMessage validBlock1 = KnownBlocks.Block100001.Block;
+            BlockMessage validBlock2 = KnownBlocks.Block100002.Block;
 
             Assert.True(BlockContentValidator.IsMerkleTreeValid(validBlock1));
             Assert.True(BlockContentValidator.IsMerkleTreeValid(validBlock2));
@@ -86,7 +86,7 @@ namespace Test.BitcoinUtilities.Node.Rules
         [Test]
         public void TestInvalidCoinbase()
         {
-            BlockMessage validBlock = BitcoinStreamReader.FromBytes(KnownBlocks.Block100000, BlockMessage.Read);
+            BlockMessage validBlock = KnownBlocks.Block100000.Block;
             Assert.True(BlockContentValidator.IsValidCoinbaseTransaction(validBlock));
 
             Tx validCoinbaseTransaction = validBlock.Transactions[0];
