@@ -1,6 +1,5 @@
 ﻿using System;
 using System.IO;
-using System.Runtime.CompilerServices;
 
 namespace TestUtilities
 {
@@ -15,18 +14,18 @@ namespace TestUtilities
         /// <param name="relativePath">The relative path.</param>
         /// <param name="patterns">The patterns of files that should be deleted.</param>
         /// <returns>A full path to the test folder.</returns>
-        public static string PrepareTestFolder(Type testType, [CallerMemberName] string relativePath = "Test", params string[] patterns)
+        public static string PrepareTestFolder(Type testType, string relativePath = "Test", params string[] patterns)
         {
             string testFolder = Path.GetFullPath(Path.Combine("tmp-test", testType.Name, relativePath));
 
-            System.Diagnostics.Debug.WriteLine($"Removing files in the test folder: {testFolder}");
+            Console.WriteLine($"Removing files in the test folder: {testFolder}");
 
             Directory.CreateDirectory(testFolder);
             foreach (string pattern in patterns)
             {
                 foreach (string filename in Directory.GetFiles(testFolder, pattern, SearchOption.TopDirectoryOnly))
                 {
-                    System.Diagnostics.Debug.WriteLine($"Removing: {filename}");
+                    Console.WriteLine($"Removing: {filename}");
                     File.Delete(filename);
                 }
             }
