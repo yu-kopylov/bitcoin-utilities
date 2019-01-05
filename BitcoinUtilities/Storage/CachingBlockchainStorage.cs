@@ -73,7 +73,7 @@ namespace BitcoinUtilities.Storage
             // enlistment in transaction is not necessary, since cached data would remain valid until modifying method is called
 
             if (lastChain == null
-                || (lastChain.Length < length && !lastChain.GetBlockByOffset(lastChain.Length - 1).Header.IsFirst)
+                || (lastChain.Count < length && !lastChain.GetBlockByOffset(lastChain.Count - 1).Header.IsFirst)
                 || !lastChain.GetBlockByOffset(0).Hash.SequenceEqual(hash))
             {
                 lastChain = storage.FindSubchain(hash, length);
@@ -110,8 +110,8 @@ namespace BitcoinUtilities.Storage
             if (lastChain != null)
             {
                 //todo: cashing is a little bit ugly
-                List<StoredBlock> chainBlocks = new List<StoredBlock>(lastChain.Length);
-                for (int i = lastChain.Length - 1; i >= 0; i--)
+                List<StoredBlock> chainBlocks = new List<StoredBlock>(lastChain.Count);
+                for (int i = lastChain.Count - 1; i >= 0; i--)
                 {
                     StoredBlock chainBlock = lastChain.GetBlockByOffset(i);
                     if (chainBlock.Hash.SequenceEqual(block.Hash))
@@ -136,8 +136,8 @@ namespace BitcoinUtilities.Storage
             if (lastChain != null)
             {
                 //todo: cashing is a little bit ugly
-                List<StoredBlock> chainBlocks = new List<StoredBlock>(lastChain.Length);
-                for (int i = lastChain.Length - 1; i >= 0; i--)
+                List<StoredBlock> chainBlocks = new List<StoredBlock>(lastChain.Count);
+                for (int i = lastChain.Count - 1; i >= 0; i--)
                 {
                     StoredBlock chainBlock = lastChain.GetBlockByOffset(i);
                     if (chainBlock.Hash.SequenceEqual(updatedBlock.Hash))

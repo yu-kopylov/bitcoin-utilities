@@ -149,7 +149,7 @@ namespace BitcoinUtilities.P2P
 
             if (logger.IsTraceEnabled)
             {
-                logger.Trace("Sent message: {0}", FormatForLog(message));
+                logger.Trace("Sent message to endpoint '{0}': {1}", RemoteEndPoint, FormatForLog(message));
             }
         }
 
@@ -206,7 +206,7 @@ namespace BitcoinUtilities.P2P
 
             if (logger.IsTraceEnabled)
             {
-                logger.Trace("Received message: {0}", FormatForLog(message));
+                logger.Trace("Received message from endpoint '{0}': {1}", RemoteEndPoint, FormatForLog(message));
             }
 
             return message;

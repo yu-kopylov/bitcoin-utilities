@@ -1,7 +1,7 @@
 ## System.Data.SQLite binary for Linux
 
 ### Version
-Current version was build from `sqlite-netFx-full-source-1.0.109.0`
+Current version was built from: `sqlite-netFx-full-source-1.0.109.0`
 
 ### Compilation
 Install build tools if necessary: `sudo apt-get install libc6-dev`

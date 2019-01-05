@@ -112,11 +112,10 @@ namespace BitcoinUtilities.GUI.ViewModels
         {
             NetworkParameters networkParameters = NetworkParameters.BitcoinCoreMain;
 
-            string settingsBlockchainFolder = applicationContext.Settings.BlockchainFolder;
-            string networkBlockchainFolder = Path.Combine(settingsBlockchainFolder, networkParameters.Name);
-            SQLiteBlockchainStorage storage = SQLiteBlockchainStorage.Open(networkBlockchainFolder);
+            string dataFolder = Path.Combine(applicationContext.Settings.BlockchainFolder, networkParameters.Name);
+            SQLiteBlockchainStorage storage = SQLiteBlockchainStorage.Open(dataFolder);
 
-            BitcoinNode node = new BitcoinNode(networkParameters, storage);
+            BitcoinNode node = new BitcoinNode(networkParameters, dataFolder, storage);
             try
             {
                 node.Start();
@@ -127,6 +126,7 @@ namespace BitcoinUtilities.GUI.ViewModels
                 //todo: dispose storage?
                 return;
             }
+
             BitcoinNode oldNode = applicationContext.BitcoinNode;
             applicationContext.BitcoinNode = node;
             if (oldNode != null)
@@ -173,6 +173,7 @@ namespace BitcoinUtilities.GUI.ViewModels
                 CanStopNode = false;
                 return;
             }
+
             State = node.Started ? "Started" : "Stopped";
             BestHeaderHeight = node.Blockchain?.State?.BestHeader?.Height ?? 0;
             BestChainHeight = node.Blockchain?.State?.BestChain?.Height ?? 0;

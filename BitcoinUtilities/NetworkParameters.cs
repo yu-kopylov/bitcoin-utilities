@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using BitcoinUtilities.P2P.Primitives;
 
 namespace BitcoinUtilities
 {
@@ -8,10 +9,6 @@ namespace BitcoinUtilities
     /// </summary>
     public class NetworkParameters
     {
-        private readonly BitcoinFork fork;
-
-        private readonly string name;
-
         private readonly List<string> dnsSeeds = new List<string>();
 
         private readonly Dictionary<int, byte[]> checkpoints = new Dictionary<int, byte[]>();
@@ -21,21 +18,38 @@ namespace BitcoinUtilities
         /// </summary>
         /// <param name="fork">The fork that is used in the network.</param>
         /// <param name="name">
-        /// The name of the network.
-        /// <para/>
-        /// It must be a valid file name, because it is used as part of the path to blockchain data.
+        /// <para>The name of the network.</para>
+        /// <para>It must be a valid file name, because it is used as part of the path to blockchain data.</para>
         /// </param>
-        public NetworkParameters(BitcoinFork fork, string name)
+        /// <param name="genesisBlock">The first block of the blockchain.</param>
+        public NetworkParameters(BitcoinFork fork, string name, BlockHeader genesisBlock)
         {
-            this.fork = fork;
-            this.name = name;
+            Fork = fork;
+            Name = name;
+            GenesisBlock = genesisBlock;
         }
+
+        /// <summary>
+        /// The fork that is used in the network.
+        /// </summary>
+        public BitcoinFork Fork { get; }
+
+        /// <summary>
+        /// <para>The name of the network.</para>
+        /// <para> It must be a valid file name, because it is used as part of the path to blockchain data.</para>
+        /// </summary>
+        public string Name { get; }
+
+        /// <summary>
+        /// The first block of the blockchain.
+        /// </summary>
+        public BlockHeader GenesisBlock { get; }
 
         public static NetworkParameters BitcoinCoreMain
         {
             get
             {
-                var parameters = new NetworkParameters(BitcoinFork.Core, "bitcoin-core-main");
+                var parameters = new NetworkParameters(BitcoinFork.Core, "bitcoin-core-main", P2P.GenesisBlock.GetHeader());
 
                 // DNS seeds taken from: https://github.com/bitcoin/bitcoin/blob/master/src/chainparams.cpp
                 parameters.AddDnsSeed("seed.bitcoin.sipa.be"); // Pieter Wuille
@@ -65,7 +79,7 @@ namespace BitcoinUtilities
         {
             get
             {
-                var parameters = new NetworkParameters(BitcoinFork.Cash, "bitcoin-cash-main");
+                var parameters = new NetworkParameters(BitcoinFork.Cash, "bitcoin-cash-main", P2P.GenesisBlock.GetHeader());
 
                 // DNS seeds taken from: https://github.com/bitcoinclassic/bitcoinclassic/blob/master/src/chainparams.cpp
                 parameters.AddDnsSeed("cash-seed.bitcoin.thomaszander.se");
@@ -104,24 +118,6 @@ namespace BitcoinUtilities
         }
 
         /// <summary>
-        /// The fork that is used in the network.
-        /// </summary>
-        public BitcoinFork Fork
-        {
-            get { return fork; }
-        }
-
-        /// <summary>
-        /// The name of the network.
-        /// <para/>
-        /// It must be a valid file name, because it is used as part of the path to blockchain data.
-        /// </summary>
-        public string Name
-        {
-            get { return name; }
-        }
-
-        /// <summary>
         /// Adds a DNS seed if it was not added before.
         /// </summary>
         /// <param name="dnsSeed">The DNS seed.</param>
@@ -131,6 +127,7 @@ namespace BitcoinUtilities
             {
                 return;
             }
+
             dnsSeeds.Add(dnsSeed);
         }
 
@@ -155,6 +152,7 @@ namespace BitcoinUtilities
             {
                 throw new ArgumentException($"The given {nameof(blockHash)} '{blockHash}' is not a valid hexadecimal string.", nameof(blockHash));
             }
+
             Array.Reverse(hash);
             checkpoints.Add(blockHeight, hash);
         }
@@ -171,6 +169,7 @@ namespace BitcoinUtilities
             {
                 return hash;
             }
+
             return null;
         }
     }

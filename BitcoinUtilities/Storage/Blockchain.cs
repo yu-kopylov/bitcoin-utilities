@@ -16,12 +16,6 @@ namespace BitcoinUtilities.Storage
     {
         //todo: improve XMLDOC for this class
 
-        /* Lower Boundaries:
-         * 2016 - When difficulty changes, we need the 2016th block before the current one. Source: https://en.bitcoin.it/wiki/Protocol_rules#Difficulty_change .
-         * 11 - A timestamp is accepted as valid if it is greater than the median timestamp of previous 11 blocks. Source: https://en.bitcoin.it/wiki/Block_timestamp .
-         */
-        internal const int AnalyzedSubchainLength = 2016;
-
         private const int AddHeadersBatchSize = 50;
 
         private readonly object blockchainLock = new object();
@@ -126,11 +120,12 @@ namespace BitcoinUtilities.Storage
 
             foreach (BlockHeader header in headers)
             {
-                if (!BlockHeaderValidator.IsValid(header))
+                StoredBlock storedBlock = new StoredBlockBuilder(header).Build();
+                if (!BlockHeaderValidator.IsValid(header, storedBlock.Hash))
                 {
                     throw new BitcoinProtocolViolationException("An invalid header was received.");
                 }
-                blocks.Add(new StoredBlockBuilder(header).Build());
+                blocks.Add(storedBlock);
             }
 
             //todo: perform topological sorting of blocks?

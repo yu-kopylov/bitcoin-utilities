@@ -1,10 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using BitcoinUtilities.Node.Rules;
 
 namespace BitcoinUtilities.Storage
 {
-    public class Subchain
+    public class Subchain : ISubchain<StoredBlock>
     {
         private readonly List<StoredBlock> blocks;
 
@@ -22,10 +23,7 @@ namespace BitcoinUtilities.Storage
             }
         }
 
-        public int Length
-        {
-            get { return blocks.Count; }
-        }
+        public int Count => blocks.Count;
 
         public void Append(StoredBlock block)
         {
@@ -35,6 +33,7 @@ namespace BitcoinUtilities.Storage
             {
                 throw new ArgumentException($"Added block should reference last block in the {nameof(Subchain)}.", nameof(block));
             }
+
             blocks.Add(block);
         }
 
@@ -44,6 +43,7 @@ namespace BitcoinUtilities.Storage
             {
                 throw new ArgumentException($"{nameof(minLength)} should not exceed {nameof(maxLength)}.");
             }
+
             if (blocks.Count > maxLength)
             {
                 blocks.RemoveRange(0, blocks.Count - minLength);

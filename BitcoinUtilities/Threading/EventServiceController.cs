@@ -173,7 +173,7 @@ namespace BitcoinUtilities.Threading
                         catch (Exception ex)
                         {
                             logger.Error(ex, CultureInfo.InvariantCulture, "Service '{0}' failed to handle event '{1}'.", service, evt);
-                            throw;
+                            break;
                         }
                     }
                     else

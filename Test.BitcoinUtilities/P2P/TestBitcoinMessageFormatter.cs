@@ -26,7 +26,7 @@ namespace Test.BitcoinUtilities.P2P
         {
             BitcoinMessageFormatter formatter = new BitcoinMessageFormatter("\t");
             Assert.That(formatter.Format(null), Is.EqualTo("\t<null>"));
-            Assert.That(formatter.Format(new FakeMessage()), Is.StringStarting("\tcommand:\n\t\tfake\n\t<Formatting is not supported"));
+            Assert.That(formatter.Format(new FakeMessage()), Is.EqualTo("\tcommand: fake\n\t<Formatting is not supported for type: FakeMessage>"));
             Assert.That(
                 formatter.Format(
                     new InvMessage(
@@ -34,15 +34,13 @@ namespace Test.BitcoinUtilities.P2P
                         {
                             new InventoryVector(InventoryVectorType.MsgBlock, new byte[32])
                         })
-                    ),
+                ),
                 Is.EqualTo(
-                    "\tcommand:" +
-                    "\n\t\tinv" +
-                    "\n\tinventory items [1 item]:" +
-                    "\n\t\tMsgBlock\t" +
-                    "00-00-00-00-00-00-00-00-00-00-00-00-00-00-00-00-" +
-                    "00-00-00-00-00-00-00-00-00-00-00-00-00-00-00-00"
-                    ));
+                    "\tcommand: inv\n" +
+                    "\tinventory items [1 item]:\n" +
+                    "\t\tMsgBlock\t" +
+                    "0000000000000000000000000000000000000000000000000000000000000000"
+                ));
         }
     }
 }

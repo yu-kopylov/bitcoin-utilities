@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.Contracts;
 using System.IO;
+using System.Linq;
 using BitcoinUtilities.P2P;
 using BitcoinUtilities.P2P.Primitives;
 
@@ -19,7 +21,8 @@ namespace BitcoinUtilities.Node.Services.Headers
 
         private readonly Dictionary<byte[], DbHeader> headersByHash = new Dictionary<byte[], DbHeader>(ByteArrayComparer.Instance);
         private readonly Dictionary<byte[], List<byte[]>> headersByParent = new Dictionary<byte[], List<byte[]>>(ByteArrayComparer.Instance);
-        private readonly HashSet<byte[]> heads = new HashSet<byte[]>();
+        private readonly HashSet<byte[]> validHeads = new HashSet<byte[]>();
+        private DbHeader bestHead;
 
         /// <summary>
         /// Initializes a new blockchain reading data from the given storage.
@@ -75,9 +78,9 @@ namespace BitcoinUtilities.Node.Services.Headers
         /// </summary>
         /// <param name="hashes">The hashes of headers to return.</param>
         /// <returns>A list of headers with matching hashes.</returns>
-        public IReadOnlyCollection<DbHeader> GetHeaders(IReadOnlyCollection<byte[]> hashes)
+        public IReadOnlyCollection<DbHeader> GetHeaders(IEnumerable<byte[]> hashes)
         {
-            List<DbHeader> headers = new List<DbHeader>(hashes.Count);
+            List<DbHeader> headers = new List<DbHeader>();
 
             lock (monitor)
             {
@@ -94,26 +97,122 @@ namespace BitcoinUtilities.Node.Services.Headers
         }
 
         /// <summary>
-        /// Adds the given headers to this blockchain.
-        /// For each given header, its parent should either be already in the chain, or should precede that header in the given list.
-        /// Headers that are already present in the chain are ignored.
+        /// Returns the best valid header.
+        /// </summary>
+        public DbHeader GetBestHead()
+        {
+            lock (monitor)
+            {
+                if (bestHead == null)
+                {
+                    bestHead = DbHeader.BestOf(validHeads.Select(hash => headersByHash[hash]));
+                }
+
+                return bestHead;
+            }
+        }
+
+        /// <summary>
+        /// <para>Returns the best valid header among descendats of the header with given hash.</para>
+        /// <para>Returns null if a header with the given hash is not present in the blockchain or is invalid.</para>
+        /// </summary>
+        /// <param name="hash">The hash of the parent block.</param>
+        public DbHeader GetBestHead(byte[] hash)
+        {
+            lock (monitor)
+            {
+                DbHeader bestHeader = null;
+                Queue<byte[]> queue = new Queue<byte[]>();
+                queue.Enqueue(hash);
+                while (queue.Count != 0)
+                {
+                    hash = queue.Dequeue();
+                    if (!headersByHash.TryGetValue(hash, out var header) || !header.IsValid)
+                    {
+                        continue;
+                    }
+
+                    if (!headersByParent.TryGetValue(hash, out var children))
+                    {
+                        if (bestHeader == null || header.IsBetterThan(bestHeader))
+                        {
+                            bestHeader = header;
+                        }
+                    }
+                    else
+                    {
+                        Contract.Assert(children.Count != 0);
+                        foreach (byte[] childHash in children)
+                        {
+                            queue.Enqueue(childHash);
+                        }
+                    }
+                }
+
+                return bestHeader;
+            }
+        }
+
+
+        /// <summary>
+        /// <para>Returns a chain of headers ending at the header with the given hash.</para>
+        /// <para>The returned chain can be shorter than the given length in case of the chain starting at the root of the blockchain tree.</para>
+        /// </summary>
+        /// <param name="hash">The hash of the last block.</param>
+        /// <param name="length">The expected length.</param>
+        /// <returns>The requested subchain if it exists; otherwise, null.</returns>
+        public HeaderSubchain GetSubChain(byte[] hash, int length)
+        {
+            lock (monitor)
+            {
+                if (!headersByHash.TryGetValue(hash, out var header))
+                {
+                    return null;
+                }
+
+                List<DbHeader> headers = new List<DbHeader>();
+                headers.Add(header);
+                for (int i = 1; i < length; i++)
+                {
+                    if (!headersByHash.TryGetValue(header.ParentHash, out header))
+                    {
+                        break;
+                    }
+
+                    headers.Add(header);
+                }
+
+                headers.Reverse();
+                return new HeaderSubchain(headers);
+            }
+        }
+
+        /// <summary>
+        /// <para>Adds the given headers to this blockchain.</para>
+        /// <para>For each given header, its parent should either be already in the chain, or should precede that header in the given list.</para>
+        /// <para>Headers that are already present in the chain are ignored.</para>
+        /// <para>All given headers must be marked as valid.</para>
         /// </summary>
         /// <param name="headers">A collection of headers to add.</param>
-        /// <returns>A list of headers that was included into the blockchain.</returns>
+        /// <returns>
+        /// A list of headers that was included into the blockchain,
+        /// including headers that were present in blockchain before the call to this method.
+        /// </returns>
         public IReadOnlyCollection<DbHeader> Add(IReadOnlyCollection<DbHeader> headers)
         {
-            Dictionary<byte[], DbHeader> includedHeadersByHash = new Dictionary<byte[], DbHeader>(ByteArrayComparer.Instance);
+            Dictionary<byte[], DbHeader> newHeadersByHash = new Dictionary<byte[], DbHeader>(ByteArrayComparer.Instance);
+            List<DbHeader> savedHeaders = new List<DbHeader>();
             lock (monitor)
             {
                 foreach (var header in headers)
                 {
-                    if (headersByHash.ContainsKey(header.Hash))
+                    if (headersByHash.TryGetValue(header.Hash, out var existingHeader))
                     {
-                        // header already exists
+                        savedHeaders.Add(existingHeader);
                         continue;
                     }
 
-                    if (!headersByHash.TryGetValue(header.ParentHash, out var parentHeader) && !includedHeadersByHash.TryGetValue(header.ParentHash, out parentHeader))
+                    if (!headersByHash.TryGetValue(header.ParentHash, out var parentHeader) && !newHeadersByHash.TryGetValue(header.ParentHash, out parentHeader))
                     {
                         throw new InvalidOperationException(
                             $"The header '{HexUtils.GetString(header.Hash)}' cannot be added to the blockchain, " +
@@ -127,34 +226,44 @@ namespace BitcoinUtilities.Node.Services.Headers
                         includedHeader = includedHeader.MarkInvalid();
                     }
 
-                    includedHeadersByHash.Add(includedHeader.Hash, includedHeader);
+                    newHeadersByHash.Add(includedHeader.Hash, includedHeader);
+                    savedHeaders.Add(includedHeader);
                 }
 
-                var includedHeaders = new List<DbHeader>(includedHeadersByHash.Values);
-                storage.AddHeaders(includedHeaders);
+                var newHeaders = new List<DbHeader>(newHeadersByHash.Values);
+                storage.AddHeaders(newHeaders);
 
-                foreach (var header in includedHeaders)
+                foreach (var header in newHeaders)
                 {
                     AddUnsafe(header);
                 }
 
-                return includedHeaders;
+                return savedHeaders;
             }
         }
 
         /// <summary>
-        /// Marks sub-tree starting with the given header as invalid.
-        /// Does nothing if the header with the given hash is not present in this blockchain.
+        /// <para>Marks sub-tree starting with the given header as invalid.</para>
+        /// <para>Does nothing if the header with the given hash is not present in this blockchain.</para>
+        /// <remarks>
+        /// It is good to mark headers as invalid and keep them for some time instead of deleting them
+        /// to avoid repeated download of valid headers that have invalid transactions.
+        /// </remarks>
         /// </summary>
         /// <param name="headerHash">The hash of the root header of the invalid sub-tree.</param>
         public void MarkInvalid(byte[] headerHash)
         {
             lock (monitor)
             {
-                if (!headersByHash.ContainsKey(headerHash))
+                if (!headersByHash.TryGetValue(headerHash, out var removalRoot) || !removalRoot.IsValid)
                 {
                     // nothing to update
                     return;
+                }
+
+                if (removalRoot.Height == 0)
+                {
+                    throw new InvalidOperationException("The root of the blockchain cannot be marked as invalid.");
                 }
 
                 List<DbHeader> affectedHeaders = new List<DbHeader>();
@@ -182,6 +291,22 @@ namespace BitcoinUtilities.Node.Services.Headers
                 foreach (DbHeader header in affectedHeaders)
                 {
                     headersByHash[header.Hash] = header;
+                    validHeads.Remove(header.Hash);
+                }
+
+                // New head candidate always exists, since root cannot be marked as invalid.
+                // New head candidate is always valid, since removalRoot was valid.
+                var newHeadCandidate = headersByHash[removalRoot.ParentHash];
+                // New head candidate has at least removalRoot as a child.
+                bool newHeadCandidateHasValidChildren = headersByParent[newHeadCandidate.Hash].Any(hash => headersByHash[hash].IsValid);
+                if (!newHeadCandidateHasValidChildren)
+                {
+                    validHeads.Add(headerHash);
+                }
+
+                if (bestHead != null && !validHeads.Contains(bestHead.Hash))
+                {
+                    bestHead = null;
                 }
             }
         }
@@ -197,8 +322,18 @@ namespace BitcoinUtilities.Node.Services.Headers
 
             siblings.Add(header.Hash);
 
-            heads.Remove(header.ParentHash);
-            heads.Add(header.Hash);
+            if (header.IsValid)
+            {
+                validHeads.Remove(header.ParentHash);
+                validHeads.Add(header.Hash);
+
+                // The only case when bestHead is removed from validHeads is when it is parent of this block.
+                // Is this case it will be replaced by the condition below, because valid child header is always better than its parent.
+                if (bestHead != null && header.IsBetterThan(bestHead))
+                {
+                    bestHead = header;
+                }
+            }
         }
     }
 }

@@ -19,7 +19,8 @@ namespace BitcoinUtilities.P2P.Messages
         }
 
         /// <summary>
-        /// Block headers.
+        /// <para>An array of block headers. Can be empty.</para>
+        /// <para>Documentation does not state it, but it seems that headers are usually sorted by height.</para>
         /// </summary>
         public BlockHeader[] Headers
         {
@@ -50,6 +51,7 @@ namespace BitcoinUtilities.P2P.Messages
                 {
                     throw new BitcoinNetworkException($"Invalid transaction count in {Command} message: {txCount}.");
                 }
+
                 return header;
             });
             return new HeadersMessage(headers);

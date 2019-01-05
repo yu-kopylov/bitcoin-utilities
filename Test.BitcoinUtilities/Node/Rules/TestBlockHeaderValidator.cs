@@ -1,11 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Numerics;
 using BitcoinUtilities;
 using BitcoinUtilities.Node.Rules;
 using BitcoinUtilities.P2P;
 using BitcoinUtilities.P2P.Primitives;
 using BitcoinUtilities.Storage;
 using NUnit.Framework;
+using TestUtilities;
 
 namespace Test.BitcoinUtilities.Node.Rules
 {
@@ -33,16 +35,34 @@ namespace Test.BitcoinUtilities.Node.Rules
         [Test]
         public void TestIsHashValid()
         {
-            Assert.True(BlockHeaderValidator.IsHashValid(genesisBlockHeader));
+            Assert.True(BlockHeaderValidator.IsHashValid(KnownBlocks.Block100000.Header, KnownBlocks.Block100000.Hash));
+            Assert.False(BlockHeaderValidator.IsHashValid(KnownBlocks.Block100000.Header, KnownBlocks.Block100000.Header.PrevBlock));
 
-            BlockHeader blockHeader = new BlockHeader(
-                genesisBlockHeader.Version,
-                genesisBlockHeader.PrevBlock,
-                genesisBlockHeader.MerkleRoot,
-                genesisBlockHeader.Timestamp,
-                genesisBlockHeader.NBits,
-                1);
-            Assert.False(BlockHeaderValidator.IsHashValid(blockHeader));
+            BlockHeader originalHeader = KnownBlocks.Block100000.Header;
+            BigInteger target = NumberUtils.ToBigInteger(KnownBlocks.Block100000.Hash);
+
+            BlockHeader validHeader = new BlockHeader
+            (
+                originalHeader.Version,
+                originalHeader.PrevBlock,
+                originalHeader.MerkleRoot,
+                originalHeader.Timestamp,
+                DifficultyUtils.TargetToNBits(target * 10001 / 10000),
+                originalHeader.Timestamp
+            );
+
+            BlockHeader invalidHeader = new BlockHeader
+            (
+                originalHeader.Version,
+                originalHeader.PrevBlock,
+                originalHeader.MerkleRoot,
+                originalHeader.Timestamp,
+                DifficultyUtils.TargetToNBits(target * 9999 / 10000),
+                originalHeader.Timestamp
+            );
+
+            Assert.True(BlockHeaderValidator.IsHashValid(validHeader, KnownBlocks.Block100000.Hash));
+            Assert.False(BlockHeaderValidator.IsHashValid(invalidHeader, KnownBlocks.Block100000.Hash));
         }
 
         [Test]
@@ -77,7 +97,7 @@ namespace Test.BitcoinUtilities.Node.Rules
             for (int i = 0; i < 11; i++)
             {
                 BlockHeader header = new BlockHeader
-                    (
+                (
                     genesisBlockHeader.Version,
                     prevBlock == null ? new byte[32] : prevBlock.Hash,
                     new byte[32],
@@ -93,7 +113,7 @@ namespace Test.BitcoinUtilities.Node.Rules
 
             {
                 BlockHeader header = new BlockHeader
-                    (
+                (
                     genesisBlockHeader.Version,
                     new byte[32],
                     new byte[32],
@@ -108,7 +128,7 @@ namespace Test.BitcoinUtilities.Node.Rules
 
             {
                 BlockHeader header = new BlockHeader
-                    (
+                (
                     genesisBlockHeader.Version,
                     new byte[32],
                     new byte[32],

@@ -34,24 +34,36 @@ namespace BitcoinUtilities.P2P
             if (message is GetBlocksMessage)
             {
                 GetBlocksMessage typedMessage = (GetBlocksMessage) message;
-                FormatCollection("locator hashes", typedMessage.LocatorHashes, v => BitConverter.ToString(v));
-                FormatValue("hash stop", typedMessage.HashStop, v => BitConverter.ToString(v));
+                FormatCollection("locator hashes", typedMessage.LocatorHashes, HexUtils.GetString);
+                FormatValue("hash stop", typedMessage.HashStop, HexUtils.GetString);
             }
             else if (message is GetDataMessage)
             {
                 GetDataMessage typedMessage = (GetDataMessage) message;
-                FormatFullCollection("inventory items", typedMessage.Inventory, v => string.Format("{0}\t{1}", v.Type, BitConverter.ToString(v.Hash)));
+                FormatFullCollection("inventory items", typedMessage.Inventory, v => string.Format("{0}\t{1}", v.Type, HexUtils.GetString(v.Hash)));
             }
             else if (message is InvMessage)
             {
                 InvMessage typedMessage = (InvMessage) message;
-                FormatFullCollection("inventory items", typedMessage.Inventory, v => string.Format("{0}\t{1}", v.Type, BitConverter.ToString(v.Hash)));
+                FormatFullCollection("inventory items", typedMessage.Inventory, v => string.Format("{0}\t{1}", v.Type, HexUtils.GetString(v.Hash)));
             }
             else if (message is BlockMessage)
             {
                 BlockMessage typedMessage = (BlockMessage) message;
-                FormatValue("header hash", typedMessage.BlockHeader, v => BitConverter.ToString(CryptoUtils.DoubleSha256(BitcoinStreamWriter.GetBytes(v.Write))));
-                FormatCollection("transactions", typedMessage.Transactions, v => BitConverter.ToString(CryptoUtils.DoubleSha256(BitcoinStreamWriter.GetBytes(v.Write))));
+                FormatValue("header hash", typedMessage.BlockHeader, v => HexUtils.GetString(CryptoUtils.DoubleSha256(BitcoinStreamWriter.GetBytes(v.Write))));
+                FormatCollection("transactions", typedMessage.Transactions, v => HexUtils.GetString(CryptoUtils.DoubleSha256(BitcoinStreamWriter.GetBytes(v.Write))));
+            }
+            else if (message is HeadersMessage)
+            {
+                HeadersMessage typedMessage = (HeadersMessage) message;
+                FormatCollection("headers", typedMessage.Headers, header => HexUtils.GetString(CryptoUtils.DoubleSha256(BitcoinStreamWriter.GetBytes(header.Write))));
+            }
+            else if (message is GetHeadersMessage)
+            {
+                GetHeadersMessage typedMessage = (GetHeadersMessage) message;
+                FormatValue("protocol version", typedMessage.ProtocolVersion, i => i.ToString());
+                FormatCollection("locator hashes", typedMessage.LocatorHashes, HexUtils.GetString);
+                FormatValue("hash stop", typedMessage.HashStop, HexUtils.GetString);
             }
             else
             {
@@ -63,8 +75,7 @@ namespace BitcoinUtilities.P2P
 
         private void FormatValue<T>(string parameterName, T parameterValue, Func<T, string> format)
         {
-            AppendLine("{0}:", parameterName);
-            AppendLine("\t{0}", parameterValue == null ? "null" : format(parameterValue));
+            AppendLine("{0}: {1}", parameterName, parameterValue == null ? "null" : format(parameterValue));
         }
 
         private void FormatCollection<T>(string collectionName, ICollection<T> items, Func<T, string> format)
@@ -99,7 +110,7 @@ namespace BitcoinUtilities.P2P
                 AppendLine("\t{0}", item == null ? "<null>" : format(item));
             }
         }
-        
+
         private void FormatFullCollection<T>(string collectionName, ICollection<T> items, Func<T, string> format)
         {
             if (items.Count == 0)
@@ -131,6 +142,7 @@ namespace BitcoinUtilities.P2P
             {
                 sb.Append("\n");
             }
+
             sb.Append(linePrefix);
             sb.AppendFormat(format, args);
         }

@@ -380,7 +380,7 @@ namespace BitcoinUtilities.Storage
                 return storedBlock;
             }
 
-            Subchain parentChain = storage.FindSubchain(block.Header.PrevBlock, Blockchain.AnalyzedSubchainLength);
+            Subchain parentChain = storage.FindSubchain(block.Header.PrevBlock, BlockHeaderValidator.RequiredSubchainLength);
             if (parentChain == null)
             {
                 return block;

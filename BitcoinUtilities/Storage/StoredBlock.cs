@@ -1,4 +1,5 @@
-﻿using BitcoinUtilities.P2P;
+﻿using BitcoinUtilities.Node.Rules;
+using BitcoinUtilities.P2P;
 using BitcoinUtilities.P2P.Primitives;
 
 namespace BitcoinUtilities.Storage
@@ -7,7 +8,7 @@ namespace BitcoinUtilities.Storage
     /// This immutable class represents a block in a storage.
     /// Besides block header, it contains other information related to storage and the position of the block within blockchain.
     /// </summary>
-    public class StoredBlock
+    public class StoredBlock : IValidatableHeader
     {
         internal StoredBlock(BlockHeader header, byte[] hash, int height, double totalWork, bool hasContent, bool isInBestHeaderChain, bool isInBestBlockChain)
         {
@@ -36,6 +37,10 @@ namespace BitcoinUtilities.Storage
         /// It equals -1 if the height of the block in unknown.
         /// </summary>
         public int Height { get; }
+
+        public uint Timestamp => Header.Timestamp;
+
+        public uint NBits => Header.NBits;
 
         /// <summary>
         /// An estimated amount of work that was required to build blockchain up to this block.

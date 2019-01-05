@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Runtime.CompilerServices;
@@ -28,6 +29,9 @@ namespace BitcoinUtilities.Node
         private readonly IBlockchainStorage storage;
         private readonly Blockchain blockchain;
 
+        private readonly HeaderStorage headerStorage;
+        private readonly Blockchain2 blockchain2;
+
         private readonly EventServiceController eventServiceController = new EventServiceController();
         private NodeAddressCollection addressCollection;
         private NodeConnectionCollection connectionCollection;
@@ -37,11 +41,14 @@ namespace BitcoinUtilities.Node
         private readonly CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
         private bool started;
 
-        public BitcoinNode(NetworkParameters networkParameters, IBlockchainStorage storage)
+        public BitcoinNode(NetworkParameters networkParameters, string dataFolder, IBlockchainStorage storage)
         {
             this.networkParameters = networkParameters;
             this.storage = storage;
             this.blockchain = new Blockchain(networkParameters, storage);
+
+            this.headerStorage = HeaderStorage.Open(Path.Combine(dataFolder, "headers.db"));
+            this.blockchain2 = new Blockchain2(headerStorage, networkParameters.GenesisBlock);
 
             services.AddFactory(new NodeDiscoveryServiceFactory());
             //services.AddFactory(new BlockHeaderDownloadServiceFactory());
@@ -53,6 +60,8 @@ namespace BitcoinUtilities.Node
         public void Dispose()
         {
             Stop();
+
+            headerStorage?.Dispose();
         }
 
         public NodeAddressCollection AddressCollection
@@ -89,6 +98,11 @@ namespace BitcoinUtilities.Node
         public Blockchain Blockchain
         {
             get { return blockchain; }
+        }
+
+        public Blockchain2 Blockchain2
+        {
+            get { return blockchain2; }
         }
 
         public event PropertyChangedEventHandler PropertyChanged;

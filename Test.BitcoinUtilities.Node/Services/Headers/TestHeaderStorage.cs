@@ -14,8 +14,8 @@ namespace Test.BitcoinUtilities.Node.Services.Headers
         {
             var headers = new DbHeader[]
             {
-                new DbHeader(KnownBlocks.Block100000.Header, KnownBlocks.Block100000.Hash, 100000, 100, true),
-                new DbHeader(KnownBlocks.Block100001.Header, KnownBlocks.Block100001.Hash, 100001, 200, false)
+                new DbHeader(KnownBlocks.Block100000.Header, KnownBlocks.Block100000.Hash, 0, 100, true),
+                new DbHeader(KnownBlocks.Block100001.Header, KnownBlocks.Block100001.Hash, 1, 200, false)
             };
 
             string testFolder = TestUtils.PrepareTestFolder(this.GetType(), nameof(TestAddRead), "*.db");
@@ -41,8 +41,8 @@ namespace Test.BitcoinUtilities.Node.Services.Headers
             {
                 var headers = new DbHeader[]
                 {
-                    new DbHeader(KnownBlocks.Block100000.Header, KnownBlocks.Block100000.Hash, 100000, 100, true),
-                    new DbHeader(KnownBlocks.Block100001.Header, KnownBlocks.Block100001.Hash, 100001, 200, true)
+                    new DbHeader(KnownBlocks.Block100000.Header, KnownBlocks.Block100000.Hash, 0, 100, true),
+                    new DbHeader(KnownBlocks.Block100001.Header, KnownBlocks.Block100001.Hash, 1, 200, true)
                 };
 
                 storage1.AddHeaders(headers);
@@ -53,8 +53,8 @@ namespace Test.BitcoinUtilities.Node.Services.Headers
             {
                 var headers = new DbHeader[]
                 {
-                    new DbHeader(KnownBlocks.Block100000.Header, KnownBlocks.Block100000.Hash, 100000, 100, true),
-                    new DbHeader(KnownBlocks.Block100001.Header, KnownBlocks.Block100001.Hash, 100001, 200, false)
+                    new DbHeader(KnownBlocks.Block100000.Header, KnownBlocks.Block100000.Hash, 0, 100, true),
+                    new DbHeader(KnownBlocks.Block100001.Header, KnownBlocks.Block100001.Hash, 1, 200, false)
                 };
 
                 var headers2 = storage2.ReadAll();
