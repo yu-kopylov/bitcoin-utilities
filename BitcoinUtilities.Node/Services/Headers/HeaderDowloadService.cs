@@ -98,7 +98,7 @@ namespace BitcoinUtilities.Node.Services.Headers
 
                     DbHeader newHeader = header.AppendAfter(parentHeader, DifficultyUtils.DifficultyTargetToWork(DifficultyUtils.NBitsToTarget(header.NBits)));
 
-                    if (!BlockHeaderValidator.IsValid(node.NetworkParameters.Fork, newHeader, subchain))
+                    if (!BlockHeaderValidator.IsValid(node.NetworkParameters, newHeader, subchain))
                     {
                         //todo: disconnect node
                         throw new BitcoinProtocolViolationException($"Invalid block header received. Hash: '{HexUtils.GetString(newHeader.Hash)}'.");
@@ -128,16 +128,12 @@ namespace BitcoinUtilities.Node.Services.Headers
 
             logger.Debug(() =>
                 $"Received headers from endpoint '{endpoint.PeerInfo.IpEndpoint}'. " +
-                $"Best header: (Height: {bestHeader?.Height}, Hash: {(bestHeader == null ? "null" : HexUtils.GetString(bestHeader.Hash))})."
+                $"Best received header: {(bestHeader == null ? "none" : $"{{height: {bestHeader?.Height}, hash: {HexUtils.GetString(bestHeader.Hash)}}}")}."
             );
 
             if (bestHeader != null)
             {
                 var blockLocator = GetLocator(bestHeader);
-                logger.Debug(() =>
-                    $"Requesting headers from endpoint '{endpoint.PeerInfo.IpEndpoint}'." +
-                    $"Best hash: {HexUtils.GetString(blockLocator[0])})."
-                );
                 endpoint.WriteMessage(new GetHeadersMessage(endpoint.ProtocolVersion, blockLocator, new byte[32]));
             }
         }

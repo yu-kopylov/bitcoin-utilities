@@ -8,6 +8,9 @@ using NLog;
 
 namespace BitcoinUtilities.Node.Services.Headers
 {
+    /// <summary>
+    /// Stores block headers in an SQLite database.
+    /// </summary>
     public class HeaderStorage : IDisposable
     {
         private static readonly ILogger logger = LogManager.GetCurrentClassLogger();

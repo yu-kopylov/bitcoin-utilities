@@ -30,13 +30,19 @@ namespace BitcoinUtilities.Node.Rules
         /// <summary>
         /// Validates the given header against the specified blockchain, but does not performs basic structure validation.
         /// </summary>
-        /// <param name="fork">Bitcoin fork version.</param>
+        /// <param name="networkParameters">Parameters of the network.</param>
         /// <param name="header">The header to validate.</param>
-        /// <param name="parentChain">Headers that precede the given block in the blockchain.</param>
+        /// <param name="parentChain">A chain of headers that precede the given block in the blockchain.</param>
         /// <returns>True if header is valid; otherwise, false.</returns>
-        public static bool IsValid(BitcoinFork fork, IValidatableHeader header, ISubchain<IValidatableHeader> parentChain)
+        public static bool IsValid(NetworkParameters networkParameters, IValidatableHeader header, ISubchain<IValidatableHeader> parentChain)
         {
-            return IsTimeStampValid(header, parentChain) && IsNBitsValid(fork, header, parentChain);
+            byte[] checkpointHash = networkParameters.GetCheckpointHash(header.Height);
+            if (checkpointHash != null)
+            {
+                return ByteArrayComparer.Instance.Equals(checkpointHash, header.Hash);
+            }
+
+            return IsTimeStampValid(header, parentChain) && IsNBitsValid(networkParameters.Fork, header, parentChain);
         }
 
         /// <summary>

@@ -147,8 +147,7 @@ namespace BitcoinUtilities
         /// <param name="blockHash">Hash of the block.</param>
         public void AddCheckpoint(int blockHeight, string blockHash)
         {
-            byte[] hash;
-            if (!HexUtils.TryGetBytes(blockHash, out hash))
+            if (!HexUtils.TryGetBytes(blockHash, out var hash))
             {
                 throw new ArgumentException($"The given {nameof(blockHash)} '{blockHash}' is not a valid hexadecimal string.", nameof(blockHash));
             }
@@ -164,8 +163,7 @@ namespace BitcoinUtilities
         /// <returns>The hash for the block with the given height; or null if there is no checkpoint defined for this height.</returns>
         public byte[] GetCheckpointHash(int blockHeight)
         {
-            byte[] hash;
-            if (checkpoints.TryGetValue(blockHeight, out hash))
+            if (checkpoints.TryGetValue(blockHeight, out var hash))
             {
                 return hash;
             }
