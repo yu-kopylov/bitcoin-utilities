@@ -4,6 +4,7 @@ using System.Linq;
 using BitcoinUtilities.Node.Rules;
 using BitcoinUtilities.P2P;
 using BitcoinUtilities.P2P.Messages;
+using BitcoinUtilities.P2P.Primitives;
 using BitcoinUtilities.Threading;
 using NLog;
 
@@ -40,90 +41,35 @@ namespace BitcoinUtilities.Node.Services.Headers
 
         public void OnHeadersReceived(HeadersMessage message)
         {
-            List<DbHeader> remainingHeaders = new List<DbHeader>(message.Headers.Length);
-
-            foreach (var header in message.Headers)
-            {
-                // todo: we would not need write method if payload were passed with event
-                byte[] hash = CryptoUtils.DoubleSha256(BitcoinStreamWriter.GetBytes(header.Write));
-
-                if (!BlockHeaderValidator.IsValid(header, hash))
-                {
-                    //todo: disconnect node
-                    throw new BitcoinProtocolViolationException($"Invalid block header received. Hash: '{HexUtils.GetString(hash)}'.");
-                }
-
-                remainingHeaders.Add(new DbHeader(header, hash, -1, 0, true));
-            }
+            List<DbHeader> remainingHeaders = CreateAndValidateDbHeaders(message.Headers);
+            Dictionary<byte[], DbHeader> knownParentsByHash = FetchKnownParents(remainingHeaders);
 
             DbHeader bestHeader = null;
-
-            var knownParents = node.Blockchain2.GetHeaders(remainingHeaders.Select(h => h.ParentHash));
-            Dictionary<byte[], DbHeader> knownParentsByHash = new Dictionary<byte[], DbHeader>(ByteArrayComparer.Instance);
-            foreach (DbHeader parent in knownParents)
-            {
-                knownParentsByHash[parent.Hash] = parent;
-            }
 
             // Here we assume that headers in the message are already sorted by height, which should be true for most implementations.
             // We also expect no more than 2 branches in a single message.
             for (int chainNum = 0; chainNum < 2 && remainingHeaders.Count != 0; chainNum++)
             {
-                HeaderSubchain subchain = null;
-                List<DbHeader> newHeaders = new List<DbHeader>();
-                List<DbHeader> orphanHeaders = new List<DbHeader>();
-                foreach (var header in remainingHeaders)
+                var newChain = ExtractAndValidateSingleChain(remainingHeaders, knownParentsByHash, out var orphanHeaders);
+
+                if (newChain.Count == 0)
                 {
-                    // todo: test performance of validation vs checking against knownParentsByHash
-
-                    if (subchain == null && knownParentsByHash.ContainsKey(header.ParentHash))
-                    {
-                        subchain = node.Blockchain2.GetSubChain(header.ParentHash, BlockHeaderValidator.RequiredSubchainLength);
-                    }
-
-                    if (subchain == null || !ByteArrayComparer.Instance.Equals(subchain.Head.Hash, header.ParentHash))
-                    {
-                        orphanHeaders.Add(header);
-                        continue;
-                    }
-
-                    DbHeader parentHeader = subchain.Head;
-                    if (!parentHeader.IsValid)
-                    {
-                        //todo: disconnect node
-                        throw new BitcoinProtocolViolationException(
-                            $"Block header '{HexUtils.GetString(header.Hash)}' is a child of an invalid header '{HexUtils.GetString(parentHeader.Hash)}'."
-                        );
-                    }
-
-                    DbHeader newHeader = header.AppendAfter(parentHeader, DifficultyUtils.DifficultyTargetToWork(DifficultyUtils.NBitsToTarget(header.NBits)));
-
-                    if (!BlockHeaderValidator.IsValid(node.NetworkParameters, newHeader, subchain))
-                    {
-                        //todo: disconnect node
-                        throw new BitcoinProtocolViolationException($"Invalid block header received. Hash: '{HexUtils.GetString(newHeader.Hash)}'.");
-                    }
-
-                    subchain.Append(newHeader);
-                    newHeaders.Add(newHeader);
+                    break;
                 }
 
-                var savedHeaders = node.Blockchain2.Add(newHeaders);
+                var savedHeaders = node.Blockchain2.Add(newChain);
+
                 foreach (DbHeader header in savedHeaders)
                 {
-                    // todo: use is better method
-                    if (bestHeader == null || header.TotalWork > bestHeader.TotalWork)
+                    knownParentsByHash[header.Hash] = header;
+
+                    if (bestHeader == null || header.IsBetterThan(bestHeader))
                     {
                         bestHeader = header;
                     }
                 }
 
                 remainingHeaders = orphanHeaders;
-            }
-
-            if (remainingHeaders.Count > 0)
-            {
-                // todo: test
             }
 
             logger.Debug(() =>
@@ -138,6 +84,83 @@ namespace BitcoinUtilities.Node.Services.Headers
             }
         }
 
+        private List<DbHeader> ExtractAndValidateSingleChain(List<DbHeader> headers, Dictionary<byte[], DbHeader> knownParentsByHash, out List<DbHeader> orphanHeaders)
+        {
+            HeaderSubChain subChain = null;
+            List<DbHeader> newChain = new List<DbHeader>();
+            orphanHeaders = new List<DbHeader>();
+
+            foreach (var header in headers)
+            {
+                if (subChain == null && knownParentsByHash.ContainsKey(header.ParentHash))
+                {
+                    subChain = node.Blockchain2.GetSubChain(header.ParentHash, BlockHeaderValidator.RequiredSubchainLength);
+                }
+
+                if (subChain == null || !ByteArrayComparer.Instance.Equals(subChain.Head.Hash, header.ParentHash))
+                {
+                    orphanHeaders.Add(header);
+                    continue;
+                }
+
+                DbHeader parentHeader = subChain.Head;
+                if (!parentHeader.IsValid)
+                {
+                    //todo: disconnect node
+                    throw new BitcoinProtocolViolationException(
+                        $"Block header '{HexUtils.GetString(header.Hash)}' is a child of an invalid header '{HexUtils.GetString(parentHeader.Hash)}'."
+                    );
+                }
+
+                double work = DifficultyUtils.DifficultyTargetToWork(DifficultyUtils.NBitsToTarget(header.NBits));
+                DbHeader newHeader = header.AppendAfter(parentHeader, work);
+
+                if (!BlockHeaderValidator.IsValid(node.NetworkParameters, newHeader, subChain))
+                {
+                    //todo: disconnect node
+                    throw new BitcoinProtocolViolationException($"Invalid block header received. Hash: '{HexUtils.GetString(newHeader.Hash)}'.");
+                }
+
+                subChain.Append(newHeader);
+                newChain.Add(newHeader);
+            }
+
+            return newChain;
+        }
+
+        private static List<DbHeader> CreateAndValidateDbHeaders(BlockHeader[] messageHeaders)
+        {
+            List<DbHeader> headers = new List<DbHeader>(messageHeaders.Length);
+
+            foreach (var header in messageHeaders)
+            {
+                // todo: we would not need write method if payload were passed with event
+                byte[] hash = CryptoUtils.DoubleSha256(BitcoinStreamWriter.GetBytes(header.Write));
+
+                if (!BlockHeaderValidator.IsValid(header, hash))
+                {
+                    //todo: disconnect node
+                    throw new BitcoinProtocolViolationException($"Invalid block header received. Hash: '{HexUtils.GetString(hash)}'.");
+                }
+
+                headers.Add(new DbHeader(header, hash, -1, 0, true));
+            }
+
+            return headers;
+        }
+
+        private Dictionary<byte[], DbHeader> FetchKnownParents(List<DbHeader> headers)
+        {
+            var knownParents = node.Blockchain2.GetHeaders(headers.Select(h => h.ParentHash));
+            Dictionary<byte[], DbHeader> knownParentsByHash = new Dictionary<byte[], DbHeader>(ByteArrayComparer.Instance);
+            foreach (DbHeader parent in knownParents)
+            {
+                knownParentsByHash[parent.Hash] = parent;
+            }
+
+            return knownParentsByHash;
+        }
+
         private byte[][] GetLocator(DbHeader knownHeader)
         {
             List<DbHeader> locatorHeaders = new List<DbHeader>();
@@ -148,7 +171,6 @@ namespace BitcoinUtilities.Node.Services.Headers
             DbHeader bestHead = node.Blockchain2.GetBestHead(knownHeader.Hash);
             if (bestHead != null && bestHead.Height != knownHeader.Height)
             {
-                // todo: test
                 int bestRelatedChainLength = Math.Min(bestHead.Height - knownHeader.Height, 1000);
                 var bestRelatedChain = node.Blockchain2.GetSubChain(bestHead.Hash, bestRelatedChainLength);
                 if (bestRelatedChain != null)

@@ -92,26 +92,53 @@ namespace Test.BitcoinUtilities.Node.Services.Headers
         [Test]
         public void TestGetSubChain()
         {
+            SampleTree sampleTree = GenerateSampleTree();
+
             string testFolder = TestUtils.PrepareTestFolder("*.db");
             string filename = Path.Combine(testFolder, "headers.db");
             using (HeaderStorage storage = HeaderStorage.Open(filename))
             {
-                var headers = new DbHeader[]
-                {
-                    new DbHeader(KnownBlocks.Block100000.Header, KnownBlocks.Block100000.Hash, 0, 0, true),
-                    new DbHeader(KnownBlocks.Block100001.Header, KnownBlocks.Block100001.Hash, 1, 100, true),
-                    new DbHeader(KnownBlocks.Block100002.Header, KnownBlocks.Block100002.Hash, 2, 200, true)
-                };
+                Blockchain2 blockchain = new Blockchain2(storage, sampleTree["a0"].Header);
+                blockchain.Add(sampleTree.GetBlocks("a1", "a2", "a3", "a4", "a5"));
+                blockchain.Add(sampleTree.GetBlocks("b5"));
+                blockchain.Add(sampleTree.GetBlocks("c3", "c4", "c5"));
 
-                Blockchain2 blockchain = new Blockchain2(storage, KnownBlocks.Block100000.Header);
-                Assert.That(blockchain.Add(headers).Count, Is.EqualTo(3));
+                Assert.That(blockchain.GetSubChain(sampleTree["d5"].Hash, 10), Is.Null);
 
-                Assert.That(blockchain.GetSubChain(KnownBlocks.Block1.Hash, 1), Is.Null);
+                Assert.AreEqual(
+                    blockchain.GetSubChain(sampleTree["a0"].Hash, 10).Select(sampleTree.GetName),
+                    new string[] {"a0"}
+                );
 
-                Assert.That(blockchain.GetSubChain(KnownBlocks.Block100000.Hash, 10)?.Select(h => h.Hash).ToArray(), Is.EqualTo(
-                    new byte[][] {KnownBlocks.Block100000.Hash}
-                    //todo: finish test
-                ));
+                Assert.AreEqual(
+                    blockchain.GetSubChain(sampleTree["a4"].Hash, 10).Select(sampleTree.GetName),
+                    new string[] {"a0", "a1", "a2", "a3", "a4"}
+                );
+
+                Assert.AreEqual(
+                    blockchain.GetSubChain(sampleTree["c4"].Hash, 10).Select(sampleTree.GetName),
+                    new string[] {"a0", "a1", "a2", "c3", "c4"}
+                );
+
+                Assert.AreEqual(
+                    blockchain.GetSubChain(sampleTree["a4"].Hash, 5).Select(sampleTree.GetName),
+                    new string[] {"a0", "a1", "a2", "a3", "a4"}
+                );
+
+                Assert.AreEqual(
+                    blockchain.GetSubChain(sampleTree["c4"].Hash, 5).Select(sampleTree.GetName),
+                    new string[] {"a0", "a1", "a2", "c3", "c4"}
+                );
+
+                Assert.AreEqual(
+                    blockchain.GetSubChain(sampleTree["a4"].Hash, 4).Select(sampleTree.GetName),
+                    new string[] {"a1", "a2", "a3", "a4"}
+                );
+
+                Assert.AreEqual(
+                    blockchain.GetSubChain(sampleTree["c4"].Hash, 4).Select(sampleTree.GetName),
+                    new string[] {"a1", "a2", "c3", "c4"}
+                );
             }
         }
 

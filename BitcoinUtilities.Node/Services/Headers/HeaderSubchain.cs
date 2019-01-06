@@ -5,13 +5,13 @@ using BitcoinUtilities.Node.Rules;
 
 namespace BitcoinUtilities.Node.Services.Headers
 {
-    public class HeaderSubchain : ISubchain<DbHeader>, IReadOnlyCollection<DbHeader>
+    public class HeaderSubChain : ISubchain<DbHeader>, IReadOnlyCollection<DbHeader>
     {
         private readonly List<DbHeader> headers;
 
         private DbHeader head;
 
-        public HeaderSubchain(IReadOnlyCollection<DbHeader> headers)
+        public HeaderSubChain(IReadOnlyCollection<DbHeader> headers)
         {
             this.headers = new List<DbHeader>(headers);
             this.head = this.headers[this.headers.Count - 1];

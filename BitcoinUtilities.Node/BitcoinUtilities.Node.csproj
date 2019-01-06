@@ -63,7 +63,7 @@
     <Compile Include="Services\Headers\DbHeader.cs" />
     <Compile Include="Services\Headers\HeaderDowloadService.cs" />
     <Compile Include="Services\Headers\HeaderStorage.cs" />
-    <Compile Include="Services\Headers\HeaderSubchain.cs" />
+    <Compile Include="Services\Headers\HeaderSubChain.cs" />
     <Compile Include="Services\NodeDiscoveryService.cs" />
     <Compile Include="Services\NodeEventHandlingService.cs" />
     <Compile Include="Services\SqliteUtils.cs" />

@@ -178,7 +178,7 @@ namespace BitcoinUtilities.Node.Services.Headers
         /// <param name="hash">The hash of the last block.</param>
         /// <param name="length">The expected length.</param>
         /// <returns>The requested subchain if it exists; otherwise, null.</returns>
-        public HeaderSubchain GetSubChain(byte[] hash, int length)
+        public HeaderSubChain GetSubChain(byte[] hash, int length)
         {
             lock (monitor)
             {
@@ -200,7 +200,7 @@ namespace BitcoinUtilities.Node.Services.Headers
                 }
 
                 headers.Reverse();
-                return new HeaderSubchain(headers);
+                return new HeaderSubChain(headers);
             }
         }
 
