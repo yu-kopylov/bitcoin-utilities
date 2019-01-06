@@ -19,7 +19,8 @@
         }
 
         /// <summary>
-        /// Transaction data format version.
+        /// <para>Transaction data format version.</para>
+        /// <para>Currently 1.</para>
         /// </summary>
         public uint Version
         {
@@ -43,7 +44,8 @@
         }
 
         /// <summary>
-        /// If all <see cref="Inputs"/> have final (0xffffffff) sequence numbers then <see cref="LockTime"/> is irrelevant. Otherwise, the transaction may not be added to a block until after <see cref="LockTime"/>.
+        /// If all <see cref="Inputs"/> have final (0xffffffff) sequence numbers then <see cref="LockTime"/> is irrelevant.
+        /// Otherwise, the transaction may not be added to a block until after <see cref="LockTime"/>.
         /// </summary>
         public uint LockTime
         {

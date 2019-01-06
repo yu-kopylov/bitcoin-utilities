@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics.Contracts;
 using System.IO;
 using System.Linq;
 using BitcoinUtilities.P2P;
@@ -21,7 +20,7 @@ namespace BitcoinUtilities.Node.Services.Headers
 
         private readonly Dictionary<byte[], DbHeader> headersByHash = new Dictionary<byte[], DbHeader>(ByteArrayComparer.Instance);
         private readonly Dictionary<byte[], List<byte[]>> headersByParent = new Dictionary<byte[], List<byte[]>>(ByteArrayComparer.Instance);
-        private readonly HashSet<byte[]> validHeads = new HashSet<byte[]>();
+        private readonly HashSet<byte[]> validHeads = new HashSet<byte[]>(ByteArrayComparer.Instance);
         private DbHeader bestHead;
 
         /// <summary>
@@ -97,6 +96,17 @@ namespace BitcoinUtilities.Node.Services.Headers
         }
 
         /// <summary>
+        /// Returns all valid headers that do not have children.
+        /// </summary>
+        public IReadOnlyCollection<DbHeader> GetValidHeads()
+        {
+            lock (monitor)
+            {
+                return validHeads.Select(hash => headersByHash[hash]).ToList();
+            }
+        }
+
+        /// <summary>
         /// Returns the best valid header.
         /// </summary>
         public DbHeader GetBestHead()
@@ -121,30 +131,37 @@ namespace BitcoinUtilities.Node.Services.Headers
         {
             lock (monitor)
             {
+                if (!headersByHash.TryGetValue(hash, out var rootHeader) || !rootHeader.IsValid)
+                {
+                    return null;
+                }
+
                 DbHeader bestHeader = null;
                 Queue<byte[]> queue = new Queue<byte[]>();
                 queue.Enqueue(hash);
                 while (queue.Count != 0)
                 {
                     hash = queue.Dequeue();
-                    if (!headersByHash.TryGetValue(hash, out var header) || !header.IsValid)
+
+                    bool hasValidChild = false;
+                    if (headersByParent.TryGetValue(hash, out var children))
                     {
-                        continue;
+                        foreach (byte[] childHash in children)
+                        {
+                            if (headersByHash[childHash].IsValid)
+                            {
+                                hasValidChild = true;
+                                queue.Enqueue(childHash);
+                            }
+                        }
                     }
 
-                    if (!headersByParent.TryGetValue(hash, out var children))
+                    if (!hasValidChild)
                     {
+                        DbHeader header = headersByHash[hash];
                         if (bestHeader == null || header.IsBetterThan(bestHeader))
                         {
                             bestHeader = header;
-                        }
-                    }
-                    else
-                    {
-                        Contract.Assert(children.Count != 0);
-                        foreach (byte[] childHash in children)
-                        {
-                            queue.Enqueue(childHash);
                         }
                     }
                 }
@@ -301,7 +318,7 @@ namespace BitcoinUtilities.Node.Services.Headers
                 bool newHeadCandidateHasValidChildren = headersByParent[newHeadCandidate.Hash].Any(hash => headersByHash[hash].IsValid);
                 if (!newHeadCandidateHasValidChildren)
                 {
-                    validHeads.Add(headerHash);
+                    validHeads.Add(newHeadCandidate.Hash);
                 }
 
                 if (bestHead != null && !validHeads.Contains(bestHead.Hash))

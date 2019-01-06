@@ -9,4 +9,4 @@
 );
 
 CREATE UNIQUE INDEX UX_Headers_Hash ON Headers(Hash);
-CREATE UNIQUE INDEX UX_Headers_Height ON Headers(Height);
+CREATE INDEX UX_Headers_Height ON Headers(Height);
