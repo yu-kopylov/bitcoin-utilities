@@ -17,75 +17,186 @@ namespace Test.BitcoinUtilities.Node.Services.Headers
         private readonly SampleBlockGenerator blockGenerator = new SampleBlockGenerator();
 
         [Test]
-        public void TestSmoke()
+        public void TestSaveAndReopen()
         {
+            SampleTree sampleTree = GenerateSampleTree();
+
+            List<DbHeader> headersA = sampleTree.GetHeaders("a0", "a1", "a2", "a3", "a4", "a5");
+            List<DbHeader> headersB = sampleTree.GetHeaders("b5");
+            List<DbHeader> headersC = sampleTree.GetHeaders("c3", "c4", "c5");
+            List<DbHeader> headersD = sampleTree.GetHeaders("d5");
+            var allHeaders = headersA.Union(headersB).Union(headersC).Union(headersD).ToList();
+
             string testFolder = TestUtils.PrepareTestFolder("*.db");
             string filename = Path.Combine(testFolder, "headers.db");
+
             using (HeaderStorage storage = HeaderStorage.Open(filename))
             {
-                var headers = new DbHeader[]
-                {
-                    new DbHeader(KnownBlocks.Block100000.Header, KnownBlocks.Block100000.Hash, 0, 0, true),
-                    new DbHeader(KnownBlocks.Block100001.Header, KnownBlocks.Block100001.Hash, 1, 100, true),
-                    new DbHeader(KnownBlocks.Block100002.Header, KnownBlocks.Block100002.Hash, 2, 200, true)
-                };
+                Blockchain2 blockchain = new Blockchain2(storage, sampleTree["a0"].Header);
 
-                Blockchain2 blockchain = new Blockchain2(storage, KnownBlocks.Block100000.Header);
-                Assert.That(blockchain.Add(headers).Count, Is.EqualTo(3));
-                blockchain.MarkInvalid(headers[1].Hash);
+                blockchain.Add(headersA);
+                blockchain.Add(headersB);
+                blockchain.Add(headersC);
+                blockchain.Add(headersD);
+
+                blockchain.MarkInvalid(sampleTree["a4"].Hash);
             }
 
             using (HeaderStorage storage = HeaderStorage.Open(filename))
             {
-                var headers = new DbHeader[]
-                {
-                    new DbHeader(KnownBlocks.Block100000.Header, KnownBlocks.Block100000.Hash, 0, 0, true),
-                    new DbHeader(KnownBlocks.Block100001.Header, KnownBlocks.Block100001.Hash, 1, 100, false),
-                    new DbHeader(KnownBlocks.Block100002.Header, KnownBlocks.Block100002.Hash, 2, 200, false)
-                };
+                Blockchain2 blockchain = new Blockchain2(storage, sampleTree["a0"].Header);
 
-                Blockchain2 blockchain = new Blockchain2(storage, KnownBlocks.Block100000.Header);
-                var headers2 = blockchain.GetHeaders(new byte[][]
+                var foundHeaders = blockchain.GetHeaders(allHeaders.Select(h => h.Hash));
+
+                Assert.That(foundHeaders.Where(h => h.IsValid).Select(sampleTree.GetName), Is.EquivalentTo(new string[]
                 {
-                    KnownBlocks.Block1.Hash,
-                    KnownBlocks.Block100000.Hash,
-                    KnownBlocks.Block100001.Hash,
-                    KnownBlocks.Block100002.Hash
-                });
-                Assert.That(headers2.Select(h => h.AsText).ToArray(), Is.EqualTo(headers.Select(h => h.AsText).ToArray()));
+                    "a0", "a1", "a2", "a3",
+                    "c3", "c4", "c5",
+                    "d5"
+                }));
+
+                Assert.That(foundHeaders.Where(h => !h.IsValid).Select(sampleTree.GetName), Is.EquivalentTo(new string[]
+                {
+                    "a4", "a5",
+                    "b5"
+                }));
+
+                Assert.That(blockchain.GetValidHeads().Select(sampleTree.GetName), Is.EquivalentTo(new string[] {"a3", "c5", "d5"}));
+                Assert.That(sampleTree.GetName(blockchain.GetBestHead()), Is.EqualTo("c5"));
+                Assert.That(sampleTree.GetName(blockchain.GetBestHead(sampleTree["a3"].Hash)), Is.EqualTo("a3"));
+                Assert.That(sampleTree.GetName(blockchain.GetBestHead(sampleTree["a4"].Hash)), Is.Null);
+                Assert.That(sampleTree.GetName(blockchain.GetBestHead(sampleTree["c3"].Hash)), Is.EqualTo("c5"));
             }
         }
 
         [Test]
-        public void TestSaveWithInvalid()
+        public void TestMarkInvalid()
         {
+            SampleTree sampleTree = GenerateSampleTree();
+
             string testFolder = TestUtils.PrepareTestFolder("*.db");
             string filename = Path.Combine(testFolder, "headers.db");
             using (HeaderStorage storage = HeaderStorage.Open(filename))
             {
-                var headers = new DbHeader[]
-                {
-                    new DbHeader(KnownBlocks.Block100000.Header, KnownBlocks.Block100000.Hash, 0, 0, true),
-                    new DbHeader(KnownBlocks.Block100001.Header, KnownBlocks.Block100001.Hash, 1, 100, false),
-                    new DbHeader(KnownBlocks.Block100002.Header, KnownBlocks.Block100002.Hash, 2, 200, true)
-                };
+                Blockchain2 blockchain = new Blockchain2(storage, sampleTree["a0"].Header);
 
-                Blockchain2 blockchain = new Blockchain2(storage, KnownBlocks.Block100000.Header);
-                blockchain.Add(headers);
-                var foundHeaders = blockchain.GetHeaders(new byte[][]
-                {
-                    KnownBlocks.Block100000.Hash,
-                    KnownBlocks.Block100001.Hash,
-                    KnownBlocks.Block100002.Hash
-                });
+                List<DbHeader> headersA = sampleTree.GetHeaders("a0", "a1", "a2", "a3", "a4", "a5");
+                List<DbHeader> headersB = sampleTree.GetHeaders("b5");
+                List<DbHeader> headersC = sampleTree.GetHeaders("c3", "c4", "c5");
+                List<DbHeader> headersD = sampleTree.GetHeaders("d5");
 
-                var expectedHeaders = new DbHeader[]
+                var allHeaders = headersA.Union(headersB).Union(headersC).Union(headersD).ToList();
+                blockchain.Add(allHeaders);
+
+                // non-existing header
+                blockchain.MarkInvalid(new byte[32]);
+
+                blockchain.MarkInvalid(sampleTree["a3"].Hash);
+                blockchain.MarkInvalid(sampleTree["c4"].Hash);
+
+                var foundHeaders = blockchain.GetHeaders(allHeaders.Select(h => h.Hash));
+
+                Assert.That(foundHeaders.Where(h => h.IsValid).Select(sampleTree.GetName), Is.EquivalentTo(new string[]
                 {
-                    new DbHeader(KnownBlocks.Block100000.Header, KnownBlocks.Block100000.Hash, 0, 0, true),
-                    new DbHeader(KnownBlocks.Block100001.Header, KnownBlocks.Block100001.Hash, 1, 100, false),
-                    new DbHeader(KnownBlocks.Block100002.Header, KnownBlocks.Block100002.Hash, 2, 200, false)
-                };
-                Assert.That(foundHeaders.Select(h => h.AsText).ToArray(), Is.EqualTo(expectedHeaders.Select(h => h.AsText).ToArray()));
+                    "a0", "a1", "a2", "c3"
+                }));
+
+                Assert.That(foundHeaders.Where(h => !h.IsValid).Select(sampleTree.GetName), Is.EquivalentTo(new string[]
+                {
+                    "a3", "a4", "a5", "b5",
+                    "c4", "c5", "d5"
+                }));
+            }
+        }
+
+        [Test]
+        public void TestSaveInvalid()
+        {
+            SampleTree sampleTree = GenerateSampleTree();
+
+            string testFolder = TestUtils.PrepareTestFolder("*.db");
+            string filename = Path.Combine(testFolder, "headers.db");
+            using (HeaderStorage storage = HeaderStorage.Open(filename))
+            {
+                Blockchain2 blockchain = new Blockchain2(storage, sampleTree["a0"].Header);
+
+                List<DbHeader> headersA = sampleTree.GetHeaders("a0", "a1", "a2", "a3", "a4", "a5");
+                List<DbHeader> headersB = sampleTree.GetHeaders("b5");
+                List<DbHeader> headersC = sampleTree.GetHeaders("c3", "c4", "c5");
+                List<DbHeader> headersD = sampleTree.GetHeaders("d5");
+
+                // marking a3 and c4 as invalid 
+                headersA[3] = headersA[3].MarkInvalid();
+                headersC[1] = headersC[1].MarkInvalid();
+
+                var allHeaders = headersA.Union(headersB).Union(headersC).Union(headersD).ToList();
+
+                var savedHeaders = blockchain.Add(allHeaders);
+
+                Assert.That(savedHeaders.Where(h => h.IsValid).Select(sampleTree.GetName), Is.EquivalentTo(new string[]
+                {
+                    "a0", "a1", "a2", "c3"
+                }));
+
+                Assert.That(savedHeaders.Where(h => !h.IsValid).Select(sampleTree.GetName), Is.EquivalentTo(new string[]
+                {
+                    "a3", "a4", "a5", "b5",
+                    "c4", "c5", "d5"
+                }));
+
+                var foundHeaders = blockchain.GetHeaders(allHeaders.Select(h => h.Hash));
+
+                Assert.That(foundHeaders.Where(h => h.IsValid).Select(sampleTree.GetName), Is.EquivalentTo(new string[]
+                {
+                    "a0", "a1", "a2", "c3"
+                }));
+
+                Assert.That(foundHeaders.Where(h => !h.IsValid).Select(sampleTree.GetName), Is.EquivalentTo(new string[]
+                {
+                    "a3", "a4", "a5", "b5",
+                    "c4", "c5", "d5"
+                }));
+            }
+        }
+
+        [Test]
+        public void TestSaveAgainstInvalid()
+        {
+            SampleTree sampleTree = GenerateSampleTree();
+
+            string testFolder = TestUtils.PrepareTestFolder("*.db");
+            string filename = Path.Combine(testFolder, "headers.db");
+            using (HeaderStorage storage = HeaderStorage.Open(filename))
+            {
+                Blockchain2 blockchain = new Blockchain2(storage, sampleTree["a0"].Header);
+
+                List<DbHeader> headersA = sampleTree.GetHeaders("a0", "a1", "a2", "a3", "a4", "a5");
+                List<DbHeader> headersB = sampleTree.GetHeaders("b5");
+                List<DbHeader> headersC = sampleTree.GetHeaders("c3", "c4", "c5");
+                List<DbHeader> headersD = sampleTree.GetHeaders("d5");
+
+                blockchain.Add(headersA);
+                blockchain.MarkInvalid(sampleTree["a3"].Hash);
+                blockchain.Add(headersB);
+
+                blockchain.Add(headersC);
+                blockchain.MarkInvalid(sampleTree["c4"].Hash);
+                blockchain.Add(headersD);
+
+                var allHeaders = headersA.Union(headersB).Union(headersC).Union(headersD).ToList();
+
+                var foundHeaders = blockchain.GetHeaders(allHeaders.Select(h => h.Hash));
+
+                Assert.That(foundHeaders.Where(h => h.IsValid).Select(sampleTree.GetName), Is.EquivalentTo(new string[]
+                {
+                    "a0", "a1", "a2", "c3"
+                }));
+
+                Assert.That(foundHeaders.Where(h => !h.IsValid).Select(sampleTree.GetName), Is.EquivalentTo(new string[]
+                {
+                    "a3", "a4", "a5", "b5",
+                    "c4", "c5", "d5"
+                }));
             }
         }
 
@@ -99,9 +210,9 @@ namespace Test.BitcoinUtilities.Node.Services.Headers
             using (HeaderStorage storage = HeaderStorage.Open(filename))
             {
                 Blockchain2 blockchain = new Blockchain2(storage, sampleTree["a0"].Header);
-                blockchain.Add(sampleTree.GetBlocks("a1", "a2", "a3", "a4", "a5"));
-                blockchain.Add(sampleTree.GetBlocks("b5"));
-                blockchain.Add(sampleTree.GetBlocks("c3", "c4", "c5"));
+                blockchain.Add(sampleTree.GetHeaders("a1", "a2", "a3", "a4", "a5"));
+                blockchain.Add(sampleTree.GetHeaders("b5"));
+                blockchain.Add(sampleTree.GetHeaders("c3", "c4", "c5"));
 
                 Assert.That(blockchain.GetSubChain(sampleTree["d5"].Hash, 10), Is.Null);
 
@@ -157,25 +268,25 @@ namespace Test.BitcoinUtilities.Node.Services.Headers
                 Assert.That(sampleTree.GetName(blockchain.GetBestHead(sampleTree["a3"].Hash)), Is.Null);
                 Assert.That(sampleTree.GetName(blockchain.GetBestHead(sampleTree["c3"].Hash)), Is.Null);
 
-                blockchain.Add(sampleTree.GetBlocks("a1", "a2", "a3", "a4", "a5"));
+                blockchain.Add(sampleTree.GetHeaders("a1", "a2", "a3", "a4", "a5"));
                 Assert.That(blockchain.GetValidHeads().Select(sampleTree.GetName), Is.EquivalentTo(new string[] {"a5"}));
                 Assert.That(sampleTree.GetName(blockchain.GetBestHead()), Is.EqualTo("a5"));
                 Assert.That(sampleTree.GetName(blockchain.GetBestHead(sampleTree["a3"].Hash)), Is.EqualTo("a5"));
                 Assert.That(sampleTree.GetName(blockchain.GetBestHead(sampleTree["c3"].Hash)), Is.Null);
 
-                blockchain.Add(sampleTree.GetBlocks("c3", "c4", "c5"));
+                blockchain.Add(sampleTree.GetHeaders("c3", "c4", "c5"));
                 Assert.That(blockchain.GetValidHeads().Select(sampleTree.GetName), Is.EquivalentTo(new string[] {"a5", "c5"}));
                 Assert.That(sampleTree.GetName(blockchain.GetBestHead()), Is.EqualTo("c5"));
                 Assert.That(sampleTree.GetName(blockchain.GetBestHead(sampleTree["a3"].Hash)), Is.EqualTo("a5"));
                 Assert.That(sampleTree.GetName(blockchain.GetBestHead(sampleTree["c3"].Hash)), Is.EqualTo("c5"));
 
-                blockchain.Add(sampleTree.GetBlocks("d5"));
+                blockchain.Add(sampleTree.GetHeaders("d5"));
                 Assert.That(blockchain.GetValidHeads().Select(sampleTree.GetName), Is.EquivalentTo(new string[] {"a5", "c5", "d5"}));
                 Assert.That(sampleTree.GetName(blockchain.GetBestHead()), Is.EqualTo("c5"));
                 Assert.That(sampleTree.GetName(blockchain.GetBestHead(sampleTree["a3"].Hash)), Is.EqualTo("a5"));
                 Assert.That(sampleTree.GetName(blockchain.GetBestHead(sampleTree["c3"].Hash)), Is.EqualTo("c5"));
 
-                blockchain.Add(sampleTree.GetBlocks("b5"));
+                blockchain.Add(sampleTree.GetHeaders("b5"));
                 Assert.That(blockchain.GetValidHeads().Select(sampleTree.GetName), Is.EquivalentTo(new string[] {"a5", "b5", "c5", "d5"}));
                 Assert.That(sampleTree.GetName(blockchain.GetBestHead()), Is.EqualTo("b5"));
                 Assert.That(sampleTree.GetName(blockchain.GetBestHead(sampleTree["a3"].Hash)), Is.EqualTo("b5"));
@@ -249,15 +360,15 @@ namespace Test.BitcoinUtilities.Node.Services.Headers
             sampleTree.Add(headersC, "c", 3);
             sampleTree.Add(headersD, "d", 5);
 
-            Assert.That(sampleTree.GetBlocks("a5")[0].TotalWork, Is.EqualTo(50d));
-            Assert.That(sampleTree.GetBlocks("b5")[0].TotalWork, Is.EqualTo(55d));
-            Assert.That(sampleTree.GetBlocks("c5")[0].TotalWork, Is.EqualTo(53d));
-            Assert.That(sampleTree.GetBlocks("d5")[0].TotalWork, Is.EqualTo(52d));
+            Assert.That(sampleTree.GetHeaders("a5")[0].TotalWork, Is.EqualTo(50d));
+            Assert.That(sampleTree.GetHeaders("b5")[0].TotalWork, Is.EqualTo(55d));
+            Assert.That(sampleTree.GetHeaders("c5")[0].TotalWork, Is.EqualTo(53d));
+            Assert.That(sampleTree.GetHeaders("d5")[0].TotalWork, Is.EqualTo(52d));
 
-            Assert.That(sampleTree.GetBlocks("a5")[0].Height, Is.EqualTo(5));
-            Assert.That(sampleTree.GetBlocks("b5")[0].Height, Is.EqualTo(5));
-            Assert.That(sampleTree.GetBlocks("c5")[0].Height, Is.EqualTo(5));
-            Assert.That(sampleTree.GetBlocks("d5")[0].Height, Is.EqualTo(5));
+            Assert.That(sampleTree.GetHeaders("a5")[0].Height, Is.EqualTo(5));
+            Assert.That(sampleTree.GetHeaders("b5")[0].Height, Is.EqualTo(5));
+            Assert.That(sampleTree.GetHeaders("c5")[0].Height, Is.EqualTo(5));
+            Assert.That(sampleTree.GetHeaders("d5")[0].Height, Is.EqualTo(5));
 
             return sampleTree;
         }
@@ -309,7 +420,7 @@ namespace Test.BitcoinUtilities.Node.Services.Headers
 
             public DbHeader this[string blockName] => headers[blockName];
 
-            public List<DbHeader> GetBlocks(params string[] blockNames)
+            public List<DbHeader> GetHeaders(params string[] blockNames)
             {
                 return blockNames.Select(name => headers[name]).ToList();
             }
