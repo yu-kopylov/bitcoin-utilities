@@ -1,6 +1,5 @@
 ﻿using System.Collections.Generic;
 using BitcoinUtilities.Node.Rules;
-using BitcoinUtilities.P2P;
 using BitcoinUtilities.P2P.Primitives;
 
 namespace BitcoinUtilities.Node.Services.Headers
@@ -71,12 +70,5 @@ namespace BitcoinUtilities.Node.Services.Headers
 
             return r > 0;
         }
-
-        public string AsText =>
-            $"Hash:\t{HexUtils.GetString(this.Hash)}\r\n" +
-            $"Height:\t{this.Height}\r\n" +
-            $"TotalWork:\t{this.TotalWork}\r\n" +
-            $"IsValid:\t{this.IsValid}\r\n" +
-            $"Header:\t{HexUtils.GetString(BitcoinStreamWriter.GetBytes(this.Header.Write))}";
     }
 }

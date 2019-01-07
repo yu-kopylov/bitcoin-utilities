@@ -5,7 +5,7 @@ namespace BitcoinUtilities.Node.Events
     /// <summary>
     /// Represents event of receiving a message from a connected node.
     /// </summary>
-    public class MessageEvent
+    public sealed class MessageEvent
     {
         public MessageEvent(BitcoinEndpoint endpoint, IBitcoinMessage message)
         {

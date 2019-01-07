@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Data;
 using System.Data.SQLite;
 using System.IO;
@@ -49,6 +50,45 @@ namespace BitcoinUtilities.Node.Services
             using (SQLiteCommand command = new SQLiteCommand(createSchemaSql, conn))
             {
                 command.ExecuteNonQuery();
+            }
+        }
+
+        public static string GetInParameters(string parameterPrefix, int valuesCount)
+        {
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < valuesCount; i++)
+            {
+                if (i > 0)
+                {
+                    sb.Append(", ");
+                }
+
+                sb.Append($"@{parameterPrefix}{i}");
+            }
+
+            return sb.ToString();
+        }
+
+        public static void SetInParameters<T>(SQLiteParameterCollection parameters, string parameterPrefix, DbType parameterType, IReadOnlyCollection<T> values)
+        {
+            int index = 0;
+            foreach (T value in values)
+            {
+                parameters.Add($"@{parameterPrefix}{index}", parameterType).Value = value;
+                index++;
+            }
+        }
+
+        public static int ExecuteNonQuery(this SQLiteConnection conn, string sql, params Action<SQLiteParameterCollection>[] parameterSetters)
+        {
+            using (SQLiteCommand command = new SQLiteCommand(sql, conn))
+            {
+                foreach (var parameterSetter in parameterSetters)
+                {
+                    parameterSetter(command.Parameters);
+                }
+
+                return command.ExecuteNonQuery();
             }
         }
     }

@@ -52,6 +52,7 @@
     <Compile Include="Services\Blocks\TestBlockStorage.cs" />
     <Compile Include="Services\Headers\TestBlockchain.cs" />
     <Compile Include="Services\Headers\TestHeaderStorage.cs" />
+    <Compile Include="Services\Outputs\TestUtxoStorage.cs" />
     <Compile Include="TestNodeServiceCollection.cs" />
   </ItemGroup>
   <ItemGroup>

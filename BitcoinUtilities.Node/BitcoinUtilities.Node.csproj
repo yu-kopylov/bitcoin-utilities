@@ -66,6 +66,10 @@
     <Compile Include="Services\Headers\HeaderSubChain.cs" />
     <Compile Include="Services\NodeDiscoveryService.cs" />
     <Compile Include="Services\NodeEventHandlingService.cs" />
+    <Compile Include="Services\Outputs\UtxoHeader.cs" />
+    <Compile Include="Services\Outputs\UtxoOutput.cs" />
+    <Compile Include="Services\Outputs\UtxoStorage.cs" />
+    <Compile Include="Services\Outputs\UtxoUpdate.cs" />
     <Compile Include="Services\SqliteUtils.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -86,6 +90,9 @@
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Services\Headers\headers-create.sql" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Services\Outputs\utxo-create.sql" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="..\packages\System.Data.SQLite.Core.1.0.109.2\build\net45\System.Data.SQLite.Core.targets" Condition="Exists('..\packages\System.Data.SQLite.Core.1.0.109.2\build\net45\System.Data.SQLite.Core.targets')" />
