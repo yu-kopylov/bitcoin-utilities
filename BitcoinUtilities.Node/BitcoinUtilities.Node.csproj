@@ -66,6 +66,7 @@
     <Compile Include="Services\Headers\HeaderSubChain.cs" />
     <Compile Include="Services\NodeDiscoveryService.cs" />
     <Compile Include="Services\NodeEventHandlingService.cs" />
+    <Compile Include="Services\Outputs\UtxoAggregateUpdate.cs" />
     <Compile Include="Services\Outputs\UtxoHeader.cs" />
     <Compile Include="Services\Outputs\UtxoOutput.cs" />
     <Compile Include="Services\Outputs\UtxoStorage.cs" />

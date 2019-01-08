@@ -80,7 +80,7 @@ namespace BitcoinUtilities.Node.Services.Outputs
                                 ulong value = (ulong) reader.GetInt64(col++);
                                 byte[] script = (byte[]) reader[col++];
 
-                                res.Add(new UtxoOutput(outputPoint, height, value, script));
+                                res.Add(new UtxoOutput(outputPoint, height, value, script, -1));
                             }
                         }
                     }
@@ -99,24 +99,32 @@ namespace BitcoinUtilities.Node.Services.Outputs
 
         public void Update(IReadOnlyCollection<UtxoUpdate> updates)
         {
+            UtxoAggregateUpdate aggregateUpdate = new UtxoAggregateUpdate();
+            foreach (UtxoUpdate update in updates)
+            {
+                aggregateUpdate.Add(update);
+            }
+
             using (var tx = conn.BeginTransaction())
             {
-                foreach (UtxoUpdate update in updates)
+                CheckStateBeforeUpdate(aggregateUpdate);
+                InsertHeaders(aggregateUpdate.FirstHeaderHeight, aggregateUpdate.HeaderHashes);
+                foreach (var spentOutputs in aggregateUpdate.ExistingSpentOutputs)
                 {
-                    CheckStateBeforeUpdate(update);
-                    InsertHeader(update.HeaderHash, update.Height);
-                    MoveUnspentToSpent(update.Height, update.SpentOutputs);
-                    InsertUnspentOutputs(update.Height, update.NewOutputs);
+                    MoveUnspentToSpent(spentOutputs.Item1, spentOutputs.Item2);
                 }
+
+                InsertDirectlySpent(aggregateUpdate.DirectlySpentOutputs);
+                InsertUnspent(aggregateUpdate.UnspentOutputs.Values);
 
                 tx.Commit();
             }
         }
 
-        private void CheckStateBeforeUpdate(UtxoUpdate update)
+        private void CheckStateBeforeUpdate(UtxoAggregateUpdate aggregateUpdate)
         {
             UtxoHeader lastHeader = ReadHeader("order by Height desc");
-            if (update.Height == 0)
+            if (aggregateUpdate.FirstHeaderHeight == 0)
             {
                 if (lastHeader != null)
                 {
@@ -125,21 +133,36 @@ namespace BitcoinUtilities.Node.Services.Outputs
             }
             else
             {
-                if (lastHeader == null || lastHeader.Height != update.Height - 1 && !ByteArrayComparer.Instance.Equals(lastHeader.Hash, update.ParentHash))
+                if (lastHeader == null
+                    || lastHeader.Height != aggregateUpdate.FirstHeaderHeight - 1
+                    || !ByteArrayComparer.Instance.Equals(lastHeader.Hash, aggregateUpdate.FirstHeaderParent))
                 {
                     throw new InvalidOperationException("The last header in the UTXO storage does not match the parent header of the update.");
                 }
             }
         }
 
-        private void InsertHeader(byte[] headerHash, int height)
+        private void InsertHeaders(int firstHeaderHeight, List<byte[]> headerHashes)
         {
-            conn.ExecuteNonQuery(
+            int height = firstHeaderHeight;
+
+            using (SQLiteCommand command = new SQLiteCommand(
                 "insert into Headers(Hash, Height, IsReversible)" +
                 "values (@Hash, @Height, 1)",
-                p => p.Add("@Hash", DbType.Binary).Value = headerHash,
-                p => p.Add("@Height", DbType.Int32).Value = height
-            );
+                conn
+            ))
+            {
+                foreach (byte[] headerHash in headerHashes)
+                {
+                    command.Parameters.Add("@Hash", DbType.Binary).Value = headerHash;
+                    command.Parameters.Add("@Height", DbType.Int32).Value = height;
+
+                    command.ExecuteNonQuery();
+                    command.Parameters.Clear();
+
+                    height++;
+                }
+            }
         }
 
         private UtxoHeader ReadHeader(string filterAndOrder, params Action<SQLiteParameterCollection>[] parameterSetters)
@@ -195,7 +218,29 @@ namespace BitcoinUtilities.Node.Services.Outputs
             }
         }
 
-        private void InsertUnspentOutputs(int updateHeight, List<UtxoOutput> unspentOutputs)
+        private void InsertDirectlySpent(IEnumerable<UtxoOutput> unspentOutputs)
+        {
+            using (SQLiteCommand command = new SQLiteCommand(
+                "insert into SpentOutputs(OutputPoint, Height, Value, Script, SpentHeight)" +
+                "values (@OutputPoint, @Height, @Value, @Script, @SpentHeight)",
+                conn
+            ))
+            {
+                foreach (UtxoOutput output in unspentOutputs.OrderBy(p => p.Height))
+                {
+                    command.Parameters.Add("@Height", DbType.Int32).Value = output.Height;
+                    command.Parameters.Add("@OutputPoint", DbType.Binary).Value = output.OutputPoint;
+                    command.Parameters.Add("@Value", DbType.UInt64).Value = output.Value;
+                    command.Parameters.Add("@Script", DbType.Binary).Value = output.Script;
+                    command.Parameters.Add("@SpentHeight", DbType.Int32).Value = output.SpentHeight;
+
+                    command.ExecuteNonQuery();
+                    command.Parameters.Clear();
+                }
+            }
+        }
+
+        private void InsertUnspent(IEnumerable<UtxoOutput> unspentOutputs)
         {
             using (SQLiteCommand command = new SQLiteCommand(
                 "insert into UnspentOutputs(OutputPoint, Height, Value, Script)" +
@@ -205,7 +250,7 @@ namespace BitcoinUtilities.Node.Services.Outputs
             {
                 foreach (UtxoOutput output in unspentOutputs.OrderBy(p => p.OutputPoint[0]))
                 {
-                    command.Parameters.Add("@Height", DbType.Int32).Value = updateHeight;
+                    command.Parameters.Add("@Height", DbType.Int32).Value = output.Height;
                     command.Parameters.Add("@OutputPoint", DbType.Binary).Value = output.OutputPoint;
                     command.Parameters.Add("@Value", DbType.UInt64).Value = output.Value;
                     command.Parameters.Add("@Script", DbType.Binary).Value = output.Script;
