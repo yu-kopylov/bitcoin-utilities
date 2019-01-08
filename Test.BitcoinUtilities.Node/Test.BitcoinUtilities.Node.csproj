@@ -50,6 +50,7 @@
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Services\Blocks\TestBlockStorage.cs" />
+    <Compile Include="Services\Blocks\TestBlockStorageService.cs" />
     <Compile Include="Services\Headers\TestBlockchain.cs" />
     <Compile Include="Services\Headers\TestHeaderStorage.cs" />
     <Compile Include="Services\Outputs\TestUtxoStorage.cs" />

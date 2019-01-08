@@ -59,6 +59,7 @@
     <Compile Include="Services\BlockContentDownloadService.cs" />
     <Compile Include="Services\BlockHeaderDownloadService.cs" />
     <Compile Include="Services\Blocks\BlockStorage.cs" />
+    <Compile Include="Services\Blocks\BlockStorageService.cs" />
     <Compile Include="Services\BlockValidationService.cs" />
     <Compile Include="Services\Headers\Blockchain2.cs" />
     <Compile Include="Services\Headers\DbHeader.cs" />

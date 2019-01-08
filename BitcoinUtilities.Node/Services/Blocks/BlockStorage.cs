@@ -6,7 +6,7 @@ using System.IO;
 
 namespace BitcoinUtilities.Node.Services.Blocks
 {
-    internal class BlockStorage : IDisposable
+    public class BlockStorage : IDisposable
     {
         private const string BlocksFilename = "blocks2.db";
 

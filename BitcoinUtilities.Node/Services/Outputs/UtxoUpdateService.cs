@@ -9,14 +9,14 @@ using BitcoinUtilities.Threading;
 
 namespace BitcoinUtilities.Node.Services.Outputs
 {
-    public class UtxoUpdateService : NodeEventHandlingService
+    public class UtxoUpdateService : EventHandlingService
     {
         private readonly EventServiceController controller;
         private readonly Blockchain2 blockchain;
         private readonly UtxoStorage utxoStorage;
 
         // todo: add specific type for node-scoped services?
-        public UtxoUpdateService(EventServiceController controller, Blockchain2 blockchain, UtxoStorage utxoStorage) : base(null)
+        public UtxoUpdateService(EventServiceController controller, Blockchain2 blockchain, UtxoStorage utxoStorage)
         {
             this.controller = controller;
             this.blockchain = blockchain;
@@ -112,7 +112,6 @@ namespace BitcoinUtilities.Node.Services.Outputs
                 outPoints.Add(UtxoOutput.CreateOutPoint(tx.Inputs[0].PreviousOutput));
             }
 
-            // todo: ??? do know which header is the last header in UTXO ??? 
             Dictionary<byte[], UtxoOutput> existingOutputs = utxoStorage.GetUnspentOutputs(outPoints).ToDictionary(
                 o => o.OutputPoint, ByteArrayComparer.Instance
             );
