@@ -296,7 +296,7 @@ namespace Test.BitcoinUtilities.Node.Services.Outputs
                     pendingUpdates.Add(update);
                     existingOutputs.AddRange(update.NewOutputs);
 
-                    if (pendingUpdates.Count >= 10)
+                    if (pendingUpdates.Count >= 100)
                     {
                         Stopwatch sw = Stopwatch.StartNew();
                         storage.Update(pendingUpdates);

@@ -108,14 +108,11 @@ namespace BitcoinUtilities.Node.Services.Outputs
             using (var tx = conn.BeginTransaction())
             {
                 CheckStateBeforeUpdate(aggregateUpdate);
-                InsertHeaders(aggregateUpdate.FirstHeaderHeight, aggregateUpdate.HeaderHashes);
-                foreach (var spentOutputs in aggregateUpdate.ExistingSpentOutputs)
-                {
-                    MoveUnspentToSpent(spentOutputs.Item1, spentOutputs.Item2);
-                }
 
-                InsertDirectlySpent(aggregateUpdate.DirectlySpentOutputs);
+                InsertHeaders(aggregateUpdate.FirstHeaderHeight, aggregateUpdate.HeaderHashes);
+                DeleteUnspent(aggregateUpdate.ExistingSpentOutputs);
                 InsertUnspent(aggregateUpdate.UnspentOutputs.Values);
+                InsertSpent(aggregateUpdate.AllSpentOutputs);
 
                 tx.Commit();
             }
@@ -192,33 +189,24 @@ namespace BitcoinUtilities.Node.Services.Outputs
             }
         }
 
-        private void MoveUnspentToSpent(int updateHeight, List<UtxoOutput> spentOutputs)
+        private void DeleteUnspent(List<UtxoOutput> outputs)
         {
-            List<byte[]> outPoints = spentOutputs.Select(o => o.OutputPoint).ToList();
+            List<byte[]> outPoints = outputs.Select(o => o.OutputPoint).ToList();
 
             foreach (List<byte[]> chunk in outPoints.OrderBy(p => p[0]).Split(900))
             {
                 int affectedRows = conn.ExecuteNonQuery(
-                    "insert into SpentOutputs(OutputPoint, Height, Value, Script, SpentHeight)" +
-                    "select OutputPoint, Height, Value, Script, @SpentHeight from UnspentOutputs" +
-                    $" where OutputPoint in ({SqliteUtils.GetInParameters("O", chunk.Count)})",
-                    p => SqliteUtils.SetInParameters(p, "O", DbType.Binary, chunk),
-                    p => p.AddWithValue("@SpentHeight", updateHeight)
+                    $"delete from UnspentOutputs where OutputPoint in ({SqliteUtils.GetInParameters("O", chunk.Count)})",
+                    p => SqliteUtils.SetInParameters(p, "O", DbType.Binary, chunk)
                 );
-
                 if (affectedRows != chunk.Count)
                 {
                     throw new InvalidOperationException("Attempt to spend a non-existing output.");
                 }
-
-                conn.ExecuteNonQuery(
-                    $"delete from UnspentOutputs where OutputPoint in ({SqliteUtils.GetInParameters("O", chunk.Count)})",
-                    p => SqliteUtils.SetInParameters(p, "O", DbType.Binary, chunk)
-                );
             }
         }
 
-        private void InsertDirectlySpent(IEnumerable<UtxoOutput> unspentOutputs)
+        private void InsertSpent(IEnumerable<UtxoOutput> unspentOutputs)
         {
             using (SQLiteCommand command = new SQLiteCommand(
                 "insert into SpentOutputs(OutputPoint, Height, Value, Script, SpentHeight)" +

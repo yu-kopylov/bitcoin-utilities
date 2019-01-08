@@ -11,8 +11,8 @@ namespace BitcoinUtilities.Node.Services.Outputs
 
         public List<byte[]> HeaderHashes { get; } = new List<byte[]>();
 
-        public List<Tuple<int, List<UtxoOutput>>> ExistingSpentOutputs { get; } = new List<Tuple<int, List<UtxoOutput>>>();
-        public List<UtxoOutput> DirectlySpentOutputs { get; } = new List<UtxoOutput>();
+        public List<UtxoOutput> AllSpentOutputs { get; } = new List<UtxoOutput>();
+        public List<UtxoOutput> ExistingSpentOutputs { get; } = new List<UtxoOutput>();
         public Dictionary<byte[], UtxoOutput> UnspentOutputs { get; } = new Dictionary<byte[], UtxoOutput>(ByteArrayComparer.Instance);
 
         public void Add(UtxoUpdate update)
@@ -35,18 +35,16 @@ namespace BitcoinUtilities.Node.Services.Outputs
 
             HeaderHashes.Add(update.HeaderHash);
 
-            List<UtxoOutput> existingSpentOutputs = new List<UtxoOutput>();
-            ExistingSpentOutputs.Add(new Tuple<int, List<UtxoOutput>>(update.Height, existingSpentOutputs));
-
             foreach (UtxoOutput output in update.SpentOutputs)
             {
-                if (UnspentOutputs.Remove(output.OutputPoint))
+                // todo: this seems to be a wrong place to set heigh
+                UtxoOutput spentOutput = output.Spend(update.Height);
+
+                AllSpentOutputs.Add(spentOutput);
+
+                if (!UnspentOutputs.Remove(output.OutputPoint))
                 {
-                    DirectlySpentOutputs.Add(output.Spend(update.Height));
-                }
-                else
-                {
-                    existingSpentOutputs.Add(output);
+                    ExistingSpentOutputs.Add(spentOutput);
                 }
             }
 
