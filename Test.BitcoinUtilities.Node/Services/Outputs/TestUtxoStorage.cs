@@ -15,6 +15,7 @@ namespace Test.BitcoinUtilities.Node.Services.Outputs
     public class TestUtxoStorage
     {
         // todo: test revert and truncate, including revert to future
+        // todo: test GetLastHeader
 
         [Test]
         public void TestSaveAndReopen()
@@ -33,17 +34,17 @@ namespace Test.BitcoinUtilities.Node.Services.Outputs
             byte[] header2 = CryptoUtils.DoubleSha256(Encoding.ASCII.GetBytes("header2"));
             byte[] header2Tx1 = CryptoUtils.DoubleSha256(Encoding.ASCII.GetBytes("header2Tx1"));
 
-            UtxoOutput header0Tx1Out0 = new UtxoOutput(CreateOutPoint(header0Tx1, 0), 0, 100, new byte[] {0, 1, 0}, -1);
-            UtxoOutput header0Tx1Out1 = new UtxoOutput(CreateOutPoint(header0Tx1, 1), 0, 200, new byte[] {0, 1, 1}, -1);
-            UtxoOutput header0Tx2Out0 = new UtxoOutput(CreateOutPoint(header0Tx2, 0), 0, 300, new byte[] {0, 2, 0}, -1);
-            UtxoOutput header0Tx2Out1 = new UtxoOutput(CreateOutPoint(header0Tx2, 1), 0, 400, new byte[] {0, 2, 1}, -1);
+            UtxoOutput header0Tx1Out0 = new UtxoOutput(UtxoOutput.CreateOutPoint(header0Tx1, 0), 0, 100, new byte[] {0, 1, 0}, -1);
+            UtxoOutput header0Tx1Out1 = new UtxoOutput(UtxoOutput.CreateOutPoint(header0Tx1, 1), 0, 200, new byte[] {0, 1, 1}, -1);
+            UtxoOutput header0Tx2Out0 = new UtxoOutput(UtxoOutput.CreateOutPoint(header0Tx2, 0), 0, 300, new byte[] {0, 2, 0}, -1);
+            UtxoOutput header0Tx2Out1 = new UtxoOutput(UtxoOutput.CreateOutPoint(header0Tx2, 1), 0, 400, new byte[] {0, 2, 1}, -1);
 
-            UtxoOutput header1Tx1Out0 = new UtxoOutput(CreateOutPoint(header1Tx1, 0), 1, 500, new byte[] {1, 1, 0}, -1);
-            UtxoOutput header1Tx2Out0 = new UtxoOutput(CreateOutPoint(header1Tx2, 0), 1, 600, new byte[] {1, 2, 0}, -1);
-            UtxoOutput header1Tx2Out1 = new UtxoOutput(CreateOutPoint(header1Tx2, 1), 1, 700, new byte[] {1, 2, 1}, -1);
+            UtxoOutput header1Tx1Out0 = new UtxoOutput(UtxoOutput.CreateOutPoint(header1Tx1, 0), 1, 500, new byte[] {1, 1, 0}, -1);
+            UtxoOutput header1Tx2Out0 = new UtxoOutput(UtxoOutput.CreateOutPoint(header1Tx2, 0), 1, 600, new byte[] {1, 2, 0}, -1);
+            UtxoOutput header1Tx2Out1 = new UtxoOutput(UtxoOutput.CreateOutPoint(header1Tx2, 1), 1, 700, new byte[] {1, 2, 1}, -1);
 
-            UtxoOutput header2Tx1Out0 = new UtxoOutput(CreateOutPoint(header2Tx1, 0), 2, 0x1234567890123450ul, new byte[] {1, 2, 0}, -1);
-            UtxoOutput header2Tx1Out1 = new UtxoOutput(CreateOutPoint(header2Tx1, 1), 2, 0xF234567890123450ul, new byte[] {2, 1, 1}, -1);
+            UtxoOutput header2Tx1Out0 = new UtxoOutput(UtxoOutput.CreateOutPoint(header2Tx1, 0), 2, 0x1234567890123450ul, new byte[] {1, 2, 0}, -1);
+            UtxoOutput header2Tx1Out1 = new UtxoOutput(UtxoOutput.CreateOutPoint(header2Tx1, 1), 2, 0xF234567890123450ul, new byte[] {2, 1, 1}, -1);
 
             var allOutputs = new List<UtxoOutput>
             {
@@ -143,17 +144,17 @@ namespace Test.BitcoinUtilities.Node.Services.Outputs
             byte[] header2 = CryptoUtils.DoubleSha256(Encoding.ASCII.GetBytes("header2"));
             byte[] header2Tx1 = CryptoUtils.DoubleSha256(Encoding.ASCII.GetBytes("header2Tx1"));
 
-            UtxoOutput header0Tx1Out0 = new UtxoOutput(CreateOutPoint(header0Tx1, 0), 0, 100, new byte[] {0, 1, 0}, -1);
-            UtxoOutput header0Tx1Out1 = new UtxoOutput(CreateOutPoint(header0Tx1, 1), 0, 200, new byte[] {0, 1, 1}, -1);
-            UtxoOutput header0Tx2Out0 = new UtxoOutput(CreateOutPoint(header0Tx2, 0), 0, 300, new byte[] {0, 2, 0}, -1);
-            UtxoOutput header0Tx2Out1 = new UtxoOutput(CreateOutPoint(header0Tx2, 1), 0, 400, new byte[] {0, 2, 1}, -1);
+            UtxoOutput header0Tx1Out0 = new UtxoOutput(UtxoOutput.CreateOutPoint(header0Tx1, 0), 0, 100, new byte[] {0, 1, 0}, -1);
+            UtxoOutput header0Tx1Out1 = new UtxoOutput(UtxoOutput.CreateOutPoint(header0Tx1, 1), 0, 200, new byte[] {0, 1, 1}, -1);
+            UtxoOutput header0Tx2Out0 = new UtxoOutput(UtxoOutput.CreateOutPoint(header0Tx2, 0), 0, 300, new byte[] {0, 2, 0}, -1);
+            UtxoOutput header0Tx2Out1 = new UtxoOutput(UtxoOutput.CreateOutPoint(header0Tx2, 1), 0, 400, new byte[] {0, 2, 1}, -1);
 
-            UtxoOutput header1Tx1Out0 = new UtxoOutput(CreateOutPoint(header1Tx1, 0), 1, 500, new byte[] {1, 1, 0}, -1);
-            UtxoOutput header1Tx2Out0 = new UtxoOutput(CreateOutPoint(header1Tx2, 0), 1, 600, new byte[] {1, 2, 0}, -1);
-            UtxoOutput header1Tx2Out1 = new UtxoOutput(CreateOutPoint(header1Tx2, 1), 1, 700, new byte[] {1, 2, 1}, -1);
+            UtxoOutput header1Tx1Out0 = new UtxoOutput(UtxoOutput.CreateOutPoint(header1Tx1, 0), 1, 500, new byte[] {1, 1, 0}, -1);
+            UtxoOutput header1Tx2Out0 = new UtxoOutput(UtxoOutput.CreateOutPoint(header1Tx2, 0), 1, 600, new byte[] {1, 2, 0}, -1);
+            UtxoOutput header1Tx2Out1 = new UtxoOutput(UtxoOutput.CreateOutPoint(header1Tx2, 1), 1, 700, new byte[] {1, 2, 1}, -1);
 
-            UtxoOutput header2Tx1Out0 = new UtxoOutput(CreateOutPoint(header2Tx1, 0), 2, 0x1234567890123450ul, new byte[] {1, 2, 0}, -1);
-            UtxoOutput header2Tx1Out1 = new UtxoOutput(CreateOutPoint(header2Tx1, 1), 2, 0xF234567890123450ul, new byte[] {2, 1, 1}, -1);
+            UtxoOutput header2Tx1Out0 = new UtxoOutput(UtxoOutput.CreateOutPoint(header2Tx1, 0), 2, 0x1234567890123450ul, new byte[] {1, 2, 0}, -1);
+            UtxoOutput header2Tx1Out1 = new UtxoOutput(UtxoOutput.CreateOutPoint(header2Tx1, 1), 2, 0xF234567890123450ul, new byte[] {2, 1, 1}, -1);
 
             var allOutputs = new List<UtxoOutput>
             {
@@ -262,7 +263,7 @@ namespace Test.BitcoinUtilities.Node.Services.Outputs
                         byte[] txHash = CryptoUtils.DoubleSha256(Encoding.ASCII.GetBytes($"Header: {height}, Tx: {txNum}"));
                         for (int outputIndex = 0; outputIndex < 2; outputIndex++)
                         {
-                            byte[] outPoint = CreateOutPoint(txHash, outputIndex);
+                            byte[] outPoint = UtxoOutput.CreateOutPoint(txHash, outputIndex);
                             UtxoOutput output = new UtxoOutput(outPoint, height, 123, new byte[] {32}, -1);
                             update.NewOutputs.Add(output);
                         }
@@ -310,26 +311,13 @@ namespace Test.BitcoinUtilities.Node.Services.Outputs
 
         private string FormatOutput(UtxoOutput output)
         {
-            return string.Join(", ", new string[]
-            {
+            return string.Join(", ",
                 $"Height: {output.Height}",
                 $"OutputPoint: {HexUtils.GetString(output.OutputPoint)}",
                 $"Value: {output.Value}",
                 $"Script: {HexUtils.GetString(output.Script)}",
                 $"SpentHeight: {output.SpentHeight}"
-            });
-        }
-
-        private byte[] CreateOutPoint(byte[] txHash, int outputIndex)
-        {
-            int hashLength = txHash.Length;
-            byte[] outPoint = new byte[hashLength + 4];
-            Array.Copy(txHash, outPoint, hashLength);
-            outPoint[hashLength + 0] = (byte) outputIndex;
-            outPoint[hashLength + 1] = (byte) (outputIndex >> 8);
-            outPoint[hashLength + 2] = (byte) (outputIndex >> 16);
-            outPoint[hashLength + 3] = (byte) (outputIndex >> 24);
-            return outPoint;
+            );
         }
     }
 }

@@ -53,6 +53,19 @@ namespace BitcoinUtilities.Node.Services.Outputs
             return new UtxoStorage(conn);
         }
 
+        public UtxoHeader GetLastHeader()
+        {
+            UtxoHeader bestHeader;
+
+            using (var tx = conn.BeginTransaction())
+            {
+                bestHeader = ReadHeader("order by Height desc");
+                tx.Commit();
+            }
+
+            return bestHeader;
+        }
+
         public IReadOnlyCollection<UtxoOutput> GetUnspentOutputs(IEnumerable<byte[]> outputPoints)
         {
             List<UtxoOutput> res = new List<UtxoOutput>();

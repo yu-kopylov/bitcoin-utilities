@@ -51,6 +51,7 @@
   <ItemGroup>
     <Compile Include="BitcoinNode.cs" />
     <Compile Include="Events\MessageEvent.cs" />
+    <Compile Include="Events\PrefetchBlocksEvent.cs" />
     <Compile Include="INodeEventServiceFactory.cs" />
     <Compile Include="INodeServiceFactory.cs" />
     <Compile Include="NodeServiceCollection.cs" />
@@ -71,6 +72,7 @@
     <Compile Include="Services\Outputs\UtxoOutput.cs" />
     <Compile Include="Services\Outputs\UtxoStorage.cs" />
     <Compile Include="Services\Outputs\UtxoUpdate.cs" />
+    <Compile Include="Services\Outputs\UtxoUpdateService.cs" />
     <Compile Include="Services\SqliteUtils.cs" />
   </ItemGroup>
   <ItemGroup>

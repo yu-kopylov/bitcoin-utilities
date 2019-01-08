@@ -66,14 +66,13 @@ namespace Test.BitcoinUtilities.Node.Services.Headers
 
         private string FormatHeader(DbHeader header)
         {
-            return string.Join(", ", new string[]
-            {
+            return string.Join(", ",
                 $"Hash: {HexUtils.GetString(header.Hash)}",
                 $"Height: {header.Height}",
                 $"TotalWork: {header.TotalWork}",
                 $"IsValid: {header.IsValid}",
                 $"Header: {HexUtils.GetString(BitcoinStreamWriter.GetBytes(header.Header.Write))}"
-            });
+            );
         }
     }
 }
