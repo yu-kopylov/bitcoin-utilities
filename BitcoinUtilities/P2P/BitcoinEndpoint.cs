@@ -3,13 +3,17 @@ using System.IO;
 using System.Net;
 using System.Threading;
 using BitcoinUtilities.P2P.Messages;
-using BitcoinUtilities.Threading;
-using NLog;
 
 namespace BitcoinUtilities.P2P
 {
     /// <summary>
-    /// Provides a P2P Bitcoin network endpoint that listens for incoming messages and provides means for sending messages.
+    /// Represents a P2P Bitcoin network endpoint.
+    /// <list type="bullet">
+    /// <item><description>Performs handshake with remote node.</description></item>
+    /// <item><description>Has a thread that listens for incoming messages.</description></item>
+    /// <item><description>Provides methods for sending messages.</description></item>
+    /// <item><description>Answers ping messages.</description></item>
+    /// </list>
     /// </summary>
     /// <remarks>
     /// Specifications:<br/>
@@ -18,8 +22,6 @@ namespace BitcoinUtilities.P2P
     /// </remarks>
     public class BitcoinEndpoint : IDisposable
     {
-        private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
-
         private const string UserAgent = "/BitcoinUtilities:0.0.1/";
         private readonly int protocolVersion = 70002;
         private const ulong Services = 0;
@@ -29,15 +31,10 @@ namespace BitcoinUtilities.P2P
 
         private readonly BitcoinMessageHandler messageHandler;
 
-        private const int MessageProcessingThreadsCount = 4;
-        private const int MessageProcessingTasksCount = 5;
-        private const int MessageProcessingStartTimeout = 300000;
-
         private BitcoinConnection conn;
         private BitcoinPeerInfo peerInfo;
 
         private Thread listenerThread;
-        private BlockingThreadPool threadPool;
         private volatile bool running;
 
         private readonly object disconnectLock = new object();
@@ -52,15 +49,7 @@ namespace BitcoinUtilities.P2P
         {
             //todo: shutdown gracefully
             running = false;
-            if (conn != null)
-            {
-                conn.Dispose();
-            }
-            if (threadPool != null)
-            {
-                //todo: set better value?
-                threadPool.Stop(10000);
-            }
+            conn?.Dispose();
         }
 
         public int ProtocolVersion
@@ -73,12 +62,12 @@ namespace BitcoinUtilities.P2P
             get { return peerInfo; }
         }
 
-        public event Action Disconnected;
+        private event Action Disconnected;
 
         /// <summary>
         /// Method attaches the given handler to the <see cref="Disconnected"/> event.
         /// <para/>
-        /// It also guaranties that the handler would be called even if the endpoint was already disconnected.
+        /// It also guaranties that the handler will be called even if the endpoint was already disconnected.
         /// </summary>
         /// <param name="handler">The handler.</param>
         public void CallWhenDisconnected(Action handler)
@@ -89,6 +78,7 @@ namespace BitcoinUtilities.P2P
                 runNow = disconnected;
                 Disconnected += handler;
             }
+
             if (runNow)
             {
                 handler();
@@ -164,11 +154,9 @@ namespace BitcoinUtilities.P2P
 
             running = true;
 
-            threadPool = new BlockingThreadPool(MessageProcessingThreadsCount, MessageProcessingTasksCount);
-
             listenerThread = new Thread(Listen);
             listenerThread.Name = "Endpoint Listener";
-            listenerThread.IsBackground = true; //todo: ??? should it be background?
+            listenerThread.IsBackground = true;
             listenerThread.Start();
         }
 
@@ -197,14 +185,8 @@ namespace BitcoinUtilities.P2P
                     //todo: this was happening before BitcoinNetworkException was introduced when endpoint was disposed, can it happen for other reasons?
                     break;
                 }
-                if (!threadPool.Execute(() => HandleMessage(message), MessageProcessingStartTimeout))
-                {
-                    //todo: terminate connection?
-                    logger.Warn(
-                        "Message was ignored because all threads were busy (command: {0}, payload: {1} byte(s)).",
-                        message.Command,
-                        message.Payload.Length);
-                }
+
+                HandleMessage(message);
             }
 
             Action handler;
@@ -234,9 +216,8 @@ namespace BitcoinUtilities.P2P
 
             IBitcoinMessage parsedMessage = BitcoinMessageParser.Parse(message);
 
-            if (parsedMessage is PingMessage)
+            if (parsedMessage is PingMessage ping)
             {
-                PingMessage ping = (PingMessage) parsedMessage;
                 WriteMessage(new PongMessage(ping.Nonce));
             }
 

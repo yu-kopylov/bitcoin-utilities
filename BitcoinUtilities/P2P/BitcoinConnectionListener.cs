@@ -5,6 +5,9 @@ using System.Threading;
 
 namespace BitcoinUtilities.P2P
 {
+    /// <summary>
+    /// A thread that listens for incoming connections.
+    /// </summary>
     public class BitcoinConnectionListener : IDisposable
     {
         private readonly IPAddress address;
@@ -57,6 +60,7 @@ namespace BitcoinUtilities.P2P
                     //todo: this happens when listener is stopped, can it happen for other reasons?
                     return;
                 }
+
                 BitcoinConnection conn = new BitcoinConnection(tcpClient);
                 connectionHandler(conn);
             }

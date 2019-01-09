@@ -243,7 +243,7 @@ namespace BitcoinUtilities.Node
             services.OnNodeConnected(endpoint);
             //todo: make sure that OnNodeConnected is always called before OnNodeDisconnected and before message processing
             //todo: remove associated services from eventServiceController
-            endpoint.Disconnected += () => services.OnNodeDisconnected(endpoint);
+            endpoint.CallWhenDisconnected(() => services.OnNodeDisconnected(endpoint));
         }
 
         private void HandleIncomingConnection(BitcoinConnection connection)
@@ -269,7 +269,7 @@ namespace BitcoinUtilities.Node
             services.OnNodeConnected(endpoint);
             //todo: make sure that OnNodeConnected is always called before OnNodeDisconnected and before message processing
             //todo: remove associated services from eventServiceController
-            endpoint.Disconnected += () => services.OnNodeDisconnected(endpoint);
+            endpoint.CallWhenDisconnected(() => services.OnNodeDisconnected(endpoint));
         }
 
         private bool HandleMessage(BitcoinEndpoint endpoint, IBitcoinMessage message)
