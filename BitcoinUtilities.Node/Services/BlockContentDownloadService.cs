@@ -21,15 +21,15 @@ namespace BitcoinUtilities.Node.Services
 
         private readonly object lockObject = new object();
 
-        private readonly BitcoinNode node;
+        private readonly Blockchain blockchain;
 
         private readonly Dictionary<BitcoinEndpoint, EndpointState> endpoints = new Dictionary<BitcoinEndpoint, EndpointState>();
 
         private readonly Dictionary<byte[], BlockState> requiredBlocks = new Dictionary<byte[], BlockState>(ByteArrayComparer.Instance);
 
-        public BlockContentDownloadService(BitcoinNode node, CancellationToken cancellationToken)
+        public BlockContentDownloadService(Blockchain blockchain, CancellationToken cancellationToken)
         {
-            this.node = node;
+            this.blockchain = blockchain;
             this.cancellationToken = cancellationToken;
 
             UpdateRequiredBlocks();
@@ -54,7 +54,7 @@ namespace BitcoinUtilities.Node.Services
                 {
                     int minRequiredBlockHeight = requiredBlocks.Values.Min(b => b.Height);
                     int locatorHeight = minRequiredBlockHeight - 1;
-                    List<StoredBlock> parentBlocks = node.Blockchain.GetBlocksByHeight(BlockLocator.GetRequiredBlockHeights(locatorHeight));
+                    List<StoredBlock> parentBlocks = blockchain.GetBlocksByHeight(BlockLocator.GetRequiredBlockHeights(locatorHeight));
                     locator = new BlockLocator();
                     foreach (StoredBlock block in parentBlocks)
                     {
@@ -78,6 +78,7 @@ namespace BitcoinUtilities.Node.Services
                 {
                     return;
                 }
+
                 endpoints.Remove(endpoint);
                 foreach (BlockRequest blockRequest in endpointState.BlockRequests.Values)
                 {
@@ -129,6 +130,7 @@ namespace BitcoinUtilities.Node.Services
                         endpointState.AdvertisedBlocks.Add(vector.Hash, utcNow);
                     }
                 }
+
                 while (endpointState.AdvertisedBlocks.Count > MaxAdvertisedBlocksPerNode)
                 {
                     endpointState.AdvertisedBlocks.Remove(endpointState.AdvertisedBlocks.First().Key);
@@ -145,15 +147,18 @@ namespace BitcoinUtilities.Node.Services
                         {
                             continue;
                         }
+
                         if (!endpointState.AdvertisedBlocks.ContainsKey(blockState.Hash))
                         {
                             continue;
                         }
+
                         //todo: there are situations when request was sent, but timed out and should be requested again
                         if (endpointState.HasPendingRequest(blockState.Hash))
                         {
                             continue;
                         }
+
                         blocksToRequest.Add(blockState);
                         if (blocksToRequest.Count >= maxBlocksToRequest)
                         {
@@ -191,10 +196,11 @@ namespace BitcoinUtilities.Node.Services
                 {
                     return;
                 }
+
                 //todo: here there is a lock within lock
                 //todo: if block is invalid don't ask for it again
                 //todo: if block is invalid truncate headers chain and select other chain if necessary
-                node.Blockchain.AddBlockContent(blockMessage);
+                blockchain.AddBlockContent(blockMessage);
                 RemoveRequiredBlock(blockHash);
             }
         }
@@ -203,7 +209,7 @@ namespace BitcoinUtilities.Node.Services
         {
             lock (lockObject)
             {
-                List<StoredBlock> blocks = node.Blockchain.GetOldestBlocksWithoutContent(MaxRequiredBlocks);
+                List<StoredBlock> blocks = blockchain.GetOldestBlocksWithoutContent(MaxRequiredBlocks);
                 Dictionary<byte[], StoredBlock> blocksMap = blocks.ToDictionary(b => b.Hash, ByteArrayComparer.Instance);
 
                 foreach (byte[] hash in requiredBlocks.Keys)
@@ -213,6 +219,7 @@ namespace BitcoinUtilities.Node.Services
                         RemoveRequiredBlock(hash);
                     }
                 }
+
                 foreach (StoredBlock block in blocks)
                 {
                     if (!requiredBlocks.ContainsKey(block.Hash))
@@ -297,14 +304,6 @@ namespace BitcoinUtilities.Node.Services
             public BitcoinEndpoint Endpoint { get; private set; }
 
             public DateTime RequestDate { get; private set; }
-        }
-    }
-
-    public class BlockContentDownloadServiceFactory : INodeServiceFactory
-    {
-        public INodeService Create(BitcoinNode node, CancellationToken cancellationToken)
-        {
-            return new BlockContentDownloadService(node, cancellationToken);
         }
     }
 }

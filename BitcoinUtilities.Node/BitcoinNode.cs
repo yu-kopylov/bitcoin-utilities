@@ -14,7 +14,6 @@ using BitcoinUtilities.Node.Services.Outputs;
 using BitcoinUtilities.P2P;
 using BitcoinUtilities.P2P.Messages;
 using BitcoinUtilities.P2P.Primitives;
-using BitcoinUtilities.Storage;
 using BitcoinUtilities.Threading;
 
 namespace BitcoinUtilities.Node
@@ -28,8 +27,6 @@ namespace BitcoinUtilities.Node
         private readonly List<INodeEventServiceFactory> eventServiceFactories = new List<INodeEventServiceFactory>();
 
         private readonly NetworkParameters networkParameters;
-        private readonly IBlockchainStorage storage;
-        private readonly Blockchain blockchain;
 
         private readonly HeaderStorage headerStorage;
         private readonly Blockchain2 blockchain2;
@@ -45,11 +42,9 @@ namespace BitcoinUtilities.Node
         private readonly CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
         private bool started;
 
-        public BitcoinNode(NetworkParameters networkParameters, string dataFolder, IBlockchainStorage storage)
+        public BitcoinNode(NetworkParameters networkParameters, string dataFolder)
         {
             this.networkParameters = networkParameters;
-            this.storage = storage;
-            this.blockchain = new Blockchain(networkParameters, storage);
 
             // todo: storages are implementation-specific, should use some resource factory instead
             // todo: align creation of files and folders
@@ -70,9 +65,6 @@ namespace BitcoinUtilities.Node
             }
 
             services.AddFactory(new NodeDiscoveryServiceFactory());
-            //services.AddFactory(new BlockHeaderDownloadServiceFactory());
-            //services.AddFactory(new BlockContentDownloadServiceFactory());
-            //services.AddFactory(new BlockValidationServiceFactory());
             eventServiceFactories.Add(new HeaderDowloadServiceFactory());
             eventServiceFactories.Add(new BlockStorageServiceFactory());
             eventServiceFactories.Add(new BlockDownloadServiceFactory());
@@ -120,16 +112,6 @@ namespace BitcoinUtilities.Node
             get { return eventServiceController; }
         }
 
-        public IBlockchainStorage Storage
-        {
-            get { return storage; }
-        }
-
-        public Blockchain Blockchain
-        {
-            get { return blockchain; }
-        }
-
         public Blockchain2 Blockchain2
         {
             get { return blockchain2; }
@@ -154,8 +136,6 @@ namespace BitcoinUtilities.Node
 
         public void Start()
         {
-            blockchain.Init();
-
             //todo: review the order in which services and listener start/stop, dispose created entities when start fails
             services.CreateServices(this, cancellationTokenSource.Token);
 

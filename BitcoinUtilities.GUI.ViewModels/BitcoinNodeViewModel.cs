@@ -4,7 +4,6 @@ using System.IO;
 using System.Runtime.CompilerServices;
 using BitcoinUtilities.GUI.Models;
 using BitcoinUtilities.Node;
-using BitcoinUtilities.Storage.SQLite;
 
 namespace BitcoinUtilities.GUI.ViewModels
 {
@@ -113,9 +112,7 @@ namespace BitcoinUtilities.GUI.ViewModels
             NetworkParameters networkParameters = NetworkParameters.BitcoinCoreMain;
 
             string dataFolder = Path.Combine(applicationContext.Settings.BlockchainFolder, networkParameters.Name);
-            SQLiteBlockchainStorage storage = SQLiteBlockchainStorage.Open(dataFolder);
-
-            BitcoinNode node = new BitcoinNode(networkParameters, dataFolder, storage);
+            BitcoinNode node = new BitcoinNode(networkParameters, dataFolder);
             try
             {
                 node.Start();
@@ -138,7 +135,6 @@ namespace BitcoinUtilities.GUI.ViewModels
             const string nodeStateChangedEventType = "NodeStateChanged";
             node.PropertyChanged += (sender, args) => applicationContext.EventManager.Notify(nodeStateChangedEventType);
             node.ConnectionCollection.Changed += () => applicationContext.EventManager.Notify(nodeStateChangedEventType);
-            node.Blockchain.StateChanged += () => applicationContext.EventManager.Notify(nodeStateChangedEventType);
             // todo: rethink service -> UI notifications patterns
             node.EventServiceController.AddService(new UIUpdaterService(viewContext, this, applicationContext, nodeStateChangedEventType));
 
@@ -151,9 +147,6 @@ namespace BitcoinUtilities.GUI.ViewModels
         public void StopNode()
         {
             applicationContext.BitcoinNode.Stop();
-            //todo: who should close storage ?
-            IDisposable storage = applicationContext.BitcoinNode.Storage as IDisposable;
-            storage?.Dispose();
         }
 
         private void OnNodePropertyChanged()
