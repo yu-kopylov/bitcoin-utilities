@@ -148,8 +148,7 @@ namespace BitcoinUtilities.Node
 
             //todo: discover own external address? (it seems useless without external port)
             //todo: use setting to specify port and operating mode
-            listener = new BitcoinConnectionListener(IPAddress.Any, 8333, HandleIncomingConnection);
-            listener.Start();
+            listener = BitcoinConnectionListener.StartListener(IPAddress.Any, 8333, HandleIncomingConnection);
 
             services.Start();
 
@@ -175,7 +174,7 @@ namespace BitcoinUtilities.Node
 
             cancellationTokenSource.Cancel();
 
-            listener?.Stop();
+            listener?.Dispose();
 
             //todo: use parameter for timeout?
             TimeSpan stopTimeout = TimeSpan.FromSeconds(30);

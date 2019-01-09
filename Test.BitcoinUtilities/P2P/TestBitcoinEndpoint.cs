@@ -36,11 +36,9 @@ namespace Test.BitcoinUtilities.P2P
         [Explicit]
         public void TestServer()
         {
-            using (BitcoinConnectionListener listener = new BitcoinConnectionListener(IPAddress.Any, 8334, ConnectionHandler))
+            using (BitcoinConnectionListener listener = BitcoinConnectionListener.StartListener(IPAddress.Any, 8334, ConnectionHandler))
             {
-                listener.Start();
                 Thread.Sleep(30000);
-                listener.Stop();
             }
         }
 
@@ -96,6 +94,7 @@ namespace Test.BitcoinUtilities.P2P
                 {
                     Console.WriteLine("\t{0}", BitConverter.ToString(hash));
                 }
+
                 Console.WriteLine("\t{0} (stop)", BitConverter.ToString(getHeadersMessage.HashStop));
 
                 endpoint.WriteMessage(new InvMessage(new InventoryVector[]
@@ -123,6 +122,7 @@ namespace Test.BitcoinUtilities.P2P
                     {
                         Console.WriteLine("\t\t{0} seq. {1:X}", BitConverter.ToString(input.PreviousOutput.Hash), input.Sequence);
                     }
+
                     Console.WriteLine("\tOutputs:");
                     foreach (TxOut output in tx.Outputs)
                     {
@@ -130,6 +130,7 @@ namespace Test.BitcoinUtilities.P2P
                     }
                 }
             }
+
             if (message is MerkleBlockMessage)
             {
                 MerkleBlockMessage merkleBlockMessage = (MerkleBlockMessage) message;
@@ -163,10 +164,8 @@ namespace Test.BitcoinUtilities.P2P
         public void TestDeadlock()
         {
             AutoResetEvent finishedEvent = new AutoResetEvent(false);
-            using (BitcoinConnectionListener server = new BitcoinConnectionListener(IPAddress.Loopback, 28333, DeadlockTestConnectionHandler))
+            using (BitcoinConnectionListener server = BitcoinConnectionListener.StartListener(IPAddress.Loopback, 28333, DeadlockTestConnectionHandler))
             {
-                server.Start();
-
                 Exception threadException = null;
 
                 Thread thread = new Thread(() =>
@@ -218,6 +217,7 @@ namespace Test.BitcoinUtilities.P2P
                 client.WriteMessage(bigMessage);
                 client.WriteMessage(pingMessage);
             }
+
             Console.WriteLine("{0}: sequence finished", peerName);
         }
 
