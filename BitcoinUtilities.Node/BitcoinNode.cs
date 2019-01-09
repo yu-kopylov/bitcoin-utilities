@@ -46,12 +46,14 @@ namespace BitcoinUtilities.Node
         {
             this.networkParameters = networkParameters;
 
+            Directory.CreateDirectory(dataFolder);
+
             // todo: storages are implementation-specific, should use some resource factory instead
             // todo: align creation of files and folders
             this.headerStorage = HeaderStorage.Open(Path.Combine(dataFolder, "headers.db"));
             this.blockchain = new Blockchain2(headerStorage, networkParameters.GenesisBlock.BlockHeader);
             this.blockStorage = BlockStorage.Open(dataFolder);
-            this.utxoStorage = UtxoStorage.Open(Path.Combine(dataFolder, "utxo2.db"));
+            this.utxoStorage = UtxoStorage.Open(Path.Combine(dataFolder, "utxo.db"));
 
             // todo: this should not be in BitcoinNode (should be handled by block storage)
             // todo: check for existance inside AddBlock
