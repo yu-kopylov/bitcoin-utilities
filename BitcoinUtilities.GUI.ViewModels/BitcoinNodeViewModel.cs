@@ -170,7 +170,7 @@ namespace BitcoinUtilities.GUI.ViewModels
             }
 
             State = node.Started ? "Started" : "Stopped";
-            BestHeaderHeight = node.Blockchain2?.GetBestHead()?.Height ?? 0;
+            BestHeaderHeight = node.Blockchain?.GetBestHead()?.Height ?? 0;
             // todo: BestChainHeight = node.UtxoStorage?.GetLastHeader()?.Height ?? 0; (thread-safe?)
             IncomingConnectionsCount = node.ConnectionCollection.IncomingConnectionsCount;
             OutgoingConnectionsCount = node.ConnectionCollection.OutgoingConnectionsCount;

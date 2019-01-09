@@ -20,7 +20,7 @@ namespace BitcoinUtilities.Node.Services.Headers
 
         public IReadOnlyCollection<IEventHandlingService> CreateForEndpoint(BitcoinNode node, BitcoinEndpoint endpoint)
         {
-            return new[] {new HeaderDowloadService(node, endpoint)};
+            return new[] {new HeaderDowloadService(node.EventServiceController, node.Blockchain, node.NetworkParameters, endpoint)};
         }
     }
 
@@ -28,12 +28,16 @@ namespace BitcoinUtilities.Node.Services.Headers
     {
         private static readonly ILogger logger = LogManager.GetLogger(nameof(HeaderDowloadService));
 
-        private readonly BitcoinNode node;
+        private readonly EventServiceController controller;
+        private readonly Blockchain2 blockchain;
+        private readonly NetworkParameters networkParameters;
         private readonly BitcoinEndpoint endpoint;
 
-        public HeaderDowloadService(BitcoinNode node, BitcoinEndpoint endpoint) : base(endpoint)
+        public HeaderDowloadService(EventServiceController controller, Blockchain2 blockchain, NetworkParameters networkParameters, BitcoinEndpoint endpoint) : base(endpoint)
         {
-            this.node = node;
+            this.controller = controller;
+            this.blockchain = blockchain;
+            this.networkParameters = networkParameters;
             this.endpoint = endpoint;
             OnMessage<HeadersMessage>(OnHeadersReceived);
         }
@@ -41,13 +45,13 @@ namespace BitcoinUtilities.Node.Services.Headers
         public override void OnStart()
         {
             base.OnStart();
-            byte[][] blockLocator = GetLocator(node.Blockchain2.GetBestHead());
+            byte[][] blockLocator = GetLocator(blockchain.GetBestHead());
             endpoint.WriteMessage(new GetHeadersMessage(endpoint.ProtocolVersion, blockLocator, new byte[32]));
         }
 
         public void OnHeadersReceived(HeadersMessage message)
         {
-            var bestHeadBeforeUpdate = node.Blockchain2.GetBestHead();
+            var bestHeadBeforeUpdate = blockchain.GetBestHead();
 
             List<DbHeader> remainingHeaders = CreateAndValidateDbHeaders(message.Headers);
             Dictionary<byte[], DbHeader> knownParentsByHash = FetchKnownParents(remainingHeaders);
@@ -65,7 +69,7 @@ namespace BitcoinUtilities.Node.Services.Headers
                     break;
                 }
 
-                var savedHeaders = node.Blockchain2.Add(newChain);
+                var savedHeaders = blockchain.Add(newChain);
 
                 foreach (DbHeader header in savedHeaders)
                 {
@@ -92,10 +96,10 @@ namespace BitcoinUtilities.Node.Services.Headers
             }
 
             // todo: this code look misplaced
-            var bestHeadAfterUpdate = node.Blockchain2.GetBestHead();
+            var bestHeadAfterUpdate = blockchain.GetBestHead();
             if (bestHeadBeforeUpdate != bestHeadAfterUpdate)
             {
-                node.EventServiceController.Raise(new BestHeadChangedEvent());
+                controller.Raise(new BestHeadChangedEvent());
             }
         }
 
@@ -109,7 +113,7 @@ namespace BitcoinUtilities.Node.Services.Headers
             {
                 if (subChain == null && knownParentsByHash.ContainsKey(header.ParentHash))
                 {
-                    subChain = node.Blockchain2.GetSubChain(header.ParentHash, BlockHeaderValidator.RequiredSubchainLength);
+                    subChain = blockchain.GetSubChain(header.ParentHash, BlockHeaderValidator.RequiredSubchainLength);
                 }
 
                 if (subChain == null || !ByteArrayComparer.Instance.Equals(subChain.Head.Hash, header.ParentHash))
@@ -130,7 +134,7 @@ namespace BitcoinUtilities.Node.Services.Headers
                 double work = DifficultyUtils.DifficultyTargetToWork(DifficultyUtils.NBitsToTarget(header.NBits));
                 DbHeader newHeader = header.AppendAfter(parentHeader, work);
 
-                if (!BlockHeaderValidator.IsValid(node.NetworkParameters, newHeader, subChain))
+                if (!BlockHeaderValidator.IsValid(networkParameters, newHeader, subChain))
                 {
                     //todo: disconnect node
                     throw new BitcoinProtocolViolationException($"Invalid block header received. Hash: '{HexUtils.GetString(newHeader.Hash)}'.");
@@ -166,7 +170,7 @@ namespace BitcoinUtilities.Node.Services.Headers
 
         private Dictionary<byte[], DbHeader> FetchKnownParents(List<DbHeader> headers)
         {
-            var knownParents = node.Blockchain2.GetHeaders(headers.Select(h => h.ParentHash));
+            var knownParents = blockchain.GetHeaders(headers.Select(h => h.ParentHash));
             Dictionary<byte[], DbHeader> knownParentsByHash = new Dictionary<byte[], DbHeader>(ByteArrayComparer.Instance);
             foreach (DbHeader parent in knownParents)
             {
@@ -180,14 +184,14 @@ namespace BitcoinUtilities.Node.Services.Headers
         {
             List<DbHeader> locatorHeaders = new List<DbHeader>();
 
-            locatorHeaders.AddRange(node.Blockchain2.GetSubChain(knownHeader.ParentHash, 999) ?? Enumerable.Empty<DbHeader>());
+            locatorHeaders.AddRange(blockchain.GetSubChain(knownHeader.ParentHash, 999) ?? Enumerable.Empty<DbHeader>());
             locatorHeaders.Add(knownHeader);
 
-            DbHeader bestHead = node.Blockchain2.GetBestHead(knownHeader.Hash);
+            DbHeader bestHead = blockchain.GetBestHead(knownHeader.Hash);
             if (bestHead != null && bestHead.Height != knownHeader.Height)
             {
                 int bestRelatedChainLength = Math.Min(bestHead.Height - knownHeader.Height, 1000);
-                var bestRelatedChain = node.Blockchain2.GetSubChain(bestHead.Hash, bestRelatedChainLength);
+                var bestRelatedChain = blockchain.GetSubChain(bestHead.Hash, bestRelatedChainLength);
                 if (bestRelatedChain != null)
                 {
                     locatorHeaders.AddRange(bestRelatedChain);
