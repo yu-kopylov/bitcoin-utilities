@@ -47,7 +47,7 @@ namespace Test.BitcoinUtilities.P2P
             {
                 using (BitcoinConnection conn = BitcoinConnection.Connect("localhost", listener.Port))
                 {
-                    // todo: Had to disconnect on the client side. Disconnect on the server side does not stop read operation.
+                    // todo: Had to disconnect on the client side. Disconnect on the server side does not stop read operation (happens on Windows).
                     conn.Dispose();
 
                     Assert.Throws<BitcoinNetworkException>(() => conn.ReadMessage());
@@ -68,6 +68,10 @@ namespace Test.BitcoinUtilities.P2P
                 using (BitcoinConnection conn = BitcoinConnection.Connect("localhost", listener.Port))
                 {
                     Thread.Sleep(100);
+
+                    // todo: Had to disconnect on the client side. Disconnect on the server side does not stop read operation (happens on Linux/Mono).
+                    conn.Dispose();
+
                     Assert.Throws<BitcoinNetworkException>(() => conn.WriteMessage(new BitcoinMessage("ABC", new byte[] {1, 2, 3, 4, 5})));
                     Assert.Throws<BitcoinNetworkException>(() => conn.ReadMessage());
                 }
