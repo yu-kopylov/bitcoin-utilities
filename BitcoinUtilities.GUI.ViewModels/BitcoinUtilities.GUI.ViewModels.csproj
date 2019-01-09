@@ -53,6 +53,7 @@
     <Compile Include="PaperWalletViewModel.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SettingsViewModel.cs" />
+    <Compile Include="UIUpdaterService.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\BitcoinUtilities.GUI.Models\BitcoinUtilities.GUI.Models.csproj">

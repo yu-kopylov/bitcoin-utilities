@@ -11,7 +11,7 @@ namespace BitcoinUtilities.Node.Services.Headers
 
         private DbHeader head;
 
-        public HeaderSubChain(IReadOnlyCollection<DbHeader> headers)
+        public HeaderSubChain(IEnumerable<DbHeader> headers)
         {
             this.headers = new List<DbHeader>(headers);
             this.head = this.headers[this.headers.Count - 1];

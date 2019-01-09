@@ -6,11 +6,27 @@ using BitcoinUtilities.P2P;
 using BitcoinUtilities.P2P.Messages;
 using BitcoinUtilities.P2P.Primitives;
 using BitcoinUtilities.Threading;
+using NLog;
 
 namespace BitcoinUtilities.Node.Services.Outputs
 {
+    public class UtxoUpdateServiceFactory : INodeEventServiceFactory
+    {
+        public IReadOnlyCollection<IEventHandlingService> CreateForNode(BitcoinNode node)
+        {
+            return new IEventHandlingService[] {new UtxoUpdateService(node.EventServiceController, node.Blockchain2, node.UtxoStorage)};
+        }
+
+        public IReadOnlyCollection<IEventHandlingService> CreateForEndpoint(BitcoinNode node, BitcoinEndpoint endpoint)
+        {
+            return new IEventHandlingService[0];
+        }
+    }
+
     public class UtxoUpdateService : EventHandlingService
     {
+        private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
+
         private readonly EventServiceController controller;
         private readonly Blockchain2 blockchain;
         private readonly UtxoStorage utxoStorage;
@@ -41,7 +57,7 @@ namespace BitcoinUtilities.Node.Services.Outputs
                 return;
             }
 
-            controller.Raise(new PrefetchBlocksEvent(this, chain.Select(h => h.Hash)));
+            controller.Raise(new PrefetchBlocksEvent(this, chain));
             controller.Raise(new RequestBlockEvent(this, chain.First().Hash));
         }
 
@@ -85,7 +101,8 @@ namespace BitcoinUtilities.Node.Services.Outputs
                 }
             }
 
-            return chain;
+            // todo: this should not be required after fixes above
+            return new HeaderSubChain(chain.Take(2000));
         }
 
         private void AddRequestedBlock(BlockAvailableEvent evt)
@@ -98,6 +115,7 @@ namespace BitcoinUtilities.Node.Services.Outputs
                 if (ByteArrayComparer.Instance.Equals(firstHeader.Hash, evt.HeaderHash))
                 {
                     utxoStorage.Update(CreateAndValidateUtxoUpdate(firstHeader, evt.Block));
+                    controller.Raise(new UtxoChangedEvent(firstHeader));
                 }
             }
 
@@ -109,12 +127,17 @@ namespace BitcoinUtilities.Node.Services.Outputs
             List<byte[]> outPoints = new List<byte[]>();
             foreach (Tx tx in block.Transactions)
             {
-                outPoints.Add(UtxoOutput.CreateOutPoint(tx.Inputs[0].PreviousOutput));
+                foreach (var input in tx.Inputs)
+                {
+                    outPoints.Add(UtxoOutput.CreateOutPoint(input.PreviousOutput));
+                }
             }
 
             Dictionary<byte[], UtxoOutput> existingOutputs = utxoStorage.GetUnspentOutputs(outPoints).ToDictionary(
                 o => o.OutputPoint, ByteArrayComparer.Instance
             );
+
+            Dictionary<byte[], UtxoOutput> newOutputs = new Dictionary<byte[], UtxoOutput>(ByteArrayComparer.Instance);
 
             UtxoUpdate update = new UtxoUpdate(header.Height, header.Hash, header.ParentHash);
 
@@ -133,6 +156,7 @@ namespace BitcoinUtilities.Node.Services.Outputs
 
                         if (!existingOutputs.TryGetValue(outPoint, out var oldOutput))
                         {
+                            logger.Debug($"Transaction '{HexUtils.GetString(txHash)}' attempts to spend a non-existing output '{HexUtils.GetString(outPoint)}'.");
                             // todo: throw exception?
                             blockchain.MarkInvalid(header.Hash);
                             return null;
@@ -140,7 +164,10 @@ namespace BitcoinUtilities.Node.Services.Outputs
 
                         inputSum += oldOutput.Value;
                         existingOutputs.Remove(outPoint);
-                        update.SpentOutputs.Add(oldOutput);
+                        if (!newOutputs.Remove(outPoint))
+                        {
+                            update.SpentOutputs.Add(oldOutput);
+                        }
                     }
                 }
 
@@ -153,6 +180,7 @@ namespace BitcoinUtilities.Node.Services.Outputs
                     UtxoOutput newOutput = new UtxoOutput(txHash, outputIndex, header.Height, txOut);
                     update.NewOutputs.Add(newOutput);
                     existingOutputs.Add(newOutput.OutputPoint, newOutput);
+                    newOutputs.Add(newOutput.OutputPoint, newOutput);
                 }
 
                 // todo: check output of coinbase transaction ?

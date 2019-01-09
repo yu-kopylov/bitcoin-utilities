@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using BitcoinUtilities.Node.Events;
 using BitcoinUtilities.Node.Rules;
 using BitcoinUtilities.P2P;
 using BitcoinUtilities.P2P.Messages;
@@ -12,9 +13,14 @@ namespace BitcoinUtilities.Node.Services.Headers
 {
     public class HeaderDowloadServiceFactory : INodeEventServiceFactory
     {
-        public IEventHandlingService CreateForEndpoint(BitcoinNode node, BitcoinEndpoint endpoint)
+        public IReadOnlyCollection<IEventHandlingService> CreateForNode(BitcoinNode node)
         {
-            return new HeaderDowloadService(node, endpoint);
+            return new IEventHandlingService[0];
+        }
+
+        public IReadOnlyCollection<IEventHandlingService> CreateForEndpoint(BitcoinNode node, BitcoinEndpoint endpoint)
+        {
+            return new[] {new HeaderDowloadService(node, endpoint)};
         }
     }
 
@@ -41,6 +47,8 @@ namespace BitcoinUtilities.Node.Services.Headers
 
         public void OnHeadersReceived(HeadersMessage message)
         {
+            var bestHeadBeforeUpdate = node.Blockchain2.GetBestHead();
+
             List<DbHeader> remainingHeaders = CreateAndValidateDbHeaders(message.Headers);
             Dictionary<byte[], DbHeader> knownParentsByHash = FetchKnownParents(remainingHeaders);
 
@@ -81,6 +89,13 @@ namespace BitcoinUtilities.Node.Services.Headers
             {
                 var blockLocator = GetLocator(bestHeader);
                 endpoint.WriteMessage(new GetHeadersMessage(endpoint.ProtocolVersion, blockLocator, new byte[32]));
+            }
+
+            // todo: this code look misplaced
+            var bestHeadAfterUpdate = node.Blockchain2.GetBestHead();
+            if (bestHeadBeforeUpdate != bestHeadAfterUpdate)
+            {
+                node.EventServiceController.Raise(new BestHeadChangedEvent());
             }
         }
 

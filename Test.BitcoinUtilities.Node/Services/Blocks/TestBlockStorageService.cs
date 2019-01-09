@@ -16,9 +16,8 @@ namespace Test.BitcoinUtilities.Node.Services.Blocks
         public void Test()
         {
             string testFolder = TestUtils.PrepareTestFolder("*.db");
-            string storageFile = Path.Combine(testFolder, "blocks.db");
 
-            using (BlockStorage blockStorage = BlockStorage.Open(storageFile))
+            using (BlockStorage blockStorage = BlockStorage.Open(testFolder))
             using (EventServiceController controller = new EventServiceController())
             {
                 MessageLog log = new MessageLog();

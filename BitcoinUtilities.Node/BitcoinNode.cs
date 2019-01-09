@@ -8,7 +8,9 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 using BitcoinUtilities.Node.Events;
 using BitcoinUtilities.Node.Services;
+using BitcoinUtilities.Node.Services.Blocks;
 using BitcoinUtilities.Node.Services.Headers;
+using BitcoinUtilities.Node.Services.Outputs;
 using BitcoinUtilities.P2P;
 using BitcoinUtilities.P2P.Messages;
 using BitcoinUtilities.P2P.Primitives;
@@ -31,6 +33,8 @@ namespace BitcoinUtilities.Node
 
         private readonly HeaderStorage headerStorage;
         private readonly Blockchain2 blockchain2;
+        private readonly BlockStorage blockStorage;
+        private readonly UtxoStorage utxoStorage;
 
         private readonly EventServiceController eventServiceController = new EventServiceController();
         private NodeAddressCollection addressCollection;
@@ -47,21 +51,42 @@ namespace BitcoinUtilities.Node
             this.storage = storage;
             this.blockchain = new Blockchain(networkParameters, storage);
 
+            // todo: storages are implementation-specific, should use some resource factory instead
+            // todo: align creation of files and folders
             this.headerStorage = HeaderStorage.Open(Path.Combine(dataFolder, "headers.db"));
-            this.blockchain2 = new Blockchain2(headerStorage, networkParameters.GenesisBlock);
+            this.blockchain2 = new Blockchain2(headerStorage, networkParameters.GenesisBlock.BlockHeader);
+            this.blockStorage = BlockStorage.Open(dataFolder);
+            this.utxoStorage = UtxoStorage.Open(Path.Combine(dataFolder, "utxo2.db"));
+
+            // todo: this should not be in BitcoinNode (should be handled by block storage)
+            // todo: check for existance inside AddBlock
+            byte[] genesisBlockHash = CryptoUtils.DoubleSha256(BitcoinStreamWriter.GetBytes(networkParameters.GenesisBlock.BlockHeader.Write));
+            if (blockStorage.GetBlock(genesisBlockHash) == null)
+            {
+                this.blockStorage.AddBlock(
+                    genesisBlockHash,
+                    BitcoinStreamWriter.GetBytes(networkParameters.GenesisBlock.Write)
+                );
+            }
 
             services.AddFactory(new NodeDiscoveryServiceFactory());
             //services.AddFactory(new BlockHeaderDownloadServiceFactory());
-            services.AddFactory(new BlockContentDownloadServiceFactory());
-            services.AddFactory(new BlockValidationServiceFactory());
+            //services.AddFactory(new BlockContentDownloadServiceFactory());
+            //services.AddFactory(new BlockValidationServiceFactory());
             eventServiceFactories.Add(new HeaderDowloadServiceFactory());
+            eventServiceFactories.Add(new BlockStorageServiceFactory());
+            eventServiceFactories.Add(new BlockDownloadServiceFactory());
+            eventServiceFactories.Add(new UtxoUpdateServiceFactory());
         }
 
         public void Dispose()
         {
             Stop();
 
+            // todo: safely dispose all, even if one is failing
             headerStorage?.Dispose();
+            blockStorage?.Dispose();
+            utxoStorage?.Dispose();
         }
 
         public NodeAddressCollection AddressCollection
@@ -90,6 +115,11 @@ namespace BitcoinUtilities.Node
             get { return networkParameters; }
         }
 
+        public EventServiceController EventServiceController
+        {
+            get { return eventServiceController; }
+        }
+
         public IBlockchainStorage Storage
         {
             get { return storage; }
@@ -103,6 +133,16 @@ namespace BitcoinUtilities.Node
         public Blockchain2 Blockchain2
         {
             get { return blockchain2; }
+        }
+
+        public BlockStorage BlockStorage
+        {
+            get { return blockStorage; }
+        }
+
+        public UtxoStorage UtxoStorage
+        {
+            get { return utxoStorage; }
         }
 
         public event PropertyChangedEventHandler PropertyChanged;
@@ -130,6 +170,15 @@ namespace BitcoinUtilities.Node
             listener.Start();
 
             services.Start();
+
+            foreach (var factory in eventServiceFactories)
+            {
+                foreach (var service in factory.CreateForNode(this))
+                {
+                    eventServiceController.AddService(service);
+                }
+            }
+
             eventServiceController.Start();
 
             Started = true;
@@ -203,7 +252,10 @@ namespace BitcoinUtilities.Node
             // todo: have to guarantee that no message is processed before service is added
             foreach (var factory in eventServiceFactories)
             {
-                eventServiceController.AddService(factory.CreateForEndpoint(this, endpoint));
+                foreach (var service in factory.CreateForEndpoint(this, endpoint))
+                {
+                    eventServiceController.AddService(service);
+                }
             }
 
             services.OnNodeConnected(endpoint);
@@ -226,7 +278,10 @@ namespace BitcoinUtilities.Node
             // todo: have to guarantee that no message is processed before service is added
             foreach (var factory in eventServiceFactories)
             {
-                eventServiceController.AddService(factory.CreateForEndpoint(this, endpoint));
+                foreach (var service in factory.CreateForEndpoint(this, endpoint))
+                {
+                    eventServiceController.AddService(service);
+                }
             }
 
             services.OnNodeConnected(endpoint);

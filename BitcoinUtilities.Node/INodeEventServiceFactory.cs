@@ -1,4 +1,5 @@
-﻿using BitcoinUtilities.P2P;
+﻿using System.Collections.Generic;
+using BitcoinUtilities.P2P;
 using BitcoinUtilities.Threading;
 
 namespace BitcoinUtilities.Node
@@ -9,11 +10,18 @@ namespace BitcoinUtilities.Node
     public interface INodeEventServiceFactory
     {
         /// <summary>
+        /// This method is called diring the start of a <see cref="BitcoinNode"/>.
+        /// </summary>
+        /// <param name="node">The node that will use the service.</param>
+        /// <returns>Instances of <see cref="IEventHandlingService"/>.</returns>
+        IReadOnlyCollection<IEventHandlingService> CreateForNode(BitcoinNode node);
+
+        /// <summary>
         /// This method is called when new connection is established.
         /// </summary>
         /// <param name="node">The node that will use the service.</param>
         /// <param name="endpoint">The endpoint to the connected node.</param>
-        /// <returns>An instace of the <see cref="IEventHandlingService"/>.</returns>
-        IEventHandlingService CreateForEndpoint(BitcoinNode node, BitcoinEndpoint endpoint);
+        /// <returns>Instances of <see cref="IEventHandlingService"/>.</returns>
+        IReadOnlyCollection<IEventHandlingService> CreateForEndpoint(BitcoinNode node, BitcoinEndpoint endpoint);
     }
 }

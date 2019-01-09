@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using BitcoinUtilities.Node.Services.Headers;
 using BitcoinUtilities.P2P.Messages;
 
 namespace BitcoinUtilities.Node.Events
@@ -11,14 +12,14 @@ namespace BitcoinUtilities.Node.Events
     {
         // todo: describe owner
         // todo: pass DbHeader?
-        public PrefetchBlocksEvent(object requestOwner, IEnumerable<byte[]> headerHashes)
+        public PrefetchBlocksEvent(object requestOwner, IEnumerable<DbHeader> headerHashes)
         {
             RequestOwner = requestOwner;
-            HeaderHashes = new List<byte[]>(headerHashes);
+            Headers = new List<DbHeader>(headerHashes);
         }
 
         public object RequestOwner { get; }
-        public IReadOnlyCollection<byte[]> HeaderHashes { get; }
+        public IReadOnlyCollection<DbHeader> Headers { get; }
     }
 
     /// <summary>

@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Threading;
 using NLog;
 
@@ -23,44 +22,77 @@ namespace BitcoinUtilities.Threading
         {
             Stop();
 
-            foreach (var service in services)
+            // todo: avoid excessive locks
+            lock (monitor)
             {
-                service.Dispose();
+                foreach (var service in services)
+                {
+                    service.Dispose();
+                }
             }
         }
 
         public void Start()
         {
             started = true;
-            foreach (var service in services)
+            lock (monitor)
             {
-                service.Start();
+                foreach (var service in services)
+                {
+                    service.Start();
+                }
             }
         }
 
         public void Stop()
         {
             started = false;
-            foreach (var service in services)
+            lock (monitor)
             {
-                service.Stop();
+                foreach (var service in services)
+                {
+                    service.Stop();
+                }
             }
 
-            foreach (var service in services)
+            lock (monitor)
             {
-                service.Join();
+                foreach (var service in services)
+                {
+                    service.Join();
+                }
             }
         }
 
         public void AddService(IEventHandlingService service)
         {
             var serviceThread = new ServiceThread(service);
-            services.Add(serviceThread);
+            lock (monitor)
+            {
+                services.Add(serviceThread);
+            }
+
             if (started)
             {
                 // todo: add test
                 serviceThread.Start();
             }
+        }
+
+        public T GetService<T>()
+        {
+            lock (monitor)
+            {
+                foreach (var service in services)
+                {
+                    if (service.Service is T innerService)
+                    {
+                        return innerService;
+                    }
+                }
+            }
+
+            return default(T);
         }
 
         public void Raise(object evt)
@@ -85,14 +117,12 @@ namespace BitcoinUtilities.Threading
             private readonly AutoResetEvent stateChangedEvent = new AutoResetEvent(false);
             private readonly Queue<object> events = new Queue<object>();
 
-            private readonly IEventHandlingService service;
-
             private Thread thread;
             private volatile bool stopped = false;
 
             public ServiceThread(IEventHandlingService service)
             {
-                this.service = service;
+                Service = service;
             }
 
             public void Dispose()
@@ -100,6 +130,8 @@ namespace BitcoinUtilities.Threading
                 Stop();
                 stateChangedEvent.Dispose();
             }
+
+            internal IEventHandlingService Service { get; }
 
             public void Start()
             {
@@ -126,16 +158,15 @@ namespace BitcoinUtilities.Threading
 
             public void Queue(object evt)
             {
-                const int maxQueueSize = 16;
+                const int maxQueueSize = 8192;
                 lock (monitor)
                 {
                     // todo: add per endpoint restriction insteads
                     if (events.Count >= maxQueueSize)
                     {
-                        throw new InvalidOperationException(string.Format(CultureInfo.InvariantCulture,
-                            "Cannot queue event '{0}' for service '{1}', because queue already has {2} events.",
-                            evt, service, maxQueueSize
-                        ));
+                        throw new InvalidOperationException(
+                            $"Cannot queue event '{evt}' for service '{Service}', because queue already has {maxQueueSize} events."
+                        );
                     }
 
                     events.Enqueue(evt);
@@ -146,18 +177,18 @@ namespace BitcoinUtilities.Threading
 
             public bool Expects(object @event)
             {
-                return service.GetHandler(@event) != null;
+                return Service.GetHandler(@event) != null;
             }
 
             private void ServiceLoop()
             {
                 try
                 {
-                    service.OnStart();
+                    Service.OnStart();
                 }
                 catch (Exception ex)
                 {
-                    logger.Error(ex, CultureInfo.InvariantCulture, "Error during startup of service '{0}'.", service);
+                    logger.Error(ex, $"Error during startup of service '{Service}'.");
                     throw;
                 }
 
@@ -172,7 +203,7 @@ namespace BitcoinUtilities.Threading
                         }
                         catch (Exception ex)
                         {
-                            logger.Error(ex, CultureInfo.InvariantCulture, "Service '{0}' failed to handle event '{1}'.", service, evt);
+                            logger.Error(ex, $"Service '{Service}' failed to handle event '{evt}'.");
                             break;
                         }
                     }
@@ -184,11 +215,11 @@ namespace BitcoinUtilities.Threading
 
                 try
                 {
-                    service.OnTearDown();
+                    Service.OnTearDown();
                 }
                 catch (Exception ex)
                 {
-                    logger.Error(ex, CultureInfo.InvariantCulture, "Error during tear-down of service '{0}'.", service);
+                    logger.Error(ex, $"Error during tear-down of service '{Service}'.");
                     throw;
                 }
             }
@@ -213,10 +244,10 @@ namespace BitcoinUtilities.Threading
                     return;
                 }
 
-                var handler = service.GetHandler(evt);
+                var handler = Service.GetHandler(evt);
                 if (handler == null)
                 {
-                    throw new InvalidOperationException(string.Format(CultureInfo.InvariantCulture, "Handler not found for event '{0}' in service '{1}'.", evt, service));
+                    throw new InvalidOperationException($"Handler not found for event '{evt}' in service '{Service}'.");
                 }
 
                 handler(evt);

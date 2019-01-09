@@ -139,6 +139,8 @@ namespace BitcoinUtilities.GUI.ViewModels
             node.PropertyChanged += (sender, args) => applicationContext.EventManager.Notify(nodeStateChangedEventType);
             node.ConnectionCollection.Changed += () => applicationContext.EventManager.Notify(nodeStateChangedEventType);
             node.Blockchain.StateChanged += () => applicationContext.EventManager.Notify(nodeStateChangedEventType);
+            // todo: rethink service -> UI notifications patterns
+            node.EventServiceController.AddService(new UIUpdaterService(viewContext, this, applicationContext, nodeStateChangedEventType));
 
             //todo: updates are too frequent, consider adding a delay to EventManager
             applicationContext.EventManager.Watch(nodeStateChangedEventType, OnNodePropertyChanged);
@@ -175,8 +177,8 @@ namespace BitcoinUtilities.GUI.ViewModels
             }
 
             State = node.Started ? "Started" : "Stopped";
-            BestHeaderHeight = node.Blockchain?.State?.BestHeader?.Height ?? 0;
-            BestChainHeight = node.Blockchain?.State?.BestChain?.Height ?? 0;
+            BestHeaderHeight = node.Blockchain2?.GetBestHead()?.Height ?? 0;
+            // todo: BestChainHeight = node.UtxoStorage?.GetLastHeader()?.Height ?? 0; (thread-safe?)
             IncomingConnectionsCount = node.ConnectionCollection.IncomingConnectionsCount;
             OutgoingConnectionsCount = node.ConnectionCollection.OutgoingConnectionsCount;
             CanStartNode = !node.Started;

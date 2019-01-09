@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using BitcoinUtilities.P2P;
+using BitcoinUtilities.P2P.Messages;
 using BitcoinUtilities.P2P.Primitives;
 
 namespace BitcoinUtilities
@@ -22,11 +24,11 @@ namespace BitcoinUtilities
         /// <para>It must be a valid file name, because it is used as part of the path to blockchain data.</para>
         /// </param>
         /// <param name="genesisBlock">The first block of the blockchain.</param>
-        public NetworkParameters(BitcoinFork fork, string name, BlockHeader genesisBlock)
+        public NetworkParameters(BitcoinFork fork, string name, byte[] genesisBlock)
         {
             Fork = fork;
             Name = name;
-            GenesisBlock = genesisBlock;
+            GenesisBlock = BitcoinStreamReader.FromBytes(genesisBlock, BlockMessage.Read);
         }
 
         /// <summary>
@@ -43,13 +45,13 @@ namespace BitcoinUtilities
         /// <summary>
         /// The first block of the blockchain.
         /// </summary>
-        public BlockHeader GenesisBlock { get; }
+        public BlockMessage GenesisBlock { get; }
 
         public static NetworkParameters BitcoinCoreMain
         {
             get
             {
-                var parameters = new NetworkParameters(BitcoinFork.Core, "bitcoin-core-main", P2P.GenesisBlock.GetHeader());
+                var parameters = new NetworkParameters(BitcoinFork.Core, "bitcoin-core-main", P2P.GenesisBlock.Raw);
 
                 // DNS seeds taken from: https://github.com/bitcoin/bitcoin/blob/master/src/chainparams.cpp
                 parameters.AddDnsSeed("seed.bitcoin.sipa.be"); // Pieter Wuille
@@ -79,7 +81,7 @@ namespace BitcoinUtilities
         {
             get
             {
-                var parameters = new NetworkParameters(BitcoinFork.Cash, "bitcoin-cash-main", P2P.GenesisBlock.GetHeader());
+                var parameters = new NetworkParameters(BitcoinFork.Cash, "bitcoin-cash-main", P2P.GenesisBlock.Raw);
 
                 // DNS seeds taken from: https://github.com/bitcoinclassic/bitcoinclassic/blob/master/src/chainparams.cpp
                 parameters.AddDnsSeed("cash-seed.bitcoin.thomaszander.se");

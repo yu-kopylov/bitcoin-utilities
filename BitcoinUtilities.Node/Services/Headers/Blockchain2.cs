@@ -170,7 +170,6 @@ namespace BitcoinUtilities.Node.Services.Headers
             }
         }
 
-
         /// <summary>
         /// <para>Returns a chain of headers ending at the header with the given hash.</para>
         /// <para>The returned chain can be shorter than the given length in case of the chain starting at the root of the blockchain tree.</para>
