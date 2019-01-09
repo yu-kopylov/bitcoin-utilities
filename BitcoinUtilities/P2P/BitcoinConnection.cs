@@ -226,12 +226,18 @@ namespace BitcoinUtilities.P2P
         private byte[] ReadBytes(int count)
         {
             byte[] res = new byte[count];
-            int bytesRead = 0;
-            while (bytesRead < count)
+            int totalBytesRead = 0;
+            while (totalBytesRead < count)
             {
                 try
                 {
-                    bytesRead += stream.Read(res, bytesRead, count - bytesRead);
+                    int bytesRead = stream.Read(res, totalBytesRead, count - totalBytesRead);
+                    if (bytesRead == 0)
+                    {
+                        throw new BitcoinNetworkException("Connection is closed.");
+                    }
+
+                    totalBytesRead += bytesRead;
                 }
                 catch (ObjectDisposedException e)
                 {
