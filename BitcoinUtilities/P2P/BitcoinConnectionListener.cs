@@ -61,7 +61,7 @@ namespace BitcoinUtilities.P2P
                     return;
                 }
 
-                BitcoinConnection conn = new BitcoinConnection(tcpClient);
+                BitcoinConnection conn = BitcoinConnection.Connect(tcpClient);
                 connectionHandler(conn);
             }
         }
@@ -76,6 +76,8 @@ namespace BitcoinUtilities.P2P
                 tcpListener = null;
             }
         }
+
+        public int Port => ((IPEndPoint) tcpListener?.LocalEndpoint)?.Port ?? port;
     }
 
     public delegate void BitcoinConnectionHandler(BitcoinConnection connection);

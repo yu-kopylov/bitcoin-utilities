@@ -1,5 +1,6 @@
-﻿using BitcoinUtilities.P2P;
-using BitcoinUtilities.P2P.Messages;
+﻿using System.Net;
+using System.Threading;
+using BitcoinUtilities.P2P;
 using NUnit.Framework;
 
 namespace Test.BitcoinUtilities.P2P
@@ -8,37 +9,100 @@ namespace Test.BitcoinUtilities.P2P
     public class TestBitcoinConnection
     {
         [Test]
-        [Explicit]
-        public void Test()
+        public void TestReadWriteMessage()
         {
-            byte[] hello = new byte[]
-                           {
-                               0x62, 0xea, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x11, 0xb2, 0xd0, 0x50,
-                               0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-                               0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xff, 0xff, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-                               0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-                               0xff, 0xff, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x3b, 0x2e, 0xb3, 0x5d, 0x8c, 0xe6, 0x17, 0x65,
-                               0x0f, 0x2f, 0x53, 0x61, 0x74, 0x6f, 0x73, 0x68, 0x69, 0x3a, 0x30, 0x2e, 0x37, 0x2e, 0x32, 0x2f,
-                               0xc0, 0x3e, 0x03, 0x00
-                           };
-
-            using (BitcoinConnection conn = new BitcoinConnection())
+            BitcoinMessage receivedMessage = null;
+            using (AutoResetEvent messageReceived = new AutoResetEvent(false))
+            using (BitcoinConnectionListener listener = new BitcoinConnectionListener(IPAddress.Loopback, 0, conn =>
             {
-                conn.Connect("localhost", 8333);
+                receivedMessage = conn.ReadMessage();
+                messageReceived.Set();
+                conn.Dispose();
+            }))
+            {
+                listener.Start();
 
-                conn.WriteMessage(new BitcoinMessage("version", hello));
+                using (BitcoinConnection conn = BitcoinConnection.Connect("localhost", listener.Port))
+                {
+                    byte[] payload = new byte[] {1, 2, 3, 4, 5};
 
-                BitcoinMessage incVersionMessage = conn.ReadMessage();
-                Assert.That(incVersionMessage.Command, Is.EqualTo(VersionMessage.Command));
+                    conn.WriteMessage(new BitcoinMessage("ABC", payload));
 
-                conn.WriteMessage(new BitcoinMessage(VerAckMessage.Command, new byte[0]));
+                    Assert.That(messageReceived.WaitOne(5000), Is.True);
+                    Assert.AreEqual("ABC", receivedMessage?.Command);
+                    Assert.AreEqual(payload, receivedMessage?.Payload);
+                }
 
-                BitcoinMessage incVerAckMessage = conn.ReadMessage();
-                Assert.That(incVerAckMessage.Command, Is.EqualTo(VerAckMessage.Command));
-
-                BitcoinMessage incPing = conn.ReadMessage();
-                Assert.That(incPing.Command, Is.EqualTo(PingMessage.Command));
+                listener.Stop();
             }
+        }
+
+        [Test]
+        public void TestReadWriteWithClosedConnection()
+        {
+            using (BitcoinConnectionListener listener = new BitcoinConnectionListener(IPAddress.Loopback, 0, conn => { conn.Dispose(); }))
+            {
+                listener.Start();
+
+                using (BitcoinConnection conn = BitcoinConnection.Connect("localhost", listener.Port))
+                {
+                    // todo: Had to disconnect on the client side. Disconnect on the server side does not stop read operation.
+                    conn.Dispose();
+
+                    Assert.Throws<BitcoinNetworkException>(() => conn.ReadMessage());
+                    Assert.Throws<BitcoinNetworkException>(() => conn.WriteMessage(new BitcoinMessage("ABC", new byte[] {1, 2, 3, 4, 5})));
+                }
+
+                listener.Stop();
+            }
+        }
+
+        [Test]
+        public void TestWriteReadWithClosedConnection()
+        {
+            using (BitcoinConnectionListener listener = new BitcoinConnectionListener(IPAddress.Loopback, 0, conn => { conn.Dispose(); }))
+            {
+                listener.Start();
+
+                using (BitcoinConnection conn = BitcoinConnection.Connect("localhost", listener.Port))
+                {
+                    Thread.Sleep(100);
+                    Assert.Throws<BitcoinNetworkException>(() => conn.WriteMessage(new BitcoinMessage("ABC", new byte[] {1, 2, 3, 4, 5})));
+                    Assert.Throws<BitcoinNetworkException>(() => conn.ReadMessage());
+                }
+
+                listener.Stop();
+            }
+        }
+
+        [Test]
+        public void TestRepeatableDispose()
+        {
+            using (BitcoinConnectionListener listener = new BitcoinConnectionListener(IPAddress.Loopback, 0, conn => { conn.Dispose(); }))
+            {
+                listener.Start();
+
+                using (BitcoinConnection conn = BitcoinConnection.Connect("localhost", listener.Port))
+                {
+                    conn.Dispose();
+                    Assert.Throws<BitcoinNetworkException>(() => conn.WriteMessage(new BitcoinMessage("ABC", new byte[] {1, 2, 3, 4, 5})));
+                    conn.Dispose();
+                }
+
+                listener.Stop();
+            }
+        }
+
+        [Test]
+        public void TestFailedToConnect()
+        {
+            Assert.Throws<BitcoinNetworkException>(() =>
+            {
+                using (BitcoinConnection.Connect("0.0.0.0", -1))
+                {
+                    Assert.Fail("connection should not be created");
+                }
+            });
         }
     }
 }

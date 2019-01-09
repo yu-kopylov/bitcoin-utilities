@@ -9,7 +9,7 @@ using NLog;
 namespace BitcoinUtilities.P2P
 {
     /// <summary>
-    /// Provides a P2P Bitcoin network connection with methods for a message exchange.
+    /// A network connection with methods for reading and writing messages using Bitcoin P2P network protocol.
     /// </summary>
     /// <remarks>
     /// Specifications:<br/>
@@ -23,7 +23,7 @@ namespace BitcoinUtilities.P2P
         private const int MessageHeaderLength = 24;
         private const int MaxCommandLength = 12;
 
-        private const int MaxPayloadLength = 32*1024*1024;
+        private const int MaxPayloadLength = 32 * 1024 * 1024;
 
         private readonly byte[] magicBytes = new byte[] {0xF9, 0xBE, 0xB4, 0xD9};
 
@@ -32,34 +32,55 @@ namespace BitcoinUtilities.P2P
         private readonly SHA256 sha256ReaderAlg;
         private readonly SHA256 sha256WriterAlg;
 
-        private TcpClient client;
-        private NetworkStream stream;
+        private readonly TcpClient client;
+        private readonly NetworkStream stream;
 
-        public BitcoinConnection()
-        {
-            sha256ReaderAlg = SHA256.Create();
-            sha256WriterAlg = SHA256.Create();
-        }
-
-        public BitcoinConnection(TcpClient client) : this()
+        private BitcoinConnection(TcpClient client, NetworkStream stream, SHA256 sha256ReaderAlg, SHA256 sha256WriterAlg)
         {
             this.client = client;
-            this.stream = client.GetStream();
+            this.stream = stream;
+            this.sha256ReaderAlg = sha256ReaderAlg;
+            this.sha256WriterAlg = sha256WriterAlg;
         }
 
         public void Dispose()
         {
+            stream.Close();
+            client.Close();
+
             sha256ReaderAlg.Dispose();
             sha256WriterAlg.Dispose();
+        }
 
-            if (stream != null)
+        /// <summary>
+        /// Creates a connection to a remote host.
+        /// </summary>
+        /// <param name="client">The underlying connection.</param>
+        /// <exception cref="BitcoinNetworkException">Connection failed.</exception>
+        public static BitcoinConnection Connect(TcpClient client)
+        {
+            NetworkStream stream = null;
+            SHA256 sha256ReaderAlg = null;
+            SHA256 sha256WriterAlg = null;
+            try
             {
-                stream.Close();
+                client.Client.ReceiveBufferSize = 32 * 1024 * 1024;
+                client.Client.SendBufferSize = 32 * 1024 * 1024;
+                stream = client.GetStream();
+
+                sha256ReaderAlg = SHA256.Create();
+                sha256WriterAlg = SHA256.Create();
             }
-            if (client != null)
+            catch (Exception e)
             {
-                client.Close();
+                stream?.Close();
+                client?.Close();
+                sha256ReaderAlg?.Dispose();
+                sha256WriterAlg?.Dispose();
+                throw new BitcoinNetworkException("Connection failed.", e);
             }
+
+            return new BitcoinConnection(client, stream, sha256ReaderAlg, sha256WriterAlg);
         }
 
         /// <summary>
@@ -68,91 +89,84 @@ namespace BitcoinUtilities.P2P
         /// <param name="host">The DNS name of the remote host.</param>
         /// <param name="port">The port number of the remote host.</param>
         /// <exception cref="BitcoinNetworkException">Connection failed.</exception>
-        public void Connect(string host, int port)
+        public static BitcoinConnection Connect(string host, int port)
         {
-            if (client != null)
-            {
-                throw new BitcoinNetworkException("A connection was already established.");
-            }
-
+            TcpClient client;
             try
             {
                 client = new TcpClient(host, port);
             }
-            catch (SocketException e)
+            catch (Exception e)
             {
                 throw new BitcoinNetworkException("Connection failed.", e);
             }
 
-            //todo: also implement this in BitcoinConnectionListener
-            client.Client.ReceiveBufferSize = 32*1024*1024;
-            client.Client.SendBufferSize = 32*1024*1024;
-
-            stream = client.GetStream();
+            return Connect(client);
         }
 
         public IPEndPoint LocalEndPoint
         {
-            get
-            {
-                if (client == null)
-                {
-                    return null;
-                }
-                return client.Client.LocalEndPoint as IPEndPoint;
-            }
+            get { return client?.Client.LocalEndPoint as IPEndPoint; }
         }
 
         public IPEndPoint RemoteEndPoint
         {
-            get
-            {
-                if (client == null)
-                {
-                    return null;
-                }
-                return client.Client.RemoteEndPoint as IPEndPoint;
-            }
+            get { return client?.Client.RemoteEndPoint as IPEndPoint; }
         }
 
         /// <summary>
-        /// Sends the message to the connected peer.
-        /// <para/>
-        /// Method is thread-safe.
+        /// Sends the given message to the connected peer. 
         /// </summary>
+        /// <remarks>This method is thread-safe.</remarks>
         /// <param name="message">The message to send.</param>
+        /// <exception cref="ArgumentException">The given message is invalid.</exception>
+        /// <exception cref="BitcoinNetworkException">A network failure occured.</exception>
         public void WriteMessage(BitcoinMessage message)
         {
+            byte[] commandBytes = Encoding.ASCII.GetBytes(message.Command);
+            if (commandBytes.Length > MaxCommandLength)
+            {
+                throw new ArgumentException(
+                    $"Command length ({commandBytes.Length}) exeeds maximum command length ({MaxCommandLength}).", nameof(message)
+                );
+            }
+
+            byte[] header = new byte[MessageHeaderLength];
+
+            Array.Copy(magicBytes, 0, header, 0, 4);
+            Array.Copy(commandBytes, 0, header, 4, commandBytes.Length);
+
+            byte[] payloadLengthBytes = BitConverter.GetBytes(message.Payload.Length);
+            Array.Copy(payloadLengthBytes, 0, header, 16, 4);
+
             lock (writeLock)
             {
-                byte[] commandBytes = Encoding.ASCII.GetBytes(message.Command);
-                if (commandBytes.Length > MaxCommandLength)
+                try
                 {
-                    //todo: handle correctly
-                    throw new BitcoinNetworkException($"Command length ({commandBytes.Length}) exeeds maximum command length ({MaxCommandLength}).");
+                    byte[] checksum = sha256WriterAlg.ComputeHash(sha256WriterAlg.ComputeHash(message.Payload));
+                    Array.Copy(checksum, 0, header, 20, 4);
+
+                    stream.Write(header, 0, header.Length);
+                    stream.Write(message.Payload, 0, message.Payload.Length);
                 }
-
-                byte[] header = new byte[MessageHeaderLength];
-
-                Array.Copy(magicBytes, 0, header, 0, 4);
-                Array.Copy(commandBytes, 0, header, 4, commandBytes.Length);
-
-                byte[] payloadLengthBytes = BitConverter.GetBytes(message.Payload.Length);
-                Array.Copy(payloadLengthBytes, 0, header, 16, 4);
-
-                byte[] checksum = sha256WriterAlg.ComputeHash(sha256WriterAlg.ComputeHash(message.Payload));
-                Array.Copy(checksum, 0, header, 20, 4);
-
-                stream.Write(header, 0, header.Length);
-                stream.Write(message.Payload, 0, message.Payload.Length);
+                catch (IOException e)
+                {
+                    throw new BitcoinNetworkException("Failed to send message.", e);
+                }
+                catch (ObjectDisposedException e)
+                {
+                    throw new BitcoinNetworkException("Failed to send message.", e);
+                }
             }
 
-            if (logger.IsTraceEnabled)
-            {
-                logger.Trace(() => $"Sent message to endpoint '{RemoteEndPoint}': {FormatForLog(message)}");
-            }
+            logger.Trace(() => $"Sent a message to the endpoint '{RemoteEndPoint}': {FormatForLog(message)}");
         }
 
+        /// <summary>
+        /// Reads a message from the network stream.
+        /// </summary>
+        /// <returns>The received message.</returns>
+        /// <exception cref="BitcoinNetworkException">A network failure occured.</exception>
         public BitcoinMessage ReadMessage()
         {
             byte[] header = ReadBytes(MessageHeaderLength);
@@ -163,22 +177,18 @@ namespace BitcoinUtilities.P2P
             {
                 if (header[i] != magicBytes[i])
                 {
-                    //todo: handle correctly
-                    throw new Exception("The magic value is invalid.");
+                    throw new BitcoinNetworkException("The magic value is invalid.");
                 }
             }
 
             if (payloadLength < 0)
             {
-                //todo: handle correctly
-                throw new Exception(string.Format("Invalid payload length: ({0}).", payloadLength));
+                throw new BitcoinNetworkException($"Invalid payload length: ({payloadLength}).");
             }
 
-            //todo: move to const
             if (payloadLength > MaxPayloadLength)
             {
-                //todo: handle correctly
-                throw new Exception(string.Format("Payload length is too large: {0}.", payloadLength));
+                throw new BitcoinNetworkException($"Payload length is too large: {payloadLength}.");
             }
 
             int commandLength = 12;
@@ -197,21 +207,22 @@ namespace BitcoinUtilities.P2P
             {
                 if (header[20 + i] != checksum[i])
                 {
-                    //todo: handle correctly
-                    throw new Exception("The checksum is invalid.");
+                    throw new BitcoinNetworkException("The checksum is invalid.");
                 }
             }
 
             BitcoinMessage message = new BitcoinMessage(command, payload);
 
-            if (logger.IsTraceEnabled)
-            {
-                logger.Trace(() => $"Received message from endpoint '{RemoteEndPoint}': {FormatForLog(message)}");
-            }
+            logger.Trace(() => $"Received a message from the endpoint '{RemoteEndPoint}': {FormatForLog(message)}");
 
             return message;
         }
 
+        /// <summary>
+        /// Reads an array of bytes of the given length from the network stream.
+        /// </summary>
+        /// <param name="count">The number of bytes to read.</param>
+        /// <exception cref="BitcoinNetworkException">A network failure occured.</exception>
         private byte[] ReadBytes(int count)
         {
             byte[] res = new byte[count];
@@ -222,12 +233,16 @@ namespace BitcoinUtilities.P2P
                 {
                     bytesRead += stream.Read(res, bytesRead, count - bytesRead);
                 }
+                catch (ObjectDisposedException e)
+                {
+                    throw new BitcoinNetworkException("Cannot read bytes from the network stream.", e);
+                }
                 catch (IOException e)
                 {
-                    //todo: test if write methods also require exception wrapping
                     throw new BitcoinNetworkException("Cannot read bytes from the network stream.", e);
                 }
             }
+
             return res;
         }
 
@@ -249,6 +264,7 @@ namespace BitcoinUtilities.P2P
             {
                 sb.AppendFormat("\n\tUnable to parse message: {0}", e.Message);
             }
+
             return sb.ToString();
         }
     }

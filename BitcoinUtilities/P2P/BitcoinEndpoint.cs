@@ -98,8 +98,7 @@ namespace BitcoinUtilities.P2P
                 throw new BitcoinNetworkException("Connection was already established.");
             }
 
-            conn = new BitcoinConnection();
-            conn.Connect(host, port);
+            conn = BitcoinConnection.Connect(host, port);
 
             Start();
         }
