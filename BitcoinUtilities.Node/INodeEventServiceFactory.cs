@@ -14,7 +14,7 @@ namespace BitcoinUtilities.Node
         /// This method is called diring the start of a <see cref="BitcoinNode"/>.
         /// </summary>
         /// <param name="node">The node that will use the service.</param>
-        /// <param name="cancellationToken">A cancellation token.</param>
+        /// <param name="cancellationToken">A cancellation token that can be used to stop long-running operations.</param>
         /// <returns>Instances of <see cref="IEventHandlingService"/>.</returns>
         IReadOnlyCollection<IEventHandlingService> CreateForNode(BitcoinNode node, CancellationToken cancellationToken);
 

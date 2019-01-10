@@ -23,8 +23,8 @@ namespace BitcoinUtilities.Node
     /// </summary>
     public class BitcoinNode : INotifyPropertyChanged, IDisposable
     {
-        private readonly NodeServiceCollection services = new NodeServiceCollection();
         private readonly List<INodeEventServiceFactory> eventServiceFactories = new List<INodeEventServiceFactory>();
+        private readonly EventServiceController eventServiceController = new EventServiceController();
 
         private readonly NetworkParameters networkParameters;
 
@@ -33,7 +33,6 @@ namespace BitcoinUtilities.Node
         private readonly BlockStorage blockStorage;
         private readonly UtxoStorage utxoStorage;
 
-        private readonly EventServiceController eventServiceController = new EventServiceController();
         private NodeAddressCollection addressCollection;
         private NodeConnectionCollection connectionCollection;
 
@@ -131,28 +130,21 @@ namespace BitcoinUtilities.Node
 
         public event PropertyChangedEventHandler PropertyChanged;
 
-        protected virtual void OnPropertyChanged([CallerMemberName] string propertyName = null)
+        private void OnPropertyChanged([CallerMemberName] string propertyName = null)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
 
         public void Start()
         {
-            //todo: review the order in which services and listener start/stop, dispose created entities when start fails
-            services.CreateServices(this, cancellationTokenSource.Token);
-
             addressCollection = new NodeAddressCollection();
             connectionCollection = new NodeConnectionCollection(cancellationTokenSource.Token);
+            //todo: review, maybe registering event handler is a responsibility of the NodeDiscoveryService 
             connectionCollection.Changed += () => eventServiceController.Raise(new NodeConnectionsChangedEvent());
-
-            //todo: review, maybe registering event handler is a responsibility of nodeDiscoveryService 
-            //todo: connectionCollection.Changed += nodeDiscoveryService.Signal; - signal nodeDiscoveryService to connect to new nodes (is it its responsibility?)
 
             //todo: discover own external address? (it seems useless without external port)
             //todo: use setting to specify port and operating mode
             listener = BitcoinConnectionListener.StartListener(IPAddress.Any, 8333, HandleIncomingConnection);
-
-            services.Start();
 
             foreach (var factory in eventServiceFactories)
             {
@@ -161,7 +153,6 @@ namespace BitcoinUtilities.Node
                     eventServiceController.AddService(service);
                 }
             }
-
 
             eventServiceController.Start();
 
@@ -179,16 +170,9 @@ namespace BitcoinUtilities.Node
 
             listener?.Dispose();
 
-            //todo: use parameter for timeout?
-            TimeSpan stopTimeout = TimeSpan.FromSeconds(30);
-            bool servicesTerminated = services.Join(stopTimeout);
-            //todo: use value of servicesTerminated
-
             // todo: add timeout
-            // todo: remove and dispose if necessary services from eventServiceController
+            // todo: dispose IDisposable services in eventServiceController
             eventServiceController.Stop();
-
-            services.DisposeServices();
 
             Started = false;
         }
@@ -242,10 +226,7 @@ namespace BitcoinUtilities.Node
                 }
             }
 
-            services.OnNodeConnected(endpoint);
-            //todo: make sure that OnNodeConnected is always called before OnNodeDisconnected and before message processing
             //todo: remove associated services from eventServiceController
-            endpoint.CallWhenDisconnected(() => services.OnNodeDisconnected(endpoint));
         }
 
         private void HandleIncomingConnection(BitcoinConnection connection)
@@ -268,10 +249,7 @@ namespace BitcoinUtilities.Node
                 }
             }
 
-            services.OnNodeConnected(endpoint);
-            //todo: make sure that OnNodeConnected is always called before OnNodeDisconnected and before message processing
             //todo: remove associated services from eventServiceController
-            endpoint.CallWhenDisconnected(() => services.OnNodeDisconnected(endpoint));
         }
 
         private bool HandleMessage(BitcoinEndpoint endpoint, IBitcoinMessage message)
@@ -290,10 +268,7 @@ namespace BitcoinUtilities.Node
                 return true;
             }
 
-            services.ProcessMessage(endpoint, message);
             eventServiceController.Raise(new MessageEvent(endpoint, message));
-            //todo: handle getaddr message
-            //todo: implement
             return true;
         }
 

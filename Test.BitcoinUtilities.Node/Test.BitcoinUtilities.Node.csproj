@@ -55,7 +55,6 @@
     <Compile Include="Services\Headers\TestHeaderStorage.cs" />
     <Compile Include="Services\Outputs\TestUtxoStorage.cs" />
     <Compile Include="Services\Outputs\TestUtxoUpdateService.cs" />
-    <Compile Include="TestNodeServiceCollection.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\BitcoinUtilities.Node\BitcoinUtilities.Node.csproj">
