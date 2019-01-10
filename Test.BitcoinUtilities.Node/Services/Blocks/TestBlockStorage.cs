@@ -6,7 +6,6 @@ using TestUtilities;
 namespace Test.BitcoinUtilities.Node.Services.Blocks
 {
     [TestFixture]
-    [Category("SqliteTest")]
     public class TestBlockStorage
     {
         [Test]

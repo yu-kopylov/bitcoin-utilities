@@ -5,7 +5,7 @@ install:
   - nuget install NUnit.Runners -Version 2.6.4 -OutputDirectory testrunner
 script:
   - xbuild /p:Configuration=Release BitcoinUtilities.sln
-  - mono ./testrunner/NUnit.Runners.2.6.4/tools/nunit-console.exe -exclude=SqliteTest
+  - mono ./testrunner/NUnit.Runners.2.6.4/tools/nunit-console.exe
     ./Test.BitcoinUtilities/bin/Release/Test.BitcoinUtilities.dll
     ./Test.BitcoinUtilities.Node/bin/Release/Test.BitcoinUtilities.Node.dll
     ./Test.BitcoinUtilities.GUI.Models/bin/Release/Test.BitcoinUtilities.GUI.Models.dll

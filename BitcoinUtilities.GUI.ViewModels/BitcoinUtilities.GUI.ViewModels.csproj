@@ -64,10 +64,6 @@
       <Project>{BE18ED30-1B79-483D-9A26-C840F0DD624A}</Project>
       <Name>BitcoinUtilities.Node</Name>
     </ProjectReference>
-    <ProjectReference Include="..\BitcoinUtilities.Storage.SQLite\BitcoinUtilities.Storage.SQLite.csproj">
-      <Project>{C40E8B76-3F0E-4B16-AA34-136122B985D6}</Project>
-      <Name>BitcoinUtilities.Storage.SQLite</Name>
-    </ProjectReference>
     <ProjectReference Include="..\BitcoinUtilities\BitcoinUtilities.csproj">
       <Project>{36C6CCB9-5611-40F7-95B5-47FC25EC3B63}</Project>
       <Name>BitcoinUtilities</Name>
