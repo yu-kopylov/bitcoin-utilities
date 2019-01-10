@@ -50,6 +50,7 @@
     <Compile Include="Node\Rules\TestBlockHeaderValidator.cs" />
     <Compile Include="Node\TestLimitedNodeAddressDictionary.cs" />
     <Compile Include="Node\TestNodeAddressCollection.cs" />
+    <Compile Include="P2P\TestBitcoinConnectionListener.cs" />
     <Compile Include="Scripts\TestControlStack.cs" />
     <Compile Include="Scripts\TestScriptParser.cs" />
     <Compile Include="Scripts\TestScriptProcessor.cs" />

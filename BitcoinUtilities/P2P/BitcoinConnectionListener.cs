@@ -103,13 +103,26 @@ namespace BitcoinUtilities.P2P
                         return;
                     }
 
+                    BitcoinConnection conn;
                     try
                     {
-                        BitcoinConnection conn = BitcoinConnection.Connect(tcpClient);
+                        conn = BitcoinConnection.Connect(tcpClient);
+                    }
+                    catch (BitcoinNetworkException e)
+                    {
+                        logger.Error(e, "Failed to establish a connection for the accepted connection request.");
+                        tcpClient.Close();
+                        continue;
+                    }
+
+                    try
+                    {
                         threadParams.ConnectionHandler(conn);
                     }
-                    catch (BitcoinNetworkException)
+                    catch (Exception e)
                     {
+                        logger.Error(e, "Unhandled exception in the connection handler.");
+                        conn.Dispose();
                     }
                 }
             }

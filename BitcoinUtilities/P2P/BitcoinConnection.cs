@@ -201,7 +201,15 @@ namespace BitcoinUtilities.P2P
 
             byte[] payload = ReadBytes(payloadLength);
 
-            byte[] checksum = sha256ReaderAlg.ComputeHash(sha256ReaderAlg.ComputeHash(payload));
+            byte[] checksum;
+            try
+            {
+                checksum = sha256ReaderAlg.ComputeHash(sha256ReaderAlg.ComputeHash(payload));
+            }
+            catch (ObjectDisposedException)
+            {
+                throw new BitcoinNetworkException("Connection is closed.");
+            }
 
             for (int i = 0; i < 4; i++)
             {
