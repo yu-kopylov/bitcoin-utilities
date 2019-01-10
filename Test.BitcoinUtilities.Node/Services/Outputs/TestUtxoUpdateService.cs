@@ -52,7 +52,7 @@ namespace Test.BitcoinUtilities.Node.Services.Outputs
 
                 Assert.AreEqual(new string[]
                 {
-                    "PrefetchBlocksEvent: Headers[5]",
+                    $"PrefetchBlocksEvent: Headers[5] ({HexUtils.GetString(headers[0].Hash)})",
                     $"RequestBlockEvent: {HexUtils.GetString(headers[0].Hash)}"
                 }, log.GetLog());
 
@@ -62,7 +62,7 @@ namespace Test.BitcoinUtilities.Node.Services.Outputs
 
                 Assert.AreEqual(new string[]
                 {
-                    "PrefetchBlocksEvent: Headers[4]",
+                    $"PrefetchBlocksEvent: Headers[4] ({HexUtils.GetString(headers[1].Hash)})",
                     $"RequestBlockEvent: {HexUtils.GetString(headers[1].Hash)}"
                 }, log.GetLog());
 
@@ -72,7 +72,7 @@ namespace Test.BitcoinUtilities.Node.Services.Outputs
 
                 Assert.AreEqual(new string[]
                 {
-                    "PrefetchBlocksEvent: Headers[3]",
+                    $"PrefetchBlocksEvent: Headers[3] ({HexUtils.GetString(headers[2].Hash)})",
                     $"RequestBlockEvent: {HexUtils.GetString(headers[2].Hash)}"
                 }, log.GetLog());
 
@@ -98,7 +98,7 @@ namespace Test.BitcoinUtilities.Node.Services.Outputs
         {
             public EventLoggingService(MessageLog log)
             {
-                On<PrefetchBlocksEvent>(e => log.Log($"PrefetchBlocksEvent: Headers[{e.Headers.Count}]"));
+                On<PrefetchBlocksEvent>(e => log.Log($"PrefetchBlocksEvent: Headers[{e.Headers.Count}] ({HexUtils.GetString(e.Headers.FirstOrDefault()?.Hash)})"));
                 On<RequestBlockEvent>(e => log.Log($"RequestBlockEvent: {HexUtils.GetString(e.Hash)}"));
             }
         }

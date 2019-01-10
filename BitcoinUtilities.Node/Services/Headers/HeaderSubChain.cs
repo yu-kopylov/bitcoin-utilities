@@ -34,7 +34,8 @@ namespace BitcoinUtilities.Node.Services.Headers
 
         public DbHeader GetBlockByHeight(int height)
         {
-            return headers[height - headers[0].Height];
+            int index = GetIndexFromHeight(height);
+            return headers[index];
         }
 
         public DbHeader GetBlockByOffset(int offset)
@@ -50,6 +51,33 @@ namespace BitcoinUtilities.Node.Services.Headers
         IEnumerator IEnumerable.GetEnumerator()
         {
             return headers.GetEnumerator();
+        }
+
+        /// <summary>
+        /// <para>Returns a chain of headers starting at the header with the given height.</para>
+        /// <para>The returned chain can be shorter than the given length in case of the chain ending at the last header of this chain.</para>
+        /// </summary>
+        /// <param name="firstHeaderHeight">The height of the first header.</param>
+        /// <param name="length">The expected length.</param>
+        /// <exception cref="ArgumentException">This chain does not have a header with the given height.</exception>
+        /// <returns>The requested subchain.</returns>
+        public HeaderSubChain GetChildSubChain(int firstHeaderHeight, int length)
+        {
+            int index = GetIndexFromHeight(firstHeaderHeight);
+
+            if (index < 0 || index >= headers.Count)
+            {
+                throw new ArgumentException("This chain does not have a header with the given height.", nameof(firstHeaderHeight));
+            }
+
+            int availableLength = headers.Count - index;
+
+            return new HeaderSubChain(headers.GetRange(index, availableLength < length ? availableLength : length));
+        }
+
+        private int GetIndexFromHeight(int height)
+        {
+            return height - headers[0].Height;
         }
     }
 }

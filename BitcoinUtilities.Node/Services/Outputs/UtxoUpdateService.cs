@@ -31,7 +31,8 @@ namespace BitcoinUtilities.Node.Services.Outputs
         private readonly Blockchain2 blockchain;
         private readonly UtxoStorage utxoStorage;
 
-        // todo: add specific type for node-scoped services?
+        private HeaderSubChain cachedChainForUpdate;
+
         public UtxoUpdateService(EventServiceController controller, Blockchain2 blockchain, UtxoStorage utxoStorage)
         {
             this.controller = controller;
@@ -51,19 +52,25 @@ namespace BitcoinUtilities.Node.Services.Outputs
 
         private void RequestBlocks()
         {
-            HeaderSubChain chain = GetChainForUpdate();
+            UtxoHeader utxoHead = utxoStorage.GetLastHeader();
+            HeaderSubChain chain = GetChainForUpdate(utxoHead);
             if (chain == null)
             {
                 return;
             }
 
-            controller.Raise(new PrefetchBlocksEvent(this, chain));
-            controller.Raise(new RequestBlockEvent(this, chain.First().Hash));
+            int requiredBlockHeight = GetRequiredBlockHeight(utxoHead);
+
+            controller.Raise(new PrefetchBlocksEvent(this, chain.GetChildSubChain(requiredBlockHeight, 2000)));
+            controller.Raise(new RequestBlockEvent(this, chain.GetBlockByHeight(requiredBlockHeight).Hash));
         }
 
-        private HeaderSubChain GetChainForUpdate()
+        private HeaderSubChain GetChainForUpdate(UtxoHeader utxoHead)
         {
-            UtxoHeader utxoHead = utxoStorage.GetLastHeader();
+            if (CanUseCachedChainForUpdate(utxoHead))
+            {
+                return cachedChainForUpdate;
+            }
 
             HeaderSubChain chain = null;
 
@@ -71,55 +78,87 @@ namespace BitcoinUtilities.Node.Services.Outputs
             while (chain == null)
             {
                 DbHeader blockChainHead = blockchain.GetBestHead();
+                int requiredBlockHeight = GetRequiredBlockHeight(utxoHead);
 
-                if (utxoHead == null)
+                if (requiredBlockHeight > blockChainHead.Height)
                 {
-                    // no UTXO yet, getting best chain from root
-                    // todo: skip last blocks (chain can be long for new node)
-                    chain = blockchain.GetSubChain(blockChainHead.Hash, blockChainHead.Height + 1);
+                    // todo: allow reversal
+                    return null;
                 }
-                else
+
+                chain = blockchain.GetSubChain(blockChainHead.Hash, blockChainHead.Height - requiredBlockHeight + 1);
+
+                if (chain != null && utxoHead != null)
                 {
-                    if (blockChainHead.Height <= utxoHead.Height)
+                    if (!ByteArrayComparer.Instance.Equals(chain.GetBlockByHeight(requiredBlockHeight).ParentHash, utxoHead.Hash))
                     {
+                        // UTXO head is on the the wrong branch
                         // todo: allow reversal
                         return null;
-                    }
-
-                    // todo: skip last blocks (blockChainHead.Height - utxoHead.Height can be big for new node)
-                    chain = blockchain.GetSubChain(blockChainHead.Hash, blockChainHead.Height - utxoHead.Height);
-
-                    if (chain != null)
-                    {
-                        if (!ByteArrayComparer.Instance.Equals(chain.First().ParentHash, utxoHead.Hash))
-                        {
-                            // UTXO head is on the the wrong branch
-                            // todo: allow reversal
-                            return null;
-                        }
                     }
                 }
             }
 
-            // todo: this should not be required after fixes above
-            return new HeaderSubChain(chain.Take(2000));
+            cachedChainForUpdate = chain;
+
+            return chain;
+        }
+
+        private bool CanUseCachedChainForUpdate(UtxoHeader utxoHead)
+        {
+            if (cachedChainForUpdate == null)
+            {
+                return false;
+            }
+
+            DbHeader lastChainHead = cachedChainForUpdate.GetBlockByOffset(0);
+            DbHeader blockChainHead = blockchain.GetBestHead();
+
+            if (lastChainHead != blockChainHead)
+            {
+                return false;
+            }
+
+            var lastChainTail = cachedChainForUpdate.GetBlockByOffset(cachedChainForUpdate.Count - 1);
+            int requiredBlockHeight = GetRequiredBlockHeight(utxoHead);
+
+            if (requiredBlockHeight < lastChainTail.Height || requiredBlockHeight > lastChainHead.Height)
+            {
+                return false;
+            }
+
+            if (utxoHead == null)
+            {
+                // no need to check previous hash for the genesis block
+                return true;
+            }
+
+            DbHeader requiredHeader = cachedChainForUpdate.GetBlockByHeight(requiredBlockHeight);
+            return ByteArrayComparer.Instance.Equals(requiredHeader.ParentHash, utxoHead.Hash);
         }
 
         private void AddRequestedBlock(BlockAvailableEvent evt)
         {
-            HeaderSubChain chain = GetChainForUpdate();
+            UtxoHeader utxoHead = utxoStorage.GetLastHeader();
+            HeaderSubChain chain = GetChainForUpdate(utxoHead);
 
             if (chain != null)
             {
-                DbHeader firstHeader = chain.First();
-                if (ByteArrayComparer.Instance.Equals(firstHeader.Hash, evt.HeaderHash))
+                int requiredBlockHeight = GetRequiredBlockHeight(utxoHead);
+                DbHeader requiredHeader = chain.GetBlockByHeight(requiredBlockHeight);
+                if (ByteArrayComparer.Instance.Equals(requiredHeader.Hash, evt.HeaderHash))
                 {
-                    utxoStorage.Update(CreateAndValidateUtxoUpdate(firstHeader, evt.Block));
-                    controller.Raise(new UtxoChangedEvent(firstHeader));
+                    utxoStorage.Update(CreateAndValidateUtxoUpdate(requiredHeader, evt.Block));
+                    controller.Raise(new UtxoChangedEvent(requiredHeader));
                 }
             }
 
             RequestBlocks();
+        }
+
+        private static int GetRequiredBlockHeight(UtxoHeader utxoHead)
+        {
+            return utxoHead == null ? 0 : utxoHead.Height + 1;
         }
 
         private UtxoUpdate CreateAndValidateUtxoUpdate(DbHeader header, BlockMessage block)

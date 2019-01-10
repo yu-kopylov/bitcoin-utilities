@@ -158,7 +158,7 @@ namespace BitcoinUtilities.Threading
 
             public void Queue(object evt)
             {
-                const int maxQueueSize = 8192;
+                const int maxQueueSize = 16384;
                 lock (monitor)
                 {
                     // todo: add per endpoint restriction insteads
