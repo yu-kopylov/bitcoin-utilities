@@ -40,7 +40,8 @@ namespace BitcoinUtilities.Node.Services.Outputs
             this.utxoStorage = utxoStorage;
 
             // todo: OnStart(RequestBlocks);
-            // todo: On<BestHeaderChanged>(check best head && RequestBlocks);
+            // todo: do not call RequestBlocks in response to BestHeadChangedEvent too often
+            On<BestHeadChangedEvent>(e => RequestBlocks());
             On<BlockAvailableEvent>(AddRequestedBlock);
         }
 
