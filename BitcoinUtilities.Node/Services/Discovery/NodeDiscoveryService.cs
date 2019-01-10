@@ -3,18 +3,30 @@ using System.Collections.Generic;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
+using BitcoinUtilities.Node.Events;
 using BitcoinUtilities.P2P;
 using BitcoinUtilities.Threading;
 
-namespace BitcoinUtilities.Node.Services
+namespace BitcoinUtilities.Node.Services.Discovery
 {
-    public class NodeDiscoveryService : INodeService, IDisposable
+    public class NodeDiscoveryServiceFactory : INodeEventServiceFactory
     {
-        private static readonly TimeSpan stateRefreshInterval = TimeSpan.FromMilliseconds(5000);
+        public IReadOnlyCollection<IEventHandlingService> CreateForNode(BitcoinNode node, CancellationToken cancellationToken)
+        {
+            return new IEventHandlingService[] {new NodeDiscoveryService(node, cancellationToken)};
+        }
+
+        public IReadOnlyCollection<IEventHandlingService> CreateForEndpoint(BitcoinNode node, BitcoinEndpoint endpoint)
+        {
+            return new IEventHandlingService[0];
+        }
+    }
+
+    public class NodeDiscoveryService : EventHandlingService
+    {
         private static readonly TimeSpan dnsSeedsRefreshInterval = TimeSpan.FromMinutes(60);
 
         private readonly Random random = new Random();
-        private readonly AutoResetEvent signalEvent = new AutoResetEvent(true);
 
         private DateTime lastDnsSeedsLookup = DateTime.MinValue;
 
@@ -24,46 +36,21 @@ namespace BitcoinUtilities.Node.Services
         public NodeDiscoveryService(BitcoinNode node, CancellationToken cancellationToken)
         {
             this.node = node;
-
-            cancellationToken.Register(Signal);
             this.cancellationToken = cancellationToken;
+
+            On<NodeConnectionsChangedEvent>(e => CheckState());
         }
 
-        public void Dispose()
+        public override void OnStart()
         {
-            signalEvent.Dispose();
+            base.OnStart();
+            CheckState();
         }
 
-        public void Run()
+        private void CheckState()
         {
-            while (!cancellationToken.IsCancellationRequested)
-            {
-                CheckDnsSeeds();
-                ConnectToNodes();
-                signalEvent.WaitOne(stateRefreshInterval);
-            }
-        }
-
-        public void OnNodeConnected(BitcoinEndpoint endpoint)
-        {
-            //todo: remember node?
-        }
-
-        public void OnNodeDisconnected(BitcoinEndpoint endpoint)
-        {
-        }
-
-        public void ProcessMessage(BitcoinEndpoint endpoint, IBitcoinMessage message)
-        {
-            //todo: process AddrMessage
-        }
-
-        /// <summary>
-        /// Signals thread to stop waiting and process changed state.
-        /// </summary>
-        public void Signal()
-        {
-            signalEvent.Set();
+            CheckDnsSeeds();
+            ConnectToNodes();
         }
 
         private void ConnectToNodes()
@@ -82,10 +69,12 @@ namespace BitcoinUtilities.Node.Services
                 {
                     return;
                 }
+
                 if (node.ConnectionCollection.IsConnected(address.Address))
                 {
                     return;
                 }
+
                 //todo: don't connect to already connected nodes
                 node.ConnectTo(address);
             });
@@ -120,10 +109,12 @@ namespace BitcoinUtilities.Node.Services
                 lastDnsSeedsLookup = now;
                 return;
             }
+
             if (lastDnsSeedsLookup.Add(dnsSeedsRefreshInterval) >= now)
             {
                 return;
             }
+
             //todo: if network was inaccessible on start of application seeds will not be received for up to dnsSeedsRefreshInterval (1 hour)
             lastDnsSeedsLookup = now;
 
@@ -154,14 +145,6 @@ namespace BitcoinUtilities.Node.Services
             }
 
             return res;
-        }
-    }
-
-    public class NodeDiscoveryServiceFactory : INodeServiceFactory
-    {
-        public INodeService Create(BitcoinNode node, CancellationToken cancellationToken)
-        {
-            return new NodeDiscoveryService(node, cancellationToken);
         }
     }
 }

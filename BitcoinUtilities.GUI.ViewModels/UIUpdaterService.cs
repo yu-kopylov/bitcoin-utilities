@@ -8,8 +8,8 @@ namespace BitcoinUtilities.GUI.ViewModels
     {
         public UIUpdaterService(IViewContext viewContext, BitcoinNodeViewModel viewModel, ApplicationContext applicationContext, string nodeStateChangedEventType)
         {
+            On<NodeConnectionsChangedEvent>(e => applicationContext.EventManager.Notify(nodeStateChangedEventType));
             On<BestHeadChangedEvent>(e => applicationContext.EventManager.Notify(nodeStateChangedEventType));
-
             On<UtxoChangedEvent>(e => viewContext.Invoke(() => viewModel.BestChainHeight = e.LastHeader?.Height ?? 0));
         }
     }

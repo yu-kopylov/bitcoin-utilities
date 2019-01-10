@@ -7,8 +7,8 @@ using System.Net;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using BitcoinUtilities.Node.Events;
-using BitcoinUtilities.Node.Services;
 using BitcoinUtilities.Node.Services.Blocks;
+using BitcoinUtilities.Node.Services.Discovery;
 using BitcoinUtilities.Node.Services.Headers;
 using BitcoinUtilities.Node.Services.Outputs;
 using BitcoinUtilities.P2P;
@@ -66,7 +66,7 @@ namespace BitcoinUtilities.Node
                 );
             }
 
-            services.AddFactory(new NodeDiscoveryServiceFactory());
+            eventServiceFactories.Add(new NodeDiscoveryServiceFactory());
             eventServiceFactories.Add(new HeaderDowloadServiceFactory());
             eventServiceFactories.Add(new BlockStorageServiceFactory());
             eventServiceFactories.Add(new BlockDownloadServiceFactory());
@@ -143,6 +143,8 @@ namespace BitcoinUtilities.Node
 
             addressCollection = new NodeAddressCollection();
             connectionCollection = new NodeConnectionCollection(cancellationTokenSource.Token);
+            connectionCollection.Changed += () => eventServiceController.Raise(new NodeConnectionsChangedEvent());
+
             //todo: review, maybe registering event handler is a responsibility of nodeDiscoveryService 
             //todo: connectionCollection.Changed += nodeDiscoveryService.Signal; - signal nodeDiscoveryService to connect to new nodes (is it its responsibility?)
 
@@ -154,11 +156,12 @@ namespace BitcoinUtilities.Node
 
             foreach (var factory in eventServiceFactories)
             {
-                foreach (var service in factory.CreateForNode(this))
+                foreach (var service in factory.CreateForNode(this, cancellationTokenSource.Token))
                 {
                     eventServiceController.AddService(service);
                 }
             }
+
 
             eventServiceController.Start();
 

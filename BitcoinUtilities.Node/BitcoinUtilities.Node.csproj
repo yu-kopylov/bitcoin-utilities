@@ -52,6 +52,7 @@
     <Compile Include="BitcoinNode.cs" />
     <Compile Include="Events\BestHeadChangedEvent.cs" />
     <Compile Include="Events\MessageEvent.cs" />
+    <Compile Include="Events\NodeConnectionsChangedEvent.cs" />
     <Compile Include="Events\PrefetchBlocksEvent.cs" />
     <Compile Include="Events\BlockDownloadRequestedEvent.cs" />
     <Compile Include="Events\UtxoChangedEvent.cs" />
@@ -69,7 +70,7 @@
     <Compile Include="Services\Headers\HeaderDowloadService.cs" />
     <Compile Include="Services\Headers\HeaderStorage.cs" />
     <Compile Include="Services\Headers\HeaderSubChain.cs" />
-    <Compile Include="Services\NodeDiscoveryService.cs" />
+    <Compile Include="Services\Discovery\NodeDiscoveryService.cs" />
     <Compile Include="Services\NodeEventHandlingService.cs" />
     <Compile Include="Services\Outputs\UtxoAggregateUpdate.cs" />
     <Compile Include="Services\Outputs\UtxoHeader.cs" />

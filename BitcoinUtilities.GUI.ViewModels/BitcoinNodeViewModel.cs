@@ -134,7 +134,7 @@ namespace BitcoinUtilities.GUI.ViewModels
             //todo: unregister handlers?
             const string nodeStateChangedEventType = "NodeStateChanged";
             node.PropertyChanged += (sender, args) => applicationContext.EventManager.Notify(nodeStateChangedEventType);
-            node.ConnectionCollection.Changed += () => applicationContext.EventManager.Notify(nodeStateChangedEventType);
+
             // todo: rethink service -> UI notifications patterns
             node.EventServiceController.AddService(new UIUpdaterService(viewContext, this, applicationContext, nodeStateChangedEventType));
 

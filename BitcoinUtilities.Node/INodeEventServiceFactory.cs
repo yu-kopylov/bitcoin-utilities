@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Threading;
 using BitcoinUtilities.P2P;
 using BitcoinUtilities.Threading;
 
@@ -13,8 +14,9 @@ namespace BitcoinUtilities.Node
         /// This method is called diring the start of a <see cref="BitcoinNode"/>.
         /// </summary>
         /// <param name="node">The node that will use the service.</param>
+        /// <param name="cancellationToken">A cancellation token.</param>
         /// <returns>Instances of <see cref="IEventHandlingService"/>.</returns>
-        IReadOnlyCollection<IEventHandlingService> CreateForNode(BitcoinNode node);
+        IReadOnlyCollection<IEventHandlingService> CreateForNode(BitcoinNode node, CancellationToken cancellationToken);
 
         /// <summary>
         /// This method is called when new connection is established.

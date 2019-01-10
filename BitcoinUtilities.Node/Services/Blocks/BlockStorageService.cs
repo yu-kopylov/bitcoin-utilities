@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using BitcoinUtilities.Node.Events;
 using BitcoinUtilities.Node.Services.Headers;
 using BitcoinUtilities.P2P;
@@ -10,7 +11,7 @@ namespace BitcoinUtilities.Node.Services.Blocks
 {
     public class BlockStorageServiceFactory : INodeEventServiceFactory
     {
-        public IReadOnlyCollection<IEventHandlingService> CreateForNode(BitcoinNode node)
+        public IReadOnlyCollection<IEventHandlingService> CreateForNode(BitcoinNode node, CancellationToken cancellationToken)
         {
             return new IEventHandlingService[] {new BlockStorageService(node.EventServiceController, node.BlockStorage)};
         }

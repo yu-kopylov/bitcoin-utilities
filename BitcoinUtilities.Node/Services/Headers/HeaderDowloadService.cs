@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using BitcoinUtilities.Node.Events;
 using BitcoinUtilities.Node.Rules;
 using BitcoinUtilities.P2P;
@@ -13,7 +14,7 @@ namespace BitcoinUtilities.Node.Services.Headers
 {
     public class HeaderDowloadServiceFactory : INodeEventServiceFactory
     {
-        public IReadOnlyCollection<IEventHandlingService> CreateForNode(BitcoinNode node)
+        public IReadOnlyCollection<IEventHandlingService> CreateForNode(BitcoinNode node, CancellationToken cancellationToken)
         {
             return new IEventHandlingService[0];
         }

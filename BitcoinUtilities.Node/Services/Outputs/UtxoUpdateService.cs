@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using BitcoinUtilities.Node.Events;
 using BitcoinUtilities.Node.Services.Headers;
 using BitcoinUtilities.P2P;
@@ -12,7 +13,7 @@ namespace BitcoinUtilities.Node.Services.Outputs
 {
     public class UtxoUpdateServiceFactory : INodeEventServiceFactory
     {
-        public IReadOnlyCollection<IEventHandlingService> CreateForNode(BitcoinNode node)
+        public IReadOnlyCollection<IEventHandlingService> CreateForNode(BitcoinNode node, CancellationToken cancellationToken)
         {
             return new IEventHandlingService[] {new UtxoUpdateService(node.EventServiceController, node.Blockchain, node.UtxoStorage)};
         }
@@ -39,7 +40,6 @@ namespace BitcoinUtilities.Node.Services.Outputs
             this.blockchain = blockchain;
             this.utxoStorage = utxoStorage;
 
-            // todo: OnStart(RequestBlocks);
             // todo: do not call RequestBlocks in response to BestHeadChangedEvent too often
             On<BestHeadChangedEvent>(e => RequestBlocks());
             On<BlockAvailableEvent>(AddRequestedBlock);
