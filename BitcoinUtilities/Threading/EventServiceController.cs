@@ -48,20 +48,20 @@ namespace BitcoinUtilities.Threading
         public void Stop()
         {
             started = false;
+
+            List<ServiceThread> stoppedThreads;
             lock (monitor)
             {
-                foreach (var service in services)
+                stoppedThreads = new List<ServiceThread>(services);
+                foreach (var service in stoppedThreads)
                 {
                     service.Stop();
                 }
             }
 
-            lock (monitor)
+            foreach (var service in stoppedThreads)
             {
-                foreach (var service in services)
-                {
-                    service.Join();
-                }
+                service.Join();
             }
         }
 
@@ -71,12 +71,11 @@ namespace BitcoinUtilities.Threading
             lock (monitor)
             {
                 services.Add(serviceThread);
-            }
-
-            if (started)
-            {
-                // todo: add test
-                serviceThread.Start();
+                if (started)
+                {
+                    // todo: add test
+                    serviceThread.Start();
+                }
             }
         }
 
