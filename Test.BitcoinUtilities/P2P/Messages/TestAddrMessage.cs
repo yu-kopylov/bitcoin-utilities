@@ -42,7 +42,7 @@ namespace Test.BitcoinUtilities.P2P.Messages
             NetAddr address = message.AddressList[0];
 
             Assert.That(UnixTime.ToDateTime(address.Timestamp), Is.EqualTo(new DateTime(2010, 12, 21, 02, 50, 10, DateTimeKind.Utc)));
-            Assert.That(address.Services, Is.EqualTo(1));
+            Assert.That(address.Services, Is.EqualTo(BitcoinServiceFlags.NodeNetwork));
             Assert.That(address.Address, Is.EqualTo(IpUtils.MapToIPv6(IPAddress.Parse("10.0.0.1"))));
             Assert.That(address.Port, Is.EqualTo(8333));
 

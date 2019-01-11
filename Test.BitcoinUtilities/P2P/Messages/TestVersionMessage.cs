@@ -45,7 +45,7 @@ namespace Test.BitcoinUtilities.P2P.Messages
 
             Assert.That(message.ProtocolVersion, Is.EqualTo(70002));
             Assert.That(message.UserAgent, Is.EqualTo("/Satoshi:0.9.0/"));
-            Assert.That(message.Services, Is.EqualTo(1));
+            Assert.That(message.Services, Is.EqualTo(BitcoinServiceFlags.NodeNetwork));
             Assert.That(message.StartHeight, Is.EqualTo(212672));
             Assert.That(message.AcceptBroadcasts, Is.True);
 

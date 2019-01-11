@@ -36,7 +36,7 @@ namespace BitcoinUtilities.Node
         private NodeAddressCollection addressCollection;
         private NodeConnectionCollection connectionCollection;
 
-        private BitcoinConnectionListener listener;
+        private BitcoinConnectionListener connectionListener;
 
         private readonly CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
         private bool started;
@@ -80,6 +80,7 @@ namespace BitcoinUtilities.Node
             headerStorage?.Dispose();
             blockStorage?.Dispose();
             utxoStorage?.Dispose();
+            cancellationTokenSource.Dispose();
         }
 
         public NodeAddressCollection AddressCollection
@@ -138,13 +139,13 @@ namespace BitcoinUtilities.Node
         public void Start()
         {
             addressCollection = new NodeAddressCollection();
-            connectionCollection = new NodeConnectionCollection(cancellationTokenSource.Token);
+            connectionCollection = new NodeConnectionCollection();
             //todo: review, maybe registering event handler is a responsibility of the NodeDiscoveryService 
             connectionCollection.Changed += () => eventServiceController.Raise(new NodeConnectionsChangedEvent());
 
             //todo: discover own external address? (it seems useless without external port)
             //todo: use setting to specify port and operating mode
-            listener = BitcoinConnectionListener.StartListener(IPAddress.Any, 8333, HandleIncomingConnection);
+            connectionListener = BitcoinConnectionListener.StartListener(IPAddress.Any, 8333, HandleIncomingConnection);
 
             foreach (var factory in eventServiceFactories)
             {
@@ -168,7 +169,9 @@ namespace BitcoinUtilities.Node
 
             cancellationTokenSource.Cancel();
 
-            listener?.Dispose();
+            connectionListener?.Dispose();
+
+            connectionCollection?.Dispose();
 
             // todo: add timeout
             // todo: dispose IDisposable services in eventServiceController
@@ -184,24 +187,22 @@ namespace BitcoinUtilities.Node
                 return;
             }
 
-            //todo: The construction of BitcoinEndpoint and BitcoinConnection is confusing. Both can use host and port.
-            BitcoinEndpoint endpoint = new BitcoinEndpoint(HandleMessage);
+            BitcoinEndpoint endpoint;
             try
             {
-                endpoint.Connect(address.Address.ToString(), address.Port);
+                endpoint = BitcoinEndpoint.Create(address.Address.ToString(), address.Port);
             }
             catch (BitcoinNetworkException)
             {
                 addressCollection.Reject(address);
-                //todo: log error?
                 return;
             }
 
-            //todo: check nonce to avoid connection to self
             //todo: check if peer is banned
+            //todo: check nonce to avoid connection to self
             //todo: send ping messages to check if connection is alive
 
-            if ((endpoint.PeerInfo.VersionMessage.Services & VersionMessage.ServiceNodeNetwork) == 0)
+            if (!endpoint.PeerInfo.VersionMessage.Services.HasFlag(BitcoinServiceFlags.NodeNetwork))
             {
                 // outgoing connections ignore non-full nodes
                 addressCollection.Reject(address);
@@ -210,54 +211,59 @@ namespace BitcoinUtilities.Node
             }
 
             addressCollection.Confirm(address);
-
-            if (!connectionCollection.Add(NodeConnectionDirection.Outgoing, endpoint))
-            {
-                endpoint.Dispose();
-                return;
-            }
-
-            // todo: have to guarantee that no message is processed before service is added
-            foreach (var factory in eventServiceFactories)
-            {
-                foreach (var service in factory.CreateForEndpoint(this, endpoint))
-                {
-                    eventServiceController.AddService(service);
-                }
-            }
-
-            //todo: remove associated services from eventServiceController
+            SetupConnection(NodeConnectionDirection.Outgoing, endpoint);
         }
 
         private void HandleIncomingConnection(BitcoinConnection connection)
         {
-            BitcoinEndpoint endpoint = new BitcoinEndpoint(HandleMessage);
-            endpoint.Connect(connection);
+            BitcoinEndpoint endpoint = BitcoinEndpoint.Create(connection);
+            SetupConnection(NodeConnectionDirection.Incoming, endpoint);
+        }
 
-            if (!connectionCollection.Add(NodeConnectionDirection.Incoming, endpoint))
+        private void SetupConnection(NodeConnectionDirection direction, BitcoinEndpoint endpoint)
+        {
+            if (!connectionCollection.Add(direction, endpoint))
             {
                 endpoint.Dispose();
                 return;
             }
 
-            // todo: have to guarantee that no message is processed before service is added
+            List<IEventHandlingService> endpointServices = new List<IEventHandlingService>();
+            connectionCollection.AssingServices(endpoint, endpointServices);
+
             foreach (var factory in eventServiceFactories)
             {
                 foreach (var service in factory.CreateForEndpoint(this, endpoint))
                 {
                     eventServiceController.AddService(service);
+                    endpointServices.Add(service);
                 }
             }
 
-            //todo: remove associated services from eventServiceController
+            endpoint.StartListener(HandleMessage, HandleDisconnectedEndpoint);
         }
 
-        private bool HandleMessage(BitcoinEndpoint endpoint, IBitcoinMessage message)
+        private void HandleDisconnectedEndpoint(BitcoinEndpoint endpoint)
         {
-            if (message is AddrMessage)
+            NodeConnection connection = connectionCollection.Remove(endpoint);
+            if (connection?.Services != null)
             {
-                SaveReceivedAddresses((AddrMessage) message);
-                return true;
+                foreach (IEventHandlingService service in connection.Services)
+                {
+                    // todo: dispose services if necessary
+                    eventServiceController.RemoveService(service);
+                }
+            }
+        }
+
+        private void HandleMessage(BitcoinEndpoint endpoint, IBitcoinMessage message)
+        {
+            // todo: delegate message-handling to services
+
+            if (message is AddrMessage addrMessage)
+            {
+                SaveReceivedAddresses(addrMessage);
+                return;
             }
 
             //todo: send GetAddr message sometimes
@@ -265,11 +271,10 @@ namespace BitcoinUtilities.Node
             if (message is GetAddrMessage)
             {
                 SendKnownAddresses(endpoint);
-                return true;
+                return;
             }
 
             eventServiceController.Raise(new MessageEvent(endpoint, message));
-            return true;
         }
 
         private void SaveReceivedAddresses(AddrMessage addrMessage)

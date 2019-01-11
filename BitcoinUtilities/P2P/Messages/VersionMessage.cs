@@ -11,31 +11,12 @@ namespace BitcoinUtilities.P2P.Messages
     {
         public const string Command = "version";
 
-        // NODE_NETWORK
-        public const ulong ServiceNodeNetwork = 1;
-
-        private const int MaxUserAgentLength = 256*1024;
-
-        private readonly string userAgent;
-        private readonly int protocolVersion;
-        private readonly ulong services;
-
-        private readonly long timestamp;
-        private readonly ulong nonce;
-
-        private readonly IPEndPoint localEndpoint;
-        private ulong localServices;
-
-        private readonly IPEndPoint remoteEndpoint;
-        private ulong remoteServices;
-
-        private readonly int startHeight;
-        private readonly bool acceptBroadcasts;
+        private const int MaxUserAgentLength = 256 * 1024;
 
         public VersionMessage(
             string userAgent,
             int protocolVersion,
-            ulong services,
+            BitcoinServiceFlags services,
             long timestamp,
             ulong nonce,
             IPEndPoint localEndpoint,
@@ -43,20 +24,20 @@ namespace BitcoinUtilities.P2P.Messages
             int startHeight,
             bool acceptBroadcasts)
         {
-            this.userAgent = userAgent;
-            this.protocolVersion = protocolVersion;
-            this.services = services;
-            this.timestamp = timestamp;
-            this.nonce = nonce;
+            this.UserAgent = userAgent;
+            this.ProtocolVersion = protocolVersion;
+            this.Services = services;
+            this.Timestamp = timestamp;
+            this.Nonce = nonce;
 
-            this.localEndpoint = localEndpoint;
-            this.localServices = services;
+            this.LocalEndpoint = localEndpoint;
+            this.LocalServices = services;
 
-            this.remoteEndpoint = remoteEndpoint;
-            this.remoteServices = services;
+            this.RemoteEndpoint = remoteEndpoint;
+            this.RemoteServices = services;
 
-            this.startHeight = startHeight;
-            this.acceptBroadcasts = acceptBroadcasts;
+            this.StartHeight = startHeight;
+            this.AcceptBroadcasts = acceptBroadcasts;
         }
 
         string IBitcoinMessage.Command
@@ -67,63 +48,40 @@ namespace BitcoinUtilities.P2P.Messages
         /// <summary>
         /// Identifies protocol version being used by the node.
         /// </summary>
-        public int ProtocolVersion
-        {
-            get { return protocolVersion; }
-        }
+        public int ProtocolVersion { get; }
 
         /// <summary>
         /// Bitfield of features to be enabled for this connection.
         /// </summary>
-        public ulong Services
-        {
-            get { return services; }
-        }
+        public BitcoinServiceFlags Services { get; }
 
         /// <summary>
         /// Standard UNIX timestamp in seconds.
         /// </summary>
-        public long Timestamp
-        {
-            get { return timestamp; }
-        }
+        public long Timestamp { get; }
 
         /// <summary>
         /// The network address of the node emitting this message.
         /// </summary>
-        public IPEndPoint LocalEndpoint
-        {
-            get { return localEndpoint; }
-        }
+        public IPEndPoint LocalEndpoint { get; }
 
         /// <summary>
         /// Same services listed in <see cref="Services"/>.
         /// </summary>
-        public ulong LocalServices
-        {
-            get { return localServices; }
-            private set { localServices = value; }
-        }
+        public BitcoinServiceFlags LocalServices { get; private set; }
 
         /// <summary>
         /// The network address of the node receiving this message.
         /// </summary>
-        public IPEndPoint RemoteEndpoint
-        {
-            get { return remoteEndpoint; }
-        }
+        public IPEndPoint RemoteEndpoint { get; }
 
         /// <summary>
         /// Same services listed in <see cref="Services"/>.
         /// </summary>
-        public ulong RemoteServices
-        {
-            get { return remoteServices; }
-            private set { remoteServices = value; }
-        }
+        public BitcoinServiceFlags RemoteServices { get; private set; }
 
         /// <summary>
-        /// A random nonce which can help a node detect a connection to itself.
+        /// A random nonce which can help a node to detect a connection to itself.
         /// <para/>
         /// Nonce is randomly generated every time a version packet is sent.
         /// <para/>
@@ -131,68 +89,56 @@ namespace BitcoinUtilities.P2P.Messages
         /// <para/>
         /// If the nonce is anything else, a node should terminate the connection on receipt of a version message with a nonce it previously sent.
         /// </summary>
-        public ulong Nonce
-        {
-            get { return nonce; }
-        }
+        public ulong Nonce { get; }
 
         /// <summary>
         /// User Agent (described in BIP-14)
         /// </summary>
-        public string UserAgent
-        {
-            get { return userAgent; }
-        }
+        public string UserAgent { get; }
 
         /// <summary>
         /// The last block received by the emitting node.
         /// </summary>
-        public int StartHeight
-        {
-            get { return startHeight; }
-        }
+        public int StartHeight { get; }
 
         /// <summary>
         /// Whether the remote peer should announce relayed transactions or not (see BIP-37).
         /// </summary>
-        public bool AcceptBroadcasts
-        {
-            get { return acceptBroadcasts; }
-        }
+        public bool AcceptBroadcasts { get; }
 
         public void Write(BitcoinStreamWriter writer)
         {
-            writer.Write(protocolVersion);
-            writer.Write(services);
-            writer.Write(timestamp);
+            writer.Write(ProtocolVersion);
+            writer.Write((ulong) Services);
+            writer.Write(Timestamp);
 
-            writer.Write(remoteServices);
-            writer.WriteAddress(remoteEndpoint.Address);
-            writer.WriteBigEndian((ushort) remoteEndpoint.Port);
+            writer.Write((ulong) RemoteServices);
+            writer.WriteAddress(RemoteEndpoint.Address);
+            writer.WriteBigEndian((ushort) RemoteEndpoint.Port);
 
-            writer.Write(localServices);
-            writer.WriteAddress(localEndpoint.Address);
-            writer.WriteBigEndian((ushort) localEndpoint.Port);
+            writer.Write((ulong) LocalServices);
+            writer.WriteAddress(LocalEndpoint.Address);
+            writer.WriteBigEndian((ushort) LocalEndpoint.Port);
 
-            writer.Write(nonce);
+            writer.Write(Nonce);
 
             writer.WriteText(UserAgent);
-            writer.Write(startHeight);
-            writer.Write(acceptBroadcasts);
+            writer.Write(StartHeight);
+            writer.Write(AcceptBroadcasts);
         }
 
         public static VersionMessage Read(BitcoinStreamReader reader)
         {
             int protocolVersion = reader.ReadInt32();
-            ulong services = reader.ReadUInt64();
+            BitcoinServiceFlags services = (BitcoinServiceFlags) reader.ReadUInt64();
             long timestamp = reader.ReadInt64();
 
-            ulong remoteServices = reader.ReadUInt64();
+            BitcoinServiceFlags remoteServices = (BitcoinServiceFlags) reader.ReadUInt64();
             IPAddress remoteAddress = reader.ReadAddress();
             ushort remotePort = reader.ReadUInt16BigEndian();
             IPEndPoint remoteEndpoint = new IPEndPoint(remoteAddress, remotePort);
 
-            ulong localServices = reader.ReadUInt64();
+            BitcoinServiceFlags localServices = (BitcoinServiceFlags) reader.ReadUInt64();
             IPAddress localAddress = reader.ReadAddress();
             ushort localPort = reader.ReadUInt16BigEndian();
             IPEndPoint localEndpoint = new IPEndPoint(localAddress, localPort);

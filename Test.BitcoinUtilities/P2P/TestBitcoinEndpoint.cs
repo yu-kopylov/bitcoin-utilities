@@ -1,243 +1,280 @@
-﻿using System;
-using System.Collections;
-using System.Net;
-using System.Text;
+﻿using System.Net;
 using System.Threading;
 using BitcoinUtilities.P2P;
 using BitcoinUtilities.P2P.Messages;
 using BitcoinUtilities.P2P.Primitives;
 using NUnit.Framework;
+using TestUtilities;
 
 namespace Test.BitcoinUtilities.P2P
 {
     [TestFixture]
+    [Timeout(10000)]
     public class TestBitcoinEndpoint
     {
-        private static readonly byte[] blockHash0 = new byte[]
+        private MessageLog messageLog;
+
+        [SetUp]
+        public void SetUp()
         {
-            0x6F, 0xE2, 0x8C, 0x0A, 0xB6, 0xF1, 0xB3, 0x72, 0xC1, 0xA6, 0xA2, 0x46, 0xAE, 0x63, 0xF7, 0x4F,
-            0x93, 0x1E, 0x83, 0x65, 0xE1, 0x5A, 0x08, 0x9C, 0x68, 0xD6, 0x19, 0x00, 0x00, 0x00, 0x00, 0x00
-        };
-
-        private static readonly byte[] blockHash1 = new byte[]
-        {
-            0x48, 0x60, 0xEB, 0x18, 0xBF, 0x1B, 0x16, 0x20, 0xE3, 0x7E, 0x94, 0x90, 0xFC, 0x8A, 0x42, 0x75,
-            0x14, 0x41, 0x6F, 0xD7, 0x51, 0x59, 0xAB, 0x86, 0x68, 0x8E, 0x9A, 0x83, 0x00, 0x00, 0x00, 0x00
-        };
-
-        private static readonly byte[] blockHash2 = new byte[]
-        {
-            0xBD, 0xDD, 0x99, 0xCC, 0xFD, 0xA3, 0x9D, 0xA1, 0xB1, 0x08, 0xCE, 0x1A, 0x5D, 0x70, 0x03, 0x8D,
-            0x0A, 0x96, 0x7B, 0xAC, 0xB6, 0x8B, 0x6B, 0x63, 0x06, 0x5F, 0x62, 0x6A, 0x00, 0x00, 0x00, 0x00
-        };
-
-
-        [Test]
-        [Explicit]
-        public void TestServer()
-        {
-            using (BitcoinConnectionListener listener = BitcoinConnectionListener.StartListener(IPAddress.Any, 8334, ConnectionHandler))
-            {
-                Thread.Sleep(30000);
-            }
-        }
-
-        private void ConnectionHandler(BitcoinConnection connection)
-        {
-            using (BitcoinEndpoint endpoint = new BitcoinEndpoint(LoggingMessageHandler))
-            {
-                endpoint.Connect(connection);
-
-                Thread.Sleep(1000);
-                endpoint.WriteMessage(new BitcoinMessage(InvMessage.Command, new byte[0]));
-            }
+            messageLog = new MessageLog();
         }
 
         [Test]
-        [Explicit]
-        public void TestClient()
+        public void TestClientServerMessaging()
         {
-            //todo: test ping deadlock
-
-            using (BitcoinEndpoint endpoint = new BitcoinEndpoint(LoggingMessageHandler))
+            using (var connectionListener = BitcoinConnectionListener.StartListener(IPAddress.Loopback, 0, conn => CreateServerEndpoint(conn)))
             {
-                endpoint.Connect("localhost", 8333);
-
-                //endpoint.WriteMessage(new GetBlocksMessage(endpoint.ProtocolVersion, new byte[][] {blockHash0}, blockHash2));
-                endpoint.WriteMessage(new GetBlocksMessage(endpoint.ProtocolVersion, new byte[][] {new byte[32]}, new byte[32]));
-                Thread.Sleep(500);
-                endpoint.WriteMessage(new GetDataMessage(new InventoryVector[] {new InventoryVector(InventoryVectorType.MsgBlock, blockHash1)}));
-
-                Thread.Sleep(30000);
-            }
-        }
-
-        private bool LoggingMessageHandler(BitcoinEndpoint endpoint, IBitcoinMessage message)
-        {
-            Console.WriteLine(">>command: {0}", message.Command);
-
-            if (message is InvMessage)
-            {
-                InvMessage invMessage = (InvMessage) message;
-                foreach (InventoryVector vector in invMessage.Inventory)
+                using (BitcoinEndpoint endpoint = BitcoinEndpoint.Create("localhost", connectionListener.Port))
                 {
-                    Console.WriteLine("\t{0} {1}", vector.Type.ToString().PadRight(16), BitConverter.ToString(vector.Hash));
-                }
-            }
+                    StartMessageListener(endpoint, false);
+                    Thread.Sleep(100);
 
-            if (message is GetHeadersMessage)
-            {
-                GetHeadersMessage getHeadersMessage = (GetHeadersMessage) message;
+                    Assert.That(messageLog.GetLog(), Is.EquivalentTo(new string[]
+                    {
+                        "Server accepted connection.",
+                        "Server started listener.",
+                        "Client started listener."
+                    }));
+                    messageLog.Clear();
 
-                Console.WriteLine("\tprotocol: {0}", getHeadersMessage.ProtocolVersion);
-                foreach (byte[] hash in getHeadersMessage.LocatorHashes)
-                {
-                    Console.WriteLine("\t{0}", BitConverter.ToString(hash));
+                    endpoint.WriteMessage(new GetAddrMessage());
+                    endpoint.WriteMessage(new GetAddrMessage());
+                    Thread.Sleep(100);
+
+                    Assert.That(messageLog.GetLog(), Is.EquivalentTo(new string[]
+                    {
+                        "Server got message: getaddr",
+                        "Server got message: getaddr",
+                        "Client got message: addr",
+                        "Client got message: addr"
+                    }));
+                    messageLog.Clear();
                 }
 
-                Console.WriteLine("\t{0} (stop)", BitConverter.ToString(getHeadersMessage.HashStop));
-
-                endpoint.WriteMessage(new InvMessage(new InventoryVector[]
+                Thread.Sleep(100);
+                Assert.That(messageLog.GetLog(), Is.EquivalentTo(new string[]
                 {
-                    new InventoryVector(InventoryVectorType.MsgBlock, blockHash1)
+                    "Server endpoint disconnected.",
+                    "Client endpoint disconnected."
                 }));
             }
-
-            if (message is GetDataMessage)
-            {
-                GetDataMessage getDataMessage = (GetDataMessage) message;
-                foreach (InventoryVector vector in getDataMessage.Inventory)
-                {
-                    Console.WriteLine("\t{0} {1}", vector.Type.ToString().PadRight(16), BitConverter.ToString(vector.Hash));
-                }
-            }
-
-            if (message is BlockMessage)
-            {
-                BlockMessage blockMessage = (BlockMessage) message;
-                foreach (Tx tx in blockMessage.Transactions)
-                {
-                    Console.WriteLine("\tInputs:");
-                    foreach (TxIn input in tx.Inputs)
-                    {
-                        Console.WriteLine("\t\t{0} seq. {1:X}", BitConverter.ToString(input.PreviousOutput.Hash), input.Sequence);
-                    }
-
-                    Console.WriteLine("\tOutputs:");
-                    foreach (TxOut output in tx.Outputs)
-                    {
-                        Console.WriteLine("\t\t{0}, script: {1}", output.Value, BitConverter.ToString(output.PubkeyScript));
-                    }
-                }
-            }
-
-            if (message is MerkleBlockMessage)
-            {
-                MerkleBlockMessage merkleBlockMessage = (MerkleBlockMessage) message;
-
-                BitArray flagsBitArray = new BitArray(merkleBlockMessage.Flags);
-                StringBuilder flagsSb = new StringBuilder();
-                foreach (bool flag in flagsBitArray)
-                {
-                    flagsSb.Append(flag ? "1" : "0");
-                }
-
-                Console.WriteLine("\tTotalTransactions: {0}", merkleBlockMessage.TotalTransactions);
-                Console.WriteLine("\tFlags:             {0}", flagsSb);
-
-                foreach (byte[] hash in merkleBlockMessage.Hashes)
-                {
-                    Console.WriteLine("\t\t{0}", BitConverter.ToString(hash));
-                }
-            }
-
-            if (message is BitcoinMessage)
-            {
-                BitcoinMessage rawMessage = (BitcoinMessage) message;
-                Console.WriteLine(">>payload: {0}", BitConverter.ToString(rawMessage.Payload));
-            }
-
-            return true;
         }
 
         [Test]
-        public void TestDeadlock()
+        public void TestDisconnectByServer()
         {
-            AutoResetEvent finishedEvent = new AutoResetEvent(false);
-            using (BitcoinConnectionListener server = BitcoinConnectionListener.StartListener(IPAddress.Loopback, 28333, DeadlockTestConnectionHandler))
+            BitcoinEndpoint serverEndpoint = null;
+            using (var connectionListener = BitcoinConnectionListener.StartListener(
+                IPAddress.Loopback, 0, conn => serverEndpoint = CreateServerEndpoint(conn)
+            ))
             {
-                Exception threadException = null;
-
-                Thread thread = new Thread(() =>
+                using (BitcoinEndpoint clientEndpoint = BitcoinEndpoint.Create("localhost", connectionListener.Port))
                 {
-                    try
+                    StartMessageListener(clientEndpoint, false);
+                    Thread.Sleep(100);
+
+                    Assert.That(messageLog.GetLog(), Is.EquivalentTo(new string[]
                     {
-                        using (BitcoinEndpoint client = new BitcoinEndpoint(DeadlockTestMessageHandler))
-                        {
-                            client.Connect("localhost", 28333);
-                            SendDeadlockTestSequence(client, "client");
-                            //let other peer to send remaining data
-                            Thread.Sleep(1000);
-                        }
-                    }
-                    catch (Exception ex)
+                        "Server accepted connection.",
+                        "Server started listener.",
+                        "Client started listener."
+                    }));
+                    messageLog.Clear();
+
+                    Assert.NotNull(serverEndpoint);
+                    serverEndpoint.Dispose();
+                    Thread.Sleep(100);
+
+                    Assert.That(messageLog.GetLog(), Is.EquivalentTo(new string[]
                     {
-                        threadException = ex;
-                    }
-                    finally
-                    {
-                        finishedEvent.Set();
-                    }
-                });
-                thread.Name = "Test Sending Thread";
-                thread.IsBackground = true;
-                thread.Start();
-                Assert.That(finishedEvent.WaitOne(5000), Is.True);
-                Assert.That(threadException, Is.Null);
+                        "Server endpoint disconnected.",
+                        "Client endpoint disconnected."
+                    }));
+                    messageLog.Clear();
+
+                    Assert.Throws<BitcoinNetworkException>(() => serverEndpoint.WriteMessage(new GetAddrMessage()));
+                    Assert.Throws<BitcoinNetworkException>(() => clientEndpoint.WriteMessage(new GetAddrMessage()));
+                }
+
+                Thread.Sleep(100);
+                Assert.That(messageLog.GetLog(), Is.EquivalentTo(new string[0]));
             }
         }
 
-        private void SendDeadlockTestSequence(BitcoinEndpoint client, string peerName)
+        [Test]
+        public void TestRepeatableDispose()
         {
-            byte[][] locatorHashes = new byte[256][];
-            for (int i = 0; i < locatorHashes.Length; i++)
+            BitcoinEndpoint serverEndpoint = null;
+            using (var connectionListener = BitcoinConnectionListener.StartListener(
+                IPAddress.Loopback, 0, conn => serverEndpoint = CreateServerEndpoint(conn)
+            ))
             {
-                locatorHashes[i] = new byte[32];
+                using (BitcoinEndpoint clientEndpoint = BitcoinEndpoint.Create("localhost", connectionListener.Port))
+                {
+                    StartMessageListener(clientEndpoint, false);
+                    Thread.Sleep(100);
+
+                    Assert.That(messageLog.GetLog(), Is.EquivalentTo(new string[]
+                    {
+                        "Server accepted connection.",
+                        "Server started listener.",
+                        "Client started listener."
+                    }));
+                    messageLog.Clear();
+
+                    Assert.NotNull(serverEndpoint);
+
+                    serverEndpoint.Dispose();
+                    clientEndpoint.Dispose();
+
+                    serverEndpoint.Dispose();
+                    clientEndpoint.Dispose();
+
+                    Thread.Sleep(100);
+
+                    Assert.That(messageLog.GetLog(), Is.EquivalentTo(new string[]
+                    {
+                        "Server endpoint disconnected.",
+                        "Client endpoint disconnected."
+                    }));
+                    messageLog.Clear();
+
+                    Assert.Throws<BitcoinNetworkException>(() => serverEndpoint.WriteMessage(new GetAddrMessage()));
+                    Assert.Throws<BitcoinNetworkException>(() => clientEndpoint.WriteMessage(new GetAddrMessage()));
+                }
+
+                Thread.Sleep(100);
+                Assert.That(messageLog.GetLog(), Is.EquivalentTo(new string[0]));
             }
-
-            IBitcoinMessage pingMessage = new PingMessage(0);
-
-            IBitcoinMessage bigMessage = new GetBlocksMessage(client.ProtocolVersion, locatorHashes, new byte[32]);
-            byte[] messageText = BitcoinStreamWriter.GetBytes(bigMessage.Write);
-            Console.WriteLine("{0}: message length is {1}", peerName, messageText.Length);
-
-            Console.WriteLine("{0}: sequence started", peerName);
-            for (int i = 0; i < 16; i++)
-            {
-                client.WriteMessage(bigMessage);
-                client.WriteMessage(pingMessage);
-            }
-
-            Console.WriteLine("{0}: sequence finished", peerName);
         }
 
-        private void DeadlockTestConnectionHandler(BitcoinConnection connection)
+        [Test]
+        public void TestDisposeFromMessageHandler()
         {
-            using (BitcoinEndpoint endpoint = new BitcoinEndpoint(DeadlockTestMessageHandler))
+            BitcoinEndpoint serverEndpoint = null;
+            using (var connectionListener = BitcoinConnectionListener.StartListener(
+                IPAddress.Loopback, 0, conn =>
+                {
+                    messageLog.Log("Server accepted connection.");
+                    serverEndpoint = BitcoinEndpoint.Create(conn);
+                    serverEndpoint.StartListener((_, __) =>
+                    {
+                        serverEndpoint.Dispose();
+                        messageLog.Log("Server accepted message.");
+                    }, _ => { messageLog.Log("Server endpoint disconnected."); });
+                    messageLog.Log("Server started listener.");
+                }
+            ))
             {
-                endpoint.Connect(connection);
+                using (BitcoinEndpoint clientEndpoint = BitcoinEndpoint.Create("localhost", connectionListener.Port))
+                {
+                    StartMessageListener(clientEndpoint, false);
+                    Thread.Sleep(100);
 
-                SendDeadlockTestSequence(endpoint, "server");
+                    Assert.That(messageLog.GetLog(), Is.EquivalentTo(new string[]
+                    {
+                        "Server accepted connection.",
+                        "Server started listener.",
+                        "Client started listener."
+                    }));
+                    messageLog.Clear();
 
-                //let other peer to send remaining data
-                Thread.Sleep(1000);
+                    clientEndpoint.WriteMessage(new GetAddrMessage());
+                    Thread.Sleep(100);
+
+                    Assert.That(messageLog.GetLog(), Is.EquivalentTo(new string[]
+                    {
+                        "Server accepted message.",
+                        "Server endpoint disconnected.",
+                        "Client endpoint disconnected."
+                    }));
+                    messageLog.Clear();
+
+                    Assert.NotNull(serverEndpoint);
+                    Assert.Throws<BitcoinNetworkException>(() => serverEndpoint.WriteMessage(new GetAddrMessage()));
+                    Assert.Throws<BitcoinNetworkException>(() => clientEndpoint.WriteMessage(new GetAddrMessage()));
+                }
+
+                Thread.Sleep(100);
+                Assert.That(messageLog.GetLog(), Is.EquivalentTo(new string[0]));
             }
         }
 
-        private bool DeadlockTestMessageHandler(BitcoinEndpoint endpoint, IBitcoinMessage message)
+        [Test]
+        public void TestDisposeFromDisconnectHandler()
         {
-            Thread.Sleep(100);
-            return true;
+            BitcoinEndpoint serverEndpoint = null;
+            using (var connectionListener = BitcoinConnectionListener.StartListener(
+                IPAddress.Loopback, 0, conn =>
+                {
+                    messageLog.Log("Server accepted connection.");
+                    serverEndpoint = BitcoinEndpoint.Create(conn);
+                    serverEndpoint.StartListener((_, __) => { }, _ =>
+                    {
+                        serverEndpoint.Dispose();
+                        messageLog.Log("Server endpoint disconnected.");
+                    });
+                    messageLog.Log("Server started listener.");
+                }
+            ))
+            {
+                using (BitcoinEndpoint clientEndpoint = BitcoinEndpoint.Create("localhost", connectionListener.Port))
+                {
+                    StartMessageListener(clientEndpoint, false);
+                    Thread.Sleep(100);
+
+                    Assert.That(messageLog.GetLog(), Is.EquivalentTo(new string[]
+                    {
+                        "Server accepted connection.",
+                        "Server started listener.",
+                        "Client started listener."
+                    }));
+                    messageLog.Clear();
+
+                    serverEndpoint.Dispose();
+                    Thread.Sleep(100);
+
+                    Assert.That(messageLog.GetLog(), Is.EquivalentTo(new string[]
+                    {
+                        "Server endpoint disconnected.",
+                        "Client endpoint disconnected."
+                    }));
+                    messageLog.Clear();
+
+                    Assert.NotNull(serverEndpoint);
+                    Assert.Throws<BitcoinNetworkException>(() => serverEndpoint.WriteMessage(new GetAddrMessage()));
+                    Assert.Throws<BitcoinNetworkException>(() => clientEndpoint.WriteMessage(new GetAddrMessage()));
+                }
+
+                Thread.Sleep(100);
+                Assert.That(messageLog.GetLog(), Is.EquivalentTo(new string[0]));
+            }
+        }
+
+        private BitcoinEndpoint CreateServerEndpoint(BitcoinConnection connection)
+        {
+            messageLog.Log("Server accepted connection.");
+            BitcoinEndpoint endpoint = BitcoinEndpoint.Create(connection);
+            StartMessageListener(endpoint, true);
+            return endpoint;
+        }
+
+        private void StartMessageListener(BitcoinEndpoint endpoint, bool server)
+        {
+            string name = server ? "Server" : "Client";
+            endpoint.StartListener(
+                (_, message) =>
+                {
+                    messageLog.Log($"{name} got message: {message.Command}");
+                    if (message is GetAddrMessage)
+                    {
+                        endpoint.WriteMessage(new AddrMessage(new NetAddr[0]));
+                    }
+                },
+                ep => { messageLog.Log($"{name} endpoint disconnected."); }
+            );
+            messageLog.Log($"{name} started listener.");
         }
     }
 }

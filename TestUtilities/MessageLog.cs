@@ -11,6 +11,11 @@ namespace TestUtilities
         private readonly List<string> log = new List<string>();
         private readonly Stopwatch timer = Stopwatch.StartNew();
 
+        public MessageLog()
+        {
+            Console.WriteLine($"{timer.ElapsedMilliseconds,4}: >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
+        }
+
         public string[] GetLog()
         {
             lock (logLock)
@@ -24,17 +29,16 @@ namespace TestUtilities
             lock (logLock)
             {
                 log.Add(message);
-                Console.WriteLine($"{timer.ElapsedMilliseconds,3}: {message}");
+                Console.WriteLine($"{timer.ElapsedMilliseconds,4}: {message}");
             }
         }
 
         public void Clear()
         {
-            timer.Restart();
             lock (logLock)
             {
                 log.Clear();
-                Console.WriteLine("=========================================");
+                Console.WriteLine($"{timer.ElapsedMilliseconds,4}: =========================================");
             }
         }
     }

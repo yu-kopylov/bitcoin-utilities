@@ -2,22 +2,20 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
-using System.Threading;
 using BitcoinUtilities.P2P;
+using BitcoinUtilities.Threading;
 
 namespace BitcoinUtilities.Node
 {
     //todo: write tests
     /// <summary>
-    /// A thread-safe collection of connections to Bitcoin nodes.
+    /// A thread-safe collection of connections to a node.
     /// </summary>
-    public class NodeConnectionCollection
+    public class NodeConnectionCollection : IDisposable
     {
-        private readonly CancellationToken cancellationToken;
-
         private readonly object lockObject = new object();
 
-        private readonly List<NodeConnection> connections = new List<NodeConnection>();
+        private readonly Dictionary<BitcoinEndpoint, NodeConnection> connections = new Dictionary<BitcoinEndpoint, NodeConnection>();
 
         private int maxIncomingConnectionsCount = 8;
         private int maxOutgoingConnectionsCount = 8;
@@ -25,10 +23,30 @@ namespace BitcoinUtilities.Node
         private int incomingConnectionsCount;
         private int outgoingConnectionsCount;
 
-        public NodeConnectionCollection(CancellationToken cancellationToken)
+        private volatile bool disposed;
+
+        /// <summary>
+        /// Stops collection from accepting new connections and closes all associated endpoints.
+        /// </summary>
+        /// <remarks>
+        /// This method does not remove connections from this collection.
+        /// However, since endpoints are closed, their associated message listener threads will call their disconnect handlers
+        /// which should remove connections from this collection.
+        /// </remarks>
+        public void Dispose()
         {
-            cancellationToken.Register(CloseConnections);
-            this.cancellationToken = cancellationToken;
+            List<BitcoinEndpoint> endpoints;
+
+            lock (lockObject)
+            {
+                disposed = true;
+                endpoints = new List<BitcoinEndpoint>(connections.Keys);
+            }
+
+            foreach (BitcoinEndpoint endpoint in endpoints)
+            {
+                endpoint.Dispose();
+            }
         }
 
         public int MaxIncomingConnectionsCount
@@ -99,7 +117,7 @@ namespace BitcoinUtilities.Node
         {
             lock (lockObject)
             {
-                return new List<NodeConnection>(connections);
+                return new List<NodeConnection>(connections.Values);
             }
         }
 
@@ -108,7 +126,7 @@ namespace BitcoinUtilities.Node
         {
             lock (lockObject)
             {
-                return connections.Any(c => c.Endpoint.PeerInfo.IpEndpoint.Address.Equals(address));
+                return connections.Keys.Any(e => e.PeerInfo.IpEndpoint.Address.Equals(address));
             }
         }
 
@@ -122,11 +140,11 @@ namespace BitcoinUtilities.Node
         /// <returns>true if the connection was accepted; otherwise false.</returns>
         public bool Add(NodeConnectionDirection direction, BitcoinEndpoint endpoint)
         {
-            NodeConnection connection = new NodeConnection(direction, endpoint);
+            NodeConnection connection = new NodeConnection(direction, endpoint, null);
 
             lock (lockObject)
             {
-                if (!CanRegister(connection))
+                if (!CanRegisterUnsafe(connection))
                 {
                     return false;
                 }
@@ -144,28 +162,42 @@ namespace BitcoinUtilities.Node
                     throw new InvalidOperationException($"Unexpected connection direction: {direction}.");
                 }
 
-                connections.Add(connection);
+                connections.Add(endpoint, connection);
             }
-
-            endpoint.CallWhenDisconnected(() => Remove(connection));
 
             Changed?.Invoke();
 
             return true;
         }
 
-        private bool CanRegister(NodeConnection connection)
+        public void AssingServices(BitcoinEndpoint endpoint, IEnumerable<IEventHandlingService> endpointServices)
         {
-            if (cancellationToken.IsCancellationRequested)
+            lock (lockObject)
+            {
+                var connection = connections[endpoint];
+                if (connection.Services != null)
+                {
+                    throw new InvalidOperationException("Connection already have associated services.");
+                }
+
+                connections[endpoint] = new NodeConnection(connection.Direction, connection.Endpoint, endpointServices);
+            }
+        }
+
+        private bool CanRegisterUnsafe(NodeConnection connection)
+        {
+            if (disposed)
             {
                 return false;
             }
+
             if (connection.Direction == NodeConnectionDirection.Incoming)
             {
                 if (incomingConnectionsCount >= maxIncomingConnectionsCount)
                 {
                     return false;
                 }
+
                 //todo: should IsConnected be checked for incoming connections?
             }
             else if (connection.Direction == NodeConnectionDirection.Outgoing)
@@ -174,6 +206,7 @@ namespace BitcoinUtilities.Node
                 {
                     return false;
                 }
+
                 if (IsConnected(connection.Endpoint.PeerInfo.IpEndpoint.Address))
                 {
                     return false;
@@ -183,17 +216,22 @@ namespace BitcoinUtilities.Node
             {
                 throw new InvalidOperationException($"Unexpected connection direction: {connection.Direction}.");
             }
+
             return true;
         }
 
-        private void Remove(NodeConnection connection)
+        public NodeConnection Remove(BitcoinEndpoint endpoint)
         {
+            NodeConnection connection;
             lock (lockObject)
             {
-                if (!connections.Remove(connection))
+                if (!connections.TryGetValue(endpoint, out connection))
                 {
-                    return;
+                    return null;
                 }
+
+                connections.Remove(endpoint);
+
                 if (connection.Direction == NodeConnectionDirection.Incoming)
                 {
                     incomingConnectionsCount--;
@@ -207,22 +245,9 @@ namespace BitcoinUtilities.Node
                     throw new InvalidOperationException($"Unexpected connection direction: {connection.Direction}.");
                 }
             }
+
             Changed?.Invoke();
-        }
-
-        private void CloseConnections()
-        {
-            List<NodeConnection> connectionsToClose;
-
-            lock (lockObject)
-            {
-                connectionsToClose = new List<NodeConnection>(connections);
-            }
-
-            foreach (NodeConnection connection in connectionsToClose)
-            {
-                connection.Endpoint.Dispose();
-            }
+            return connection;
         }
     }
 }

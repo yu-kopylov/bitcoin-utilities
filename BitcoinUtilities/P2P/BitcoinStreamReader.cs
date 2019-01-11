@@ -2,7 +2,6 @@
 using System.IO;
 using System.Net;
 using System.Text;
-using BitcoinUtilities.P2P.Messages;
 
 namespace BitcoinUtilities.P2P
 {
@@ -66,16 +65,19 @@ namespace BitcoinUtilities.P2P
             {
                 throw new IOException($"Received an array with too many elements ({elementCountLong} elements).");
             }
+
             int elementCount = (int) elementCountLong;
             if (elementCount > maxElements)
             {
                 throw new IOException($"Received an array with too many elements ({elementCountLong} elements).");
             }
+
             T[] result = new T[elementCount];
             for (int i = 0; i < elementCount; i++)
             {
                 result[i] = readMethod(this);
             }
+
             return result;
         }
 
@@ -91,11 +93,13 @@ namespace BitcoinUtilities.P2P
             {
                 throw new IOException($"A received string is too long ({length} bytes).");
             }
+
             int intLength = (int) length;
             if (intLength > maxLength)
             {
                 throw new IOException($"A received string is too long ({length} bytes).");
             }
+
             byte[] bytes = ReadBytes(intLength);
             return Encoding.ASCII.GetString(bytes);
         }
@@ -109,7 +113,13 @@ namespace BitcoinUtilities.P2P
             return new IPAddress(addressBytes);
         }
 
-        //todo: move this method to BlockMessage?
+        /// <summary>
+        /// Reads an object from the given byte array using the provided read method.
+        /// </summary>
+        /// <typeparam name="T">The type of the object to read.</typeparam>
+        /// <param name="data">An array with a serilized object.</param>
+        /// <param name="readMethod">A method that can deserialize the object from <see cref="BitcoinStreamReader"/>.</param>
+        /// <returns>The deserialized object.</returns>
         public static T FromBytes<T>(byte[] data, Func<BitcoinStreamReader, T> readMethod)
         {
             MemoryStream mem = new MemoryStream(data);

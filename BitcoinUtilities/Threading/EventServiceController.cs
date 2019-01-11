@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading;
+using BitcoinUtilities.P2P;
 using NLog;
 
 namespace BitcoinUtilities.Threading
@@ -79,6 +80,28 @@ namespace BitcoinUtilities.Threading
             }
         }
 
+        public void RemoveService(IEventHandlingService service)
+        {
+            ServiceThread serviceThread;
+            lock (monitor)
+            {
+                // todo: use dictionary
+                int index = services.FindIndex(s => s.Service == service);
+                if (index < 0)
+                {
+                    throw new InvalidOperationException($"{nameof(EventServiceController)} does not have this service.");
+                }
+
+                serviceThread = services[index];
+                services.RemoveAt(index);
+            }
+
+            // todo: use list of services as parameter to stop all of them before a call to serviceThread.Join
+            serviceThread.Stop();
+            serviceThread.Join();
+            serviceThread.Dispose();
+        }
+
         public T GetService<T>()
         {
             lock (monitor)
@@ -92,7 +115,7 @@ namespace BitcoinUtilities.Threading
                 }
             }
 
-            return default(T);
+            throw new InvalidOperationException($"{nameof(EventServiceController)} does not have a service implementing {typeof(T).Name}.");
         }
 
         public void Raise(object evt)
@@ -136,6 +159,8 @@ namespace BitcoinUtilities.Threading
             public void Start()
             {
                 thread = new Thread(ServiceLoop);
+                thread.Name = $"ServiceThread<{Service.GetType().Name}>";
+                thread.IsBackground = true;
                 thread.Start();
             }
 
@@ -153,7 +178,7 @@ namespace BitcoinUtilities.Threading
 
             public void Join()
             {
-                thread.Join();
+                thread?.Join();
             }
 
             public void Queue(object evt)
@@ -186,10 +211,15 @@ namespace BitcoinUtilities.Threading
                 {
                     Service.OnStart();
                 }
+                catch (BitcoinNetworkException ex)
+                {
+                    logger.Trace(ex, $"Error during startup of service '{Service}'.");
+                    stopped = true;
+                }
                 catch (Exception ex)
                 {
                     logger.Error(ex, $"Error during startup of service '{Service}'.");
-                    throw;
+                    stopped = true;
                 }
 
                 while (!stopped)
@@ -200,6 +230,11 @@ namespace BitcoinUtilities.Threading
                         try
                         {
                             HandleEvent(evt);
+                        }
+                        catch (BitcoinNetworkException ex)
+                        {
+                            logger.Trace(ex, $"Service '{Service}' failed to handle event '{evt}'.");
+                            break;
                         }
                         catch (Exception ex)
                         {
@@ -217,10 +252,13 @@ namespace BitcoinUtilities.Threading
                 {
                     Service.OnTearDown();
                 }
+                catch (BitcoinNetworkException ex)
+                {
+                    logger.Trace(ex, $"Error during tear-down of service '{Service}'.");
+                }
                 catch (Exception ex)
                 {
                     logger.Error(ex, $"Error during tear-down of service '{Service}'.");
-                    throw;
                 }
             }
 

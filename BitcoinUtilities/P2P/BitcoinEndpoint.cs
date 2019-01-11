@@ -3,16 +3,16 @@ using System.IO;
 using System.Net;
 using System.Threading;
 using BitcoinUtilities.P2P.Messages;
+using NLog;
 
 namespace BitcoinUtilities.P2P
 {
     /// <summary>
     /// Represents a P2P Bitcoin network endpoint.
     /// <list type="bullet">
-    /// <item><description>Performs handshake with remote node.</description></item>
     /// <item><description>Has a thread that listens for incoming messages.</description></item>
-    /// <item><description>Provides methods for sending messages.</description></item>
     /// <item><description>Answers ping messages.</description></item>
+    /// <item><description>Provides methods to send messages.</description></item>
     /// </list>
     /// </summary>
     /// <remarks>
@@ -22,34 +22,42 @@ namespace BitcoinUtilities.P2P
     /// </remarks>
     public class BitcoinEndpoint : IDisposable
     {
+        private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
+
         private const string UserAgent = "/BitcoinUtilities:0.0.1/";
-        private readonly int protocolVersion = 70002;
+        private static readonly int protocolVersion = 70002;
         private const ulong Services = 0;
         private const bool AcceptBroadcasts = false;
-        private const int StartHeight = 0;
+        private const int StartHeight = 0; // todo: support StartHeight
         private const ulong Nonce = 0; // todo: support Nonce
 
-        private readonly BitcoinMessageHandler messageHandler;
-
-        private BitcoinConnection conn;
-        private BitcoinPeerInfo peerInfo;
+        private readonly BitcoinConnection connection;
+        private readonly BitcoinPeerInfo peerInfo;
+        private readonly CancellationTokenSource cancellationTokenSource;
 
         private Thread listenerThread;
-        private volatile bool running;
+        private BitcoinMessageHandler messageHandler;
+        private Action<BitcoinEndpoint> disconnectHandler;
 
-        private readonly object disconnectLock = new object();
-        private volatile bool disconnected;
-
-        public BitcoinEndpoint(BitcoinMessageHandler messageHandler)
+        private BitcoinEndpoint(BitcoinConnection connection, BitcoinPeerInfo peerInfo)
         {
-            this.messageHandler = messageHandler;
+            this.connection = connection;
+            this.peerInfo = peerInfo;
+            this.cancellationTokenSource = new CancellationTokenSource();
         }
 
+        /// <summary>
+        /// Closes the underlying connection and signals the listener thread to stop.
+        /// </summary>
         public void Dispose()
         {
-            //todo: shutdown gracefully
-            running = false;
-            conn?.Dispose();
+            if (!cancellationTokenSource.IsCancellationRequested)
+            {
+                cancellationTokenSource.Cancel();
+            }
+
+            connection.Dispose();
+            cancellationTokenSource.Dispose();
         }
 
         public int ProtocolVersion
@@ -62,154 +70,183 @@ namespace BitcoinUtilities.P2P
             get { return peerInfo; }
         }
 
-        private event Action Disconnected;
-
         /// <summary>
-        /// Method attaches the given handler to the <see cref="Disconnected"/> event.
-        /// <para/>
-        /// It also guaranties that the handler will be called even if the endpoint was already disconnected.
-        /// </summary>
-        /// <param name="handler">The handler.</param>
-        public void CallWhenDisconnected(Action handler)
-        {
-            bool runNow;
-            lock (disconnectLock)
-            {
-                runNow = disconnected;
-                Disconnected += handler;
-            }
-
-            if (runNow)
-            {
-                handler();
-            }
-        }
-
-        /// <summary>
-        /// Connects to a remote host and sends a version handshake.
+        /// Creates an endpoint connected to a remote host.
         /// </summary>
         /// <param name="host">The DNS name of the remote host.</param>
         /// <param name="port">The port number of the remote host.</param>
-        /// <exception cref="BitcoinNetworkException">Connection failed.</exception>
-        public void Connect(string host, int port)
+        /// <exception cref="BitcoinNetworkException">A network or protocol error occured during the handshake.</exception>
+        public static BitcoinEndpoint Create(string host, int port)
         {
-            if (conn != null)
-            {
-                throw new BitcoinNetworkException("Connection was already established.");
-            }
-
-            conn = BitcoinConnection.Connect(host, port);
-
-            Start();
+            return Create(BitcoinConnection.Connect(host, port));
         }
 
         /// <summary>
-        /// Connects to a remote host using an established connection and sends a version handshake.
+        /// <para>Creates an endpoint connected to a remote host using the provided connection.</para>
+        /// <para>Performs a handshake with the remote host.</para>
         /// </summary>
-        /// <param name="connection">The established network connection.</param>
-        /// <exception cref="BitcoinNetworkException">Connection failed.</exception>
-        public void Connect(BitcoinConnection connection)
+        /// <param name="connection">The underlying connection.</param>
+        /// <exception cref="BitcoinNetworkException">A network or protocol error occured during the handshake.</exception>
+        public static BitcoinEndpoint Create(BitcoinConnection connection)
         {
-            if (conn != null)
+            VersionMessage versionMessage;
+            try
             {
-                throw new BitcoinNetworkException("Connection was already established.");
+                versionMessage = PerformHandshake(connection);
+            }
+            catch (BitcoinNetworkException)
+            {
+                connection.Dispose();
+                throw;
             }
 
-            conn = connection;
-
-            Start();
+            return new BitcoinEndpoint(connection, new BitcoinPeerInfo(connection.RemoteEndPoint, versionMessage));
         }
 
-        private void Start()
+        /// <summary>
+        /// Performs a handshake with the remote host.
+        /// </summary>
+        /// <returns>A version message returned by the remote host.</returns>
+        /// <exception cref="BitcoinNetworkException">A network or protocol error occured during the handshake.</exception>
+        /// <remarks>
+        /// Specification: https://en.bitcoin.it/wiki/Version_Handshake
+        /// </remarks>
+        private static VersionMessage PerformHandshake(BitcoinConnection connection)
         {
-            VersionMessage outVersionMessage = CreateVersionMessage();
-            WriteMessage(outVersionMessage);
+            VersionMessage outVersionMessage = CreateVersionMessage(connection);
+            connection.WriteMessage(new BitcoinMessage(VersionMessage.Command, BitcoinStreamWriter.GetBytes(outVersionMessage.Write)));
 
-            BitcoinMessage incVersionMessage = conn.ReadMessage();
+            BitcoinMessage incVersionMessage = connection.ReadMessage();
             if (incVersionMessage.Command != VersionMessage.Command)
             {
                 throw new BitcoinNetworkException("Remote endpoint did not send Version message.");
             }
 
             VersionMessage incVersionMessageParsed;
-            using (BitcoinStreamReader reader = new BitcoinStreamReader(new MemoryStream(incVersionMessage.Payload)))
+            try
             {
-                //todo: review and handle exceptions
-                incVersionMessageParsed = VersionMessage.Read(reader);
+                incVersionMessageParsed = BitcoinStreamReader.FromBytes(incVersionMessage.Payload, VersionMessage.Read);
+            }
+            catch (EndOfStreamException e)
+            {
+                throw new BitcoinNetworkException("Received a malformed version message.", e);
             }
 
             //todo: check minimal peer protocol version
 
-            WriteMessage(new VerAckMessage());
+            connection.WriteMessage(new BitcoinMessage(VerAckMessage.Command, BitcoinStreamWriter.GetBytes(new VerAckMessage().Write)));
 
-            BitcoinMessage incVerAckMessage = conn.ReadMessage();
+            BitcoinMessage incVerAckMessage = connection.ReadMessage();
             if (incVerAckMessage.Command != VerAckMessage.Command)
             {
-                //todo: handle correctly
                 throw new BitcoinNetworkException("Remote endpoint did not send VerAck message.");
             }
 
-            peerInfo = new BitcoinPeerInfo(conn.RemoteEndPoint, incVersionMessageParsed);
+            return incVersionMessageParsed;
+        }
 
-            running = true;
+        /// <summary>
+        /// Processes received messages.
+        /// </summary>
+        /// <param name="endpoint">An endpoint that received the message.</param>
+        /// <param name="message">A message from the remote endpoint.</param>
+        public delegate void BitcoinMessageHandler(BitcoinEndpoint endpoint, IBitcoinMessage message);
 
-            listenerThread = new Thread(Listen);
+        /// <summary>
+        /// Starts a thread that:
+        /// <list type="bullet">
+        /// <item><description>Handles incoming messages using provided handler method.</description></item>
+        /// <item><description>Answers ping messages.</description></item>
+        /// <item><description>Calls the given disconnect handler and disposes this endpoint when peer is disconnected.</description></item>
+        /// </list>
+        /// </summary>
+        public void StartListener(BitcoinMessageHandler messageHandler, Action<BitcoinEndpoint> disconnectHandler)
+        {
+            if (listenerThread != null)
+            {
+                throw new InvalidOperationException("The endpoint already have an associated listener thread.");
+            }
+
+            listenerThread = new Thread(ListenerLoop);
             listenerThread.Name = "Endpoint Listener";
             listenerThread.IsBackground = true;
+
+            this.messageHandler = messageHandler;
+            this.disconnectHandler = disconnectHandler;
+
             listenerThread.Start();
         }
 
-        private void Listen()
+        private void ListenerLoop()
         {
-            while (running)
+            try
             {
-                BitcoinMessage message;
-                //todo: review exception handling
+                while (!cancellationTokenSource.IsCancellationRequested)
+                {
+                    BitcoinMessage message;
+                    try
+                    {
+                        message = connection.ReadMessage();
+                    }
+                    catch (BitcoinNetworkException)
+                    {
+                        // peer disconnected
+                        break;
+                    }
+
+                    try
+                    {
+                        HandleMessage(message);
+                    }
+                    catch (BitcoinNetworkException)
+                    {
+                        // peer disconnected
+                        break;
+                    }
+                    catch (Exception e)
+                    {
+                        logger.Error(e, "Unhandled exception in the message handler.");
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                logger.Error(e, "Unhandled exception in the endpoint listener thread.");
+            }
+            finally
+            {
                 try
                 {
-                    message = conn.ReadMessage();
+                    disconnectHandler(this);
                 }
-                catch (ObjectDisposedException)
+                catch (Exception e)
                 {
-                    //todo: this happens when endpoint is disposed, can it happen for other reasons?
-                    break;
+                    logger.Error(e, "Unhandled exception in the disconnect handler.");
                 }
-                catch (BitcoinNetworkException)
+                finally
                 {
-                    //todo: this happens when endpoint is disposed, can it happen for other reasons?
-                    break;
+                    Dispose();
                 }
-                catch (IOException)
-                {
-                    //todo: this was happening before BitcoinNetworkException was introduced when endpoint was disposed, can it happen for other reasons?
-                    break;
-                }
-
-                HandleMessage(message);
             }
-
-            Action handler;
-
-            lock (disconnectLock)
-            {
-                disconnected = true;
-                handler = Disconnected;
-            }
-
-            handler?.Invoke();
         }
 
+        /// <summary>
+        /// Sends the given message to the connected peer. 
+        /// </summary>
+        /// <remarks>This method is thread-safe.</remarks>
+        /// <param name="message">The message to send.</param>
+        /// <exception cref="BitcoinNetworkException">A network failure occured.</exception>
         public void WriteMessage(IBitcoinMessage message)
         {
             BitcoinMessage rawMessage = new BitcoinMessage(message.Command, BitcoinStreamWriter.GetBytes(message.Write));
-            conn.WriteMessage(rawMessage);
+            connection.WriteMessage(rawMessage);
         }
 
         private void HandleMessage(BitcoinMessage message)
         {
             if (message.Command == RejectMessage.Command)
             {
-                //todo: stop endpoint / allow messageHandler to process it (be careful of reject message loop)?
+                //todo: stop endpoint or allow message-handler to process it (be careful of reject message loop)?
                 return;
             }
 
@@ -222,17 +259,14 @@ namespace BitcoinUtilities.P2P
 
             if (parsedMessage == null)
             {
-                //todo: this is a misuse of the interface
-                parsedMessage = message;
+                // todo: consider creating new UknownMessage(message.Command, message.Payload) ?
+                return;
             }
 
-            if (messageHandler == null || !messageHandler(this, parsedMessage))
-            {
-                WriteMessage(new RejectMessage(message.Command, RejectMessage.RejectReason.Malformed, "Unknown command."));
-            }
+            messageHandler(this, parsedMessage);
         }
 
-        private VersionMessage CreateVersionMessage()
+        private static VersionMessage CreateVersionMessage(BitcoinConnection conn)
         {
             long timestamp = UnixTime.ToTimestamp(SystemTime.UtcNow);
             IPEndPoint remoteEndPoint = conn.RemoteEndPoint;
@@ -252,12 +286,4 @@ namespace BitcoinUtilities.P2P
             return message;
         }
     }
-
-    /// <summary>
-    /// Processes the message if it is supported.
-    /// </summary>
-    /// <param name="endpoint">The endpoint that received the message.</param>
-    /// <param name="message">The message from the remote endpoint.</param>
-    /// <returns>true if the given message is supported; otherwise, false.</returns>
-    public delegate bool BitcoinMessageHandler(BitcoinEndpoint endpoint, IBitcoinMessage message);
 }

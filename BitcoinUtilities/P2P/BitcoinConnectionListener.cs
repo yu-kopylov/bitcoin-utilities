@@ -26,9 +26,14 @@ namespace BitcoinUtilities.P2P
 
         public void Dispose()
         {
-            cancellationTokenSource.Cancel();
+            if (!cancellationTokenSource.IsCancellationRequested)
+            {
+                cancellationTokenSource.Cancel();
+            }
+
             tcpListener.Stop();
             listenerThread.Join();
+            cancellationTokenSource.Dispose();
         }
 
         /// <summary>
@@ -69,20 +74,6 @@ namespace BitcoinUtilities.P2P
             }
 
             return new BitcoinConnectionListener(tcpListener, listenerThread, cancellationTokenSource);
-        }
-
-        private sealed class ListenerThreadParams
-        {
-            public ListenerThreadParams(TcpListener tcpListener, CancellationToken cancellationToken, BitcoinConnectionHandler connectionHandler)
-            {
-                TcpListener = tcpListener;
-                CancellationToken = cancellationToken;
-                ConnectionHandler = connectionHandler;
-            }
-
-            public TcpListener TcpListener { get; }
-            public CancellationToken CancellationToken { get; }
-            public BitcoinConnectionHandler ConnectionHandler { get; }
         }
 
         private static void ListenerLoop(object parameters)
@@ -130,6 +121,20 @@ namespace BitcoinUtilities.P2P
             {
                 logger.Error(e, "Unhandled exception in the connection listener thread.");
             }
+        }
+
+        private sealed class ListenerThreadParams
+        {
+            public ListenerThreadParams(TcpListener tcpListener, CancellationToken cancellationToken, BitcoinConnectionHandler connectionHandler)
+            {
+                TcpListener = tcpListener;
+                CancellationToken = cancellationToken;
+                ConnectionHandler = connectionHandler;
+            }
+
+            public TcpListener TcpListener { get; }
+            public CancellationToken CancellationToken { get; }
+            public BitcoinConnectionHandler ConnectionHandler { get; }
         }
     }
 }

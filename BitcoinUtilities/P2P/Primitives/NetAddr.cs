@@ -8,17 +8,12 @@ namespace BitcoinUtilities.P2P.Primitives
     /// </summary>
     public struct NetAddr
     {
-        private readonly uint timestamp;
-        private readonly ulong services;
-        private readonly IPAddress address;
-        private readonly ushort port;
-
-        public NetAddr(uint timestamp, ulong services, IPAddress address, ushort port)
+        public NetAddr(uint timestamp, BitcoinServiceFlags services, IPAddress address, ushort port)
         {
-            this.timestamp = timestamp;
-            this.services = services;
-            this.address = address;
-            this.port = port;
+            this.Timestamp = timestamp;
+            this.Services = services;
+            this.Address = address;
+            this.Port = port;
         }
 
         /// <summary>
@@ -35,27 +30,18 @@ namespace BitcoinUtilities.P2P.Primitives
         /// <remark>
         /// Added in protocol version 31402. 
         /// </remark>
-        public uint Timestamp
-        {
-            get { return timestamp; }
-        }
+        public uint Timestamp { get; }
 
         /// <summary>
         /// The services the node advertised in its version message.
         /// </summary>
-        public ulong Services
-        {
-            get { return services; }
-        }
+        public BitcoinServiceFlags Services { get; }
 
         /// <summary>
         /// IPv6 address in big endian byte order.
         /// IPv4 addresses can be provided as IPv4-mapped IPv6 addresses.
         /// </summary>
-        public IPAddress Address
-        {
-            get { return address; }
-        }
+        public IPAddress Address { get; }
 
         /// <summary>
         /// Port number in big endian byte order.
@@ -63,23 +49,20 @@ namespace BitcoinUtilities.P2P.Primitives
         /// Note that Bitcoin Core will only connect to nodes with non-standard port numbers as a last resort for finding peers.
         /// This is to prevent anyone from trying to use the network to disrupt non-Bitcoin services that run on other ports.
         /// </summary>
-        public ushort Port
-        {
-            get { return port; }
-        }
+        public ushort Port { get; }
 
         public void Write(BitcoinStreamWriter writer)
         {
-            writer.Write(timestamp);
-            writer.Write(services);
-            writer.WriteAddress(address);
-            writer.WriteBigEndian(port);
+            writer.Write(Timestamp);
+            writer.Write((ulong) Services);
+            writer.WriteAddress(Address);
+            writer.WriteBigEndian(Port);
         }
 
         public static NetAddr Read(BitcoinStreamReader reader)
         {
             uint timestamp = reader.ReadUInt32();
-            ulong services = reader.ReadUInt64();
+            BitcoinServiceFlags services = (BitcoinServiceFlags) reader.ReadUInt64();
             IPAddress address = reader.ReadAddress();
             ushort port = reader.ReadUInt16BigEndian();
             return new NetAddr(timestamp, services, address, port);
