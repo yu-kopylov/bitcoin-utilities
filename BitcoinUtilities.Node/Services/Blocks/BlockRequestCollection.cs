@@ -15,6 +15,8 @@ namespace BitcoinUtilities.Node.Services.Blocks
 
         private List<DbHeader> pendingRequests;
 
+        private readonly HashSet<byte[]> requiredBlocks = new HashSet<byte[]>(ByteArrayComparer.Instance);
+
         public void AddRequest(object owner, IReadOnlyCollection<DbHeader> headers)
         {
             lock (monitor)
@@ -50,7 +52,17 @@ namespace BitcoinUtilities.Node.Services.Blocks
             }
         }
 
-        public void MarkReceived(byte[] hash)
+        // todo: handle multiple owners
+        public void SetRequired(byte[] hash)
+        {
+            lock (monitor)
+            {
+                requiredBlocks.Clear();
+                requiredBlocks.Add(hash);
+            }
+        }
+
+        public bool MarkReceived(byte[] hash)
         {
             lock (monitor)
             {
@@ -59,6 +71,8 @@ namespace BitcoinUtilities.Node.Services.Blocks
                     requestedBlock.Received = true;
                     pendingRequests = null;
                 }
+
+                return requiredBlocks.Remove(hash);
             }
         }
 

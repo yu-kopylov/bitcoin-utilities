@@ -10,6 +10,8 @@ namespace BitcoinUtilities.Node.Services.Blocks
     {
         private const string BlocksFilename = "blocks2.db";
 
+        private readonly object monitor = new object();
+
         private readonly SQLiteConnection conn;
 
         public BlockStorage(SQLiteConnection conn)
@@ -48,46 +50,63 @@ namespace BitcoinUtilities.Node.Services.Blocks
 
         public void AddBlock(byte[] hash, byte[] content)
         {
-            using (var tx = conn.BeginTransaction())
+            lock (monitor)
             {
-                bool requested;
-
-                using (SQLiteCommand command = new SQLiteCommand(
-                    "select ifnull((select 1 from BlockRequests where Hash=@Hash limit 1), 0)",
-                    conn
-                ))
+                //todo: review
+                using (var tx = conn.BeginTransaction())
                 {
-                    command.Parameters.Add("@Hash", DbType.Binary).Value = hash;
-                    requested = (long) command.ExecuteScalar() == 1;
-                }
+                    bool requested;
 
-                if (!requested)
-                {
-                    if (content.Length > MaxUnrequestedBlocksVolume)
+                    using (SQLiteCommand command = new SQLiteCommand(
+                        "select ifnull((select 1 from Blocks where Hash=@Hash limit 1), 0)",
+                        conn
+                    ))
                     {
-                        return;
+                        command.Parameters.Add("@Hash", DbType.Binary).Value = hash;
+                        bool exists = (long) command.ExecuteScalar() == 1;
+                        if (exists)
+                        {
+                            return;
+                        }
                     }
 
-                    TruncateUnrequestedBlocks(MaxUnrequestedBlocksVolume - content.Length);
+                    using (SQLiteCommand command = new SQLiteCommand(
+                        "select ifnull((select 1 from BlockRequests where Hash=@Hash limit 1), 0)",
+                        conn
+                    ))
+                    {
+                        command.Parameters.Add("@Hash", DbType.Binary).Value = hash;
+                        requested = (long) command.ExecuteScalar() == 1;
+                    }
+
+                    if (!requested)
+                    {
+                        if (content.Length > MaxUnrequestedBlocksVolume)
+                        {
+                            return;
+                        }
+
+                        TruncateUnrequestedBlocks(MaxUnrequestedBlocksVolume - content.Length);
+                    }
+
+                    using (SQLiteCommand command = new SQLiteCommand(
+                        "insert into Blocks(Hash,Size,Received,Requested,Content)" +
+                        "values (@Hash,@Size,@Received,@Requested,@Content)",
+                        conn
+                    ))
+                    {
+                        command.Parameters.Add("@Hash", DbType.Binary).Value = hash;
+                        command.Parameters.Add("@Size", DbType.Int32).Value = content.Length;
+                        // todo: check date format and maybe remove recieved column
+                        command.Parameters.Add("@Received", DbType.DateTime).Value = SystemTime.UtcNow;
+                        command.Parameters.Add("@Requested", DbType.Boolean).Value = requested;
+                        command.Parameters.Add("@Content", DbType.Binary).Value = content;
+
+                        command.ExecuteNonQuery();
+                    }
+
+                    tx.Commit();
                 }
-
-                using (SQLiteCommand command = new SQLiteCommand(
-                    "insert into Blocks(Hash,Size,Received,Requested,Content)" +
-                    "values (@Hash,@Size,@Received,@Requested,@Content)",
-                    conn
-                ))
-                {
-                    command.Parameters.Add("@Hash", DbType.Binary).Value = hash;
-                    command.Parameters.Add("@Size", DbType.Int32).Value = content.Length;
-                    // todo: check date format and maybe remove recieved column
-                    command.Parameters.Add("@Received", DbType.DateTime).Value = SystemTime.UtcNow;
-                    command.Parameters.Add("@Requested", DbType.Boolean).Value = requested;
-                    command.Parameters.Add("@Content", DbType.Binary).Value = content;
-
-                    command.ExecuteNonQuery();
-                }
-
-                tx.Commit();
             }
         }
 
@@ -129,21 +148,25 @@ namespace BitcoinUtilities.Node.Services.Blocks
 
         public byte[] GetBlock(byte[] hash)
         {
-            using (conn.BeginTransaction())
+            lock (monitor)
             {
-                using (SQLiteCommand command = new SQLiteCommand(
-                    "select Content from Blocks where Hash=@Hash",
-                    conn
-                ))
+                using (conn.BeginTransaction())
                 {
-                    command.Parameters.Add("@Hash", DbType.Binary).Value = hash;
-                    return (byte[]) command.ExecuteScalar();
+                    using (SQLiteCommand command = new SQLiteCommand(
+                        "select Content from Blocks where Hash=@Hash",
+                        conn
+                    ))
+                    {
+                        command.Parameters.Add("@Hash", DbType.Binary).Value = hash;
+                        return (byte[]) command.ExecuteScalar();
+                    }
                 }
             }
         }
 
         public void UpdateRequests(string token, List<byte[]> hashes)
         {
+            // todo: lock?
             List<byte[]> existingRequests = new List<byte[]>();
 
             using (var tx = conn.BeginTransaction())
@@ -230,6 +253,7 @@ namespace BitcoinUtilities.Node.Services.Blocks
 
         public long GetUnrequestedVolume()
         {
+            //todo: lock
             using (conn.BeginTransaction())
             {
                 using (SQLiteCommand command = new SQLiteCommand(

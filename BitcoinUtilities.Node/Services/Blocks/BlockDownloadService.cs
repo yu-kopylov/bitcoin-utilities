@@ -2,7 +2,9 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using BitcoinUtilities.Collections;
 using BitcoinUtilities.Node.Events;
+using BitcoinUtilities.Node.Services.Headers;
 using BitcoinUtilities.P2P;
 using BitcoinUtilities.P2P.Messages;
 using BitcoinUtilities.P2P.Primitives;
@@ -19,45 +21,93 @@ namespace BitcoinUtilities.Node.Services.Blocks
 
         public IReadOnlyCollection<IEventHandlingService> CreateForEndpoint(BitcoinNode node, BitcoinEndpoint endpoint)
         {
-            return new IEventHandlingService[] {new BlockDownloadService(node.Resources.Get<BlockRequestCollection>(), endpoint)};
+            return new IEventHandlingService[]
+            {
+                new BlockDownloadService(node.EventServiceController, node.Resources.Get<BlockRequestCollection>(), node.BlockStorage, endpoint)
+            };
         }
     }
 
     public class BlockDownloadService : NodeEventHandlingService
     {
-        private static readonly TimeSpan RetryInterval = TimeSpan.FromSeconds(5);
-
+        private readonly EventServiceController controller;
         private readonly BlockRequestCollection requestCollection;
+        private readonly BlockStorage storage;
         private readonly BitcoinEndpoint endpoint;
 
-        private DateTime? lastUnansweredRequest;
+        private readonly LinkedDictionary<byte[], DateTime> inventory = new LinkedDictionary<byte[], DateTime>(ByteArrayComparer.Instance);
+        private readonly LinkedDictionary<byte[], DateTime> sentRequests = new LinkedDictionary<byte[], DateTime>(ByteArrayComparer.Instance);
 
-        public BlockDownloadService(BlockRequestCollection requestCollection, BitcoinEndpoint endpoint) : base(endpoint)
+        public BlockDownloadService(
+            EventServiceController controller,
+            BlockRequestCollection requestCollection,
+            BlockStorage storage,
+            BitcoinEndpoint endpoint
+        ) : base(endpoint)
         {
+            this.controller = controller;
             this.requestCollection = requestCollection;
+            this.storage = storage;
             this.endpoint = endpoint;
 
-            On<BlockDownloadRequestedEvent>(e => RequestBlocks());
+            On<BlockDownloadRequestedEvent>(e => CheckState());
             OnMessage<InvMessage>(ProcessInvMessage);
+            OnMessage<BlockMessage>(ProcessBlockMessage);
         }
 
         public override void OnStart()
         {
             base.OnStart();
-            RequestBlocks();
+            CheckState();
         }
 
-        private void RequestBlocks()
+        private void CheckState()
         {
-            DateTime utcNow = DateTime.UtcNow;
-            if (lastUnansweredRequest == null || (lastUnansweredRequest + RetryInterval) <= utcNow || lastUnansweredRequest > utcNow)
+            // todo: is this method expensive of called too often?
+            RemoveOutdatedEntries(inventory);
+            RemoveOutdatedEntries(sentRequests);
+
+            var pendingRequests = requestCollection.GetPendingRequests();
+
+            int awaitableBlocksCount = pendingRequests.Count(h => sentRequests.ContainsKey(h.Hash));
+            // todo: check constant
+            if (awaitableBlocksCount >= 10)
             {
-                var pendingRequests = requestCollection.GetPendingRequests();
+                return;
+            }
+
+            // todo: check constant
+            List<DbHeader> tmp = pendingRequests.Where(h => inventory.ContainsKey(h.Hash) /*&& !sentRequests.ContainsKey(h.Hash)*/).ToList();
+            List<DbHeader> requestableBlocks = tmp.Take(20) /*.Union(tmp.Skip(random.Next(10)).Take(49))*/.ToList();
+            //var requestableBlocks = tmp.Skip(random.Next(50)).Take(20 + random.Next(30)).ToList();
+            if (requestableBlocks.Any())
+            {
+                DateTime utcNow = DateTime.UtcNow;
+
+                InventoryVector[] inventoryVectors = requestableBlocks.Select(b => new InventoryVector(InventoryVectorType.MsgBlock, b.Hash)).ToArray();
+                endpoint.WriteMessage(new GetDataMessage(inventoryVectors));
+
+                sentRequests.Clear();
+                //inventory.Clear();
+                foreach (var header in requestableBlocks)
+                {
+                    sentRequests.Add(header.Hash, utcNow);
+                }
+
+                //awaitableBlocksCount += requestableBlocks.Count;
+                awaitableBlocksCount = requestableBlocks.Count;
+                //return;
+            }
+
+            // todo: check constant
+            if (awaitableBlocksCount < 10)
+                //if (awaitableBlocksCount == 0)
+            {
                 byte[] locator = pendingRequests.FirstOrDefault()?.ParentHash;
                 if (locator != null)
                 {
                     endpoint.WriteMessage(new GetBlocksMessage(endpoint.ProtocolVersion, new byte[][] {locator}, new byte[32]));
-                    lastUnansweredRequest = DateTime.UtcNow;
+                    inventory.Clear();
                 }
             }
         }
@@ -65,11 +115,53 @@ namespace BitcoinUtilities.Node.Services.Blocks
         private void ProcessInvMessage(InvMessage message)
         {
             var advertisedBlocks = message.Inventory.Where(i => i.Type == InventoryVectorType.MsgBlock).Select(i => i.Hash);
-            if (advertisedBlocks.Any())
+            DateTime utcNow = DateTime.UtcNow;
+            foreach (byte[] hash in advertisedBlocks)
             {
-                lastUnansweredRequest = null;
-                InventoryVector[] inventoryVectors = advertisedBlocks.Select(b => new InventoryVector(InventoryVectorType.MsgBlock, b)).ToArray();
-                endpoint.WriteMessage(new GetDataMessage(inventoryVectors));
+                inventory.Remove(hash);
+                inventory.Add(hash, utcNow);
+            }
+
+            CheckState();
+        }
+
+        private void ProcessBlockMessage(BlockMessage blockMessage)
+        {
+            byte[] hash = CryptoUtils.DoubleSha256(BitcoinStreamWriter.GetBytes(blockMessage.BlockHeader.Write));
+            // todo: we would not need to serialize block if message included payload
+            byte[] content = BitcoinStreamWriter.GetBytes(blockMessage.Write);
+
+            // todo: validate block, disconnect endpoint if it is invalid, maybe mark header as invalid
+            // todo: check for existance inside AddBlock
+            storage.AddBlock(hash, content);
+            // mark received should happen after saving block to storage
+            if (requestCollection.MarkReceived(hash))
+            {
+                controller.Raise(new BlockAvailableEvent(hash, blockMessage));
+            }
+
+            inventory.Remove(hash);
+            sentRequests.Remove(hash);
+
+            CheckState();
+        }
+
+        private static void RemoveOutdatedEntries(LinkedDictionary<byte[], DateTime> entries)
+        {
+            //todo: check constants
+            DateTime outdatedEntryDate = DateTime.UtcNow.AddSeconds(-10);
+            List<byte[]> outdatedEntries = entries.Where(p => p.Value <= outdatedEntryDate).Select(p => p.Key).ToList();
+            foreach (byte[] hash in outdatedEntries)
+            {
+                entries.Remove(hash);
+            }
+
+            // todo: handle dates from future
+
+            //todo: check constants
+            while (entries.Count > 5000)
+            {
+                entries.Remove(entries.First().Key);
             }
         }
     }
