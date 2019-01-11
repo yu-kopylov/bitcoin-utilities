@@ -29,13 +29,27 @@ namespace Test.BitcoinUtilities.Node.Services.Blocks
 
                 log.Clear();
                 controller.Raise(new RequestBlockEvent("test", KnownBlocks.Block100000.Hash));
-                controller.Raise(new MessageEvent(null, KnownBlocks.Block100001.Block));
+                // todo: update test
+                //controller.Raise(new MessageEvent(null, KnownBlocks.Block100001.Block));
+                blockStorage.AddBlock(KnownBlocks.Block100001.Hash, KnownBlocks.Block100001.Content);
+                if (requestCollection.MarkReceived(KnownBlocks.Block100001.Hash))
+                {
+                    controller.Raise(new BlockAvailableEvent(KnownBlocks.Block100001.Hash, KnownBlocks.Block100001.Block));
+                }
+
                 Thread.Sleep(100);
 
                 Assert.AreEqual(new string[0], log.GetLog());
 
                 log.Clear();
-                controller.Raise(new MessageEvent(null, KnownBlocks.Block100000.Block));
+                // todo: update test
+                // controller.Raise(new MessageEvent(null, KnownBlocks.Block100000.Block));
+                blockStorage.AddBlock(KnownBlocks.Block100000.Hash, KnownBlocks.Block100000.Content);
+                if (requestCollection.MarkReceived(KnownBlocks.Block100000.Hash))
+                {
+                    controller.Raise(new BlockAvailableEvent(KnownBlocks.Block100000.Hash, KnownBlocks.Block100000.Block));
+                }
+
                 Thread.Sleep(100);
 
                 Assert.AreEqual(new string[] {$"BlockAvailableEvent: {HexUtils.GetString(KnownBlocks.Block100000.Hash)}"}, log.GetLog());
