@@ -6,6 +6,7 @@ using System.Linq;
 using System.Net;
 using System.Runtime.CompilerServices;
 using System.Threading;
+using BitcoinUtilities.Node.Components;
 using BitcoinUtilities.Node.Events;
 using BitcoinUtilities.Node.Services.Blocks;
 using BitcoinUtilities.Node.Services.Discovery;
@@ -25,6 +26,7 @@ namespace BitcoinUtilities.Node
     {
         private readonly List<INodeEventServiceFactory> eventServiceFactories = new List<INodeEventServiceFactory>();
         private readonly EventServiceController eventServiceController = new EventServiceController();
+        private readonly NodeResourceCollection resources = new NodeResourceCollection();
 
         private readonly NetworkParameters networkParameters;
 
@@ -64,6 +66,8 @@ namespace BitcoinUtilities.Node
                     BitcoinStreamWriter.GetBytes(networkParameters.GenesisBlock.Write)
                 );
             }
+
+            resources.Add(new BlockRequestCollection());
 
             eventServiceFactories.Add(new NodeDiscoveryServiceFactory());
             eventServiceFactories.Add(new HeaderDowloadServiceFactory());
@@ -112,6 +116,11 @@ namespace BitcoinUtilities.Node
         public EventServiceController EventServiceController
         {
             get { return eventServiceController; }
+        }
+
+        public NodeResourceCollection Resources
+        {
+            get { return resources; }
         }
 
         public Blockchain2 Blockchain
@@ -176,6 +185,8 @@ namespace BitcoinUtilities.Node
             // todo: add timeout
             // todo: dispose IDisposable services in eventServiceController
             eventServiceController.Stop();
+
+            resources.Dispose();
 
             Started = false;
         }

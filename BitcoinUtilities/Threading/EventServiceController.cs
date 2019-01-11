@@ -102,22 +102,6 @@ namespace BitcoinUtilities.Threading
             serviceThread.Dispose();
         }
 
-        public T GetService<T>()
-        {
-            lock (monitor)
-            {
-                foreach (var service in services)
-                {
-                    if (service.Service is T innerService)
-                    {
-                        return innerService;
-                    }
-                }
-            }
-
-            throw new InvalidOperationException($"{nameof(EventServiceController)} does not have a service implementing {typeof(T).Name}.");
-        }
-
         public void Raise(object evt)
         {
             lock (monitor)

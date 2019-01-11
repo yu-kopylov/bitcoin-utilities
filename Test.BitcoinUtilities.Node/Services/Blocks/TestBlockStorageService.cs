@@ -21,8 +21,10 @@ namespace Test.BitcoinUtilities.Node.Services.Blocks
             using (EventServiceController controller = new EventServiceController())
             {
                 MessageLog log = new MessageLog();
+                BlockRequestCollection requestCollection = new BlockRequestCollection();
+
                 controller.AddService(new EventLoggingService(log));
-                controller.AddService(new BlockStorageService(controller, blockStorage));
+                controller.AddService(new BlockStorageService(controller, requestCollection, blockStorage));
                 controller.Start();
 
                 log.Clear();

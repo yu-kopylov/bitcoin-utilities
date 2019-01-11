@@ -50,6 +50,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="BitcoinNode.cs" />
+    <Compile Include="Components\NodeResourceCollection.cs" />
     <Compile Include="Events\BestHeadChangedEvent.cs" />
     <Compile Include="Events\MessageEvent.cs" />
     <Compile Include="Events\NodeConnectionsChangedEvent.cs" />
@@ -60,6 +61,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Services\BlockContentDownloadService.cs" />
     <Compile Include="Services\Blocks\BlockDownloadService.cs" />
+    <Compile Include="Services\Blocks\BlockRequestCollection.cs" />
     <Compile Include="Services\Blocks\BlockStorage.cs" />
     <Compile Include="Services\Blocks\BlockStorageService.cs" />
     <Compile Include="Services\BlockValidationService.cs" />

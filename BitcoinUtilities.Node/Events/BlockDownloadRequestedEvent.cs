@@ -8,11 +8,5 @@ namespace BitcoinUtilities.Node.Events
     /// </summary>
     public sealed class BlockDownloadRequestedEvent
     {
-        public BlockDownloadRequestedEvent(byte[] locator)
-        {
-            Locator = locator;
-        }
-
-        public byte[] Locator { get; }
     }
 }

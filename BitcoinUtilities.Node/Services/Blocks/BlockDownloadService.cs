@@ -19,7 +19,7 @@ namespace BitcoinUtilities.Node.Services.Blocks
 
         public IReadOnlyCollection<IEventHandlingService> CreateForEndpoint(BitcoinNode node, BitcoinEndpoint endpoint)
         {
-            return new IEventHandlingService[] {new BlockDownloadService(node.EventServiceController, endpoint)};
+            return new IEventHandlingService[] {new BlockDownloadService(node.Resources.Get<BlockRequestCollection>(), endpoint)};
         }
     }
 
@@ -27,39 +27,38 @@ namespace BitcoinUtilities.Node.Services.Blocks
     {
         private static readonly TimeSpan RetryInterval = TimeSpan.FromSeconds(5);
 
-        private readonly EventServiceController controller;
+        private readonly BlockRequestCollection requestCollection;
         private readonly BitcoinEndpoint endpoint;
 
         private DateTime? lastUnansweredRequest;
 
-        public BlockDownloadService(EventServiceController controller, BitcoinEndpoint endpoint) : base(endpoint)
+        public BlockDownloadService(BlockRequestCollection requestCollection, BitcoinEndpoint endpoint) : base(endpoint)
         {
-            this.controller = controller;
+            this.requestCollection = requestCollection;
             this.endpoint = endpoint;
 
-            On<BlockDownloadRequestedEvent>(e => RequestBlocks(e.Locator));
+            On<BlockDownloadRequestedEvent>(e => RequestBlocks());
             OnMessage<InvMessage>(ProcessInvMessage);
         }
 
         public override void OnStart()
         {
             base.OnStart();
-            // todo: consider other pattern to access shared objects
-            var blockStorageService = controller.GetService<BlockStorageService>();
-            byte[] locator = blockStorageService?.LastDownloadLocator;
-            if (locator != null)
-            {
-                RequestBlocks(locator);
-            }
+            RequestBlocks();
         }
 
-        private void RequestBlocks(byte[] locator)
+        private void RequestBlocks()
         {
             DateTime utcNow = DateTime.UtcNow;
             if (lastUnansweredRequest == null || (lastUnansweredRequest + RetryInterval) <= utcNow || lastUnansweredRequest > utcNow)
             {
-                endpoint.WriteMessage(new GetBlocksMessage(endpoint.ProtocolVersion, new byte[][] {locator}, new byte[32]));
-                lastUnansweredRequest = DateTime.UtcNow;
+                var pendingRequests = requestCollection.GetPendingRequests();
+                byte[] locator = pendingRequests.FirstOrDefault()?.ParentHash;
+                if (locator != null)
+                {
+                    endpoint.WriteMessage(new GetBlocksMessage(endpoint.ProtocolVersion, new byte[][] {locator}, new byte[32]));
+                    lastUnansweredRequest = DateTime.UtcNow;
+                }
             }
         }
 
