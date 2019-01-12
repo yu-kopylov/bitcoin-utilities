@@ -59,7 +59,6 @@
     <Compile Include="Scripts\TestScriptProcessor.BitwiseLogic.cs" />
     <Compile Include="Scripts\TestScriptProcessor.FlowControl.cs" />
     <Compile Include="Scripts\TestScriptProcessor.Constants.cs" />
-    <Compile Include="Storage\TestBlockLocator.cs" />
     <Compile Include="P2P\Messages\TestHeadersMessage.cs" />
     <Compile Include="P2P\Messages\TestPongMessage.cs" />
     <Compile Include="P2P\Messages\TestPingMessage.cs" />
@@ -81,7 +80,6 @@
     <Compile Include="P2P\TestBitcoinStreamWriter.cs" />
     <Compile Include="P2P\TestDnsSeeds.cs" />
     <Compile Include="Scripts\TestBitcoinScript.cs" />
-    <Compile Include="Storage\TestUnspentOutputsUpdate.cs" />
     <Compile Include="TestBioRandom.cs" />
     <Compile Include="TestDifficultyUtils.cs" />
     <Compile Include="TestHexUtils.cs" />
@@ -102,7 +100,6 @@
     <Compile Include="TestTransactionBuilder.cs" />
     <Compile Include="TestUnixTime.cs" />
     <Compile Include="TestWif.cs" />
-    <Compile Include="Threading\TestBlockingThreadPool.cs" />
     <Compile Include="Threading\TestEventServiceController.cs" />
   </ItemGroup>
   <ItemGroup>

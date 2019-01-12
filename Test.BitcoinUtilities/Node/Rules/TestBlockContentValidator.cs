@@ -6,7 +6,6 @@ using BitcoinUtilities.Node.Rules;
 using BitcoinUtilities.P2P;
 using BitcoinUtilities.P2P.Messages;
 using BitcoinUtilities.P2P.Primitives;
-using BitcoinUtilities.Storage;
 using NUnit.Framework;
 using TestUtilities;
 
@@ -28,7 +27,7 @@ namespace Test.BitcoinUtilities.Node.Rules
             {
                 BlockMessage block = BlockMessage.Read(new BitcoinStreamReader(new MemoryStream(rawBlock)));
                 Assert.True(BlockContentValidator.IsMerkleTreeValid(block));
-                Assert.True(BlockContentValidator.IsValid(new StoredBlockBuilder(block.BlockHeader).Build(), block));
+                Assert.True(BlockContentValidator.IsValidCoinbaseTransaction(block));
             }
         }
 

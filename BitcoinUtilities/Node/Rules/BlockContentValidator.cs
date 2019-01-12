@@ -37,13 +37,7 @@ namespace BitcoinUtilities.Node.Rules
             return merkleTreeRoot.SequenceEqual(block.BlockHeader.MerkleRoot);
         }
 
-        public static bool IsValid(StoredBlock storedBlock, BlockMessage block)
-        {
-            //todo: add other validations, recheck each field constraints
-            return IsValidCoinbaseTransaction(block);
-        }
-
-        internal static bool IsValidCoinbaseTransaction(BlockMessage block)
+        public static bool IsValidCoinbaseTransaction(BlockMessage block)
         {
             if (block.Transactions == null || block.Transactions.Length == 0)
             {

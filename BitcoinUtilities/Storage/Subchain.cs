@@ -25,31 +25,6 @@ namespace BitcoinUtilities.Storage
 
         public int Count => blocks.Count;
 
-        public void Append(StoredBlock block)
-        {
-            //todo: add XMLDOC
-            StoredBlock lastBlock = blocks.Last();
-            if (!lastBlock.Hash.SequenceEqual(block.Header.PrevBlock))
-            {
-                throw new ArgumentException($"Added block should reference last block in the {nameof(Subchain)}.", nameof(block));
-            }
-
-            blocks.Add(block);
-        }
-
-        public void Truncate(int minLength, int maxLength)
-        {
-            if (minLength > maxLength)
-            {
-                throw new ArgumentException($"{nameof(minLength)} should not exceed {nameof(maxLength)}.");
-            }
-
-            if (blocks.Count > maxLength)
-            {
-                blocks.RemoveRange(0, blocks.Count - minLength);
-            }
-        }
-
         public StoredBlock GetBlockByHeight(int height)
         {
             int blockIndex = height - blocks[0].Height;
@@ -60,12 +35,6 @@ namespace BitcoinUtilities.Storage
         {
             int blockIndex = blocks.Count - 1 - offset;
             return blocks[blockIndex];
-        }
-
-        public Subchain Clone()
-        {
-            //todo: create copy of each block ?
-            return new Subchain(blocks);
         }
     }
 }

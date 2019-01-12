@@ -67,33 +67,6 @@ namespace BitcoinUtilities.Storage
         /// True if the block belongs to current blockchain; otherwise false.
         /// </summary>
         public bool IsInBestBlockChain { get; }
-
-        /// <summary>
-        /// Returns a copy of this block with the <see cref="HasContent"/> flag set. 
-        /// </summary>
-        /// <returns></returns>
-        public StoredBlock AddContent()
-        {
-            // todo: some fields are updated through StoredBlock methods and some are updated manually (IsInBestHeaderChain, IsInBestBlockChain)
-            StoredBlockBuilder builder = new StoredBlockBuilder(this);
-            builder.HasContent = true;
-            return builder.Build();
-        }
-
-        /// <summary>
-        /// Returns a copy of this block with the <see cref="Height"/> and <see cref="TotalWork"/> properties based on the given parent block.
-        /// </summary>
-        /// <param name="parentBlock">The parent block.</param>
-        public StoredBlock AppendAfter(StoredBlock parentBlock)
-        {
-            double blockWork = DifficultyUtils.DifficultyTargetToWork(DifficultyUtils.NBitsToTarget(Header.NBits));
-
-            StoredBlockBuilder builder = new StoredBlockBuilder(this);
-            builder.Height = parentBlock.Height + 1;
-            builder.TotalWork = parentBlock.TotalWork + blockWork;
-
-            return builder.Build();
-        }
     }
 
     /// <summary>
@@ -101,17 +74,6 @@ namespace BitcoinUtilities.Storage
     /// </summary>
     public class StoredBlockBuilder
     {
-        public StoredBlockBuilder()
-        {
-            Header = default(BlockHeader);
-            Hash = null;
-            Height = -1;
-            TotalWork = 0;
-            HasContent = false;
-            IsInBestHeaderChain = false;
-            IsInBestBlockChain = false;
-        }
-
         public StoredBlockBuilder(BlockHeader header)
         {
             byte[] text = BitcoinStreamWriter.GetBytes(header.Write);
@@ -123,17 +85,6 @@ namespace BitcoinUtilities.Storage
             HasContent = false;
             IsInBestHeaderChain = false;
             IsInBestBlockChain = false;
-        }
-
-        public StoredBlockBuilder(StoredBlock block)
-        {
-            Header = block.Header;
-            Hash = block.Hash;
-            Height = block.Height;
-            TotalWork = block.TotalWork;
-            HasContent = block.HasContent;
-            IsInBestHeaderChain = block.IsInBestHeaderChain;
-            IsInBestBlockChain = block.IsInBestBlockChain;
         }
 
         /// <summary>
