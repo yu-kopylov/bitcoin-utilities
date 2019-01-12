@@ -66,12 +66,15 @@
     <Compile Include="MerkleTreeUtils.cs" />
     <Compile Include="NetworkParameters.cs" />
     <Compile Include="Node\BitcoinProtocolViolationException.cs" />
+    <Compile Include="Node\Rules\ISpendableOutput.cs" />
     <Compile Include="Node\Rules\ISubchain.cs" />
+    <Compile Include="Node\Rules\IUpdatableOutputSet.cs" />
     <Compile Include="Node\Rules\IValidatableHeader.cs" />
     <Compile Include="Node\LimitedNodeAddressDictionary.cs" />
     <Compile Include="Node\NodeAddressCollection.cs" />
     <Compile Include="BitcoinPrivateKey.cs" />
     <Compile Include="Node\Rules\BlockContentValidator.cs" />
+    <Compile Include="Node\Rules\TransactionProcessor.cs" />
     <Compile Include="P2P\BitcoinServiceFlags.cs" />
     <Compile Include="Scripts\BitcoinCashSigHashCalculator.cs" />
     <Compile Include="Scripts\ControlStack.cs" />

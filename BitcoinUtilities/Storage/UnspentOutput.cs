@@ -1,9 +1,9 @@
-﻿using BitcoinUtilities.P2P;
+﻿using BitcoinUtilities.Node.Rules;
 using BitcoinUtilities.P2P.Primitives;
 
 namespace BitcoinUtilities.Storage
 {
-    public class UnspentOutput
+    public class UnspentOutput : ISpendableOutput
     {
         public UnspentOutput(int sourceBlockHeight, byte[] transactionHash, int outputNumber, ulong sum, byte[] publicScript)
         {
@@ -20,16 +20,15 @@ namespace BitcoinUtilities.Storage
         public ulong Sum { get; }
         public byte[] PublicScript { get; }
 
-        public static UnspentOutput Create(int height, Tx transaction, int outputNumber)
+        public static UnspentOutput Create(byte[] txHash, int outputIndex, int height, TxOut txOut)
         {
-            TxOut output = transaction.Outputs[outputNumber];
-
             return new UnspentOutput(
                 height,
-                CryptoUtils.DoubleSha256(BitcoinStreamWriter.GetBytes(transaction.Write)),
-                outputNumber,
-                output.Value,
-                output.PubkeyScript);
+                txHash,
+                outputIndex,
+                txOut.Value,
+                txOut.PubkeyScript
+            );
         }
     }
 }
