@@ -125,12 +125,13 @@ namespace BitcoinUtilities.Node.Rules
                 outputsSum += transactionOutputsSum;
             }
 
-            if (inputsSum != outputsSum)
+            if (inputsSum < outputsSum)
             {
+                // in block 124724 inputsSum is less than outputsSum
                 throw new BitcoinProtocolViolationException(
                     $"The sum of the inputs and the reward" +
                     $" in the block '{HexUtils.GetString(blockHash)}'" +
-                    $" does not match the sum of the outputs.");
+                    $" is less than the sum of the outputs ({inputsSum} < {outputsSum}).");
             }
         }
 
