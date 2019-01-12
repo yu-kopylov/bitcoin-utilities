@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Threading;
 using BitcoinUtilities.Node.Events;
+using BitcoinUtilities.Node.Services.Blocks;
 using BitcoinUtilities.Node.Services.Headers;
 using BitcoinUtilities.P2P;
 using BitcoinUtilities.P2P.Messages;
@@ -13,12 +14,16 @@ namespace BitcoinUtilities.Node.Services.Outputs
 {
     public class UtxoUpdateServiceFactory : INodeEventServiceFactory
     {
-        public IReadOnlyCollection<IEventHandlingService> CreateForNode(BitcoinNode node, CancellationToken cancellationToken)
+        public void CreateResources(BitcoinNode node)
+        {
+        }
+
+        public IReadOnlyCollection<IEventHandlingService> CreateNodeServices(BitcoinNode node, CancellationToken cancellationToken)
         {
             return new IEventHandlingService[] {new UtxoUpdateService(node.EventServiceController, node.Blockchain, node.UtxoStorage)};
         }
 
-        public IReadOnlyCollection<IEventHandlingService> CreateForEndpoint(BitcoinNode node, BitcoinEndpoint endpoint)
+        public IReadOnlyCollection<IEventHandlingService> CreateEndpointServices(BitcoinNode node, BitcoinEndpoint endpoint)
         {
             return new IEventHandlingService[0];
         }

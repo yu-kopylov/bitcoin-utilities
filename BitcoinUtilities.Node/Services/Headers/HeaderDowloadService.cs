@@ -14,12 +14,16 @@ namespace BitcoinUtilities.Node.Services.Headers
 {
     public class HeaderDowloadServiceFactory : INodeEventServiceFactory
     {
-        public IReadOnlyCollection<IEventHandlingService> CreateForNode(BitcoinNode node, CancellationToken cancellationToken)
+        public void CreateResources(BitcoinNode node)
+        {
+        }
+
+        public IReadOnlyCollection<IEventHandlingService> CreateNodeServices(BitcoinNode node, CancellationToken cancellationToken)
         {
             return new IEventHandlingService[0];
         }
 
-        public IReadOnlyCollection<IEventHandlingService> CreateForEndpoint(BitcoinNode node, BitcoinEndpoint endpoint)
+        public IReadOnlyCollection<IEventHandlingService> CreateEndpointServices(BitcoinNode node, BitcoinEndpoint endpoint)
         {
             return new[] {new HeaderDowloadService(node.EventServiceController, node.Blockchain, node.NetworkParameters, endpoint)};
         }

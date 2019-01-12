@@ -11,12 +11,16 @@ namespace BitcoinUtilities.Node.Services.Discovery
 {
     public class NodeDiscoveryServiceFactory : INodeEventServiceFactory
     {
-        public IReadOnlyCollection<IEventHandlingService> CreateForNode(BitcoinNode node, CancellationToken cancellationToken)
+        public void CreateResources(BitcoinNode node)
+        {
+        }
+
+        public IReadOnlyCollection<IEventHandlingService> CreateNodeServices(BitcoinNode node, CancellationToken cancellationToken)
         {
             return new IEventHandlingService[] {new NodeDiscoveryService(node, cancellationToken)};
         }
 
-        public IReadOnlyCollection<IEventHandlingService> CreateForEndpoint(BitcoinNode node, BitcoinEndpoint endpoint)
+        public IReadOnlyCollection<IEventHandlingService> CreateEndpointServices(BitcoinNode node, BitcoinEndpoint endpoint)
         {
             return new IEventHandlingService[0];
         }

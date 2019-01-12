@@ -36,7 +36,7 @@ namespace BitcoinUtilities
         /// <summary>
         /// Calculates hash of Merkle tree root for a given list of hashes.
         /// </summary>
-        /// <param name="hashes">The array of transactions.</param>
+        /// <param name="hashes">The array of transaction hashes.</param>
         /// <exception cref="ArgumentException">If the array of transactions is null or empty.</exception>
         public static byte[] GetTreeRoot(List<byte[]> hashes)
         {

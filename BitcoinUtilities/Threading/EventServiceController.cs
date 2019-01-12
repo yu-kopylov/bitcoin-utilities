@@ -192,56 +192,68 @@ namespace BitcoinUtilities.Threading
             {
                 try
                 {
-                    Service.OnStart();
-                }
-                catch (BitcoinNetworkException ex)
-                {
-                    logger.Trace(ex, $"Error during startup of service '{Service}'.");
-                    stopped = true;
+                    try
+                    {
+                        Service.OnStart();
+                    }
+                    catch (BitcoinNetworkException ex)
+                    {
+                        logger.Trace(ex, $"Error during startup of service '{Service}'.");
+                        stopped = true;
+                    }
+                    catch (Exception ex)
+                    {
+                        logger.Error(ex, $"Error during startup of service '{Service}'.");
+                        stopped = true;
+                    }
+
+                    while (!stopped)
+                    {
+                        object evt = DequeEvent();
+                        if (evt != null)
+                        {
+                            try
+                            {
+                                HandleEvent(evt);
+                            }
+                            catch (BitcoinNetworkException ex)
+                            {
+                                logger.Trace(ex, $"Service '{Service}' failed to handle event '{evt}'.");
+                                break;
+                            }
+                            catch (Exception ex)
+                            {
+                                logger.Error(ex, $"Service '{Service}' failed to handle event '{evt}'.");
+                                break;
+                            }
+                        }
+                        else
+                        {
+                            stateChangedEvent.WaitOne();
+                        }
+                    }
+
+                    try
+                    {
+                        Service.OnTearDown();
+                    }
+                    catch (BitcoinNetworkException ex)
+                    {
+                        logger.Trace(ex, $"Error during tear-down of service '{Service}'.");
+                    }
+                    catch (Exception ex)
+                    {
+                        logger.Error(ex, $"Error during tear-down of service '{Service}'.");
+                    }
                 }
                 catch (Exception ex)
                 {
-                    logger.Error(ex, $"Error during startup of service '{Service}'.");
-                    stopped = true;
+                    logger.Error(ex, $"Unhandled exception in {Service} thread.");
                 }
-
-                while (!stopped)
+                finally
                 {
-                    object evt = DequeEvent();
-                    if (evt != null)
-                    {
-                        try
-                        {
-                            HandleEvent(evt);
-                        }
-                        catch (BitcoinNetworkException ex)
-                        {
-                            logger.Trace(ex, $"Service '{Service}' failed to handle event '{evt}'.");
-                            break;
-                        }
-                        catch (Exception ex)
-                        {
-                            logger.Error(ex, $"Service '{Service}' failed to handle event '{evt}'.");
-                            break;
-                        }
-                    }
-                    else
-                    {
-                        stateChangedEvent.WaitOne();
-                    }
-                }
-
-                try
-                {
-                    Service.OnTearDown();
-                }
-                catch (BitcoinNetworkException ex)
-                {
-                    logger.Trace(ex, $"Error during tear-down of service '{Service}'.");
-                }
-                catch (Exception ex)
-                {
-                    logger.Error(ex, $"Error during tear-down of service '{Service}'.");
+                    logger.Debug($"{Service} thread has stopped.");
+                    // todo: remove service from controller to avoid queuing events to a queue without handler
                 }
             }
 

@@ -16,6 +16,7 @@ using BitcoinUtilities.P2P;
 using BitcoinUtilities.P2P.Messages;
 using BitcoinUtilities.P2P.Primitives;
 using BitcoinUtilities.Threading;
+using NLog;
 
 namespace BitcoinUtilities.Node
 {
@@ -24,6 +25,8 @@ namespace BitcoinUtilities.Node
     /// </summary>
     public class BitcoinNode : INotifyPropertyChanged, IDisposable
     {
+        private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
+
         private readonly List<INodeEventServiceFactory> eventServiceFactories = new List<INodeEventServiceFactory>();
         private readonly EventServiceController eventServiceController = new EventServiceController();
         private readonly NodeResourceCollection resources = new NodeResourceCollection();
@@ -32,7 +35,6 @@ namespace BitcoinUtilities.Node
 
         private readonly HeaderStorage headerStorage;
         private readonly Blockchain2 blockchain;
-        private readonly BlockStorage blockStorage;
         private readonly UtxoStorage utxoStorage;
 
         private NodeAddressCollection addressCollection;
@@ -53,26 +55,11 @@ namespace BitcoinUtilities.Node
             // todo: align creation of files and folders
             this.headerStorage = HeaderStorage.Open(Path.Combine(dataFolder, "headers.db"));
             this.blockchain = new Blockchain2(headerStorage, networkParameters.GenesisBlock.BlockHeader);
-            this.blockStorage = BlockStorage.Open(dataFolder);
             this.utxoStorage = UtxoStorage.Open(Path.Combine(dataFolder, "utxo.db"));
-
-            // todo: this should not be in BitcoinNode (should be handled by block storage)
-            // todo: check for existance inside AddBlock
-            byte[] genesisBlockHash = CryptoUtils.DoubleSha256(BitcoinStreamWriter.GetBytes(networkParameters.GenesisBlock.BlockHeader.Write));
-            if (blockStorage.GetBlock(genesisBlockHash) == null)
-            {
-                this.blockStorage.AddBlock(
-                    genesisBlockHash,
-                    BitcoinStreamWriter.GetBytes(networkParameters.GenesisBlock.Write)
-                );
-            }
-
-            resources.Add(new BlockRequestCollection());
 
             eventServiceFactories.Add(new NodeDiscoveryServiceFactory());
             eventServiceFactories.Add(new HeaderDowloadServiceFactory());
-            eventServiceFactories.Add(new BlockStorageServiceFactory());
-            eventServiceFactories.Add(new BlockDownloadServiceFactory());
+            eventServiceFactories.Add(new BlocksModule());
             eventServiceFactories.Add(new UtxoUpdateServiceFactory());
         }
 
@@ -82,7 +69,6 @@ namespace BitcoinUtilities.Node
 
             // todo: safely dispose all, even if one is failing
             headerStorage?.Dispose();
-            blockStorage?.Dispose();
             utxoStorage?.Dispose();
             cancellationTokenSource.Dispose();
         }
@@ -128,11 +114,6 @@ namespace BitcoinUtilities.Node
             get { return blockchain; }
         }
 
-        public BlockStorage BlockStorage
-        {
-            get { return blockStorage; }
-        }
-
         public UtxoStorage UtxoStorage
         {
             get { return utxoStorage; }
@@ -158,7 +139,12 @@ namespace BitcoinUtilities.Node
 
             foreach (var factory in eventServiceFactories)
             {
-                foreach (var service in factory.CreateForNode(this, cancellationTokenSource.Token))
+                factory.CreateResources(this);
+            }
+
+            foreach (var factory in eventServiceFactories)
+            {
+                foreach (var service in factory.CreateNodeServices(this, cancellationTokenSource.Token))
                 {
                     eventServiceController.AddService(service);
                 }
@@ -240,22 +226,26 @@ namespace BitcoinUtilities.Node
             }
 
             List<IEventHandlingService> endpointServices = new List<IEventHandlingService>();
-            connectionCollection.AssingServices(endpoint, endpointServices);
 
             foreach (var factory in eventServiceFactories)
             {
-                foreach (var service in factory.CreateForEndpoint(this, endpoint))
+                foreach (var service in factory.CreateEndpointServices(this, endpoint))
                 {
                     eventServiceController.AddService(service);
                     endpointServices.Add(service);
                 }
             }
 
+            connectionCollection.AssingServices(endpoint, endpointServices);
+
             endpoint.StartListener(HandleMessage, HandleDisconnectedEndpoint);
+
+            logger.Debug($"Started listener for endpoint '{endpoint.PeerInfo.IpEndpoint}'.");
         }
 
         private void HandleDisconnectedEndpoint(BitcoinEndpoint endpoint)
         {
+            logger.Debug($"Endpoint '{endpoint.PeerInfo.IpEndpoint}' disconnected.");
             NodeConnection connection = connectionCollection.Remove(endpoint);
             if (connection?.Services != null)
             {
@@ -265,6 +255,8 @@ namespace BitcoinUtilities.Node
                     eventServiceController.RemoveService(service);
                 }
             }
+
+            logger.Debug($"Stopped {connection?.Services?.Count ?? 0} services for endpoint '{endpoint.PeerInfo.IpEndpoint}'.");
         }
 
         private void HandleMessage(BitcoinEndpoint endpoint, IBitcoinMessage message)

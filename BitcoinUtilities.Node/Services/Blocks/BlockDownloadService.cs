@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
 using BitcoinUtilities.Collections;
 using BitcoinUtilities.Node.Events;
+using BitcoinUtilities.Node.Rules;
 using BitcoinUtilities.Node.Services.Headers;
 using BitcoinUtilities.P2P;
 using BitcoinUtilities.P2P.Messages;
@@ -12,27 +12,11 @@ using BitcoinUtilities.Threading;
 
 namespace BitcoinUtilities.Node.Services.Blocks
 {
-    public class BlockDownloadServiceFactory : INodeEventServiceFactory
-    {
-        public IReadOnlyCollection<IEventHandlingService> CreateForNode(BitcoinNode node, CancellationToken cancellationToken)
-        {
-            return new IEventHandlingService[0];
-        }
-
-        public IReadOnlyCollection<IEventHandlingService> CreateForEndpoint(BitcoinNode node, BitcoinEndpoint endpoint)
-        {
-            return new IEventHandlingService[]
-            {
-                new BlockDownloadService(node.EventServiceController, node.Resources.Get<BlockRequestCollection>(), node.BlockStorage, endpoint)
-            };
-        }
-    }
-
     public class BlockDownloadService : NodeEventHandlingService
     {
         private readonly EventServiceController controller;
         private readonly BlockRequestCollection requestCollection;
-        private readonly BlockStorage storage;
+        private readonly BlockRepository repository;
         private readonly BitcoinEndpoint endpoint;
 
         private readonly LinkedDictionary<byte[], DateTime> inventory = new LinkedDictionary<byte[], DateTime>(ByteArrayComparer.Instance);
@@ -41,13 +25,13 @@ namespace BitcoinUtilities.Node.Services.Blocks
         public BlockDownloadService(
             EventServiceController controller,
             BlockRequestCollection requestCollection,
-            BlockStorage storage,
+            BlockRepository repository,
             BitcoinEndpoint endpoint
         ) : base(endpoint)
         {
             this.controller = controller;
             this.requestCollection = requestCollection;
-            this.storage = storage;
+            this.repository = repository;
             this.endpoint = endpoint;
 
             On<BlockDownloadRequestedEvent>(e => CheckState());
@@ -128,22 +112,30 @@ namespace BitcoinUtilities.Node.Services.Blocks
         private void ProcessBlockMessage(BlockMessage blockMessage)
         {
             byte[] hash = CryptoUtils.DoubleSha256(BitcoinStreamWriter.GetBytes(blockMessage.BlockHeader.Write));
-            // todo: we would not need to serialize block if message included payload
-            byte[] content = BitcoinStreamWriter.GetBytes(blockMessage.Write);
-
-            // todo: validate block, disconnect endpoint if it is invalid, maybe mark header as invalid
-            // todo: check for existance inside AddBlock
-            storage.AddBlock(hash, content);
-            // mark received should happen after saving block to storage
-            if (requestCollection.MarkReceived(hash))
+            if (!IsBlockValid(blockMessage, hash))
             {
-                controller.Raise(new BlockAvailableEvent(hash, blockMessage));
+                // todo: remember as bad host? 
+                endpoint.Dispose();
+                return;
             }
+
+            repository.AddBlock(hash, blockMessage);
 
             inventory.Remove(hash);
             sentRequests.Remove(hash);
 
             CheckState();
+        }
+
+        private bool IsBlockValid(BlockMessage blockMessage, byte[] hash)
+        {
+            if (!BlockHeaderValidator.IsValid(blockMessage.BlockHeader, hash))
+            {
+                return false;
+            }
+
+            byte[] merkleRoot = MerkleTreeUtils.GetTreeRoot(blockMessage.Transactions);
+            return ByteArrayComparer.Instance.Equals(blockMessage.BlockHeader.MerkleRoot, merkleRoot);
         }
 
         private static void RemoveOutdatedEntries(LinkedDictionary<byte[], DateTime> entries)
