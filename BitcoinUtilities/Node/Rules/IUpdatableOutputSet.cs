@@ -8,7 +8,7 @@ namespace BitcoinUtilities.Node.Rules
         IReadOnlyCollection<TOutput> FindUnspentOutputs(byte[] transactionHash);
         TOutput FindUnspentOutput(TxOutPoint outPoint);
 
-        void AddUnspent(byte[] txHash, int outputIndex, int height, TxOut txOut);
+        void CreateUnspentOutput(byte[] txHash, int outputIndex, int height, TxOut txOut);
         void Spend(TOutput output, int blockHeight);
     }
 }

@@ -67,6 +67,48 @@ namespace BitcoinUtilities.Node.Services.Outputs
             return bestHeader;
         }
 
+        public IReadOnlyCollection<UtxoOutput> GetUnspentOutputs(IEnumerable<byte[]> txHashes)
+        {
+            List<UtxoOutput> res = new List<UtxoOutput>();
+
+            using (var tx = conn.BeginTransaction())
+            {
+                foreach (List<byte[]> chunk in txHashes.OrderBy(h => h[0]).Split(900))
+                {
+                    //todo: compare 1-by-1 select vs IN
+                    using (SQLiteCommand command = new SQLiteCommand(
+                        "select TxHash, OutputIndex, Height, Value, Script from UnspentOutputs" +
+                        $" where TxHash in ({SqliteUtils.GetInParameters("H", chunk.Count)})",
+                        conn
+                    ))
+                    {
+                        SqliteUtils.SetInParameters(command.Parameters, "H", DbType.Binary, chunk);
+
+                        using (var reader = command.ExecuteReader())
+                        {
+                            while (reader.Read())
+                            {
+                                int col = 0;
+
+                                byte[] txHash = (byte[]) reader[col++];
+                                int outputIndex = reader.GetInt32(col++);
+                                int height = reader.GetInt32(col++);
+                                ulong value = (ulong) reader.GetInt64(col++);
+                                byte[] script = (byte[]) reader[col++];
+
+                                res.Add(new UtxoOutput(new TxOutPoint(txHash, outputIndex), height, value, script, -1));
+                            }
+                        }
+                    }
+                }
+
+                tx.Commit();
+            }
+
+            return res;
+        }
+        
+        // todo: remove
         public IReadOnlyCollection<UtxoOutput> GetUnspentOutputs(IEnumerable<TxOutPoint> outputPoints)
         {
             List<UtxoOutput> res = new List<UtxoOutput>();

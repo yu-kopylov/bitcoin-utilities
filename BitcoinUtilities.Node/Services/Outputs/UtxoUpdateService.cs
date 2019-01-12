@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Threading;
 using BitcoinUtilities.Node.Events;
+using BitcoinUtilities.Node.Rules;
 using BitcoinUtilities.Node.Services.Blocks;
 using BitcoinUtilities.Node.Services.Headers;
 using BitcoinUtilities.P2P;
@@ -169,73 +170,29 @@ namespace BitcoinUtilities.Node.Services.Outputs
 
         private UtxoUpdate CreateAndValidateUtxoUpdate(DbHeader header, BlockMessage block)
         {
-            List<TxOutPoint> outPoints = new List<TxOutPoint>();
+            HashSet<byte[]> relatedTxHashes = new HashSet<byte[]>(ByteArrayComparer.Instance);
+
             foreach (Tx tx in block.Transactions)
             {
                 foreach (var input in tx.Inputs)
                 {
-                    outPoints.Add(input.PreviousOutput);
+                    relatedTxHashes.Add(input.PreviousOutput.Hash);
                 }
+
+                relatedTxHashes.Add(CryptoUtils.DoubleSha256(BitcoinStreamWriter.GetBytes(tx.Write)));
             }
 
-            Dictionary<TxOutPoint, UtxoOutput> existingOutputs = utxoStorage.GetUnspentOutputs(outPoints).ToDictionary(
-                o => o.OutputPoint
-            );
+            IReadOnlyCollection<UtxoOutput> existingOutputs = utxoStorage.GetUnspentOutputs(relatedTxHashes);
 
-            Dictionary<TxOutPoint, UtxoOutput> newOutputs = new Dictionary<TxOutPoint, UtxoOutput>();
+            UpdatableOutputSet outputSet = new UpdatableOutputSet();
+            outputSet.AppendExistingUnspentOutputs(existingOutputs);
+
+            TransactionProcessor txProcessor = new TransactionProcessor();
+            txProcessor.UpdateOutputs(outputSet, header.Height, header.Hash, block);
 
             UtxoUpdate update = new UtxoUpdate(header.Height, header.Hash, header.ParentHash);
-
-            for (int txNum = 0; txNum < block.Transactions.Length; txNum++)
-            {
-                Tx tx = block.Transactions[txNum];
-                byte[] txHash = CryptoUtils.DoubleSha256(BitcoinStreamWriter.GetBytes(tx.Write));
-
-                // todo: recheck specification for coinbase transactions
-                ulong inputSum = 0;
-                if (txNum != 0)
-                {
-                    foreach (TxIn input in tx.Inputs)
-                    {
-                        TxOutPoint outPoint = input.PreviousOutput;
-
-                        if (!existingOutputs.TryGetValue(outPoint, out var oldOutput))
-                        {
-                            logger.Debug($"Transaction '{HexUtils.GetString(txHash)}' attempts to spend a non-existing output '{HexUtils.GetString(outPoint.Hash)}:{outPoint.Index}'.");
-                            // todo: throw exception?
-                            blockchain.MarkInvalid(header.Hash);
-                            return null;
-                        }
-
-                        inputSum += oldOutput.Value;
-                        existingOutputs.Remove(outPoint);
-                        if (!newOutputs.Remove(outPoint))
-                        {
-                            update.SpentOutputs.Add(oldOutput);
-                        }
-                    }
-                }
-
-                ulong outputSum = 0;
-                for (int outputIndex = 0; outputIndex < tx.Outputs.Length; outputIndex++)
-                {
-                    TxOut txOut = tx.Outputs[outputIndex];
-                    outputSum += txOut.Value;
-
-                    UtxoOutput newOutput = new UtxoOutput(txHash, outputIndex, header.Height, txOut);
-                    update.NewOutputs.Add(newOutput);
-                    existingOutputs.Add(newOutput.OutputPoint, newOutput);
-                    newOutputs.Add(newOutput.OutputPoint, newOutput);
-                }
-
-                // todo: check output of coinbase transaction ?
-                if (txNum != 0 && outputSum > inputSum)
-                {
-                    // todo: throw exception?
-                    blockchain.MarkInvalid(header.Hash);
-                    return null;
-                }
-            }
+            update.ExistingSpentOutputs.AddRange(outputSet.ExistingSpentOutputs);
+            update.CreatedUnspentOutputs.AddRange(outputSet.CreatedUnspentOutputs);
 
             return update;
         }

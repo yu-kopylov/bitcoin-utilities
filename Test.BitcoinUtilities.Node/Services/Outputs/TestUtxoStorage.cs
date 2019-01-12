@@ -67,27 +67,27 @@ namespace Test.BitcoinUtilities.Node.Services.Outputs
             using (UtxoStorage storage1 = UtxoStorage.Open(filename))
             {
                 var update0 = new UtxoUpdate(0, header0, new byte[32]);
-                update0.NewOutputs.Add(header0Tx1Out0);
-                update0.NewOutputs.Add(header0Tx1Out1);
-                update0.NewOutputs.Add(header0Tx2Out0);
-                update0.NewOutputs.Add(header0Tx2Out1);
+                update0.CreatedUnspentOutputs.Add(header0Tx1Out0);
+                update0.CreatedUnspentOutputs.Add(header0Tx1Out1);
+                update0.CreatedUnspentOutputs.Add(header0Tx2Out0);
+                update0.CreatedUnspentOutputs.Add(header0Tx2Out1);
 
                 storage1.Update(update0);
 
                 var update1 = new UtxoUpdate(1, header1, header0);
-                update1.SpentOutputs.Add(header0Tx1Out0);
-                update1.SpentOutputs.Add(header0Tx2Out1);
-                update1.NewOutputs.Add(header1Tx1Out0);
-                update1.NewOutputs.Add(header1Tx2Out0);
-                update1.NewOutputs.Add(header1Tx2Out1);
+                update1.ExistingSpentOutputs.Add(header0Tx1Out0);
+                update1.ExistingSpentOutputs.Add(header0Tx2Out1);
+                update1.CreatedUnspentOutputs.Add(header1Tx1Out0);
+                update1.CreatedUnspentOutputs.Add(header1Tx2Out0);
+                update1.CreatedUnspentOutputs.Add(header1Tx2Out1);
 
                 storage1.Update(update1);
 
                 var update2 = new UtxoUpdate(2, header2, header1);
-                update2.SpentOutputs.Add(header0Tx1Out1);
-                update2.SpentOutputs.Add(header1Tx2Out0);
-                update2.NewOutputs.Add(header2Tx1Out0);
-                update2.NewOutputs.Add(header2Tx1Out1);
+                update2.ExistingSpentOutputs.Add(header0Tx1Out1);
+                update2.ExistingSpentOutputs.Add(header1Tx2Out0);
+                update2.CreatedUnspentOutputs.Add(header2Tx1Out0);
+                update2.CreatedUnspentOutputs.Add(header2Tx1Out1);
 
                 storage1.Update(update2);
             }
@@ -173,25 +173,25 @@ namespace Test.BitcoinUtilities.Node.Services.Outputs
             using (UtxoStorage storage1 = UtxoStorage.Open(filename))
             {
                 var update0 = new UtxoUpdate(0, header0, new byte[32]);
-                update0.NewOutputs.Add(header0Tx1Out0);
-                update0.NewOutputs.Add(header0Tx1Out1);
-                update0.NewOutputs.Add(header0Tx2Out0);
-                update0.NewOutputs.Add(header0Tx2Out1);
+                update0.CreatedUnspentOutputs.Add(header0Tx1Out0);
+                update0.CreatedUnspentOutputs.Add(header0Tx1Out1);
+                update0.CreatedUnspentOutputs.Add(header0Tx2Out0);
+                update0.CreatedUnspentOutputs.Add(header0Tx2Out1);
 
 
                 var update1 = new UtxoUpdate(1, header1, header0);
-                update1.SpentOutputs.Add(header0Tx1Out0);
-                update1.SpentOutputs.Add(header0Tx2Out1);
-                update1.NewOutputs.Add(header1Tx1Out0);
-                update1.NewOutputs.Add(header1Tx2Out0);
-                update1.NewOutputs.Add(header1Tx2Out1);
+                update1.ExistingSpentOutputs.Add(header0Tx1Out0);
+                update1.ExistingSpentOutputs.Add(header0Tx2Out1);
+                update1.CreatedUnspentOutputs.Add(header1Tx1Out0);
+                update1.CreatedUnspentOutputs.Add(header1Tx2Out0);
+                update1.CreatedUnspentOutputs.Add(header1Tx2Out1);
 
 
                 var update2 = new UtxoUpdate(2, header2, header1);
-                update2.SpentOutputs.Add(header0Tx1Out1);
-                update2.SpentOutputs.Add(header1Tx2Out0);
-                update2.NewOutputs.Add(header2Tx1Out0);
-                update2.NewOutputs.Add(header2Tx1Out1);
+                update2.ExistingSpentOutputs.Add(header0Tx1Out1);
+                update2.ExistingSpentOutputs.Add(header1Tx2Out0);
+                update2.CreatedUnspentOutputs.Add(header2Tx1Out0);
+                update2.CreatedUnspentOutputs.Add(header2Tx1Out1);
 
 
                 storage1.Update(new UtxoUpdate[] {update0, update1, update2});
@@ -262,7 +262,7 @@ namespace Test.BitcoinUtilities.Node.Services.Outputs
                         {
                             TxOutPoint outPoint = new TxOutPoint(txHash, outputIndex);
                             UtxoOutput output = new UtxoOutput(outPoint, height, 123, new byte[] {32}, -1);
-                            update.NewOutputs.Add(output);
+                            update.CreatedUnspentOutputs.Add(output);
                         }
                     }
 
@@ -273,18 +273,18 @@ namespace Test.BitcoinUtilities.Node.Services.Outputs
                         {
                             int outputIndex = random.Next(existingOutputs.Count);
 
-                            update.SpentOutputs.Add(existingOutputs[outputIndex]);
+                            update.ExistingSpentOutputs.Add(existingOutputs[outputIndex]);
 
                             existingOutputs[outputIndex] = existingOutputs[existingOutputs.Count - 1];
                             existingOutputs.RemoveAt(existingOutputs.Count - 1);
                         }
 
                         Stopwatch sw = Stopwatch.StartNew();
-                        var requiredOutPoints = new HashSet<TxOutPoint>(update.SpentOutputs.Select(o => o.OutputPoint));
+                        var requiredOutPoints = new HashSet<TxOutPoint>(update.ExistingSpentOutputs.Select(o => o.OutputPoint));
                         IReadOnlyCollection<UtxoOutput> foundOutputs = storage.GetUnspentOutputs(requiredOutPoints)
                             .Where(o => requiredOutPoints.Contains(o.OutputPoint))
                             .ToList();
-                        File.AppendAllText(logFilename, $"Read {foundOutputs.Count} of {update.SpentOutputs.Count} outputs to spend in header {height} in {sw.ElapsedMilliseconds} ms.\r\n");
+                        File.AppendAllText(logFilename, $"Read {foundOutputs.Count} of {update.ExistingSpentOutputs.Count} outputs to spend in header {height} in {sw.ElapsedMilliseconds} ms.\r\n");
 
                         sw.Restart();
 
@@ -292,12 +292,12 @@ namespace Test.BitcoinUtilities.Node.Services.Outputs
 
                         foreach (UtxoUpdate pendingUpdate in pendingUpdates)
                         {
-                            foreach (var output in pendingUpdate.SpentOutputs)
+                            foreach (var output in pendingUpdate.ExistingSpentOutputs)
                             {
                                 foundOutputsByOutPoint.Remove(output.OutputPoint);
                             }
 
-                            foreach (var output in pendingUpdate.NewOutputs)
+                            foreach (var output in pendingUpdate.CreatedUnspentOutputs)
                             {
                                 if (requiredOutPoints.Contains(output.OutputPoint))
                                 {
@@ -318,7 +318,7 @@ namespace Test.BitcoinUtilities.Node.Services.Outputs
                     }
 
                     pendingUpdates.Add(update);
-                    existingOutputs.AddRange(update.NewOutputs);
+                    existingOutputs.AddRange(update.CreatedUnspentOutputs);
 
                     if (pendingUpdates.Count >= 100)
                     {

@@ -36,7 +36,7 @@ namespace BitcoinUtilities.Node.Services.Outputs
 
             HeaderHashes.Add(update.HeaderHash);
 
-            foreach (UtxoOutput output in update.SpentOutputs)
+            foreach (UtxoOutput output in update.ExistingSpentOutputs)
             {
                 // todo: this seems to be a wrong place to set heigh
                 UtxoOutput spentOutput = output.Spend(update.Height);
@@ -49,7 +49,7 @@ namespace BitcoinUtilities.Node.Services.Outputs
                 }
             }
 
-            foreach (UtxoOutput output in update.NewOutputs)
+            foreach (UtxoOutput output in update.CreatedUnspentOutputs)
             {
                 UnspentOutputs.Add(output.OutputPoint, output);
             }

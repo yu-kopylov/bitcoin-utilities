@@ -48,8 +48,8 @@ namespace BitcoinUtilities.Node.Rules
                     else
                     {
                         throw new BitcoinProtocolViolationException(
-                            $"The transaction '{BitConverter.ToString(transactionHash)}'" +
-                            $" in block '{BitConverter.ToString(blockHash)}'" +
+                            $"The transaction '{HexUtils.GetString(transactionHash)}'" +
+                            $" in block '{HexUtils.GetString(blockHash)}'" +
                             $" has same hash as an existing unspent transaction (see BIP-30).");
                     }
                 }
@@ -63,8 +63,8 @@ namespace BitcoinUtilities.Node.Rules
                         if (output == null)
                         {
                             throw new BitcoinProtocolViolationException(
-                                $"The input of the transaction '{BitConverter.ToString(transactionHash)}'" +
-                                $" in block '{BitConverter.ToString(blockHash)}'" +
+                                $"The input of the transaction '{HexUtils.GetString(transactionHash)}'" +
+                                $" in block '{HexUtils.GetString(blockHash)}'" +
                                 $" has been already spent or did not exist.");
                         }
 
@@ -74,16 +74,16 @@ namespace BitcoinUtilities.Node.Rules
                         if (!sctriptParser.TryParse(input.SignatureScript, out var inputCommands))
                         {
                             throw new BitcoinProtocolViolationException(
-                                $"The transaction '{BitConverter.ToString(transactionHash)}'" +
-                                $" in block '{BitConverter.ToString(blockHash)}'" +
+                                $"The transaction '{HexUtils.GetString(transactionHash)}'" +
+                                $" in block '{HexUtils.GetString(blockHash)}'" +
                                 $" has an invalid signature script.");
                         }
 
                         if (inputCommands.Any(c => !IsValidSignatureCommand(c.Code)))
                         {
                             throw new BitcoinProtocolViolationException(
-                                $"The transaction '{BitConverter.ToString(transactionHash)}'" +
-                                $" in block '{BitConverter.ToString(blockHash)}'" +
+                                $"The transaction '{HexUtils.GetString(transactionHash)}'" +
+                                $" in block '{HexUtils.GetString(blockHash)}'" +
                                 $" has forbidden commands in the signature script.");
                         }
 
@@ -103,20 +103,20 @@ namespace BitcoinUtilities.Node.Rules
                     {
                         //todo: how Bitcoin Core works in this scenario?
                         throw new BitcoinProtocolViolationException(
-                            $"The output of transaction '{BitConverter.ToString(transactionHash)}'" +
-                            $" in block '{BitConverter.ToString(blockHash)}'" +
+                            $"The output of transaction '{HexUtils.GetString(transactionHash)}'" +
+                            $" in block '{HexUtils.GetString(blockHash)}'" +
                             $" has an invalid pubkey script.");
                     }
 
-                    outputs.AddUnspent(transactionHash, outputNumber, blockHeight, output);
+                    outputs.CreateUnspentOutput(transactionHash, outputNumber, blockHeight, output);
                 }
 
                 if (transactionNumber != 0 && transactionInputsSum < transactionOutputsSum)
                 {
                     // for coinbase transaction output sum is checked later as part of total block inputs, outputs and reward sums equation
                     throw new BitcoinProtocolViolationException(
-                        $"The sum of the inputs in the transaction '{BitConverter.ToString(transactionHash)}'" +
-                        $" in block '{BitConverter.ToString(blockHash)}'" +
+                        $"The sum of the inputs in the transaction '{HexUtils.GetString(transactionHash)}'" +
+                        $" in block '{HexUtils.GetString(blockHash)}'" +
                         $" is less than the sum of the outputs.");
                 }
 
@@ -130,7 +130,7 @@ namespace BitcoinUtilities.Node.Rules
             {
                 throw new BitcoinProtocolViolationException(
                     $"The sum of the inputs and the reward" +
-                    $" in the block '{BitConverter.ToString(blockHash)}'" +
+                    $" in the block '{HexUtils.GetString(blockHash)}'" +
                     $" does not match the sum of the outputs.");
             }
         }

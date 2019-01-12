@@ -58,7 +58,7 @@ namespace BitcoinUtilities.Storage
         /// Adds the unspent output. 
         /// </summary>
         /// <exception cref="InvalidOperationException">If an output with same number of the same transaction already exists.</exception>
-        public void AddUnspent(byte[] txHash, int outputIndex, int height, TxOut txOut)
+        public void CreateUnspentOutput(byte[] txHash, int outputIndex, int height, TxOut txOut)
         {
             UnspentOutput unspentOutput = UnspentOutput.Create(txHash, outputIndex, height, txOut);
             TransactionState transactionState = LoadTransaction(unspentOutput.TransactionHash);

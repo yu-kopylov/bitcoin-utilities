@@ -101,8 +101,8 @@ namespace Test.BitcoinUtilities.Node.Services.Outputs
             byte[] tx1 = CryptoUtils.DoubleSha256(Encoding.ASCII.GetBytes("Tx 1"));
             byte[] tx2 = CryptoUtils.DoubleSha256(Encoding.ASCII.GetBytes("Tx 2"));
 
-            set.AddUnspent(tx1, 1, 0, new TxOut(100, new byte[20]));
-            set.AddUnspent(tx1, 2, 0, new TxOut(200, new byte[20]));
+            set.CreateUnspentOutput(tx1, 1, 0, new TxOut(100, new byte[20]));
+            set.CreateUnspentOutput(tx1, 2, 0, new TxOut(200, new byte[20]));
 
             UtxoOutput tx1Output1T = new UtxoOutput(tx1, 1, 0, new TxOut(100, new byte[20]));
             UtxoOutput tx1Output2T = new UtxoOutput(tx1, 2, 0, new TxOut(200, new byte[20]));
@@ -164,7 +164,7 @@ namespace Test.BitcoinUtilities.Node.Services.Outputs
             set.AppendExistingUnspentOutputs(new[] {tx1Output1, tx1Output2});
             set.Spend(tx1Output1, 1);
             set.Spend(tx1Output2, 1);
-            set.AddUnspent(tx1, 1, 2, new TxOut(300, new byte[20]));
+            set.CreateUnspentOutput(tx1, 1, 2, new TxOut(300, new byte[20]));
 
             Assert.That(set.HasExistingTransaction(tx1), Is.True);
 
@@ -206,7 +206,7 @@ namespace Test.BitcoinUtilities.Node.Services.Outputs
             UtxoOutput tx1Output1 = new UtxoOutput(tx1, 1, 0, new TxOut(100, new byte[20]));
 
             set.AppendExistingUnspentOutputs(new[] {tx1Output1});
-            set.AddUnspent(tx2, 1, 1, new TxOut(200, new byte[20]));
+            set.CreateUnspentOutput(tx2, 1, 1, new TxOut(200, new byte[20]));
 
             var tx2Output1 = set.FindUnspentOutput(new TxOutPoint(tx2, 1));
 

@@ -70,7 +70,7 @@ namespace BitcoinUtilities.Node.Services.Outputs
             return null;
         }
 
-        public void AddUnspent(byte[] txHash, int outputIndex, int height, TxOut txOut)
+        public void CreateUnspentOutput(byte[] txHash, int outputIndex, int height, TxOut txOut)
         {
             createdUnspentOutputs.Add(new UtxoOutput(txHash, outputIndex, height, txOut));
         }

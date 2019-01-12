@@ -57,15 +57,15 @@ namespace Test.BitcoinUtilities.Storage
 
             UnspentOutputsUpdate update = new UnspentOutputsUpdate(storage);
 
-            Assert.Throws<InvalidOperationException>(() => update.AddUnspent(Hash1, 0, 0, new TxOut(200, new byte[16])));
-            update.AddUnspent(Hash1, 1, 0, new TxOut(201, new byte[16]));
-            update.AddUnspent(Hash2, 0, 0, new TxOut(300, new byte[16]));
-            update.AddUnspent(Hash2, 1, 0, new TxOut(301, new byte[16]));
+            Assert.Throws<InvalidOperationException>(() => update.CreateUnspentOutput(Hash1, 0, 0, new TxOut(200, new byte[16])));
+            update.CreateUnspentOutput(Hash1, 1, 0, new TxOut(201, new byte[16]));
+            update.CreateUnspentOutput(Hash2, 0, 0, new TxOut(300, new byte[16]));
+            update.CreateUnspentOutput(Hash2, 1, 0, new TxOut(301, new byte[16]));
 
-            Assert.Throws<InvalidOperationException>(() => update.AddUnspent(Hash1, 0, 0, new TxOut(250, new byte[16])));
-            Assert.Throws<InvalidOperationException>(() => update.AddUnspent(Hash1, 1, 0, new TxOut(251, new byte[16])));
-            Assert.Throws<InvalidOperationException>(() => update.AddUnspent(Hash2, 0, 0, new TxOut(350, new byte[16])));
-            Assert.Throws<InvalidOperationException>(() => update.AddUnspent(Hash2, 1, 0, new TxOut(351, new byte[16])));
+            Assert.Throws<InvalidOperationException>(() => update.CreateUnspentOutput(Hash1, 0, 0, new TxOut(250, new byte[16])));
+            Assert.Throws<InvalidOperationException>(() => update.CreateUnspentOutput(Hash1, 1, 0, new TxOut(251, new byte[16])));
+            Assert.Throws<InvalidOperationException>(() => update.CreateUnspentOutput(Hash2, 0, 0, new TxOut(350, new byte[16])));
+            Assert.Throws<InvalidOperationException>(() => update.CreateUnspentOutput(Hash2, 1, 0, new TxOut(351, new byte[16])));
 
             Assert.That(update.FindUnspentOutputs(Hash1).Select(o => o.Sum).ToList(), Is.EquivalentTo(new ulong[] {100, 201}));
             Assert.That(update.FindUnspentOutputs(Hash2).Select(o => o.Sum).ToList(), Is.EquivalentTo(new ulong[] {300, 301}));
@@ -117,7 +117,7 @@ namespace Test.BitcoinUtilities.Storage
 
             update.Spend(DummyOutput(Hash1, 0), Block1.Height);
             update.Spend(DummyOutput(Hash1, 1), Block1.Height);
-            update.AddUnspent(Hash1, 0, 1, new TxOut(200, new byte[16]));
+            update.CreateUnspentOutput(Hash1, 0, 1, new TxOut(200, new byte[16]));
 
             Assert.That(update.FindUnspentOutputs(Hash1).Select(o => o.Sum), Is.EqualTo(new ulong[] {200}));
             Assert.That(update.FindUnspentOutput(new TxOutPoint(Hash1, 0)).Sum, Is.EqualTo(200));
@@ -134,9 +134,9 @@ namespace Test.BitcoinUtilities.Storage
             update = new UnspentOutputsUpdate(storage);
 
             update.Spend(DummyOutput(Hash1, 0), Block2.Height);
-            update.AddUnspent(Hash1, 0, 2, new TxOut(300, new byte[16]));
+            update.CreateUnspentOutput(Hash1, 0, 2, new TxOut(300, new byte[16]));
             update.Spend(DummyOutput(Hash1, 0), Block2.Height);
-            update.AddUnspent(Hash1, 0, 2, new TxOut(350, new byte[16]));
+            update.CreateUnspentOutput(Hash1, 0, 2, new TxOut(350, new byte[16]));
 
             Assert.That(update.FindUnspentOutputs(Hash1).Select(o => o.Sum), Is.EquivalentTo(new ulong[] {350}));
             Assert.That(update.FindUnspentOutput(new TxOutPoint(Hash1, 0)).Sum, Is.EqualTo(350));
@@ -161,9 +161,9 @@ namespace Test.BitcoinUtilities.Storage
             UnspentOutputsUpdate update = new UnspentOutputsUpdate(storage);
 
             update.Spend(DummyOutput(Hash1, 0), Block1.Height);
-            update.AddUnspent(Hash1, 0, 1, new TxOut(200, new byte[16]));
-            update.AddUnspent(Hash1, 1, 1, new TxOut(201, new byte[16]));
-            update.AddUnspent(Hash2, 0, 1, new TxOut(300, new byte[16]));
+            update.CreateUnspentOutput(Hash1, 0, 1, new TxOut(200, new byte[16]));
+            update.CreateUnspentOutput(Hash1, 1, 1, new TxOut(201, new byte[16]));
+            update.CreateUnspentOutput(Hash2, 0, 1, new TxOut(300, new byte[16]));
 
             Assert.That(storage.UnspentOutputs.Select(o => o.Sum), Is.EquivalentTo(new ulong[] {100}));
             Assert.That(storage.SpentOutputs, Is.Empty);

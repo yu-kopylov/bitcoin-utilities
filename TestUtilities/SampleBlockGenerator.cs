@@ -30,7 +30,7 @@ namespace TestUtilities
             (
                 version: 1,
                 inputs: new TxIn[] {new TxIn(new TxOutPoint(new byte[32], -1), Encoding.ASCII.GetBytes("TEST"), 0xFFFFFFFF)},
-                outputs: new TxOut[] {new TxOut(25_00_000_000, BitcoinScript.CreatePayToPubkeyHash(address))},
+                outputs: new TxOut[] {new TxOut(50_00_000_000, BitcoinScript.CreatePayToPubkeyHash(address))},
                 lockTime: 0
             );
             Tx[] transactions = new Tx[] {coinbaseTx};
