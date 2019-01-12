@@ -283,8 +283,30 @@ namespace Test.BitcoinUtilities.Node.Services.Outputs
                         }
 
                         Stopwatch sw = Stopwatch.StartNew();
-                        int fountOutputs = storage.GetUnspentOutputs(update.SpentOutputs.Select(o => o.OutputPoint)).Count;
-                        File.AppendAllText(logFilename, $"Read {fountOutputs} of {update.SpentOutputs.Count} outputs to spend in header {height} in {sw.ElapsedMilliseconds} ms.\r\n");
+                        var requiredOutPoints = new HashSet<byte[]>(update.SpentOutputs.Select(o => o.OutputPoint), ByteArrayComparer.Instance);
+                        IReadOnlyCollection<UtxoOutput> fountOutputs = storage.GetUnspentOutputs(requiredOutPoints);
+                        File.AppendAllText(logFilename, $"Read {fountOutputs.Count} of {update.SpentOutputs.Count} outputs to spend in header {height} in {sw.ElapsedMilliseconds} ms.\r\n");
+
+                        sw.Restart();
+                        Dictionary<byte[], UtxoOutput> fountOutputsByOutPoint = fountOutputs.ToDictionary(o => o.OutputPoint, ByteArrayComparer.Instance);
+                        foreach (UtxoUpdate pendingUpdate in pendingUpdates)
+                        {
+                            foreach (var output in pendingUpdate.SpentOutputs)
+                            {
+                                fountOutputsByOutPoint.Remove(output.OutputPoint);
+                            }
+
+                            foreach (var output in pendingUpdate.NewOutputs)
+                            {
+                                if (requiredOutPoints.Contains(output.OutputPoint))
+                                {
+                                    fountOutputsByOutPoint.Add(output.OutputPoint, output);
+                                }
+                            }
+                        }
+
+                        File.AppendAllText(logFilename,
+                            $"Constructed set of {fountOutputsByOutPoint.Count} outputs by replaying {pendingUpdates.Count} updates on fetched outputs in {sw.ElapsedMilliseconds} ms.\r\n");
                     }
 
                     while (existingOutputs.Count > 200_000)
