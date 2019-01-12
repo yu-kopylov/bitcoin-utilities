@@ -4,6 +4,7 @@ using System.Data;
 using System.Data.SQLite;
 using System.Linq;
 using BitcoinUtilities.Collections;
+using BitcoinUtilities.P2P.Primitives;
 using NLog;
 
 namespace BitcoinUtilities.Node.Services.Outputs
@@ -66,21 +67,22 @@ namespace BitcoinUtilities.Node.Services.Outputs
             return bestHeader;
         }
 
-        public IReadOnlyCollection<UtxoOutput> GetUnspentOutputs(IEnumerable<byte[]> outputPoints)
+        public IReadOnlyCollection<UtxoOutput> GetUnspentOutputs(IEnumerable<TxOutPoint> outputPoints)
         {
             List<UtxoOutput> res = new List<UtxoOutput>();
 
             using (var tx = conn.BeginTransaction())
             {
-                foreach (List<byte[]> chunk in outputPoints.OrderBy(p => p[0]).Split(900))
+                foreach (List<byte[]> chunk in outputPoints.Select(o => o.Hash).Distinct(ByteArrayComparer.Instance).OrderBy(h => h[0]).Split(900))
                 {
+                    //todo: compare 1-by-1 select vs IN
                     using (SQLiteCommand command = new SQLiteCommand(
-                        "select OutputPoint, Height, Value, Script from UnspentOutputs" +
-                        $" where OutputPoint in ({SqliteUtils.GetInParameters("O", chunk.Count)})",
+                        "select TxHash, OutputIndex, Height, Value, Script from UnspentOutputs" +
+                        $" where TxHash in ({SqliteUtils.GetInParameters("H", chunk.Count)})",
                         conn
                     ))
                     {
-                        SqliteUtils.SetInParameters(command.Parameters, "O", DbType.Binary, chunk);
+                        SqliteUtils.SetInParameters(command.Parameters, "H", DbType.Binary, chunk);
 
                         using (var reader = command.ExecuteReader())
                         {
@@ -88,16 +90,19 @@ namespace BitcoinUtilities.Node.Services.Outputs
                             {
                                 int col = 0;
 
-                                byte[] outputPoint = (byte[]) reader[col++];
+                                byte[] txHash = (byte[]) reader[col++];
+                                int outputIndex = reader.GetInt32(col++);
                                 int height = reader.GetInt32(col++);
                                 ulong value = (ulong) reader.GetInt64(col++);
                                 byte[] script = (byte[]) reader[col++];
 
-                                res.Add(new UtxoOutput(outputPoint, height, value, script, -1));
+                                res.Add(new UtxoOutput(new TxOutPoint(txHash, outputIndex), height, value, script, -1));
                             }
                         }
                     }
                 }
+
+                //todo: filter output or change signature
 
                 tx.Commit();
             }
@@ -204,17 +209,24 @@ namespace BitcoinUtilities.Node.Services.Outputs
 
         private void DeleteUnspent(List<UtxoOutput> outputs)
         {
-            List<byte[]> outPoints = outputs.Select(o => o.OutputPoint).ToList();
-
-            foreach (List<byte[]> chunk in outPoints.OrderBy(p => p[0]).Split(900))
+            using (SQLiteCommand command = new SQLiteCommand(
+                "delete from UnspentOutputs where TxHash=@TxHash and OutputIndex=@OutputIndex",
+                conn
+            ))
             {
-                int affectedRows = conn.ExecuteNonQuery(
-                    $"delete from UnspentOutputs where OutputPoint in ({SqliteUtils.GetInParameters("O", chunk.Count)})",
-                    p => SqliteUtils.SetInParameters(p, "O", DbType.Binary, chunk)
-                );
-                if (affectedRows != chunk.Count)
+                foreach (UtxoOutput output in outputs.OrderBy(p => p.OutputPoint.Hash[0]))
                 {
-                    throw new InvalidOperationException("Attempt to spend a non-existing output.");
+                    command.Parameters.Add("@TxHash", DbType.Binary).Value = output.OutputPoint.Hash;
+                    command.Parameters.Add("@OutputIndex", DbType.Int32).Value = output.OutputPoint.Index;
+                    int affectedRows = command.ExecuteNonQuery();
+                    if (affectedRows == 0)
+                    {
+                        throw new InvalidOperationException(
+                            $"Attempt to spend a non-existing output '{HexUtils.GetString(output.OutputPoint.Hash)}:{output.OutputPoint.Index}'."
+                        );
+                    }
+
+                    command.Parameters.Clear();
                 }
             }
         }
@@ -222,15 +234,16 @@ namespace BitcoinUtilities.Node.Services.Outputs
         private void InsertSpent(IEnumerable<UtxoOutput> unspentOutputs)
         {
             using (SQLiteCommand command = new SQLiteCommand(
-                "insert into SpentOutputs(OutputPoint, Height, Value, Script, SpentHeight)" +
-                "values (@OutputPoint, @Height, @Value, @Script, @SpentHeight)",
+                "insert into SpentOutputs(TxHash, OutputIndex, Height, Value, Script, SpentHeight)" +
+                "values (@TxHash, @OutputIndex, @Height, @Value, @Script, @SpentHeight)",
                 conn
             ))
             {
                 foreach (UtxoOutput output in unspentOutputs.OrderBy(p => p.Height))
                 {
+                    command.Parameters.Add("@TxHash", DbType.Binary).Value = output.OutputPoint.Hash;
+                    command.Parameters.Add("@OutputIndex", DbType.Int32).Value = output.OutputPoint.Index;
                     command.Parameters.Add("@Height", DbType.Int32).Value = output.Height;
-                    command.Parameters.Add("@OutputPoint", DbType.Binary).Value = output.OutputPoint;
                     command.Parameters.Add("@Value", DbType.UInt64).Value = output.Value;
                     command.Parameters.Add("@Script", DbType.Binary).Value = output.Script;
                     command.Parameters.Add("@SpentHeight", DbType.Int32).Value = output.SpentHeight;
@@ -244,15 +257,16 @@ namespace BitcoinUtilities.Node.Services.Outputs
         private void InsertUnspent(IEnumerable<UtxoOutput> unspentOutputs)
         {
             using (SQLiteCommand command = new SQLiteCommand(
-                "insert into UnspentOutputs(OutputPoint, Height, Value, Script)" +
-                "values (@OutputPoint, @Height, @Value, @Script)",
+                "insert into UnspentOutputs(TxHash, OutputIndex, Height, Value, Script)" +
+                "values (@TxHash, @OutputIndex, @Height, @Value, @Script)",
                 conn
             ))
             {
-                foreach (UtxoOutput output in unspentOutputs.OrderBy(p => p.OutputPoint[0]))
+                foreach (UtxoOutput output in unspentOutputs.OrderBy(p => p.OutputPoint.Hash[0]))
                 {
+                    command.Parameters.Add("@TxHash", DbType.Binary).Value = output.OutputPoint.Hash;
+                    command.Parameters.Add("@OutputIndex", DbType.Int32).Value = output.OutputPoint.Index;
                     command.Parameters.Add("@Height", DbType.Int32).Value = output.Height;
-                    command.Parameters.Add("@OutputPoint", DbType.Binary).Value = output.OutputPoint;
                     command.Parameters.Add("@Value", DbType.UInt64).Value = output.Value;
                     command.Parameters.Add("@Script", DbType.Binary).Value = output.Script;
 
@@ -295,8 +309,8 @@ namespace BitcoinUtilities.Node.Services.Outputs
                     p => p.AddWithValue("@Height", targetHeader.Height)
                 );
                 conn.ExecuteNonQuery(
-                    "insert into UnspentOutputs (OutputPoint, Height, Value, Script)" +
-                    "select OutputPoint, Height, Value, Script from SpentOutputs where SpentHeight > @Height",
+                    "insert into UnspentOutputs (TxHash, OutputIndex, Height, Value, Script)" +
+                    "select TxHash, OutputIndex, Height, Value, Script from SpentOutputs where SpentHeight > @Height",
                     p => p.AddWithValue("@Height", targetHeader.Height)
                 );
                 conn.ExecuteNonQuery(

@@ -11,10 +11,13 @@ CREATE UNIQUE INDEX UX_Headers_Height ON Headers(Height);
 
 CREATE TABLE UnspentOutputs
 (
-	OutputPoint		BLOB PRIMARY KEY NOT NULL,
+	TxHash			BLOB NOT NULL,
+	OutputIndex		INTEGER NOT NULL,
 	Height			INTEGER NOT NULL,
 	Value			INTEGER NOT NULL,
-	Script			BLOB NOT NULL
+	Script			BLOB NOT NULL,
+
+	PRIMARY KEY (TxHash, OutputIndex)
 ) WITHOUT ROWID;
 
 CREATE INDEX IX_UnspentOutputs_Height ON UnspentOutputs(Height);
@@ -22,7 +25,8 @@ CREATE INDEX IX_UnspentOutputs_Height ON UnspentOutputs(Height);
 CREATE TABLE SpentOutputs
 (
 	Id				INTEGER PRIMARY KEY NOT NULL,
-	OutputPoint		BLOB NOT NULL,
+	TxHash			BLOB NOT NULL,
+	OutputIndex		INTEGER NOT NULL,
 	Height			INTEGER NOT NULL,
 	Value			INTEGER NOT NULL,
 	Script			BLOB NOT NULL,

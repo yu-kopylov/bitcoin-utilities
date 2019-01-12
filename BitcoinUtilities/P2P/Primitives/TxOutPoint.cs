@@ -1,9 +1,11 @@
-﻿namespace BitcoinUtilities.P2P.Primitives
+﻿using System;
+
+namespace BitcoinUtilities.P2P.Primitives
 {
     /// <summary>
     /// An output transaction reference.
     /// </summary>
-    public struct TxOutPoint
+    public struct TxOutPoint : IEquatable<TxOutPoint>
     {
         private readonly byte[] hash;
         private readonly int index;
@@ -41,6 +43,36 @@
             byte[] hash = reader.ReadBytes(32);
             int index = reader.ReadInt32();
             return new TxOutPoint(hash, index);
+        }
+
+        public bool Equals(TxOutPoint other)
+        {
+            return index == other.index && ByteArrayComparer.Instance.Equals(hash, other.hash);
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (ReferenceEquals(null, obj))
+            {
+                return false;
+            }
+
+            return obj is TxOutPoint point && Equals(point);
+        }
+
+        public override int GetHashCode()
+        {
+            return (ByteArrayComparer.Instance.GetHashCode(hash) * 397) ^ index;
+        }
+
+        public static bool operator ==(TxOutPoint left, TxOutPoint right)
+        {
+            return left.Equals(right);
+        }
+
+        public static bool operator !=(TxOutPoint left, TxOutPoint right)
+        {
+            return !left.Equals(right);
         }
     }
 }

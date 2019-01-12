@@ -169,20 +169,20 @@ namespace BitcoinUtilities.Node.Services.Outputs
 
         private UtxoUpdate CreateAndValidateUtxoUpdate(DbHeader header, BlockMessage block)
         {
-            List<byte[]> outPoints = new List<byte[]>();
+            List<TxOutPoint> outPoints = new List<TxOutPoint>();
             foreach (Tx tx in block.Transactions)
             {
                 foreach (var input in tx.Inputs)
                 {
-                    outPoints.Add(UtxoOutput.CreateOutPoint(input.PreviousOutput));
+                    outPoints.Add(input.PreviousOutput);
                 }
             }
 
-            Dictionary<byte[], UtxoOutput> existingOutputs = utxoStorage.GetUnspentOutputs(outPoints).ToDictionary(
-                o => o.OutputPoint, ByteArrayComparer.Instance
+            Dictionary<TxOutPoint, UtxoOutput> existingOutputs = utxoStorage.GetUnspentOutputs(outPoints).ToDictionary(
+                o => o.OutputPoint
             );
 
-            Dictionary<byte[], UtxoOutput> newOutputs = new Dictionary<byte[], UtxoOutput>(ByteArrayComparer.Instance);
+            Dictionary<TxOutPoint, UtxoOutput> newOutputs = new Dictionary<TxOutPoint, UtxoOutput>();
 
             UtxoUpdate update = new UtxoUpdate(header.Height, header.Hash, header.ParentHash);
 
@@ -197,11 +197,11 @@ namespace BitcoinUtilities.Node.Services.Outputs
                 {
                     foreach (TxIn input in tx.Inputs)
                     {
-                        byte[] outPoint = UtxoOutput.CreateOutPoint(input.PreviousOutput);
+                        TxOutPoint outPoint = input.PreviousOutput;
 
                         if (!existingOutputs.TryGetValue(outPoint, out var oldOutput))
                         {
-                            logger.Debug($"Transaction '{HexUtils.GetString(txHash)}' attempts to spend a non-existing output '{HexUtils.GetString(outPoint)}'.");
+                            logger.Debug($"Transaction '{HexUtils.GetString(txHash)}' attempts to spend a non-existing output '{HexUtils.GetString(outPoint.Hash)}:{outPoint.Index}'.");
                             // todo: throw exception?
                             blockchain.MarkInvalid(header.Hash);
                             return null;

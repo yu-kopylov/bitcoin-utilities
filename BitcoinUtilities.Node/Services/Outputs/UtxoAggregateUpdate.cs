@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using BitcoinUtilities.P2P.Primitives;
 
 namespace BitcoinUtilities.Node.Services.Outputs
 {
@@ -13,7 +14,7 @@ namespace BitcoinUtilities.Node.Services.Outputs
 
         public List<UtxoOutput> AllSpentOutputs { get; } = new List<UtxoOutput>();
         public List<UtxoOutput> ExistingSpentOutputs { get; } = new List<UtxoOutput>();
-        public Dictionary<byte[], UtxoOutput> UnspentOutputs { get; } = new Dictionary<byte[], UtxoOutput>(ByteArrayComparer.Instance);
+        public Dictionary<TxOutPoint, UtxoOutput> UnspentOutputs { get; } = new Dictionary<TxOutPoint, UtxoOutput>();
 
         public void Add(UtxoUpdate update)
         {

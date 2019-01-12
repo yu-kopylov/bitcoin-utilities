@@ -8,6 +8,7 @@ using BitcoinUtilities.Node.Services.Headers;
 using BitcoinUtilities.Node.Services.Outputs;
 using BitcoinUtilities.P2P;
 using BitcoinUtilities.P2P.Messages;
+using BitcoinUtilities.P2P.Primitives;
 using BitcoinUtilities.Threading;
 using NUnit.Framework;
 using TestUtilities;
@@ -76,13 +77,14 @@ namespace Test.BitcoinUtilities.Node.Services.Outputs
                     $"RequestBlockEvent: {HexUtils.GetString(headers[2].Hash)}"
                 }, log.GetLog());
 
+                // todo: select by txHash?
                 var outPoints = blocks.Take(2)
                     .SelectMany(b => b.Transactions.Select(tx => new
                     {
                         tx,
                         txHash = CryptoUtils.DoubleSha256(BitcoinStreamWriter.GetBytes(tx.Write))
                     }))
-                    .SelectMany(tx => tx.tx.Outputs.Select((o, i) => UtxoOutput.CreateOutPoint(tx.txHash, i)))
+                    .SelectMany(tx => tx.tx.Outputs.Select((o, i) => new TxOutPoint(tx.txHash, i)))
                     .ToList();
 
                 var unspentOutputs = utxoStorage.GetUnspentOutputs(outPoints);
