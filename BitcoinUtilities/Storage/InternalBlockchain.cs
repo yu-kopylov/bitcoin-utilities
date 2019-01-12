@@ -176,7 +176,8 @@ namespace BitcoinUtilities.Storage
             UnspentOutputsUpdate unspentOutputsUpdate;
             try
             {
-                unspentOutputsUpdate = PrepareUnspentOutputsUpdate(block, blockMessage);
+                UnspentOutputsUpdate update = new UnspentOutputsUpdate(storage);
+                unspentOutputsUpdate = PrepareUnspentOutputsUpdate(update, block.Height, block.Hash, blockMessage);
             }
             catch (BitcoinProtocolViolationException ex)
             {
@@ -195,14 +196,12 @@ namespace BitcoinUtilities.Storage
             return true;
         }
 
-        private UnspentOutputsUpdate PrepareUnspentOutputsUpdate(StoredBlock block, BlockMessage blockMessage)
+        private static UnspentOutputsUpdate PrepareUnspentOutputsUpdate(UnspentOutputsUpdate update, int blockHeight, byte[] blockHash, BlockMessage blockMessage)
         {
             ScriptParser parser = new ScriptParser();
 
-            ulong inputsSum = GetBlockReward(block);
+            ulong inputsSum = GetBlockReward(blockHeight);
             ulong outputsSum = 0;
-
-            UnspentOutputsUpdate update = new UnspentOutputsUpdate(storage);
 
             for (int transactionNumber = 0; transactionNumber < blockMessage.Transactions.Length; transactionNumber++)
             {
@@ -217,19 +216,19 @@ namespace BitcoinUtilities.Storage
                 if (unspentOutputs.Any())
                 {
                     //todo: use network settings
-                    if (block.Height == 91842 || block.Height == 91880)
+                    if (blockHeight == 91842 || blockHeight == 91880)
                     {
                         // this blocks are exceptions from BIP-30
                         foreach (UnspentOutput unspentOutput in unspentOutputs)
                         {
-                            update.Spend(unspentOutput.TransactionHash, unspentOutput.OutputNumber, block);
+                            update.Spend(unspentOutput.TransactionHash, unspentOutput.OutputNumber, blockHeight);
                         }
                     }
                     else
                     {
                         throw new BitcoinProtocolViolationException(
                             $"The transaction '{BitConverter.ToString(transactionHash)}'" +
-                            $" in block '{BitConverter.ToString(block.Hash)}'" +
+                            $" in block '{BitConverter.ToString(blockHash)}'" +
                             $" has same hash as an existing unspent transaction (see BIP-30).");
                     }
                 }
@@ -244,30 +243,29 @@ namespace BitcoinUtilities.Storage
                         {
                             throw new BitcoinProtocolViolationException(
                                 $"The input of the transaction '{BitConverter.ToString(transactionHash)}'" +
-                                $" in block '{BitConverter.ToString(block.Hash)}'" +
+                                $" in block '{BitConverter.ToString(blockHash)}'" +
                                 $" has been already spent or did not exist.");
                         }
                         //todo: check for overflow
                         transactionInputsSum += output.Sum;
 
-                        List<ScriptCommand> inputCommands;
-                        if (!parser.TryParse(input.SignatureScript, out inputCommands))
+                        if (!parser.TryParse(input.SignatureScript, out var inputCommands))
                         {
                             throw new BitcoinProtocolViolationException(
                                 $"The transaction '{BitConverter.ToString(transactionHash)}'" +
-                                $" in block '{BitConverter.ToString(block.Hash)}'" +
+                                $" in block '{BitConverter.ToString(blockHash)}'" +
                                 $" has an invalid signature script.");
                         }
                         if (inputCommands.Any(c => !IsValidSignatureCommand(c.Code)))
                         {
                             throw new BitcoinProtocolViolationException(
                                 $"The transaction '{BitConverter.ToString(transactionHash)}'" +
-                                $" in block '{BitConverter.ToString(block.Hash)}'" +
+                                $" in block '{BitConverter.ToString(blockHash)}'" +
                                 $" has forbidden commands in the signature script.");
                         }
 
                         //todo: check signature for the output
-                        update.Spend(output.TransactionHash, output.OutputNumber, block);
+                        update.Spend(output.TransactionHash, output.OutputNumber, blockHeight);
                     }
                 }
 
@@ -283,11 +281,11 @@ namespace BitcoinUtilities.Storage
                         //todo: how Bitcoin Core works in this scenario?
                         throw new BitcoinProtocolViolationException(
                             $"The output of transaction '{BitConverter.ToString(transactionHash)}'" +
-                            $" in block '{BitConverter.ToString(block.Hash)}'" +
+                            $" in block '{BitConverter.ToString(blockHash)}'" +
                             $" has an invalid pubkey script script.");
                     }
 
-                    UnspentOutput unspentOutput = UnspentOutput.Create(block, transaction, outputNumber);
+                    UnspentOutput unspentOutput = UnspentOutput.Create(blockHeight, transaction, outputNumber);
                     update.Add(unspentOutput);
                 }
 
@@ -296,7 +294,7 @@ namespace BitcoinUtilities.Storage
                     // for coinbase transaction output sum is checked later as part of total block inputs, outputs and reward sums equation
                     throw new BitcoinProtocolViolationException(
                         $"The sum of the inputs in the transaction '{BitConverter.ToString(transactionHash)}'" +
-                        $" in block '{BitConverter.ToString(block.Hash)}'" +
+                        $" in block '{BitConverter.ToString(blockHash)}'" +
                         $" is less than the sum of the outputs.");
                 }
 
@@ -310,24 +308,23 @@ namespace BitcoinUtilities.Storage
             {
                 throw new BitcoinProtocolViolationException(
                     $"The sum of the inputs and the reward" +
-                    $" in the block '{BitConverter.ToString(block.Hash)}'" +
+                    $" in the block '{BitConverter.ToString(blockHash)}'" +
                     $" does not match the sum of the outputs.");
             }
 
             return update;
         }
 
-        private bool IsValidSignatureCommand(byte code)
+        private static bool IsValidSignatureCommand(byte code)
         {
             // note: OP_RESERVED (0x50) is considered to be a push-only command
             return code <= BitcoinScript.OP_16;
         }
 
-        private ulong GetBlockReward(StoredBlock block)
+        private static ulong GetBlockReward(int height)
         {
             //todo: use network settings
             ulong reward = 5000000000;
-            int height = block.Height;
             //todo: use network settings
             while (height >= 210000)
             {

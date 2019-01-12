@@ -20,12 +20,12 @@ namespace BitcoinUtilities.Storage
         public ulong Sum { get; }
         public byte[] PublicScript { get; }
 
-        public static UnspentOutput Create(StoredBlock block, Tx transaction, int outputNumber)
+        public static UnspentOutput Create(int height, Tx transaction, int outputNumber)
         {
             TxOut output = transaction.Outputs[outputNumber];
 
             return new UnspentOutput(
-                block.Height,
+                height,
                 CryptoUtils.DoubleSha256(BitcoinStreamWriter.GetBytes(transaction.Write)),
                 outputNumber,
                 output.Value,

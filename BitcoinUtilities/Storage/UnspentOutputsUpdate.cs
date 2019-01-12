@@ -78,9 +78,9 @@ namespace BitcoinUtilities.Storage
         /// </summary>
         /// <param name="transactionHash">The hash of a transaction.</param>
         /// <param name="outputNumber">The number of the output.</param>
-        /// <param name="block">The block in which output was spent.</param>
+        /// <param name="blockHeight">The height of the block in which output was spent.</param>
         /// <exception cref="InvalidOperationException">If the output with given parameters does not exist or was already spent.</exception>
-        public void Spend(byte[] transactionHash, int outputNumber, StoredBlock block)
+        public void Spend(byte[] transactionHash, int outputNumber, int blockHeight)
         {
             TransactionState transactionState = LoadTransaction(transactionHash);
             OutputState outputState;
@@ -95,7 +95,7 @@ namespace BitcoinUtilities.Storage
             }
             else if (outputState.StoredOutput != null && outputState.SpentOutput == null)
             {
-                outputState.SpentOutput = SpentOutput.Create(block, outputState.StoredOutput);
+                outputState.SpentOutput = SpentOutput.Create(blockHeight, outputState.StoredOutput);
             }
             else
             {

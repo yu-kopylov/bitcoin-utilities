@@ -19,11 +19,11 @@
         public ulong Sum { get; }
         public byte[] PublicScript { get; }
 
-        public static SpentOutput Create(StoredBlock block, UnspentOutput unspentOutput)
+        public static SpentOutput Create(int height, UnspentOutput unspentOutput)
         {
             return new SpentOutput(
                 unspentOutput.SourceBlockHeight,
-                block.Height,
+                height,
                 unspentOutput.TransactionHash,
                 unspentOutput.OutputNumber,
                 unspentOutput.Sum,
