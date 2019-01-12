@@ -196,14 +196,10 @@ namespace BitcoinUtilities.Threading
                     {
                         Service.OnStart();
                     }
-                    catch (BitcoinNetworkException ex)
-                    {
-                        logger.Trace(ex, $"Error during startup of service '{Service}'.");
-                        stopped = true;
-                    }
                     catch (Exception ex)
                     {
-                        logger.Error(ex, $"Error during startup of service '{Service}'.");
+                        LogServiceException(ex, null);
+                        // if service crashed, its state may be corrupted
                         stopped = true;
                     }
 
@@ -216,15 +212,11 @@ namespace BitcoinUtilities.Threading
                             {
                                 HandleEvent(evt);
                             }
-                            catch (BitcoinNetworkException ex)
-                            {
-                                logger.Trace(ex, $"Service '{Service}' failed to handle event '{evt}'.");
-                                break;
-                            }
                             catch (Exception ex)
                             {
-                                logger.Error(ex, $"Service '{Service}' failed to handle event '{evt}'.");
-                                break;
+                                LogServiceException(ex, evt);
+                                // if service crashed, its state may be corrupted
+                                stopped = true;
                             }
                         }
                         else
@@ -235,15 +227,12 @@ namespace BitcoinUtilities.Threading
 
                     try
                     {
+                        // todo: should OnTearDown be called for crashed services? such services can have corrupted state
                         Service.OnTearDown();
-                    }
-                    catch (BitcoinNetworkException ex)
-                    {
-                        logger.Trace(ex, $"Error during tear-down of service '{Service}'.");
                     }
                     catch (Exception ex)
                     {
-                        logger.Error(ex, $"Error during tear-down of service '{Service}'.");
+                        LogServiceException(ex, null);
                     }
                 }
                 catch (Exception ex)
@@ -253,8 +242,34 @@ namespace BitcoinUtilities.Threading
                 finally
                 {
                     logger.Debug($"{Service} thread has stopped.");
-                    // todo: remove service from controller to avoid queuing events to a queue without handler
+                    // todo: remove service from controller or properly stop it to avoid queuing events to a queue without handler
                 }
+            }
+
+            private void LogServiceException(Exception ex, object evt)
+            {
+                bool ignorableException = ex is BitcoinNetworkException;
+
+                if (ignorableException && logger.IsTraceEnabled)
+                {
+                    logger.Trace(ex, FormatServiceError(evt));
+                }
+
+                if (!ignorableException && logger.IsErrorEnabled)
+                {
+                    logger.Error(ex, FormatServiceError(evt));
+                }
+            }
+
+            private string FormatServiceError(object evt)
+            {
+                string serviceName = Service.GetType().Name;
+                if (evt == null)
+                {
+                    return $"Failure in {serviceName}.";
+                }
+
+                return $"{serviceName} failed to handle {evt.GetType().Name}.";
             }
 
             private object DequeEvent()

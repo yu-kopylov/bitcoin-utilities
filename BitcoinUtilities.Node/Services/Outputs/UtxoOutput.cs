@@ -1,9 +1,9 @@
-﻿using System;
+﻿using BitcoinUtilities.Node.Rules;
 using BitcoinUtilities.P2P.Primitives;
 
 namespace BitcoinUtilities.Node.Services.Outputs
 {
-    public class UtxoOutput
+    public class UtxoOutput : ISpendableOutput
     {
         public UtxoOutput(TxOutPoint outputPoint, int height, ulong value, byte[] script, int spentHeight)
         {

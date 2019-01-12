@@ -18,6 +18,7 @@ namespace Test.BitcoinUtilities.Node.Services.Outputs
         // todo: test revert and truncate, including revert to future
         // todo: test GetLastHeader
         // todo: test select by txHash vs select by outPoint
+        // todo: test outputs that was created and spent in same block
 
         [Test]
         public void TestSaveAndReopen()

@@ -7,35 +7,26 @@ namespace BitcoinUtilities.P2P.Primitives
     /// </summary>
     public struct TxOutPoint : IEquatable<TxOutPoint>
     {
-        private readonly byte[] hash;
-        private readonly int index;
-
         public TxOutPoint(byte[] hash, int index)
         {
-            this.hash = hash;
-            this.index = index;
+            Hash = hash;
+            Index = index;
         }
 
         /// <summary>
         /// The hash of the referenced transaction.
         /// </summary>
-        public byte[] Hash
-        {
-            get { return hash; }
-        }
+        public byte[] Hash { get; }
 
         /// <summary>
         /// The index of the specific output in the transaction. The first output is 0, etc.
         /// </summary>
-        public int Index
-        {
-            get { return index; }
-        }
+        public int Index { get; }
 
         public void Write(BitcoinStreamWriter writer)
         {
-            writer.Write(hash);
-            writer.Write(index);
+            writer.Write(Hash);
+            writer.Write(Index);
         }
 
         public static TxOutPoint Read(BitcoinStreamReader reader)
@@ -47,7 +38,7 @@ namespace BitcoinUtilities.P2P.Primitives
 
         public bool Equals(TxOutPoint other)
         {
-            return index == other.index && ByteArrayComparer.Instance.Equals(hash, other.hash);
+            return Index == other.Index && ByteArrayComparer.Instance.Equals(Hash, other.Hash);
         }
 
         public override bool Equals(object obj)
@@ -62,7 +53,7 @@ namespace BitcoinUtilities.P2P.Primitives
 
         public override int GetHashCode()
         {
-            return (ByteArrayComparer.Instance.GetHashCode(hash) * 397) ^ index;
+            return (ByteArrayComparer.Instance.GetHashCode(Hash) * 397) ^ Index;
         }
 
         public static bool operator ==(TxOutPoint left, TxOutPoint right)
@@ -73,6 +64,11 @@ namespace BitcoinUtilities.P2P.Primitives
         public static bool operator !=(TxOutPoint left, TxOutPoint right)
         {
             return !left.Equals(right);
+        }
+
+        public override string ToString()
+        {
+            return HexUtils.GetString(Hash) + ":" + Index;
         }
     }
 }

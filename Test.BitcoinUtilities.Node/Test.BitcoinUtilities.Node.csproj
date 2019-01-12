@@ -51,6 +51,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Services\Headers\TestBlockchain.cs" />
     <Compile Include="Services\Headers\TestHeaderStorage.cs" />
+    <Compile Include="Services\Outputs\TestUpdatableOutputSet.cs" />
     <Compile Include="Services\Outputs\TestUtxoStorage.cs" />
     <Compile Include="Services\Outputs\TestUtxoUpdateService.cs" />
   </ItemGroup>

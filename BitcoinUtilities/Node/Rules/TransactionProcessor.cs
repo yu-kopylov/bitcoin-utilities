@@ -69,7 +69,7 @@ namespace BitcoinUtilities.Node.Rules
                         }
 
                         //todo: check for overflow
-                        transactionInputsSum += output.Sum;
+                        transactionInputsSum += output.Value;
 
                         if (!sctriptParser.TryParse(input.SignatureScript, out var inputCommands))
                         {

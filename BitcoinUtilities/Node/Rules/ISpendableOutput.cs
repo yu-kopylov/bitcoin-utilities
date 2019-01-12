@@ -2,6 +2,6 @@
 {
     public interface ISpendableOutput
     {
-        ulong Sum { get; }
+        ulong Value { get; }
     }
 }

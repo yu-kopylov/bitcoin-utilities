@@ -10,6 +10,13 @@ namespace Test.BitcoinUtilities.P2P.Primitives
     public class TestTxOutPoint
     {
         [Test]
+        public void TestToString()
+        {
+            TxOutPoint outPoint = new TxOutPoint(new byte[32], 37);
+            Assert.That(outPoint.ToString(), Is.EqualTo("0000000000000000000000000000000000000000000000000000000000000000:37"));
+        }
+
+        [Test]
         public void TestEquality()
         {
             byte[] h1A = CryptoUtils.DoubleSha256(Encoding.ASCII.GetBytes("Hash1"));

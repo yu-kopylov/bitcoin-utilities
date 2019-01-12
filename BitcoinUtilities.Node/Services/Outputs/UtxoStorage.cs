@@ -310,7 +310,7 @@ namespace BitcoinUtilities.Node.Services.Outputs
                 );
                 conn.ExecuteNonQuery(
                     "insert into UnspentOutputs (TxHash, OutputIndex, Height, Value, Script)" +
-                    "select TxHash, OutputIndex, Height, Value, Script from SpentOutputs where SpentHeight > @Height",
+                    "select TxHash, OutputIndex, Height, Value, Script from SpentOutputs where SpentHeight > @Height and Height <= @Height",
                     p => p.AddWithValue("@Height", targetHeader.Height)
                 );
                 conn.ExecuteNonQuery(

@@ -20,6 +20,8 @@ namespace BitcoinUtilities.Storage
         public ulong Sum { get; }
         public byte[] PublicScript { get; }
 
+        ulong ISpendableOutput.Value => Sum;
+
         public static UnspentOutput Create(byte[] txHash, int outputIndex, int height, TxOut txOut)
         {
             return new UnspentOutput(
