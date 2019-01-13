@@ -1,9 +1,7 @@
 ﻿using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
 using BitcoinUtilities.Node.Events;
 using BitcoinUtilities.Node.Rules;
-using BitcoinUtilities.Node.Services.Blocks;
 using BitcoinUtilities.Node.Services.Headers;
 using BitcoinUtilities.P2P;
 using BitcoinUtilities.P2P.Messages;
@@ -30,7 +28,7 @@ namespace BitcoinUtilities.Node.Services.Outputs
         }
     }
 
-    public class UtxoUpdateService : EventHandlingService
+    public partial class UtxoUpdateService : EventHandlingService
     {
         private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
 
@@ -39,6 +37,8 @@ namespace BitcoinUtilities.Node.Services.Outputs
         private readonly UtxoStorage utxoStorage;
 
         private HeaderSubChain cachedChainForUpdate;
+
+        private readonly PerformanceCounters performanceCounters = new PerformanceCounters(logger);
 
         public UtxoUpdateService(EventServiceController controller, Blockchain2 blockchain, UtxoStorage utxoStorage)
         {
@@ -54,6 +54,7 @@ namespace BitcoinUtilities.Node.Services.Outputs
         public override void OnStart()
         {
             base.OnStart();
+            performanceCounters.StartRunning();
             RequestBlocks();
         }
 
@@ -68,6 +69,7 @@ namespace BitcoinUtilities.Node.Services.Outputs
 
             int requiredBlockHeight = GetRequiredBlockHeight(utxoHead);
 
+            performanceCounters.BlockRequestSent();
             controller.Raise(new PrefetchBlocksEvent(this, chain.GetChildSubChain(requiredBlockHeight, 2000)));
             controller.Raise(new RequestBlockEvent(this, chain.GetBlockByHeight(requiredBlockHeight).Hash));
         }
@@ -146,6 +148,8 @@ namespace BitcoinUtilities.Node.Services.Outputs
 
         private void AddRequestedBlock(BlockAvailableEvent evt)
         {
+            performanceCounters.BlockReceived();
+
             UtxoHeader utxoHead = utxoStorage.GetLastHeader();
             HeaderSubChain chain = GetChainForUpdate(utxoHead);
 
@@ -159,6 +163,8 @@ namespace BitcoinUtilities.Node.Services.Outputs
                     controller.Raise(new UtxoChangedEvent(requiredHeader));
                 }
             }
+
+            performanceCounters.BlockProcessed(evt.Block.Transactions.Length);
 
             RequestBlocks();
         }
