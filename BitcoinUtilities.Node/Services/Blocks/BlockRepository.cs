@@ -1,6 +1,8 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using BitcoinUtilities.Collections;
 using BitcoinUtilities.Node.Events;
+using BitcoinUtilities.Node.Services.Headers;
 using BitcoinUtilities.P2P.Messages;
 using BitcoinUtilities.Threading;
 
@@ -8,12 +10,14 @@ namespace BitcoinUtilities.Node.Services.Blocks
 {
     public class BlockRepository : EventHandlingService
     {
+        private const int MaxCachedBlocks = 3000;
+
         private readonly object monitor = new object();
 
         private readonly EventServiceController controller;
         private readonly BlockRequestCollection requestCollection;
 
-        private readonly Dictionary<byte[], BlockMessage> unsavedBlocks = new Dictionary<byte[], BlockMessage>(ByteArrayComparer.Instance);
+        private readonly LinkedDictionary<byte[], BlockMessage> blocks = new LinkedDictionary<byte[], BlockMessage>(ByteArrayComparer.Instance);
 
         public BlockRepository(EventServiceController controller, BlockRequestCollection requestCollection)
         {
@@ -28,8 +32,20 @@ namespace BitcoinUtilities.Node.Services.Blocks
         {
             lock (monitor)
             {
-                var missingBlocks = evt.Headers.Where(h => !unsavedBlocks.ContainsKey(h.Hash)).ToList();
-                // todo: also exclude headers that already exist in storage
+                List<DbHeader> missingBlocks = new List<DbHeader>();
+                foreach (DbHeader header in evt.Headers)
+                {
+                    if (blocks.TryGetValue(header.Hash, out var existingBlock))
+                    {
+                        blocks.Remove(header.Hash);
+                        blocks.Add(header.Hash, existingBlock);
+                    }
+                    else
+                    {
+                        missingBlocks.Add(header);
+                    }
+                }
+
                 requestCollection.AddRequest(evt.RequestOwner, missingBlocks);
                 controller.Raise(new BlockDownloadRequestedEvent());
             }
@@ -40,12 +56,10 @@ namespace BitcoinUtilities.Node.Services.Blocks
             lock (monitor)
             {
                 byte[] hash = evt.Hash;
-                if (unsavedBlocks.TryGetValue(hash, out var block))
+                if (blocks.TryGetValue(hash, out var block))
                 {
                     controller.Raise(new BlockAvailableEvent(hash, block));
                 }
-
-                // todo: check storage
 
                 requestCollection.SetRequired(hash);
             }
@@ -55,30 +69,17 @@ namespace BitcoinUtilities.Node.Services.Blocks
         {
             lock (monitor)
             {
-                unsavedBlocks[hash] = block;
-                if (unsavedBlocks.Count > 9999999)
-                {
-                    //todo: save to storage
-                }
+                blocks[hash] = block;
 
                 if (requestCollection.MarkReceived(hash))
                 {
                     controller.Raise(new BlockAvailableEvent(hash, block));
                 }
-            }
-        }
 
-        public BlockMessage GetBlock(byte[] hash)
-        {
-            lock (monitor)
-            {
-                if (unsavedBlocks.TryGetValue(hash, out var block))
+                while (blocks.Count > MaxCachedBlocks)
                 {
-                    return block;
+                    blocks.Remove(blocks.First().Key);
                 }
-
-                // todo: read from storage
-                return null;
             }
         }
     }

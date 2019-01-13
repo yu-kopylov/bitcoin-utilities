@@ -51,6 +51,7 @@ namespace BitcoinUtilities.Collections
             {
                 throw new InvalidOperationException("An attempt to get the last element from an empty dictionary.");
             }
+
             return lastNode.Value;
         }
 
@@ -66,15 +67,36 @@ namespace BitcoinUtilities.Collections
             get { return dict[key].Value.Value; }
             set
             {
-                LinkedListNode<KeyValuePair<TKey, TValue>> node;
-                if (dict.TryGetValue(key, out node))
+                if (dict.TryGetValue(key, out var node))
                 {
                     node.Value = new KeyValuePair<TKey, TValue>(node.Value.Key, value);
                     return;
                 }
+
                 node = list.AddLast(new KeyValuePair<TKey, TValue>(key, value));
                 dict.Add(key, node);
             }
+        }
+
+        /// <summary>
+        /// Gets the value associated with the specified key.
+        /// </summary>
+        /// <param name="key">The key of the value to get.</param>
+        /// <param name="value">
+        /// When this method returns, contains the value associated with the specified key, if the key is found;
+        /// otherwise, the default value for the type of the value parameter.
+        /// </param>
+        /// <returns>true if the key was found; otherwise, false.</returns>
+        public bool TryGetValue(TKey key, out TValue value)
+        {
+            if (dict.TryGetValue(key, out var node))
+            {
+                value = node.Value.Value;
+                return true;
+            }
+
+            value = default(TValue);
+            return false;
         }
 
         /// <summary>
@@ -114,6 +136,7 @@ namespace BitcoinUtilities.Collections
             {
                 return false;
             }
+
             dict.Remove(key);
             list.Remove(node);
             return true;

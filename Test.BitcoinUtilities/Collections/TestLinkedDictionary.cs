@@ -115,6 +115,36 @@ namespace Test.BitcoinUtilities.Collections
         }
 
         [Test]
+        public void TestTryGetValue()
+        {
+            LinkedDictionary<int, string> dict = new LinkedDictionary<int, string>();
+            dict.Add(1, "1");
+            dict.Add(2, "2");
+
+            string value;
+
+            Assert.That(dict.TryGetValue(1, out value), Is.True);
+            Assert.That(value, Is.EqualTo("1"));
+
+            Assert.That(dict.TryGetValue(2, out value), Is.True);
+            Assert.That(value, Is.EqualTo("2"));
+
+            Assert.That(dict.TryGetValue(3, out value), Is.False);
+            Assert.That(value, Is.Null);
+
+            dict.Remove(2);
+
+            Assert.That(dict.TryGetValue(1, out value), Is.True);
+            Assert.That(value, Is.EqualTo("1"));
+
+            Assert.That(dict.TryGetValue(2, out value), Is.False);
+            Assert.That(value, Is.Null);
+
+            Assert.That(dict.TryGetValue(3, out value), Is.False);
+            Assert.That(value, Is.Null);
+        }
+
+        [Test]
         public void TestExceptions()
         {
             LinkedDictionary<string, string> dict = new LinkedDictionary<string, string>();
