@@ -132,6 +132,20 @@ namespace BitcoinUtilities.Node.Services.Outputs
         {
             performanceCounters.BlockReceived();
 
+            if (IncludeBlock(evt))
+            {
+                performanceCounters.BlockProcessed(evt.Block.Transactions.Length);
+            }
+            else
+            {
+                performanceCounters.BlockDiscarded();
+            }
+
+            RequestBlocks();
+        }
+
+        private bool IncludeBlock(BlockAvailableEvent evt)
+        {
             UtxoHeader utxoHead = utxoStorage.GetLastHeader();
             HeaderSubChain chain = GetChainForUpdate(utxoHead);
 
@@ -143,12 +157,11 @@ namespace BitcoinUtilities.Node.Services.Outputs
                 {
                     utxoStorage.Update(CreateAndValidateUtxoUpdate(requiredHeader, evt.Block));
                     eventDispatcher.Raise(new UtxoChangedEvent(requiredHeader));
+                    return true;
                 }
             }
 
-            performanceCounters.BlockProcessed(evt.Block.Transactions.Length);
-
-            RequestBlocks();
+            return false;
         }
 
         private static int GetRequiredBlockHeight(UtxoHeader utxoHead)

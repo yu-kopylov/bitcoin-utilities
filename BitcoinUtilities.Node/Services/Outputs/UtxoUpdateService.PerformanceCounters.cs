@@ -15,6 +15,7 @@ namespace BitcoinUtilities.Node.Services.Outputs
             private readonly Stopwatch blockProcessingTime = new Stopwatch();
             private long blockRequestCount;
             private long blockResponsesCount;
+            private long processedBlocksCount;
             private long processedTxCount;
 
             private long runningTimeSnapshot;
@@ -22,6 +23,7 @@ namespace BitcoinUtilities.Node.Services.Outputs
             private long blockProcessingTimeSnapshot;
             private long blockRequestCountSnapshot;
             private long blockResponsesCountSnapshot;
+            private long processedBlocksCountSnapshot;
             private long processedTxCountSnapshot;
 
             public PerformanceCounters(ILogger logger)
@@ -50,7 +52,14 @@ namespace BitcoinUtilities.Node.Services.Outputs
             public void BlockProcessed(int txCount)
             {
                 blockProcessingTime.Stop();
+                processedBlocksCount++;
                 processedTxCount += txCount;
+                LogStatistic();
+            }
+
+            public void BlockDiscarded()
+            {
+                blockProcessingTime.Stop();
                 LogStatistic();
             }
 
@@ -60,30 +69,31 @@ namespace BitcoinUtilities.Node.Services.Outputs
                 long blockFetchingTimeValue = blockFetchingTime.ElapsedMilliseconds;
                 long blockProcessingTimeValue = blockProcessingTime.ElapsedMilliseconds;
 
-                if (logger.IsDebugEnabled)
-                {
-                }
-
                 if (runningTimeSnapshot + 60000 <= runningTimeValue || blockResponsesCountSnapshot + 1000 <= blockResponsesCount)
                 {
-                    StringBuilder sb = new StringBuilder();
+                    if (logger.IsDebugEnabled)
+                    {
+                        StringBuilder sb = new StringBuilder();
 
-                    sb.AppendLine($"{nameof(UtxoUpdateService)} Performance");
+                        sb.AppendLine($"{nameof(UtxoUpdateService)} Performance");
 
-                    sb.AppendLine(FormatTimeCounter("Running Time", runningTimeValue, runningTimeSnapshot, blockResponsesCount, blockResponsesCountSnapshot));
-                    sb.AppendLine(FormatTimeCounter("Block Fetching Time", blockFetchingTimeValue, blockFetchingTimeSnapshot, blockResponsesCount, blockResponsesCountSnapshot));
-                    sb.AppendLine(FormatTimeCounter("Block Processing Time", blockProcessingTimeValue, blockProcessingTimeSnapshot, blockResponsesCount, blockResponsesCountSnapshot));
-                    sb.AppendLine(FormatCounter("Block Request Count", blockRequestCount, blockRequestCountSnapshot, runningTimeValue, runningTimeSnapshot));
-                    sb.AppendLine(FormatCounter("Block Response Count", blockResponsesCount, blockResponsesCountSnapshot, runningTimeValue, runningTimeSnapshot));
-                    sb.AppendLine(FormatCounter("Processed Transactions", processedTxCount, processedTxCountSnapshot, runningTimeValue, runningTimeSnapshot));
+                        sb.AppendLine(FormatTimeCounter("Running Time", runningTimeValue, runningTimeSnapshot, blockResponsesCount, blockResponsesCountSnapshot));
+                        sb.AppendLine(FormatTimeCounter("Block Fetching Time", blockFetchingTimeValue, blockFetchingTimeSnapshot, blockResponsesCount, blockResponsesCountSnapshot));
+                        sb.AppendLine(FormatTimeCounter("Block Processing Time", blockProcessingTimeValue, blockProcessingTimeSnapshot, blockResponsesCount, blockResponsesCountSnapshot));
+                        sb.AppendLine(FormatCounter("Block Request Count", blockRequestCount, blockRequestCountSnapshot, runningTimeValue, runningTimeSnapshot));
+                        sb.AppendLine(FormatCounter("Block Response Count", blockResponsesCount, blockResponsesCountSnapshot, runningTimeValue, runningTimeSnapshot));
+                        sb.AppendLine(FormatCounter("Processed Blocks", processedBlocksCount, processedBlocksCountSnapshot, runningTimeValue, runningTimeSnapshot));
+                        sb.AppendLine(FormatCounter("Processed Transactions", processedTxCount, processedTxCountSnapshot, runningTimeValue, runningTimeSnapshot));
 
-                    logger.Debug(sb.ToString);
+                        logger.Debug(sb.ToString);
+                    }
 
                     runningTimeSnapshot = runningTimeValue;
                     blockFetchingTimeSnapshot = blockFetchingTimeValue;
                     blockProcessingTimeSnapshot = blockProcessingTimeValue;
                     blockRequestCountSnapshot = blockRequestCount;
                     blockResponsesCountSnapshot = blockResponsesCount;
+                    processedBlocksCountSnapshot = processedBlocksCount;
                     processedTxCountSnapshot = processedTxCount;
                 }
             }
