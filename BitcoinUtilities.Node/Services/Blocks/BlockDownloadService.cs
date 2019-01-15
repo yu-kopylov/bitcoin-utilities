@@ -8,13 +8,11 @@ using BitcoinUtilities.Node.Services.Headers;
 using BitcoinUtilities.P2P;
 using BitcoinUtilities.P2P.Messages;
 using BitcoinUtilities.P2P.Primitives;
-using BitcoinUtilities.Threading;
 
 namespace BitcoinUtilities.Node.Services.Blocks
 {
     public class BlockDownloadService : NodeEventHandlingService
     {
-        private readonly EventServiceController controller;
         private readonly BlockRequestCollection requestCollection;
         private readonly BlockRepository repository;
         private readonly BitcoinEndpoint endpoint;
@@ -23,13 +21,11 @@ namespace BitcoinUtilities.Node.Services.Blocks
         private readonly LinkedDictionary<byte[], DateTime> sentRequests = new LinkedDictionary<byte[], DateTime>(ByteArrayComparer.Instance);
 
         public BlockDownloadService(
-            EventServiceController controller,
             BlockRequestCollection requestCollection,
             BlockRepository repository,
             BitcoinEndpoint endpoint
         ) : base(endpoint)
         {
-            this.controller = controller;
             this.requestCollection = requestCollection;
             this.repository = repository;
             this.endpoint = endpoint;

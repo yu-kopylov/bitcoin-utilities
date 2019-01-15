@@ -32,7 +32,7 @@ namespace BitcoinUtilities.Node.Services.Outputs
     {
         private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
 
-        private readonly EventServiceController controller;
+        private readonly IEventDispatcher eventDispatcher;
         private readonly Blockchain2 blockchain;
         private readonly UtxoStorage utxoStorage;
 
@@ -40,9 +40,9 @@ namespace BitcoinUtilities.Node.Services.Outputs
 
         private readonly PerformanceCounters performanceCounters = new PerformanceCounters(logger);
 
-        public UtxoUpdateService(EventServiceController controller, Blockchain2 blockchain, UtxoStorage utxoStorage)
+        public UtxoUpdateService(IEventDispatcher eventDispatcher, Blockchain2 blockchain, UtxoStorage utxoStorage)
         {
-            this.controller = controller;
+            this.eventDispatcher = eventDispatcher;
             this.blockchain = blockchain;
             this.utxoStorage = utxoStorage;
 
@@ -70,8 +70,8 @@ namespace BitcoinUtilities.Node.Services.Outputs
             int requiredBlockHeight = GetRequiredBlockHeight(utxoHead);
 
             performanceCounters.BlockRequestSent();
-            controller.Raise(new PrefetchBlocksEvent(this, chain.GetChildSubChain(requiredBlockHeight, 2000)));
-            controller.Raise(new RequestBlockEvent(this, chain.GetBlockByHeight(requiredBlockHeight).Hash));
+            eventDispatcher.Raise(new PrefetchBlocksEvent(this, chain.GetChildSubChain(requiredBlockHeight, 2000)));
+            eventDispatcher.Raise(new RequestBlockEvent(this, chain.GetBlockByHeight(requiredBlockHeight).Hash));
         }
 
         private HeaderSubChain GetChainForUpdate(UtxoHeader utxoHead)
@@ -160,7 +160,7 @@ namespace BitcoinUtilities.Node.Services.Outputs
                 if (ByteArrayComparer.Instance.Equals(requiredHeader.Hash, evt.HeaderHash))
                 {
                     utxoStorage.Update(CreateAndValidateUtxoUpdate(requiredHeader, evt.Block));
-                    controller.Raise(new UtxoChangedEvent(requiredHeader));
+                    eventDispatcher.Raise(new UtxoChangedEvent(requiredHeader));
                 }
             }
 

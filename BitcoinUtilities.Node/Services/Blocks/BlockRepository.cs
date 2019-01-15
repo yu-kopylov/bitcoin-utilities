@@ -14,14 +14,14 @@ namespace BitcoinUtilities.Node.Services.Blocks
 
         private readonly object monitor = new object();
 
-        private readonly EventServiceController controller;
+        private readonly IEventDispatcher eventDispatcher;
         private readonly BlockRequestCollection requestCollection;
 
         private readonly LinkedDictionary<byte[], BlockMessage> blocks = new LinkedDictionary<byte[], BlockMessage>(ByteArrayComparer.Instance);
 
-        public BlockRepository(EventServiceController controller, BlockRequestCollection requestCollection)
+        public BlockRepository(IEventDispatcher eventDispatcher, BlockRequestCollection requestCollection)
         {
-            this.controller = controller;
+            this.eventDispatcher = eventDispatcher;
             this.requestCollection = requestCollection;
 
             On<PrefetchBlocksEvent>(HandlePrefetchBlocksEvent);
@@ -47,7 +47,7 @@ namespace BitcoinUtilities.Node.Services.Blocks
                 }
 
                 requestCollection.AddRequest(evt.RequestOwner, missingBlocks);
-                controller.Raise(new BlockDownloadRequestedEvent());
+                eventDispatcher.Raise(new BlockDownloadRequestedEvent());
             }
         }
 
@@ -58,7 +58,7 @@ namespace BitcoinUtilities.Node.Services.Blocks
                 byte[] hash = evt.Hash;
                 if (blocks.TryGetValue(hash, out var block))
                 {
-                    controller.Raise(new BlockAvailableEvent(hash, block));
+                    eventDispatcher.Raise(new BlockAvailableEvent(hash, block));
                 }
 
                 requestCollection.SetRequired(hash);
@@ -73,7 +73,7 @@ namespace BitcoinUtilities.Node.Services.Blocks
 
                 if (requestCollection.MarkReceived(hash))
                 {
-                    controller.Raise(new BlockAvailableEvent(hash, block));
+                    eventDispatcher.Raise(new BlockAvailableEvent(hash, block));
                 }
 
                 while (blocks.Count > MaxCachedBlocks)

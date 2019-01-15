@@ -26,7 +26,7 @@ namespace BitcoinUtilities.Node.Services.Blocks
         {
             return new IEventHandlingService[]
             {
-                new BlockDownloadService(node.EventServiceController, node.Resources.Get<BlockRequestCollection>(), node.Resources.Get<BlockRepository>(), endpoint)
+                new BlockDownloadService(node.Resources.Get<BlockRequestCollection>(), node.Resources.Get<BlockRepository>(), endpoint)
             };
         }
     }

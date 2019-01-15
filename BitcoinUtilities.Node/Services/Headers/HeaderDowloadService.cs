@@ -33,14 +33,14 @@ namespace BitcoinUtilities.Node.Services.Headers
     {
         private static readonly ILogger logger = LogManager.GetLogger(nameof(HeaderDowloadService));
 
-        private readonly EventServiceController controller;
+        private readonly IEventDispatcher eventDispatcher;
         private readonly Blockchain2 blockchain;
         private readonly NetworkParameters networkParameters;
         private readonly BitcoinEndpoint endpoint;
 
-        public HeaderDowloadService(EventServiceController controller, Blockchain2 blockchain, NetworkParameters networkParameters, BitcoinEndpoint endpoint) : base(endpoint)
+        public HeaderDowloadService(IEventDispatcher eventDispatcher, Blockchain2 blockchain, NetworkParameters networkParameters, BitcoinEndpoint endpoint) : base(endpoint)
         {
-            this.controller = controller;
+            this.eventDispatcher = eventDispatcher;
             this.blockchain = blockchain;
             this.networkParameters = networkParameters;
             this.endpoint = endpoint;
@@ -104,7 +104,7 @@ namespace BitcoinUtilities.Node.Services.Headers
             var bestHeadAfterUpdate = blockchain.GetBestHead();
             if (bestHeadBeforeUpdate != bestHeadAfterUpdate)
             {
-                controller.Raise(new BestHeadChangedEvent());
+                eventDispatcher.Raise(new BestHeadChangedEvent());
             }
         }
 

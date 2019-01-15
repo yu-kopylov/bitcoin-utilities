@@ -11,7 +11,7 @@ namespace BitcoinUtilities.Threading
     /// <p>Uses different threads for concurrent processing of events.</p>
     /// <p>Each service can assume that it is called from one thread only, and that events are passed to it in the same order in which they were raised.</p>
     /// </summary>
-    public class EventServiceController : IDisposable
+    public class EventServiceController : IEventDispatcher, IDisposable
     {
         private readonly object monitor = new object();
         private readonly List<ServiceThread> services = new List<ServiceThread>();
