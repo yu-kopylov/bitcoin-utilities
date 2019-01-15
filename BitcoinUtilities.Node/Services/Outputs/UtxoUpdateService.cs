@@ -1,6 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.Threading;
-using BitcoinUtilities.Node.Components;
 using BitcoinUtilities.Node.Events;
 using BitcoinUtilities.Node.Rules;
 using BitcoinUtilities.Node.Services.Headers;
@@ -12,23 +10,6 @@ using NLog;
 
 namespace BitcoinUtilities.Node.Services.Outputs
 {
-    public class UtxoUpdateServiceFactory : INodeModule
-    {
-        public void CreateResources(BitcoinNode node)
-        {
-        }
-
-        public IReadOnlyCollection<IEventHandlingService> CreateNodeServices(BitcoinNode node, CancellationToken cancellationToken)
-        {
-            return new IEventHandlingService[] {new UtxoUpdateService(node.EventServiceController, node.Blockchain, node.UtxoStorage)};
-        }
-
-        public IReadOnlyCollection<IEventHandlingService> CreateEndpointServices(BitcoinNode node, BitcoinEndpoint endpoint)
-        {
-            return new IEventHandlingService[0];
-        }
-    }
-
     public partial class UtxoUpdateService : EventHandlingService
     {
         private static readonly ILogger logger = LogManager.GetCurrentClassLogger();

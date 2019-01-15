@@ -3,13 +3,13 @@ using BitcoinUtilities.Node.Events;
 using BitcoinUtilities.P2P;
 using BitcoinUtilities.Threading;
 
-namespace BitcoinUtilities.Node.Services
+namespace BitcoinUtilities.Node.Components
 {
-    public abstract class NodeEventHandlingService : EventHandlingService
+    public abstract class EndpointEventHandlingService : EventHandlingService
     {
         private readonly BitcoinEndpoint endpoint;
 
-        protected NodeEventHandlingService(BitcoinEndpoint endpoint)
+        protected EndpointEventHandlingService(BitcoinEndpoint endpoint)
         {
             this.endpoint = endpoint;
         }

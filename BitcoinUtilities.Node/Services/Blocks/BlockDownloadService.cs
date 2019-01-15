@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using BitcoinUtilities.Collections;
+using BitcoinUtilities.Node.Components;
 using BitcoinUtilities.Node.Events;
 using BitcoinUtilities.Node.Rules;
 using BitcoinUtilities.Node.Services.Headers;
@@ -11,7 +12,7 @@ using BitcoinUtilities.P2P.Primitives;
 
 namespace BitcoinUtilities.Node.Services.Blocks
 {
-    public class BlockDownloadService : NodeEventHandlingService
+    public class BlockDownloadService : EndpointEventHandlingService
     {
         private readonly BlockRequestCollection requestCollection;
         private readonly BlockRepository repository;

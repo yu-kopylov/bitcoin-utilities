@@ -63,13 +63,16 @@
     <Compile Include="Services\Blocks\BlocksModule.cs" />
     <Compile Include="Services\Blocks\BlockRepository.cs" />
     <Compile Include="Services\Blocks\BlockRequestCollection.cs" />
+    <Compile Include="Services\Discovery\NodeDiscoveryModule.cs" />
     <Compile Include="Services\Headers\Blockchain2.cs" />
     <Compile Include="Services\Headers\DbHeader.cs" />
     <Compile Include="Services\Headers\HeaderDowloadService.cs" />
+    <Compile Include="Services\Headers\HeadersModule.cs" />
     <Compile Include="Services\Headers\HeaderStorage.cs" />
     <Compile Include="Services\Headers\HeaderSubChain.cs" />
     <Compile Include="Services\Discovery\NodeDiscoveryService.cs" />
-    <Compile Include="Services\NodeEventHandlingService.cs" />
+    <Compile Include="Components\EndpointEventHandlingService.cs" />
+    <Compile Include="Services\Outputs\UtxoModule.cs" />
     <Compile Include="Services\Outputs\UtxoUpdateService.PerformanceCounters.cs" />
     <Compile Include="Services\Outputs\UpdatableOutputSet.cs" />
     <Compile Include="Services\Outputs\UtxoAggregateUpdate.cs" />

@@ -57,10 +57,10 @@ namespace BitcoinUtilities.Node
             this.blockchain = new Blockchain2(headerStorage, networkParameters.GenesisBlock.BlockHeader);
             this.utxoStorage = UtxoStorage.Open(Path.Combine(dataFolder, "utxo.db"));
 
-            modules.Add(new NodeDiscoveryServiceFactory());
-            modules.Add(new HeaderDowloadServiceFactory());
+            modules.Add(new NodeDiscoveryModule());
+            modules.Add(new HeadersModule());
             modules.Add(new BlocksModule());
-            modules.Add(new UtxoUpdateServiceFactory());
+            modules.Add(new UtxoModule());
         }
 
         public void Dispose()
