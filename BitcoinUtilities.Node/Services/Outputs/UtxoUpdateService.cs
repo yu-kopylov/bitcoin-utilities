@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Threading;
+using BitcoinUtilities.Node.Components;
 using BitcoinUtilities.Node.Events;
 using BitcoinUtilities.Node.Rules;
 using BitcoinUtilities.Node.Services.Headers;
@@ -11,7 +12,7 @@ using NLog;
 
 namespace BitcoinUtilities.Node.Services.Outputs
 {
-    public class UtxoUpdateServiceFactory : INodeEventServiceFactory
+    public class UtxoUpdateServiceFactory : INodeModule
     {
         public void CreateResources(BitcoinNode node)
         {

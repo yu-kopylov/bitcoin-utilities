@@ -3,12 +3,12 @@ using System.Threading;
 using BitcoinUtilities.P2P;
 using BitcoinUtilities.Threading;
 
-namespace BitcoinUtilities.Node
+namespace BitcoinUtilities.Node.Components
 {
     /// <summary>
     /// A factory that produces services.
     /// </summary>
-    public interface INodeEventServiceFactory
+    public interface INodeModule
     {
         /// <summary>
         /// Creates resources that will be used by services.

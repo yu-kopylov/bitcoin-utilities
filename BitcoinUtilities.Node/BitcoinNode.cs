@@ -27,7 +27,7 @@ namespace BitcoinUtilities.Node
     {
         private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
 
-        private readonly List<INodeEventServiceFactory> eventServiceFactories = new List<INodeEventServiceFactory>();
+        private readonly List<INodeModule> modules = new List<INodeModule>();
         private readonly EventServiceController eventServiceController = new EventServiceController();
         private readonly NodeResourceCollection resources = new NodeResourceCollection();
 
@@ -57,10 +57,10 @@ namespace BitcoinUtilities.Node
             this.blockchain = new Blockchain2(headerStorage, networkParameters.GenesisBlock.BlockHeader);
             this.utxoStorage = UtxoStorage.Open(Path.Combine(dataFolder, "utxo.db"));
 
-            eventServiceFactories.Add(new NodeDiscoveryServiceFactory());
-            eventServiceFactories.Add(new HeaderDowloadServiceFactory());
-            eventServiceFactories.Add(new BlocksModule());
-            eventServiceFactories.Add(new UtxoUpdateServiceFactory());
+            modules.Add(new NodeDiscoveryServiceFactory());
+            modules.Add(new HeaderDowloadServiceFactory());
+            modules.Add(new BlocksModule());
+            modules.Add(new UtxoUpdateServiceFactory());
         }
 
         public void Dispose()
@@ -137,14 +137,14 @@ namespace BitcoinUtilities.Node
             //todo: use setting to specify port and operating mode
             connectionListener = BitcoinConnectionListener.StartListener(IPAddress.Any, 8333, HandleIncomingConnection);
 
-            foreach (var factory in eventServiceFactories)
+            foreach (var module in modules)
             {
-                factory.CreateResources(this);
+                module.CreateResources(this);
             }
 
-            foreach (var factory in eventServiceFactories)
+            foreach (var module in modules)
             {
-                foreach (var service in factory.CreateNodeServices(this, cancellationTokenSource.Token))
+                foreach (var service in module.CreateNodeServices(this, cancellationTokenSource.Token))
                 {
                     eventServiceController.AddService(service);
                 }
@@ -227,9 +227,9 @@ namespace BitcoinUtilities.Node
 
             List<IEventHandlingService> endpointServices = new List<IEventHandlingService>();
 
-            foreach (var factory in eventServiceFactories)
+            foreach (var module in modules)
             {
-                foreach (var service in factory.CreateEndpointServices(this, endpoint))
+                foreach (var service in module.CreateEndpointServices(this, endpoint))
                 {
                     eventServiceController.AddService(service);
                     endpointServices.Add(service);

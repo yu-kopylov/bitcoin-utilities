@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using BitcoinUtilities.Node.Components;
 using BitcoinUtilities.Node.Events;
 using BitcoinUtilities.Node.Rules;
 using BitcoinUtilities.P2P;
@@ -12,7 +13,7 @@ using NLog;
 
 namespace BitcoinUtilities.Node.Services.Headers
 {
-    public class HeaderDowloadServiceFactory : INodeEventServiceFactory
+    public class HeaderDowloadServiceFactory : INodeModule
     {
         public void CreateResources(BitcoinNode node)
         {

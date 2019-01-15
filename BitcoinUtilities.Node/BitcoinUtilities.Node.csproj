@@ -57,7 +57,7 @@
     <Compile Include="Events\PrefetchBlocksEvent.cs" />
     <Compile Include="Events\BlockDownloadRequestedEvent.cs" />
     <Compile Include="Events\UtxoChangedEvent.cs" />
-    <Compile Include="INodeEventServiceFactory.cs" />
+    <Compile Include="Components\INodeModule.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Services\Blocks\BlockDownloadService.cs" />
     <Compile Include="Services\Blocks\BlocksModule.cs" />

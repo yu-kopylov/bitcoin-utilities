@@ -1,11 +1,12 @@
 ﻿using System.Collections.Generic;
 using System.Threading;
+using BitcoinUtilities.Node.Components;
 using BitcoinUtilities.P2P;
 using BitcoinUtilities.Threading;
 
 namespace BitcoinUtilities.Node.Services.Blocks
 {
-    public class BlocksModule : INodeEventServiceFactory
+    public class BlocksModule : INodeModule
     {
         public void CreateResources(BitcoinNode node)
         {

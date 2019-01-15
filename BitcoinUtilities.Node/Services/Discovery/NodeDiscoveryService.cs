@@ -3,13 +3,14 @@ using System.Collections.Generic;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
+using BitcoinUtilities.Node.Components;
 using BitcoinUtilities.Node.Events;
 using BitcoinUtilities.P2P;
 using BitcoinUtilities.Threading;
 
 namespace BitcoinUtilities.Node.Services.Discovery
 {
-    public class NodeDiscoveryServiceFactory : INodeEventServiceFactory
+    public class NodeDiscoveryServiceFactory : INodeModule
     {
         public void CreateResources(BitcoinNode node)
         {
