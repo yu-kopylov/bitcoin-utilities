@@ -34,7 +34,7 @@ namespace BitcoinUtilities.Node
         private readonly NetworkParameters networkParameters;
 
         private readonly HeaderStorage headerStorage;
-        private readonly Blockchain2 blockchain;
+        private readonly Blockchain blockchain;
         private readonly UtxoStorage utxoStorage;
 
         private NodeAddressCollection addressCollection;
@@ -54,7 +54,7 @@ namespace BitcoinUtilities.Node
             // todo: storages are implementation-specific, should use some resource factory instead
             // todo: align creation of files and folders
             this.headerStorage = HeaderStorage.Open(Path.Combine(dataFolder, "headers.db"));
-            this.blockchain = new Blockchain2(headerStorage, networkParameters.GenesisBlock.BlockHeader);
+            this.blockchain = new Blockchain(headerStorage, networkParameters.GenesisBlock.BlockHeader);
             this.utxoStorage = UtxoStorage.Open(Path.Combine(dataFolder, "utxo.db"));
 
             modules.Add(new NodeDiscoveryModule());
@@ -109,7 +109,7 @@ namespace BitcoinUtilities.Node
             get { return resources; }
         }
 
-        public Blockchain2 Blockchain
+        public Blockchain Blockchain
         {
             get { return blockchain; }
         }

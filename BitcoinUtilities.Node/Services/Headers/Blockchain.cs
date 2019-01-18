@@ -11,7 +11,7 @@ namespace BitcoinUtilities.Node.Services.Headers
     /// An connected tree of headers.
     /// The tree is stored in memory, and update operations are mirrored in the given storage.
     /// </summary>
-    public class Blockchain2
+    public class Blockchain
     {
         private readonly object monitor = new object();
 
@@ -29,7 +29,7 @@ namespace BitcoinUtilities.Node.Services.Headers
         /// </summary>
         /// <param name="storage">The storage to read headers from.</param>
         /// <param name="genesisBlockHeader">The header of the genesis block.</param>
-        public Blockchain2(HeaderStorage storage, BlockHeader genesisBlockHeader)
+        public Blockchain(HeaderStorage storage, BlockHeader genesisBlockHeader)
         {
             this.storage = storage;
             this.root = new DbHeader(genesisBlockHeader, CryptoUtils.DoubleSha256(BitcoinStreamWriter.GetBytes(genesisBlockHeader.Write)), 0, 0, true);

@@ -17,11 +17,11 @@ namespace BitcoinUtilities.Node.Services.Headers
         private static readonly ILogger logger = LogManager.GetLogger(nameof(HeaderDowloadService));
 
         private readonly IEventDispatcher eventDispatcher;
-        private readonly Blockchain2 blockchain;
+        private readonly Blockchain blockchain;
         private readonly NetworkParameters networkParameters;
         private readonly BitcoinEndpoint endpoint;
 
-        public HeaderDowloadService(IEventDispatcher eventDispatcher, Blockchain2 blockchain, NetworkParameters networkParameters, BitcoinEndpoint endpoint) : base(endpoint)
+        public HeaderDowloadService(IEventDispatcher eventDispatcher, Blockchain blockchain, NetworkParameters networkParameters, BitcoinEndpoint endpoint) : base(endpoint)
         {
             this.eventDispatcher = eventDispatcher;
             this.blockchain = blockchain;

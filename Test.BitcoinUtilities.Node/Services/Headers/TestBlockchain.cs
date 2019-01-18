@@ -32,7 +32,7 @@ namespace Test.BitcoinUtilities.Node.Services.Headers
 
             using (HeaderStorage storage = HeaderStorage.Open(filename))
             {
-                Blockchain2 blockchain = new Blockchain2(storage, sampleTree["a0"].Header);
+                Blockchain blockchain = new Blockchain(storage, sampleTree["a0"].Header);
 
                 blockchain.Add(headersA);
                 blockchain.Add(headersB);
@@ -44,7 +44,7 @@ namespace Test.BitcoinUtilities.Node.Services.Headers
 
             using (HeaderStorage storage = HeaderStorage.Open(filename))
             {
-                Blockchain2 blockchain = new Blockchain2(storage, sampleTree["a0"].Header);
+                Blockchain blockchain = new Blockchain(storage, sampleTree["a0"].Header);
 
                 var foundHeaders = blockchain.GetHeaders(allHeaders.Select(h => h.Hash));
 
@@ -78,7 +78,7 @@ namespace Test.BitcoinUtilities.Node.Services.Headers
             string filename = Path.Combine(testFolder, "headers.db");
             using (HeaderStorage storage = HeaderStorage.Open(filename))
             {
-                Blockchain2 blockchain = new Blockchain2(storage, sampleTree["a0"].Header);
+                Blockchain blockchain = new Blockchain(storage, sampleTree["a0"].Header);
 
                 List<DbHeader> headersA = sampleTree.GetHeaders("a0", "a1", "a2", "a3", "a4", "a5");
                 List<DbHeader> headersB = sampleTree.GetHeaders("b5");
@@ -118,7 +118,7 @@ namespace Test.BitcoinUtilities.Node.Services.Headers
             string filename = Path.Combine(testFolder, "headers.db");
             using (HeaderStorage storage = HeaderStorage.Open(filename))
             {
-                Blockchain2 blockchain = new Blockchain2(storage, sampleTree["a0"].Header);
+                Blockchain blockchain = new Blockchain(storage, sampleTree["a0"].Header);
 
                 List<DbHeader> headersA = sampleTree.GetHeaders("a0", "a1", "a2", "a3", "a4", "a5");
                 List<DbHeader> headersB = sampleTree.GetHeaders("b5");
@@ -168,7 +168,7 @@ namespace Test.BitcoinUtilities.Node.Services.Headers
             string filename = Path.Combine(testFolder, "headers.db");
             using (HeaderStorage storage = HeaderStorage.Open(filename))
             {
-                Blockchain2 blockchain = new Blockchain2(storage, sampleTree["a0"].Header);
+                Blockchain blockchain = new Blockchain(storage, sampleTree["a0"].Header);
 
                 List<DbHeader> headersA = sampleTree.GetHeaders("a0", "a1", "a2", "a3", "a4", "a5");
                 List<DbHeader> headersB = sampleTree.GetHeaders("b5");
@@ -209,7 +209,7 @@ namespace Test.BitcoinUtilities.Node.Services.Headers
             string filename = Path.Combine(testFolder, "headers.db");
             using (HeaderStorage storage = HeaderStorage.Open(filename))
             {
-                Blockchain2 blockchain = new Blockchain2(storage, sampleTree["a0"].Header);
+                Blockchain blockchain = new Blockchain(storage, sampleTree["a0"].Header);
                 blockchain.Add(sampleTree.GetHeaders("a1", "a2", "a3", "a4", "a5"));
                 blockchain.Add(sampleTree.GetHeaders("b5"));
                 blockchain.Add(sampleTree.GetHeaders("c3", "c4", "c5"));
@@ -262,7 +262,7 @@ namespace Test.BitcoinUtilities.Node.Services.Headers
             string filename = Path.Combine(testFolder, "headers.db");
             using (HeaderStorage storage = HeaderStorage.Open(filename))
             {
-                Blockchain2 blockchain = new Blockchain2(storage, sampleTree["a0"].Header);
+                Blockchain blockchain = new Blockchain(storage, sampleTree["a0"].Header);
                 Assert.That(blockchain.GetValidHeads().Select(sampleTree.GetName), Is.EquivalentTo(new string[] {"a0"}));
                 Assert.That(sampleTree.GetName(blockchain.GetBestHead()), Is.EqualTo("a0"));
                 Assert.That(sampleTree.GetName(blockchain.GetBestHead(sampleTree["a3"].Hash)), Is.Null);

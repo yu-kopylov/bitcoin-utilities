@@ -42,7 +42,7 @@ namespace Test.BitcoinUtilities.Node.Services.Outputs
             using (UtxoStorage utxoStorage = UtxoStorage.Open(utxoFile))
             using (EventServiceController controller = new EventServiceController())
             {
-                var blockchain = new Blockchain2(headerStorage, blocks[0].BlockHeader);
+                var blockchain = new Blockchain(headerStorage, blocks[0].BlockHeader);
                 blockchain.Add(headers);
 
                 MessageLog log = new MessageLog();

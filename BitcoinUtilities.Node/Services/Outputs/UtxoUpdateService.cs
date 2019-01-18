@@ -15,14 +15,14 @@ namespace BitcoinUtilities.Node.Services.Outputs
         private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
 
         private readonly IEventDispatcher eventDispatcher;
-        private readonly Blockchain2 blockchain;
+        private readonly Blockchain blockchain;
         private readonly UtxoStorage utxoStorage;
 
         private HeaderSubChain cachedChainForUpdate;
 
         private readonly PerformanceCounters performanceCounters = new PerformanceCounters(logger);
 
-        public UtxoUpdateService(IEventDispatcher eventDispatcher, Blockchain2 blockchain, UtxoStorage utxoStorage)
+        public UtxoUpdateService(IEventDispatcher eventDispatcher, Blockchain blockchain, UtxoStorage utxoStorage)
         {
             this.eventDispatcher = eventDispatcher;
             this.blockchain = blockchain;
