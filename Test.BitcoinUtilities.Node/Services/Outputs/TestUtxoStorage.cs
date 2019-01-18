@@ -264,12 +264,22 @@ namespace Test.BitcoinUtilities.Node.Services.Outputs
                             existingOutputs.RemoveAt(existingOutputs.Count - 1);
                         }
 
-                        Stopwatch sw = Stopwatch.StartNew();
                         var requiredOutPoints = new HashSet<TxOutPoint>(update.ExistingSpentOutputs.Select(o => o.OutputPoint));
-                        IReadOnlyCollection<UtxoOutput> foundOutputs = storage.GetUnspentOutputs(requiredOutPoints.Select(p => p.Hash).Distinct())
+                        var requiredTxHashes = new HashSet<byte[]>(requiredOutPoints.Select(o => o.Hash));
+                        // emulating searches for already spent transactions
+                        requiredTxHashes.Add(CryptoUtils.DoubleSha256(Encoding.ASCII.GetBytes($"Header: {height}, Tx: Fake1")));
+                        requiredTxHashes.Add(CryptoUtils.DoubleSha256(Encoding.ASCII.GetBytes($"Header: {height}, Tx: Fake2")));
+                        requiredTxHashes.Add(CryptoUtils.DoubleSha256(Encoding.ASCII.GetBytes($"Header: {height}, Tx: Fake3")));
+                        requiredTxHashes.Add(CryptoUtils.DoubleSha256(Encoding.ASCII.GetBytes($"Header: {height}, Tx: Fake4")));
+
+                        Stopwatch sw = Stopwatch.StartNew();
+
+                        IReadOnlyCollection<UtxoOutput> foundOutputs = storage.GetUnspentOutputs(requiredTxHashes)
                             .Where(o => requiredOutPoints.Contains(o.OutputPoint))
                             .ToList();
-                        File.AppendAllText(logFilename, $"Read {foundOutputs.Count} of {update.ExistingSpentOutputs.Count} outputs to spend in header {height} in {sw.ElapsedMilliseconds} ms.\r\n");
+                        File.AppendAllText(logFilename,
+                            $"Read {foundOutputs.Count} of {update.ExistingSpentOutputs.Count} outputs" +
+                            $" to spend in header {height} in {sw.ElapsedMilliseconds} ms.\r\n");
 
                         sw.Restart();
 
@@ -292,7 +302,8 @@ namespace Test.BitcoinUtilities.Node.Services.Outputs
                         }
 
                         File.AppendAllText(logFilename,
-                            $"Constructed set of {foundOutputsByOutPoint.Count} outputs by replaying {pendingUpdates.Count} updates on fetched outputs in {sw.ElapsedMilliseconds} ms.\r\n");
+                            $"Constructed set of {foundOutputsByOutPoint.Count} outputs by replaying {pendingUpdates.Count} updates" +
+                            $" on fetched outputs in {sw.ElapsedMilliseconds} ms.\r\n");
                     }
 
                     while (existingOutputs.Count > 200_000)
