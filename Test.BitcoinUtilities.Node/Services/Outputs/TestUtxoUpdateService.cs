@@ -8,7 +8,6 @@ using BitcoinUtilities.Node.Services.Headers;
 using BitcoinUtilities.Node.Services.Outputs;
 using BitcoinUtilities.P2P;
 using BitcoinUtilities.P2P.Messages;
-using BitcoinUtilities.P2P.Primitives;
 using BitcoinUtilities.Threading;
 using NUnit.Framework;
 using TestUtilities;
@@ -77,20 +76,21 @@ namespace Test.BitcoinUtilities.Node.Services.Outputs
                     $"RequestBlockEvent: {HexUtils.GetString(headers[2].Hash)}"
                 }, log.GetLog());
 
-                // todo: select by txHash?
-                var outPoints = blocks.Take(2)
-                    .SelectMany(b => b.Transactions.Select(tx => new
-                    {
-                        tx,
-                        txHash = CryptoUtils.DoubleSha256(BitcoinStreamWriter.GetBytes(tx.Write))
-                    }))
-                    .SelectMany(tx => tx.tx.Outputs.Select((o, i) => new TxOutPoint(tx.txHash, i)))
+                var expectedOutputs = blocks
+                    .Take(2)
+                    .SelectMany(b => b.Transactions)
+                    .SelectMany(tx => tx.Outputs)
                     .ToList();
 
-                var unspentOutputs = utxoStorage.GetUnspentOutputs(outPoints);
+                var allTxHashes = blocks
+                    .SelectMany(b => b.Transactions)
+                    .Select(tx => CryptoUtils.DoubleSha256(BitcoinStreamWriter.GetBytes(tx.Write)))
+                    .ToList();
 
-                Assume.That(outPoints.Count, Is.EqualTo(2));
-                Assert.That(unspentOutputs.Count, Is.EqualTo(outPoints.Count));
+                var unspentOutputs = utxoStorage.GetUnspentOutputs(allTxHashes);
+
+                Assume.That(expectedOutputs.Count, Is.EqualTo(2));
+                Assert.That(unspentOutputs.Count, Is.EqualTo(expectedOutputs.Count));
 
                 controller.Stop();
             }

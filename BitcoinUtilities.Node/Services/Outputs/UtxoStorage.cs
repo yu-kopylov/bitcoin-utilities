@@ -107,50 +107,6 @@ namespace BitcoinUtilities.Node.Services.Outputs
 
             return res;
         }
-        
-        // todo: remove
-        public IReadOnlyCollection<UtxoOutput> GetUnspentOutputs(IEnumerable<TxOutPoint> outputPoints)
-        {
-            List<UtxoOutput> res = new List<UtxoOutput>();
-
-            using (var tx = conn.BeginTransaction())
-            {
-                foreach (List<byte[]> chunk in outputPoints.Select(o => o.Hash).Distinct(ByteArrayComparer.Instance).OrderBy(h => h[0]).Split(900))
-                {
-                    //todo: compare 1-by-1 select vs IN
-                    using (SQLiteCommand command = new SQLiteCommand(
-                        "select TxHash, OutputIndex, Height, Value, Script from UnspentOutputs" +
-                        $" where TxHash in ({SqliteUtils.GetInParameters("H", chunk.Count)})",
-                        conn
-                    ))
-                    {
-                        SqliteUtils.SetInParameters(command.Parameters, "H", DbType.Binary, chunk);
-
-                        using (var reader = command.ExecuteReader())
-                        {
-                            while (reader.Read())
-                            {
-                                int col = 0;
-
-                                byte[] txHash = (byte[]) reader[col++];
-                                int outputIndex = reader.GetInt32(col++);
-                                int height = reader.GetInt32(col++);
-                                ulong value = (ulong) reader.GetInt64(col++);
-                                byte[] script = (byte[]) reader[col++];
-
-                                res.Add(new UtxoOutput(new TxOutPoint(txHash, outputIndex), height, value, script, -1));
-                            }
-                        }
-                    }
-                }
-
-                //todo: filter output or change signature
-
-                tx.Commit();
-            }
-
-            return res;
-        }
 
         public void Update(UtxoUpdate update)
         {

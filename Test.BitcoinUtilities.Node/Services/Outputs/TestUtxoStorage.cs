@@ -17,7 +17,6 @@ namespace Test.BitcoinUtilities.Node.Services.Outputs
     {
         // todo: test revert and truncate, including revert to future
         // todo: test GetLastHeader
-        // todo: test select by txHash vs select by outPoint
         // todo: test outputs that was created and spent in same block
 
         [Test]
@@ -49,19 +48,15 @@ namespace Test.BitcoinUtilities.Node.Services.Outputs
             UtxoOutput header2Tx1Out0 = new UtxoOutput(new TxOutPoint(header2Tx1, 0), 2, 0x1234567890123450ul, new byte[] {1, 2, 0}, -1);
             UtxoOutput header2Tx1Out1 = new UtxoOutput(new TxOutPoint(header2Tx1, 1), 2, 0xF234567890123450ul, new byte[] {2, 1, 1}, -1);
 
-            var allOutputs = new List<UtxoOutput>
+            var allTxHashes = new List<byte[]>
             {
-                header0Tx1Out0,
-                header0Tx1Out1,
-                header0Tx2Out0,
-                header0Tx2Out1,
+                header0Tx1,
+                header0Tx2,
 
-                header1Tx1Out0,
-                header1Tx2Out0,
-                header1Tx2Out1,
+                header1Tx1,
+                header1Tx2,
 
-                header2Tx1Out0,
-                header2Tx1Out1
+                header2Tx1
             };
 
             using (UtxoStorage storage1 = UtxoStorage.Open(filename))
@@ -94,8 +89,6 @@ namespace Test.BitcoinUtilities.Node.Services.Outputs
 
             using (UtxoStorage storage2 = UtxoStorage.Open(filename))
             {
-                List<TxOutPoint> allOutputPoints = allOutputs.Select(o => o.OutputPoint).ToList();
-
                 Assert.AreEqual
                 (
                     SortAndFormat(new UtxoOutput[]
@@ -106,7 +99,7 @@ namespace Test.BitcoinUtilities.Node.Services.Outputs
                         header2Tx1Out0,
                         header2Tx1Out1
                     }),
-                    SortAndFormat(storage2.GetUnspentOutputs(allOutputPoints))
+                    SortAndFormat(storage2.GetUnspentOutputs(allTxHashes))
                 );
 
                 storage2.RevertTo(header1);
@@ -121,7 +114,7 @@ namespace Test.BitcoinUtilities.Node.Services.Outputs
                         header0Tx1Out1,
                         header1Tx2Out0
                     }),
-                    SortAndFormat(storage2.GetUnspentOutputs(allOutputPoints))
+                    SortAndFormat(storage2.GetUnspentOutputs(allTxHashes))
                 );
             }
         }
@@ -155,19 +148,15 @@ namespace Test.BitcoinUtilities.Node.Services.Outputs
             UtxoOutput header2Tx1Out0 = new UtxoOutput(new TxOutPoint(header2Tx1, 0), 2, 0x1234567890123450ul, new byte[] {1, 2, 0}, -1);
             UtxoOutput header2Tx1Out1 = new UtxoOutput(new TxOutPoint(header2Tx1, 1), 2, 0xF234567890123450ul, new byte[] {2, 1, 1}, -1);
 
-            var allOutputs = new List<UtxoOutput>
+            var allTxHashes = new List<byte[]>
             {
-                header0Tx1Out0,
-                header0Tx1Out1,
-                header0Tx2Out0,
-                header0Tx2Out1,
+                header0Tx1,
+                header0Tx2,
 
-                header1Tx1Out0,
-                header1Tx2Out0,
-                header1Tx2Out1,
+                header1Tx1,
+                header1Tx2,
 
-                header2Tx1Out0,
-                header2Tx1Out1
+                header2Tx1
             };
 
             using (UtxoStorage storage1 = UtxoStorage.Open(filename))
@@ -199,8 +188,6 @@ namespace Test.BitcoinUtilities.Node.Services.Outputs
 
             using (UtxoStorage storage2 = UtxoStorage.Open(filename))
             {
-                List<TxOutPoint> allOutputPoints = allOutputs.Select(o => o.OutputPoint).ToList();
-
                 Assert.AreEqual
                 (
                     SortAndFormat(new UtxoOutput[]
@@ -211,7 +198,7 @@ namespace Test.BitcoinUtilities.Node.Services.Outputs
                         header2Tx1Out0,
                         header2Tx1Out1
                     }),
-                    SortAndFormat(storage2.GetUnspentOutputs(allOutputPoints))
+                    SortAndFormat(storage2.GetUnspentOutputs(allTxHashes))
                 );
 
                 storage2.RevertTo(header1);
@@ -226,9 +213,7 @@ namespace Test.BitcoinUtilities.Node.Services.Outputs
                         header0Tx1Out1,
                         header1Tx2Out0
                     }),
-                    SortAndFormat(storage2.GetUnspentOutputs(
-                        allOutputPoints
-                    ))
+                    SortAndFormat(storage2.GetUnspentOutputs(allTxHashes))
                 );
             }
         }
@@ -281,7 +266,7 @@ namespace Test.BitcoinUtilities.Node.Services.Outputs
 
                         Stopwatch sw = Stopwatch.StartNew();
                         var requiredOutPoints = new HashSet<TxOutPoint>(update.ExistingSpentOutputs.Select(o => o.OutputPoint));
-                        IReadOnlyCollection<UtxoOutput> foundOutputs = storage.GetUnspentOutputs(requiredOutPoints)
+                        IReadOnlyCollection<UtxoOutput> foundOutputs = storage.GetUnspentOutputs(requiredOutPoints.Select(p => p.Hash).Distinct())
                             .Where(o => requiredOutPoints.Contains(o.OutputPoint))
                             .ToList();
                         File.AppendAllText(logFilename, $"Read {foundOutputs.Count} of {update.ExistingSpentOutputs.Count} outputs to spend in header {height} in {sw.ElapsedMilliseconds} ms.\r\n");
