@@ -73,16 +73,14 @@ namespace BitcoinUtilities.Node.Services.Outputs
 
             using (var tx = conn.BeginTransaction())
             {
-                foreach (List<byte[]> chunk in txHashes.OrderBy(h => h[0]).Split(900))
+                using (SQLiteCommand command = new SQLiteCommand(
+                    "select OutputIndex, Height, Value, Script from UnspentOutputs where TxHash=@TxHash",
+                    conn
+                ))
                 {
-                    //todo: compare 1-by-1 select vs IN
-                    using (SQLiteCommand command = new SQLiteCommand(
-                        "select TxHash, OutputIndex, Height, Value, Script from UnspentOutputs" +
-                        $" where TxHash in ({SqliteUtils.GetInParameters("H", chunk.Count)})",
-                        conn
-                    ))
+                    foreach (byte[] txHash in txHashes.Select(CopyHash).OrderBy(h => h[0]))
                     {
-                        SqliteUtils.SetInParameters(command.Parameters, "H", DbType.Binary, chunk);
+                        command.Parameters.Add("@TxHash", DbType.Binary).Value = txHash;
 
                         using (var reader = command.ExecuteReader())
                         {
@@ -90,21 +88,31 @@ namespace BitcoinUtilities.Node.Services.Outputs
                             {
                                 int col = 0;
 
-                                byte[] txHash = (byte[]) reader[col++];
                                 int outputIndex = reader.GetInt32(col++);
                                 int height = reader.GetInt32(col++);
                                 ulong value = (ulong) reader.GetInt64(col++);
-                                byte[] script = (byte[]) reader[col++];
+                                byte[] script = (byte[]) reader.GetValue(col++);
 
                                 res.Add(new UtxoOutput(new TxOutPoint(txHash, outputIndex), height, value, script, -1));
                             }
                         }
+
+                        command.Parameters.Clear();
                     }
                 }
 
                 tx.Commit();
             }
 
+            return res;
+        }
+
+        // todo: move to utils?
+        private byte[] CopyHash(byte[] hash)
+        {
+            // hash is copied to preserve output in an unlikely case of input array mutation
+            byte[] res = new byte[hash.Length];
+            Array.Copy(hash, 0, res, 0, hash.Length);
             return res;
         }
 
