@@ -114,13 +114,13 @@ namespace Test.BitcoinUtilities
                 0xEC, 0x86, 0xD3, 0xBF, 0x1F, 0xBE, 0x47, 0x1B, 0xE8, 0x98, 0x27, 0xE1, 0x9D, 0x72, 0xAA, 0x1D
             };
 
-            Assert.That(SignatureUtils.SingMesssage(message, privateKey, true), Is.EqualTo(signature));
+            Assert.That(SignatureUtils.SignMessage(message, privateKey, true), Is.EqualTo(signature));
 
-            Assert.Throws<ArgumentException>(() => SignatureUtils.SingMesssage(null, privateKey, true));
-            Assert.Throws<ArgumentException>(() => SignatureUtils.SingMesssage(message, null, true));
+            Assert.Throws<ArgumentException>(() => SignatureUtils.SignMessage(null, privateKey, true));
+            Assert.Throws<ArgumentException>(() => SignatureUtils.SignMessage(message, null, true));
 
-            Assert.Throws<ArgumentException>(() => SignatureUtils.SingMesssage(message, new byte[0], true));
-            Assert.Throws<ArgumentException>(() => SignatureUtils.SingMesssage(message, new byte[32], true));
+            Assert.Throws<ArgumentException>(() => SignatureUtils.SignMessage(message, new byte[0], true));
+            Assert.Throws<ArgumentException>(() => SignatureUtils.SignMessage(message, new byte[32], true));
         }
 
         [Test]
@@ -157,7 +157,7 @@ namespace Test.BitcoinUtilities
         {
             string address = BitcoinAddress.FromPrivateKey(BitcoinNetworkKind.Main, key, useCompressedPublicKey);
 
-            string signature = SignatureUtils.SingMesssage(message, key, useCompressedPublicKey);
+            string signature = SignatureUtils.SignMessage(message, key, useCompressedPublicKey);
 
             Console.WriteLine("---- SignAndVerify ----");
             Console.WriteLine("Address:\t{0}", address);

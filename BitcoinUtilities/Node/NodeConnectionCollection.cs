@@ -170,7 +170,7 @@ namespace BitcoinUtilities.Node
             return true;
         }
 
-        public void AssingServices(BitcoinEndpoint endpoint, IEnumerable<IEventHandlingService> endpointServices)
+        public void AssignServices(BitcoinEndpoint endpoint, IEnumerable<IEventHandlingService> endpointServices)
         {
             lock (lockObject)
             {

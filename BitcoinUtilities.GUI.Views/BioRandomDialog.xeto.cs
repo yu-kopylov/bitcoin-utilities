@@ -19,7 +19,7 @@ namespace BitcoinUtilities.GUI.Views
         private readonly BioRandom random = new BioRandom();
 
         private int progress;
-        private byte[] seedMeterial;
+        private byte[] seedMaterial;
 
         /// <summary>
         /// Creates a new instance of a dialog.
@@ -51,12 +51,12 @@ namespace BitcoinUtilities.GUI.Views
         /// <para/>
         /// Contains null if the generation process was not finished.
         /// </summary>
-        public byte[] SeedMeterial
+        public byte[] SeedMaterial
         {
-            get { return seedMeterial; }
+            get { return seedMaterial; }
             private set
             {
-                seedMeterial = value;
+                seedMaterial = value;
                 OnPropertyChanged();
             }
         }
@@ -75,7 +75,7 @@ namespace BitcoinUtilities.GUI.Views
             Progress = Math.Min(random.Entropy*100/TargetEntropy, 100);
             if (random.Entropy >= TargetEntropy)
             {
-                SeedMeterial = random.CreateSeedMaterial();
+                SeedMaterial = random.CreateSeedMaterial();
                 Close();
             }
         }

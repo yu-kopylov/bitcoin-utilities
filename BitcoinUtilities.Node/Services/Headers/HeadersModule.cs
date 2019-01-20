@@ -19,7 +19,7 @@ namespace BitcoinUtilities.Node.Services.Headers
 
         public IReadOnlyCollection<IEventHandlingService> CreateEndpointServices(BitcoinNode node, BitcoinEndpoint endpoint)
         {
-            return new[] {new HeaderDowloadService(node.EventServiceController, node.Blockchain, node.NetworkParameters, endpoint)};
+            return new[] {new HeaderDownloadService(node.EventServiceController, node.Blockchain, node.NetworkParameters, endpoint)};
         }
     }
 }

@@ -9,7 +9,7 @@ namespace BitcoinUtilities
     {
         private static readonly object lockObject = new object();
 
-        private static DateTime? overridedDateTime = null;
+        private static DateTime? overridingDateTime = null;
 
         /// <summary>
         /// Sets the date returned by the UtcNow property to the given date.
@@ -17,12 +17,12 @@ namespace BitcoinUtilities
         /// <remarks>
         /// Should be used only in tests.
         /// </remarks>
-        /// <param name="dateTime">The date which sholud be returned by the UtcNow property.</param>
+        /// <param name="dateTime">The date which should be returned by the UtcNow property.</param>
         internal static void Override(DateTime dateTime)
         {
             lock (lockObject)
             {
-                overridedDateTime = dateTime;
+                overridingDateTime = dateTime;
             }
         }
 
@@ -33,7 +33,7 @@ namespace BitcoinUtilities
         {
             lock (lockObject)
             {
-                overridedDateTime = null;
+                overridingDateTime = null;
             }
         }
 
@@ -46,7 +46,7 @@ namespace BitcoinUtilities
             {
                 lock (lockObject)
                 {
-                    return overridedDateTime ?? DateTime.UtcNow;
+                    return overridingDateTime ?? DateTime.UtcNow;
                 }
             }
         }

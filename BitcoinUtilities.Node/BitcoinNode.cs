@@ -236,7 +236,7 @@ namespace BitcoinUtilities.Node
                 }
             }
 
-            connectionCollection.AssingServices(endpoint, endpointServices);
+            connectionCollection.AssignServices(endpoint, endpointServices);
 
             endpoint.StartListener(HandleMessage, HandleDisconnectedEndpoint);
 

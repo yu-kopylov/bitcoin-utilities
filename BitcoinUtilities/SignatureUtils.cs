@@ -26,14 +26,14 @@ namespace BitcoinUtilities
         private static readonly BigInteger halfCurveOrder = curveParameters.N.ShiftRight(1);
 
         /// <summary>
-        /// Creates a signature for the given messsage and the given private key.
+        /// Creates a signature for the given message and the given private key.
         /// </summary>
         /// <param name="message">The message.</param>
         /// <param name="privateKey">The array of 32 bytes of the private key.</param>
         /// <param name="useCompressedPublicKey">true to specify that the public key should have the compressed format; otherwise, false.</param>
         /// <exception cref="ArgumentException">The message is null or private key is null or invalid.</exception>
         /// <returns>The signature for the given message and the given private key in base-64 encoding.</returns>
-        public static string SingMesssage(string message, byte[] privateKey, bool useCompressedPublicKey)
+        public static string SignMessage(string message, byte[] privateKey, bool useCompressedPublicKey)
         {
             if (message == null)
             {

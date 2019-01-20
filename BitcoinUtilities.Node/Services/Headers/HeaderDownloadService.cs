@@ -12,16 +12,16 @@ using NLog;
 
 namespace BitcoinUtilities.Node.Services.Headers
 {
-    public class HeaderDowloadService : EndpointEventHandlingService
+    public class HeaderDownloadService : EndpointEventHandlingService
     {
-        private static readonly ILogger logger = LogManager.GetLogger(nameof(HeaderDowloadService));
+        private static readonly ILogger logger = LogManager.GetLogger(nameof(HeaderDownloadService));
 
         private readonly IEventDispatcher eventDispatcher;
         private readonly Blockchain blockchain;
         private readonly NetworkParameters networkParameters;
         private readonly BitcoinEndpoint endpoint;
 
-        public HeaderDowloadService(IEventDispatcher eventDispatcher, Blockchain blockchain, NetworkParameters networkParameters, BitcoinEndpoint endpoint) : base(endpoint)
+        public HeaderDownloadService(IEventDispatcher eventDispatcher, Blockchain blockchain, NetworkParameters networkParameters, BitcoinEndpoint endpoint) : base(endpoint)
         {
             this.eventDispatcher = eventDispatcher;
             this.blockchain = blockchain;

@@ -7,7 +7,7 @@ namespace Test.BitcoinUtilities.Scripts
     public partial class TestScriptProcessor
     {
         [Test]
-        public void TestContants()
+        public void TestConstants()
         {
             ScriptProcessor processor = new ScriptProcessor();
             processor.Execute(new byte[]

@@ -55,10 +55,10 @@ namespace BitcoinUtilities.Node.Components
         {
             lock (monitor)
             {
-                Type resouceType = typeof(T);
-                if (!resources.TryGetValue(resouceType, out var resource))
+                Type resourceType = typeof(T);
+                if (!resources.TryGetValue(resourceType, out var resource))
                 {
-                    throw new InvalidOperationException($"The {nameof(NodeResourceCollection)} does not have a resource of type {resouceType.Name}.");
+                    throw new InvalidOperationException($"The {nameof(NodeResourceCollection)} does not have a resource of type {resourceType.Name}.");
                 }
 
                 return (T) resource;

@@ -17,7 +17,7 @@ namespace BitcoinUtilities.GUI.Views
             using (var dialog = new BioRandomDialog())
             {
                 dialog.ShowModal();
-                randomValue = dialog.SeedMeterial;
+                randomValue = dialog.SeedMaterial;
             }
 
             if (randomValue != null)

@@ -402,10 +402,10 @@ namespace Test.BitcoinUtilities.Node.Services.Headers
             private readonly Dictionary<string, DbHeader> headers = new Dictionary<string, DbHeader>();
             private readonly Dictionary<byte[], string> blockNames = new Dictionary<byte[], string>(ByteArrayComparer.Instance);
 
-            public void Add(List<DbHeader> headera, string chainPrefix, int firstIndex)
+            public void Add(List<DbHeader> headers, string chainPrefix, int firstIndex)
             {
                 int index = firstIndex;
-                foreach (var header in headera)
+                foreach (var header in headers)
                 {
                     Add(chainPrefix + index, header);
                     index++;
