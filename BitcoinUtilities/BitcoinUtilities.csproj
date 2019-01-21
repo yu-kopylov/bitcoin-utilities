@@ -64,6 +64,7 @@
     <Compile Include="BitcoinNetworkKind.cs" />
     <Compile Include="Collections\CollectionUtils.cs" />
     <Compile Include="DifficultyUtils.cs" />
+    <Compile Include="EcdsaSignature.cs" />
     <Compile Include="HexUtils.cs" />
     <Compile Include="IpUtils.cs" />
     <Compile Include="MerkleTreeUtils.cs" />

@@ -105,8 +105,7 @@ namespace BitcoinUtilities
                 return false;
             }
 
-            Signature signature;
-            if (!ParseSignature(signatureBase64, out signature))
+            if (!ParseSignature(signatureBase64, out var signature))
             {
                 return false;
             }
@@ -169,33 +168,53 @@ namespace BitcoinUtilities
             return signature.EcdsaSignature.ToDER();
         }
 
-        //todo: add tests, parameter validation and xml-doc
+        /// <summary>
+        /// Checks that the given signature is valid for the given data and the given public key.
+        /// </summary>
+        /// <param name="signedData">The byte array with signed data.</param>
+        /// <param name="publicKey">
+        /// The public key.
+        /// Public key format is defined in "SEC 1: Elliptic Curve Cryptography" in section "2.3.3 Elliptic-Curve-Point-to-Octet-String Conversion"
+        /// (http://www.secg.org/sec1-v2.pdf).
+        /// </param>
+        /// <param name="signature">The signature in DER encoding.</param>
+        /// <returns>true if the given signature is valid for the given byte array and the given public key; otherwise, false.</returns>
         public static bool Verify(byte[] signedData, byte[] publicKey, byte[] signature)
         {
-            EcdsaSignature ecdsaSignature;
-            if (!EcdsaSignature.ParseDER(signature, out ecdsaSignature))
+            if (signedData == null || publicKey == null || signature == null || publicKey.Length == 0 || publicKey[0] == 0)
             {
                 return false;
             }
 
-            //todo: add tests and XMLDOC
-            //todo: validate input
+            if (!EcdsaSignature.ParseDER(signature, out var ecdsaSignature))
+            {
+                return false;
+            }
+
             byte[] hash = CryptoUtils.DoubleSha256(signedData);
 
-            Signature candidateSignature = new Signature();
-            candidateSignature.EcdsaSignature = ecdsaSignature;
-
-            // todo: use normal verification algorithm
-            for (int i = 0; i < 8; i++)
+            ECPoint q;
+            try
             {
-                candidateSignature.PublicKeyMask = i;
-                byte[] recoveredPublicKey = RecoverPublicKeyFromSignature(hash, candidateSignature);
-                if (recoveredPublicKey != null && recoveredPublicKey.SequenceEqual(publicKey))
-                {
-                    return true;
-                }
+                q = domainParameters.Curve.DecodePoint(publicKey);
             }
-            return false;
+            catch (ArgumentException)
+            {
+                return false;
+            }
+            catch (FormatException)
+            {
+                return false;
+            }
+            catch (IndexOutOfRangeException)
+            {
+                return false;
+            }
+
+            ECPublicKeyParameters parameters = new ECPublicKeyParameters(q, domainParameters);
+            ECDsaSigner signer = new ECDsaSigner(new HMacDsaKCalculator(new Sha256Digest()));
+            signer.Init(false, parameters);
+            return signer.VerifySignature(hash, ecdsaSignature.R, ecdsaSignature.S);
         }
 
         /// <summary>
@@ -211,6 +230,7 @@ namespace BitcoinUtilities
             {
                 s = curveParameters.N.Subtract(s);
             }
+
             return s;
         }
 
@@ -239,7 +259,7 @@ namespace BitcoinUtilities
         {
             if ((signature.PublicKeyMask & 2) != 0)
             {
-                // It seems that loop for j from 0 to h in the "4.1.6 Public Key Recovery Operation" algorithm, should be a loop from 0 yo h - 1.
+                // It seems that loop for j from 0 to h in the "4.1.6 Public Key Recovery Operation" algorithm, should be a loop from 0 to h - 1.
                 return null;
             }
 
@@ -334,75 +354,6 @@ namespace BitcoinUtilities
         {
             public int PublicKeyMask { get; set; }
             public EcdsaSignature EcdsaSignature { get; set; }
-        }
-
-        //todo: add tests and xml-doc, consider using structure
-        private class EcdsaSignature
-        {
-            public BigInteger R { get; set; }
-            public BigInteger S { get; set; }
-
-            public byte[] ToDER()
-            {
-                //todo: compare ToByteArray and ToByteArrayUnsigned
-                byte[] rBytes = R.ToByteArray();
-                byte[] sBytes = S.ToByteArray();
-
-                byte[] signatureBytes = new byte[6 + rBytes.Length + sBytes.Length];
-
-                signatureBytes[0] = 0x30; // SEQUENCE 
-                signatureBytes[1] = (byte) (4 + rBytes.Length + sBytes.Length); // SEQUENCE LENGTH
-
-                signatureBytes[2] = 0x02; // INTEGER
-                signatureBytes[3] = (byte) rBytes.Length; // INTEGER LENGTH
-                Array.Copy(rBytes, 0, signatureBytes, 4, rBytes.Length);
-
-                signatureBytes[4 + rBytes.Length] = 0x02; // INTEGER
-                signatureBytes[5 + rBytes.Length] = (byte) sBytes.Length; // INTEGER LENGTH
-                Array.Copy(sBytes, 0, signatureBytes, 6 + rBytes.Length, sBytes.Length);
-
-                return signatureBytes;
-            }
-
-            /// <summary>
-            /// Parses DER-encoded signature.
-            /// </summary>
-            /// <param name="encoded">A byte array with encoded signature.</param>
-            /// <param name="ecdsaSignature">The decoded signature, or null if the given array is not a valid DER-encoded signature.</param>
-            /// <returns>true if the signature was decoded successfully; otherwise, false.</returns>
-            public static bool ParseDER(byte[] encoded, out EcdsaSignature ecdsaSignature)
-            {
-                ecdsaSignature = null;
-
-                //todo: is zero length possible for R and S?
-                if (encoded == null || encoded.Length < 6)
-                {
-                    return false;
-                }
-
-                if (encoded[0] != 0x30 || encoded[1] != encoded.Length - 2 || encoded[2] != 0x02)
-                {
-                    return false;
-                }
-
-                int rLength = encoded[3];
-                if (5 + rLength >= encoded.Length)
-                {
-                    return false;
-                }
-                int sLength = encoded[5 + rLength];
-                if (6 + rLength + sLength != encoded.Length)
-                {
-                    return false;
-                }
-
-                ecdsaSignature = new EcdsaSignature();
-                //todo: check other BigInteger constructors (signed / unsigned)
-                ecdsaSignature.R = new BigInteger(1, encoded, 4, rLength);
-                ecdsaSignature.S = new BigInteger(1, encoded, 6 + rLength, sLength);
-
-                return true;
-            }
         }
     }
 }
