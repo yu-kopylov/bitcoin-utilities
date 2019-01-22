@@ -332,12 +332,8 @@ namespace Test.BitcoinUtilities
             Assert.That(verifyMethod(signedData, publicKey, signatureShort), Is.False);
             Assert.That(verifyMethod(signedData, publicKey, signatureLong), Is.False);
 
-            Assert.True(EcdsaSignature.ParseDER(signature, out var parsedSignature));
-            EcdsaSignature swapRSSignature = new EcdsaSignature
-            {
-                R = parsedSignature.S,
-                S = parsedSignature.R
-            };
+            Assert.True(ECDSASignature.ParseDER(signature, out var parsedSignature));
+            ECDSASignature swapRSSignature = new ECDSASignature(parsedSignature.S, parsedSignature.R);
             Assert.That(verifyMethod(signedData, publicKey, swapRSSignature.ToDER()), Is.False);
         }
 

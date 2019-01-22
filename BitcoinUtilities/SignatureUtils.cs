@@ -58,9 +58,7 @@ namespace BitcoinUtilities
             var hash = GetMessageHash(message);
 
             BigInteger[] signatureArray = signer.GenerateSignature(hash);
-            EcdsaSignature ecdsaSignature = new EcdsaSignature();
-            ecdsaSignature.R = signatureArray[0];
-            ecdsaSignature.S = NormalizeS(signatureArray[1]);
+            ECDSASignature ecdsaSignature = new ECDSASignature(signatureArray[0], NormalizeS(signatureArray[1]));
 
             byte[] encodedPublicKey = BitcoinPrivateKey.ToEncodedPublicKey(privateKey, useCompressedPublicKey);
 
@@ -135,9 +133,7 @@ namespace BitcoinUtilities
             byte[] hash = CryptoUtils.DoubleSha256(signedData);
 
             BigInteger[] signatureArray = signer.GenerateSignature(hash);
-            EcdsaSignature ecdsaSignature = new EcdsaSignature();
-            ecdsaSignature.R = signatureArray[0];
-            ecdsaSignature.S = NormalizeS(signatureArray[1]);
+            ECDSASignature ecdsaSignature = new ECDSASignature(signatureArray[0], NormalizeS(signatureArray[1]));
 
             byte[] encodedPublicKey = BitcoinPrivateKey.ToEncodedPublicKey(privateKey, useCompressedPublicKey);
 
@@ -186,7 +182,7 @@ namespace BitcoinUtilities
                 return false;
             }
 
-            if (!EcdsaSignature.ParseDER(signature, out var ecdsaSignature))
+            if (!ECDSASignature.ParseDER(signature, out var ecdsaSignature))
             {
                 return false;
             }
@@ -339,9 +335,10 @@ namespace BitcoinUtilities
                 return false;
             }
 
-            EcdsaSignature ecdsaSignature = new EcdsaSignature();
-            ecdsaSignature.R = new BigInteger(1, signatureBytes, 1, 32);
-            ecdsaSignature.S = new BigInteger(1, signatureBytes, 33, 32);
+            ECDSASignature ecdsaSignature = new ECDSASignature(
+                new BigInteger(1, signatureBytes, 1, 32),
+                new BigInteger(1, signatureBytes, 33, 32)
+            );
 
             signature = new Signature();
             signature.PublicKeyMask = header - 0x1B;
@@ -353,7 +350,7 @@ namespace BitcoinUtilities
         private class Signature
         {
             public int PublicKeyMask { get; set; }
-            public EcdsaSignature EcdsaSignature { get; set; }
+            public ECDSASignature EcdsaSignature { get; set; }
         }
     }
 }

@@ -85,6 +85,7 @@
     <Compile Include="Scripts\TestBitcoinScript.cs" />
     <Compile Include="TestBioRandom.cs" />
     <Compile Include="TestDifficultyUtils.cs" />
+    <Compile Include="TestECDSASignature.cs" />
     <Compile Include="TestHexUtils.cs" />
     <Compile Include="TestIpUtils.cs" />
     <Compile Include="TestMerkleTreeUtils.cs" />
