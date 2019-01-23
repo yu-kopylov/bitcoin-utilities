@@ -42,6 +42,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="KnownAddresses.cs" />
     <Compile Include="SampleBlockGenerator.cs" />
     <Compile Include="KnownBlocks.cs" />
     <Compile Include="MessageLog.cs" />

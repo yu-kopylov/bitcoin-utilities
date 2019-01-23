@@ -82,9 +82,7 @@ namespace Test.BitcoinUtilities
             string calculatedEncryptedKey = Bip38.Encrypt(privateKey, password, useCompressedPublicKey);
             Assert.That(calculatedEncryptedKey, Is.EquivalentTo(encryptedKey));
 
-            byte[] calculatedPrivateKey;
-            bool calculatedUseCompressedPublicKey;
-            Assert.That(Bip38.TryDecrypt(encryptedKey, password, out calculatedPrivateKey, out calculatedUseCompressedPublicKey), Is.True);
+            Assert.That(Bip38.TryDecrypt(encryptedKey, password, out var calculatedPrivateKey, out var calculatedUseCompressedPublicKey), Is.True);
             Assert.That(calculatedPrivateKey, Is.EqualTo(privateKey));
             Assert.That(calculatedUseCompressedPublicKey, Is.EqualTo(useCompressedPublicKey));
         }

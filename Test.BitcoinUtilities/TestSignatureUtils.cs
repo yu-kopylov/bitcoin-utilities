@@ -1,6 +1,7 @@
 ﻿using System;
 using BitcoinUtilities;
 using NUnit.Framework;
+using TestUtilities;
 
 namespace Test.BitcoinUtilities
 {
@@ -110,11 +111,7 @@ namespace Test.BitcoinUtilities
             string message = "test";
             string signature = "IKbIRnBqx8C1S6cRGcBX778Ek/0aM8z3XSxZDGIBhOcVMVw+y5ORLdvkJ7uCgWwc0D7WvRFeZfpma0BleAslDEU=";
 
-            byte[] privateKey = new byte[]
-            {
-                0x0C, 0x28, 0xFC, 0xA3, 0x86, 0xC7, 0xA2, 0x27, 0x60, 0x0B, 0x2F, 0xE5, 0x0B, 0x7C, 0xAE, 0x11,
-                0xEC, 0x86, 0xD3, 0xBF, 0x1F, 0xBE, 0x47, 0x1B, 0xE8, 0x98, 0x27, 0xE1, 0x9D, 0x72, 0xAA, 0x1D
-            };
+            byte[] privateKey = KnownAddresses.ReferenceExample.PrivateKey;
 
             Assert.That(SignatureUtils.SignMessage(message, privateKey, true), Is.EqualTo(signature));
 
@@ -133,11 +130,7 @@ namespace Test.BitcoinUtilities
             // address (compressed):    1LoVGDgRs9hTfTNJNuXKSpywcbdvwRXpmK
             // WIF (uncompressed):      5HueCGU8rMjxEXxiPuD5BDku4MkFqeZyd4dZ1jvhTVqvbTLvyTJ
             // address (uncompressed):  1GAehh7TsJAHuUAeKZcXf5CnwuGuGgyX2S
-            byte[] privateKey = new byte[]
-            {
-                0x0C, 0x28, 0xFC, 0xA3, 0x86, 0xC7, 0xA2, 0x27, 0x60, 0x0B, 0x2F, 0xE5, 0x0B, 0x7C, 0xAE, 0x11,
-                0xEC, 0x86, 0xD3, 0xBF, 0x1F, 0xBE, 0x47, 0x1B, 0xE8, 0x98, 0x27, 0xE1, 0x9D, 0x72, 0xAA, 0x1D
-            };
+            byte[] privateKey = KnownAddresses.ReferenceExample.PrivateKey;
 
             // S-component normalization
             SignAndVerifyMessage("ABCD_0001", privateKey, true, "IL21huoowwTtYLdUSTXCClKxecI4c5VLweXzvXIVS17hXtriqRyNMYpwtg2BySlfPHP2Yw998Ml2Ac5RNOS2W1I=");

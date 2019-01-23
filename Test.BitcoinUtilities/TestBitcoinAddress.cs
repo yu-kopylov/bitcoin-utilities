@@ -1,6 +1,7 @@
 ﻿using System;
 using BitcoinUtilities;
 using NUnit.Framework;
+using TestUtilities;
 
 namespace Test.BitcoinUtilities
 {
@@ -24,19 +25,8 @@ namespace Test.BitcoinUtilities
                 0x3C, 0x87, 0xC4, 0x0D, 0xA6, 0xD2, 0xA2, 0x5F, 0x05, 0xBD, 0xA6, 0x8F, 0xE0, 0x77, 0xB6, 0x6E
             }, false), Is.EqualTo("16ktGzmfrurhbhi6JGqsMWf7TyqK9HNAeF"));
 
-            // X starts with 0 
-            Assert.That(BitcoinAddress.FromPrivateKey(BitcoinNetworkKind.Main, new byte[]
-            {
-                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x99
-            }, false), Is.EqualTo("1FVgHxdCE4sjHoNTVmoygXRWcKzdyXvGhm"));
-
-            // Y starts with 0 
-            Assert.That(BitcoinAddress.FromPrivateKey(BitcoinNetworkKind.Main, new byte[]
-            {
-                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x7A
-            }, false), Is.EqualTo("1NwhxtuUW2dg7RPkaypDpLW9JS2dqfEzNb"));
+            Assert.That(BitcoinAddress.FromPrivateKey(BitcoinNetworkKind.Main, KnownAddresses.UncompressedX0.PrivateKey, false), Is.EqualTo("1FVgHxdCE4sjHoNTVmoygXRWcKzdyXvGhm"));
+            Assert.That(BitcoinAddress.FromPrivateKey(BitcoinNetworkKind.Main, KnownAddresses.UncompressedY0.PrivateKey, false), Is.EqualTo("1NwhxtuUW2dg7RPkaypDpLW9JS2dqfEzNb"));
         }
 
         [Test]
@@ -59,19 +49,8 @@ namespace Test.BitcoinUtilities
         [Test]
         public void TestFromPrivateKeyForTestnet()
         {
-            // reference example
-            Assert.That(BitcoinAddress.FromPrivateKey(BitcoinNetworkKind.Test, new byte[]
-            {
-                0x0C, 0x28, 0xFC, 0xA3, 0x86, 0xC7, 0xA2, 0x27, 0x60, 0x0B, 0x2F, 0xE5, 0x0B, 0x7C, 0xAE, 0x11,
-                0xEC, 0x86, 0xD3, 0xBF, 0x1F, 0xBE, 0x47, 0x1B, 0xE8, 0x98, 0x27, 0xE1, 0x9D, 0x72, 0xAA, 0x1D
-            }, false), Is.EqualTo("mvgbzkCSgKbYgaeG38auUzR7otscEGi8U7"));
-
-            // reference example
-            Assert.That(BitcoinAddress.FromPrivateKey(BitcoinNetworkKind.Test, new byte[]
-            {
-                0x0C, 0x28, 0xFC, 0xA3, 0x86, 0xC7, 0xA2, 0x27, 0x60, 0x0B, 0x2F, 0xE5, 0x0B, 0x7C, 0xAE, 0x11,
-                0xEC, 0x86, 0xD3, 0xBF, 0x1F, 0xBE, 0x47, 0x1B, 0xE8, 0x98, 0x27, 0xE1, 0x9D, 0x72, 0xAA, 0x1D
-            }, true), Is.EqualTo("n1KSZGmQgB8iSZqv6UVhGkCGUbEdw8Lm3Q"));
+            Assert.That(BitcoinAddress.FromPrivateKey(BitcoinNetworkKind.Test, KnownAddresses.ReferenceExample.PrivateKey, false), Is.EqualTo("mvgbzkCSgKbYgaeG38auUzR7otscEGi8U7"));
+            Assert.That(BitcoinAddress.FromPrivateKey(BitcoinNetworkKind.Test, KnownAddresses.ReferenceExample.PrivateKey, true), Is.EqualTo("n1KSZGmQgB8iSZqv6UVhGkCGUbEdw8Lm3Q"));
         }
 
         [Test]

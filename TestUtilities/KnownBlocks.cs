@@ -8,14 +8,14 @@ namespace TestUtilities
 {
     public static class KnownBlocks
     {
-        public static KnownBlock Block1 = new KnownBlock(@"
+        public static KnownBlock Block1 { get; } = new KnownBlock(@"
 AQAAAG/ijAq28bNywaaiRq5j90+THoNl4VoInGjWGQAAAAAAmCBR/R5Lp0S7vmgOH+4UZ3uh
 o8NUC/exzbYG6FcjPg5hvGZJ//8AHQHjYpkBAQAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 AAAAAAAAAAAAAP////8HBP//AB0BBP////8BAPIFKgEAAABDQQSWtTjoU1GccmoskeYewRYA
 rhOQgTpifGb7i+eUe+Y8Utp1iTeVFdTgpgT4FBeB5iKUchFmv2Iec6gsvyNCyFjurAAAAAA=
 ");
 
-        public static KnownBlock Block100000 = new KnownBlock(@"
+        public static KnownBlock Block100000 { get; } = new KnownBlock(@"
 AQAAAFASARkXKmEEIabDAR3TMNnfB7Y2FsLMHxzQAgAAAAAAZlepJSqs1cCylAmW7P+VIijD
 BnzDjUiF77WkrEJH6fM3IhtNTIYEGw8rVxAEAQAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 AAAAAAAAAAAAAP////8IBEyGBBsCBgL/////AQDyBSoBAAAAQ0EEGw6MJWfBJTaqEzV7eaBz
@@ -36,7 +36,7 @@ GFyB4qosQasXVAfAlITOlpS0SVP8t1EgZWSpwk3QlNQv2/3VqtPgY85q9M+q6k6hT7v/////
 AUBCDwAAAAAAGXapFDmqPVaeBqHXkm3EvhGTyZvy657giKwAAAAA
 ");
 
-        public static KnownBlock Block100001 = new KnownBlock(@"
+        public static KnownBlock Block100001 { get; } = new KnownBlock(@"
 AQAAAAblM/0a2oY5Hz9sNDIEsNJ41KrsHAsgqie6AwAAAAAAaruz6z1zOp/hiWf9fUwRfkzL
 usW+xNkQ2QCzrgeT539UJBtNTIYEG0CJzJsMAQAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 AAAAAAAAAAAAAP////8HBEyGBBsBDf////8BAPIFKgEAAABDQQSyf36Udcz12aQxy4bWZbgw
@@ -101,7 +101,7 @@ AwAAABl2qRQ25YhCFffTBEvl03vdjJh9nZQshIisQEtMAAAAAAAZdqkUYAhdaDj4pEohoN5W
 /5Y8+mJCqWGIrAAAAAA=
 ");
 
-        public static KnownBlock Block100002 = new KnownBlock(@"
+        public static KnownBlock Block100002 { get; } = new KnownBlock(@"
 AQAAAJDwqfEQcC+Aghnr6hFzBWBCpxS61RuRbLaAAAAAAAAAUnUolVj1HJlmaZQEriKUcww8
 n5vaU1I85Q6bleVY2i/bJhtNTIYEGxqxv5MJAQAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 AAAAAAAAAAAAAP////8HBEyGBBsBRv////8BAPIFKgEAAABDQQThj3r75HIVgOgehBT8jCTX

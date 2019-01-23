@@ -1,84 +1,42 @@
 ﻿using System;
 using BitcoinUtilities;
 using NUnit.Framework;
+using TestUtilities;
 
 namespace Test.BitcoinUtilities
 {
     [TestFixture]
     public class TestWif
     {
-        // reference example
-        private readonly byte[] rfPrivateKey = new byte[]
-        {
-            0x0C, 0x28, 0xFC, 0xA3, 0x86, 0xC7, 0xA2, 0x27, 0x60, 0x0B, 0x2F, 0xE5, 0x0B, 0x7C, 0xAE, 0x11,
-            0xEC, 0x86, 0xD3, 0xBF, 0x1F, 0xBE, 0x47, 0x1B, 0xE8, 0x98, 0x27, 0xE1, 0x9D, 0x72, 0xAA, 0x1D
-        };
-
-        // X starts with 0 
-        private readonly byte[] x0PrivateKey = new byte[]
-        {
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x99
-        };
-
-        // Y starts with 0 
-        private readonly byte[] y0PrivateKey = new byte[]
-        {
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x7A
-        };
-
         [Test]
         public void TestCompressed()
         {
-            // reference example
-            TestEncodeDecode(BitcoinNetworkKind.Main, rfPrivateKey, "KwdMAjGmerYanjeui5SHS7JkmpZvVipYvB2LJGU1ZxJwYvP98617", true);
+            TestEncodeDecode(BitcoinNetworkKind.Main, KnownAddresses.ReferenceExample.PrivateKey, "KwdMAjGmerYanjeui5SHS7JkmpZvVipYvB2LJGU1ZxJwYvP98617", true);
+            TestEncodeDecode(BitcoinNetworkKind.Main, KnownAddresses.UncompressedX0.PrivateKey, "KwDiBf89QgGbjEhKnhXJuH7LrciVrZi3qYjgd9M7rFU8MZejxwYf", true);
+            TestEncodeDecode(BitcoinNetworkKind.Main, KnownAddresses.UncompressedY0.PrivateKey, "KwDiBf89QgGbjEhKnhXJuH7LrciVrZi3qYjgd9M7rFU868E4dnmx", true);
 
-            // X starts with 0 
-            TestEncodeDecode(BitcoinNetworkKind.Main, x0PrivateKey, "KwDiBf89QgGbjEhKnhXJuH7LrciVrZi3qYjgd9M7rFU8MZejxwYf", true);
-
-            // Y starts with 0 
-            TestEncodeDecode(BitcoinNetworkKind.Main, y0PrivateKey, "KwDiBf89QgGbjEhKnhXJuH7LrciVrZi3qYjgd9M7rFU868E4dnmx", true);
-
-            // reference example
-            TestEncodeDecode(BitcoinNetworkKind.Test, rfPrivateKey, "cMzLdeGd5vEqxB8B6VFQoRopQ3sLAAvEzDAoQgvX54xwofSWj1fx", true);
-
-            // X starts with 0 
-            TestEncodeDecode(BitcoinNetworkKind.Test, x0PrivateKey, "cMahea7zqjxrtgAbB7LSGbcQUr1uX1ojuat9jZodMN88cJgN5CPY", true);
-
-            // Y starts with 0 
-            TestEncodeDecode(BitcoinNetworkKind.Test, y0PrivateKey, "cMahea7zqjxrtgAbB7LSGbcQUr1uX1ojuat9jZodMN88LsKcKFDq", true);
+            TestEncodeDecode(BitcoinNetworkKind.Test, KnownAddresses.ReferenceExample.PrivateKey, "cMzLdeGd5vEqxB8B6VFQoRopQ3sLAAvEzDAoQgvX54xwofSWj1fx", true);
+            TestEncodeDecode(BitcoinNetworkKind.Test, KnownAddresses.UncompressedX0.PrivateKey, "cMahea7zqjxrtgAbB7LSGbcQUr1uX1ojuat9jZodMN88cJgN5CPY", true);
+            TestEncodeDecode(BitcoinNetworkKind.Test, KnownAddresses.UncompressedY0.PrivateKey, "cMahea7zqjxrtgAbB7LSGbcQUr1uX1ojuat9jZodMN88LsKcKFDq", true);
         }
 
         [Test]
         public void TestUncompressed()
         {
-            // reference example
-            TestEncodeDecode(BitcoinNetworkKind.Main, rfPrivateKey, "5HueCGU8rMjxEXxiPuD5BDku4MkFqeZyd4dZ1jvhTVqvbTLvyTJ", false);
+            TestEncodeDecode(BitcoinNetworkKind.Main, KnownAddresses.ReferenceExample.PrivateKey, "5HueCGU8rMjxEXxiPuD5BDku4MkFqeZyd4dZ1jvhTVqvbTLvyTJ", false);
+            TestEncodeDecode(BitcoinNetworkKind.Main, KnownAddresses.UncompressedX0.PrivateKey, "5HpHagT65TZzG1PH3CSu63k8DbpvD8s5ip4nEB3kEsreTsnN2UE", false);
+            TestEncodeDecode(BitcoinNetworkKind.Main, KnownAddresses.UncompressedY0.PrivateKey, "5HpHagT65TZzG1PH3CSu63k8DbpvD8s5ip4nEB3kEsreQTdvJta", false);
 
-            // X starts with 0 
-            TestEncodeDecode(BitcoinNetworkKind.Main, x0PrivateKey, "5HpHagT65TZzG1PH3CSu63k8DbpvD8s5ip4nEB3kEsreTsnN2UE", false);
-
-            // Y starts with 0 
-            TestEncodeDecode(BitcoinNetworkKind.Main, y0PrivateKey, "5HpHagT65TZzG1PH3CSu63k8DbpvD8s5ip4nEB3kEsreQTdvJta", false);
-
-            // reference example
-            TestEncodeDecode(BitcoinNetworkKind.Test, rfPrivateKey, "91gGn1HgSap6CbU12F6z3pJri26xzp7Ay1VW6NHCoEayNXwRpu2", false);
-
-            // X starts with 0 
-            TestEncodeDecode(BitcoinNetworkKind.Test, x0PrivateKey, "91avARGdfge8E4tZfYLoxeJ5sGBdNJQH4kvjJoQFacbhEwywzqY", false);
-
-            // Y starts with 0 
-            TestEncodeDecode(BitcoinNetworkKind.Test, y0PrivateKey, "91avARGdfge8E4tZfYLoxeJ5sGBdNJQH4kvjJoQFacbhBRKa2K7", false);
+            TestEncodeDecode(BitcoinNetworkKind.Test, KnownAddresses.ReferenceExample.PrivateKey, "91gGn1HgSap6CbU12F6z3pJri26xzp7Ay1VW6NHCoEayNXwRpu2", false);
+            TestEncodeDecode(BitcoinNetworkKind.Test, KnownAddresses.UncompressedX0.PrivateKey, "91avARGdfge8E4tZfYLoxeJ5sGBdNJQH4kvjJoQFacbhEwywzqY", false);
+            TestEncodeDecode(BitcoinNetworkKind.Test, KnownAddresses.UncompressedY0.PrivateKey, "91avARGdfge8E4tZfYLoxeJ5sGBdNJQH4kvjJoQFacbhBRKa2K7", false);
         }
 
         private void TestEncodeDecode(BitcoinNetworkKind networkKind, byte[] privateKey, string wif, bool useCompressedPublicKey)
         {
             Assert.That(Wif.Encode(networkKind, privateKey, useCompressedPublicKey), Is.EqualTo(wif));
 
-            byte[] decodedPrivateKey;
-            bool decodedUseCompressedPublicKey;
-            Assert.That(Wif.TryDecode(networkKind, wif, out decodedPrivateKey, out decodedUseCompressedPublicKey), Is.True);
+            Assert.That(Wif.TryDecode(networkKind, wif, out var decodedPrivateKey, out var decodedUseCompressedPublicKey), Is.True);
             Assert.That(decodedPrivateKey, Is.EqualTo(privateKey));
             Assert.That(decodedUseCompressedPublicKey, Is.EqualTo(useCompressedPublicKey));
         }
