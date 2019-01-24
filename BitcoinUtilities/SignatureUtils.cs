@@ -202,13 +202,9 @@ namespace BitcoinUtilities
             {
                 return false;
             }
-            catch (IndexOutOfRangeException)
-            {
-                return false;
-            }
 
             ECPublicKeyParameters parameters = new ECPublicKeyParameters(q, domainParameters);
-            ECDsaSigner signer = new ECDsaSigner(new HMacDsaKCalculator(new Sha256Digest()));
+            ECDsaSigner signer = new ECDsaSigner();
             signer.Init(false, parameters);
             return signer.VerifySignature(hash, ecdsaSignature.R, ecdsaSignature.S);
         }

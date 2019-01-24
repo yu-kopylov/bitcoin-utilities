@@ -33,9 +33,24 @@ namespace BitcoinUtilities
         /// Converts a hexadecimal string to a byte array.
         /// </summary>
         /// <param name="hex">The string to convert. The only allowed characters are 0-9, a-z, A-Z.</param>
-        /// <param name="result">A byte array converted from the given string; or null if conversion faled.</param>
+        /// <returns>A byte array converted from the given string.</returns>
+        /// <exception cref="ArgumentNullException">If the given string is not a valid hexadecimal string, or is null.</exception>
+        public static byte[] GetBytesUnsafe(string hex)
+        {
+            if (!TryGetBytes(hex, out var result))
+            {
+                throw new ArgumentException("Invalid hexadecimal string.", nameof(hex));
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// Converts a hexadecimal string to a byte array.
+        /// </summary>
+        /// <param name="hex">The string to convert. The only allowed characters are 0-9, a-z, A-Z.</param>
+        /// <param name="result">A byte array converted from the given string; or null if conversion failed.</param>
         /// <returns>true if string was converted to bytes; otherwise, false.</returns>
-        /// <exception cref="ArgumentNullException">If the given string is null.</exception>
         public static bool TryGetBytes(string hex, out byte[] result)
         {
             result = null;
@@ -55,6 +70,7 @@ namespace BitcoinUtilities
                 {
                     return false;
                 }
+
                 array[i] = (byte) (hi << 4 | low);
             }
 
@@ -71,6 +87,7 @@ namespace BitcoinUtilities
             {
                 return (char) ('0' + octetValue);
             }
+
             return (char) ('a' + octetValue - 10);
         }
 

@@ -168,174 +168,194 @@ namespace Test.BitcoinUtilities
         [Test]
         public void TestVerify()
         {
-            TestVerifyMethod(SignatureUtils.Verify);
-        }
-
-        private void TestVerifyMethod(Func<byte[], byte[], byte[], bool> verifyMethod)
-        {
-            (string SignedData, string PublicKey, string Signature)[] testVectors = new[]
+            VerifyTestVector[] verifyTestVectors = new VerifyTestVector[]
             {
+                new VerifyTestVector
                 (
-                    "11223344",
-                    "02d0de0aaeaefad02b8bdc8a01a1b8b11c696bd3d66a2c5f10780d95b7df42645c",
-                    "3045022100ec349d70270a0d90913dece668602925aa32b25ce08ae013f0f2fdca7c0ad9fd0220073dc832e645bae795e23daa216122c55ad617ba1a1a012e27046ff058423e48"
+                    "ref. key (compressed)", true,
+                    "AA00000001",
+                    KnownAddresses.ReferenceExample.PublicKeyCompressed,
+                    "30450221008f4c18a6de5348db2bd3c3c9c880c18c9f68c327617f33834f4802a0ca76b63b02202e640e9cd8d503d216c6bdf725a1c377c1feedba6548e97a1e2d418a2e069fcc"
                 ),
+                new VerifyTestVector
                 (
-                    "11223344",
-                    "04d0de0aaeaefad02b8bdc8a01a1b8b11c696bd3d66a2c5f10780d95b7df42645cd85228a6fb29940e858e7e55842ae2bd115d1ed7cc0e82d934e929c97648cb0a",
-                    "3045022100ec349d70270a0d90913dece668602925aa32b25ce08ae013f0f2fdca7c0ad9fd0220073dc832e645bae795e23daa216122c55ad617ba1a1a012e27046ff058423e48"
+                    "ref. key (uncompressed)", true,
+                    "AA00000001",
+                    KnownAddresses.ReferenceExample.PublicKeyUncompressed,
+                    "30450221008f4c18a6de5348db2bd3c3c9c880c18c9f68c327617f33834f4802a0ca76b63b02202e640e9cd8d503d216c6bdf725a1c377c1feedba6548e97a1e2d418a2e069fcc"
                 ),
+                new VerifyTestVector
                 (
-                    "11223344",
-                    "0200e3ae1974566ca06cc516d47e0fb165a674a3dabcfca15e722f0e3450f45889",
-                    "304402203ed693b794f3a0fcf0362e0e2a30d519d56422c9992e172b6d178c6071320fc802205714ab66c4b95e0e121604cc5ab45f0ab06e4fd4b2796ad7d35454fa192d6531"
+                    "bip-38 key", true,
+                    "AA00000001",
+                    KnownAddresses.Bip38Example.PublicKeyCompressed,
+                    "3045022100993531ec6216f740d4b1fa210c776c0b001e41f8ca6a43920b2f919906e7291802206db1fe0f6d6a6738b4df05cf45bd113d7c65da53a18aabde1ca620d6ae0fcd61"
                 ),
+                new VerifyTestVector
                 (
-                    "11223344",
-                    "02139ae46a1133f1f9d23f25efba0f6dd87bf7ddaf568a5fb9e0a3bfda73176237",
-                    "304402204a5c29e7d877eaab63554e89aa033af232466ed70873e1a47c23473a01dd9dc60220317545c6524d4531c24a9e4c019e11fa82a4823eaba51ec83911f944ccbbf41b"
+                    "uncompressed X0", true,
+                    "AA00000001",
+                    KnownAddresses.UncompressedX0.PublicKeyUncompressed,
+                    "30450221009398e985fa37ef79c8d5fb06a21f68f618bbe68824478ccf9115e80f909f085e022008b4d4a2ad2f2f16b7629e8b0b3bc196fe075c943fc4fbca0d8c4ebbb4044bf2"
                 ),
+                new VerifyTestVector
                 (
-                    "A1B2C3",
-                    "02139ae46a1133f1f9d23f25efba0f6dd87bf7ddaf568a5fb9e0a3bfda73176237",
-                    "30440220101e5a219e40742f2b28e7065dadd7c8935b5d493f72eaeabc42dc579e8964e7022016b55d08aa501d31855c26fc20c6387508a23041600c09c5ca0d0a5a6b7bea92"
+                    "uncompressed Y0", true,
+                    "AA00000001",
+                    KnownAddresses.UncompressedY0.PublicKeyUncompressed,
+                    "30440220680fcde47b352b1ade4bd06faa7c00f28a36ea6eaaa93d1e7d0b771e811765f1022047820b207f910e57c4e2731c57771c7a3bee60fd6e1e6db2d9336b3b4c237b82"
+                ),
+                new VerifyTestVector
+                (
+                    "low-point key", true,
+                    "AA00000001",
+                    KnownAddresses.LowPoint.PublicKeyCompressed,
+                    "3045022100f2c3d0a8eedd412c760e94231571bf04d7f5e8b0eea683bc0c472f0c55e4b9b60220289bfa9f92e47a9e5b50e95634886ea9fa8a55f5ed69834c78573f25d297b7da"
+                ),
+                new VerifyTestVector
+                (
+                    "long R and S (no normalization)", true,
+                    "AA00000004",
+                    KnownAddresses.ReferenceExample.PublicKeyCompressed,
+                    "3046022100cd46a1aa9795d12f3cd9629745d95d0e9ad053be232d0c66a7673c753ac7642c022100d2224357419d1c581f92fc3d046d46d45d3ec2bd446654aef5d67f45a0264b25"
+                ),
+                new VerifyTestVector
+                (
+                    "short R and S", true,
+                    "AA001191CF",
+                    KnownAddresses.ReferenceExample.PublicKeyCompressed,
+                    "3042021f18e8f26bca42697da704abfaa20111f63adbda1803dbbf82b27738654bd484021f3c76fb042a8ac1b7e9d9040444d5905984b14dd32ce4eca47b250159c7f615"
+                ),
+                new VerifyTestVector
+                (
+                    "non-deterministic K", true,
+                    "AA00000001",
+                    KnownAddresses.ReferenceExample.PublicKeyCompressed,
+                    "3045022100d26a4d8e12faadd8671ad45c6b90fd493b6509887915d6a906a03f7b156c4286022062ef5ccae1b1381f4dc78a4381e48f60ce52570b89643e0a59cd6fd4e729e74f"
+                ),
+                new VerifyTestVector
+                (
+                    "key-signature mismatch", false,
+                    "AA00000001",
+                    KnownAddresses.Bip38Example.PublicKeyCompressed,
+                    "30450221008f4c18a6de5348db2bd3c3c9c880c18c9f68c327617f33834f4802a0ca76b63b02202e640e9cd8d503d216c6bdf725a1c377c1feedba6548e97a1e2d418a2e069fcc"
+                ),
+                new VerifyTestVector
+                (
+                    "invalid public key encoding", false,
+                    "AA00000001",
+                    HexUtils.GetBytesUnsafe("09d0de0aaeaefad02b8bdc8a01a1b8b11c696bd3d66a2c5f10780d95b7df42645c"),
+                    "30450221008f4c18a6de5348db2bd3c3c9c880c18c9f68c327617f33834f4802a0ca76b63b02202e640e9cd8d503d216c6bdf725a1c377c1feedba6548e97a1e2d418a2e069fcc"
+                ),
+                new VerifyTestVector
+                (
+                    "invalid public key compression", false,
+                    "AA00000001",
+                    HexUtils.GetBytesUnsafe("02d0de0aaeaefad02b8bdc8a01a1b8b11c696bd3d66a2c5f10780d95b7df4264FF"),
+                    "30450221008f4c18a6de5348db2bd3c3c9c880c18c9f68c327617f33834f4802a0ca76b63b02202e640e9cd8d503d216c6bdf725a1c377c1feedba6548e97a1e2d418a2e069fcc"
+                ),
+                new VerifyTestVector
+                (
+                    "zero public key", false,
+                    "AA00000001",
+                    new byte[1],
+                    "30450221008f4c18a6de5348db2bd3c3c9c880c18c9f68c327617f33834f4802a0ca76b63b02202e640e9cd8d503d216c6bdf725a1c377c1feedba6548e97a1e2d418a2e069fcc"
+                ),
+                new VerifyTestVector
+                (
+                    "zero signature", false,
+                    "AA00000001",
+                    KnownAddresses.ReferenceExample.PublicKeyCompressed,
+                    "3006020100020100"
+                ),
+                new VerifyTestVector
+                (
+                    "zero R", false,
+                    "AA00000001",
+                    KnownAddresses.ReferenceExample.PublicKeyCompressed,
+                    "302502010002202e640e9cd8d503d216c6bdf725a1c377c1feedba6548e97a1e2d418a2e069fcc"
+                ),
+                new VerifyTestVector
+                (
+                    "zero S", false,
+                    "AA00000001",
+                    KnownAddresses.ReferenceExample.PublicKeyCompressed,
+                    "30260221008f4c18a6de5348db2bd3c3c9c880c18c9f68c327617f33834f4802a0ca76b63b020100"
+                ),
+                new VerifyTestVector
+                (
+                    "negative R", false,
+                    "AA00000004",
+                    KnownAddresses.ReferenceExample.PublicKeyCompressed,
+                    "30450220cd46a1aa9795d12f3cd9629745d95d0e9ad053be232d0c66a7673c753ac7642c022100d2224357419d1c581f92fc3d046d46d45d3ec2bd446654aef5d67f45a0264b25"
+                ),
+                new VerifyTestVector
+                (
+                    "negative S", false,
+                    "AA00000004",
+                    KnownAddresses.ReferenceExample.PublicKeyCompressed,
+                    "3045022100cd46a1aa9795d12f3cd9629745d95d0e9ad053be232d0c66a7673c753ac7642c0220d2224357419d1c581f92fc3d046d46d45d3ec2bd446654aef5d67f45a0264b25"
                 )
             };
 
-            (byte[] signedData, byte[] publicKey, byte[] signature) = RestoreVerifyTestVector(testVectors[0]);
-
-            Assert.That(verifyMethod(signedData, publicKey, signature), Is.True);
-
-            Assert.That(verifyMethod(null, publicKey, signature), Is.False);
-            Assert.That(verifyMethod(signedData, null, signature), Is.False);
-            Assert.That(verifyMethod(signedData, publicKey, null), Is.False);
-
-            Assert.That(verifyMethod(signedData, new byte[0], signature), Is.False);
-            Assert.That(verifyMethod(signedData, publicKey, new byte[0]), Is.False);
-
-            Assert.That(verifyMethod(signedData, new byte[1], signature), Is.False);
-            Assert.That(verifyMethod(signedData, publicKey, new byte[1]), Is.False);
-
-            foreach (var testVector in testVectors)
+            foreach (var testVector in verifyTestVectors)
             {
-                TestVerifyMethod(verifyMethod, testVector);
+                Assert.That(SignatureUtils.Verify(testVector.SignedData, testVector.PublicKey, testVector.Signature), Is.EqualTo(testVector.IsValid), testVector.Name);
             }
         }
 
-        private void TestVerifyMethod(Func<byte[], byte[], byte[], bool> verifyMethod, (string SignedData, string PublicKey, string Signature) testVector)
+        [Test]
+        public void TestVerifyValidation()
         {
-            (byte[] signedData, byte[] publicKey, byte[] signature) = RestoreVerifyTestVector(testVector);
-            Assert.That(verifyMethod(signedData, publicKey, signature), Is.True);
+            byte[] signedData = HexUtils.GetBytesUnsafe("AA00000001");
+            byte[] publicKey = KnownAddresses.ReferenceExample.PublicKeyCompressed;
+            byte[] signature = HexUtils.GetBytesUnsafe("30450221008f4c18a6de5348db2bd3c3c9c880c18c9f68c327617f33834f4802a0ca76b63b02202e640e9cd8d503d216c6bdf725a1c377c1feedba6548e97a1e2d418a2e069fcc");
 
-            (signedData, publicKey, signature) = RestoreVerifyTestVector(testVector);
-            signedData[0]++;
-            Assert.That(verifyMethod(signedData, publicKey, signature), Is.False);
+            Assert.True(SignatureUtils.Verify(signedData, publicKey, signature));
 
-            (signedData, publicKey, signature) = RestoreVerifyTestVector(testVector);
-            publicKey[0]++;
-            Assert.That(verifyMethod(signedData, publicKey, signature), Is.False);
+            Assert.False(SignatureUtils.Verify(null, publicKey, signature));
+            Assert.False(SignatureUtils.Verify(signedData, null, signature));
+            Assert.False(SignatureUtils.Verify(signedData, publicKey, null));
 
-            (signedData, publicKey, signature) = RestoreVerifyTestVector(testVector);
-            publicKey[0]--;
-            Assert.That(verifyMethod(signedData, publicKey, signature), Is.False);
+            Assert.False(SignatureUtils.Verify(signedData, new byte[0], signature));
+            Assert.False(SignatureUtils.Verify(signedData, publicKey, new byte[0]));
 
-            (signedData, publicKey, signature) = RestoreVerifyTestVector(testVector);
-            publicKey[1]++;
-            Assert.That(verifyMethod(signedData, publicKey, signature), Is.False);
+            Assert.False(SignatureUtils.Verify(signedData, new byte[1], signature));
+            Assert.False(SignatureUtils.Verify(signedData, publicKey, new byte[1]));
 
-            (signedData, publicKey, signature) = RestoreVerifyTestVector(testVector);
-            publicKey[1]--;
-            Assert.That(verifyMethod(signedData, publicKey, signature), Is.False);
+            Assert.False(SignatureUtils.Verify(signedData, new byte[] {0x02}, signature));
+            Assert.False(SignatureUtils.Verify(signedData, publicKey, new byte[] {0x30}));
 
-            (signedData, publicKey, signature) = RestoreVerifyTestVector(testVector);
-            publicKey[publicKey.Length - 1]++;
-            Assert.That(verifyMethod(signedData, publicKey, signature), Is.False);
-
-            (signedData, publicKey, signature) = RestoreVerifyTestVector(testVector);
-            publicKey[publicKey.Length - 1]--;
-            Assert.That(verifyMethod(signedData, publicKey, signature), Is.False);
-
-            (signedData, publicKey, signature) = RestoreVerifyTestVector(testVector);
-            signature[0]++;
-            Assert.That(verifyMethod(signedData, publicKey, signature), Is.False);
-
-            (signedData, publicKey, signature) = RestoreVerifyTestVector(testVector);
-            signature[0]--;
-            Assert.That(verifyMethod(signedData, publicKey, signature), Is.False);
-
-            (signedData, publicKey, signature) = RestoreVerifyTestVector(testVector);
-            signature[1]++;
-            Assert.That(verifyMethod(signedData, publicKey, signature), Is.False);
-
-            (signedData, publicKey, signature) = RestoreVerifyTestVector(testVector);
-            signature[1]--;
-            Assert.That(verifyMethod(signedData, publicKey, signature), Is.False);
-
-            (signedData, publicKey, signature) = RestoreVerifyTestVector(testVector);
-            signature[2]++;
-            Assert.That(verifyMethod(signedData, publicKey, signature), Is.False);
-
-            (signedData, publicKey, signature) = RestoreVerifyTestVector(testVector);
-            signature[3]++;
-            Assert.That(verifyMethod(signedData, publicKey, signature), Is.False);
-
-            (signedData, publicKey, signature) = RestoreVerifyTestVector(testVector);
-            signature[4]++;
-            Assert.That(verifyMethod(signedData, publicKey, signature), Is.False);
-
-            (signedData, publicKey, signature) = RestoreVerifyTestVector(testVector);
-            signature[15]++;
-            Assert.That(verifyMethod(signedData, publicKey, signature), Is.False);
-
-            (signedData, publicKey, signature) = RestoreVerifyTestVector(testVector);
-            signature[15]--;
-            Assert.That(verifyMethod(signedData, publicKey, signature), Is.False);
-
-            (signedData, publicKey, signature) = RestoreVerifyTestVector(testVector);
-            signature[signature.Length - 1]++;
-            Assert.That(verifyMethod(signedData, publicKey, signature), Is.False);
-
-            (signedData, publicKey, signature) = RestoreVerifyTestVector(testVector);
-            signature[signature.Length - 1]--;
-            Assert.That(verifyMethod(signedData, publicKey, signature), Is.False);
-
-            (signedData, publicKey, signature) = RestoreVerifyTestVector(testVector);
-
-            byte[] publicKey3 = new byte[3];
-            byte[] publicKeyShort = new byte[publicKey.Length - 1];
-            byte[] publicKeyLong = new byte[publicKey.Length + 1];
-
-            Array.Copy(publicKey, 0, publicKey3, 0, 3);
-            Array.Copy(publicKey, 0, publicKeyShort, 0, publicKey.Length - 1);
-            Array.Copy(publicKey, 0, publicKeyLong, 0, publicKey.Length);
-
-            Assert.That(verifyMethod(signedData, publicKey3, signature), Is.False);
-            Assert.That(verifyMethod(signedData, publicKeyShort, signature), Is.False);
-            Assert.That(verifyMethod(signedData, publicKeyLong, signature), Is.False);
-
-            byte[] signature3 = new byte[3];
-            byte[] signatureShort = new byte[signature.Length - 1];
-            byte[] signatureLong = new byte[signature.Length + 1];
-
-            Array.Copy(signature, 0, signature3, 0, 3);
-            Array.Copy(signature, 0, signatureShort, 0, signature.Length - 1);
-            Array.Copy(signature, 0, signatureLong, 0, signature.Length);
-
-            Assert.That(verifyMethod(signedData, publicKey, signature3), Is.False);
-            Assert.That(verifyMethod(signedData, publicKey, signatureShort), Is.False);
-            Assert.That(verifyMethod(signedData, publicKey, signatureLong), Is.False);
-
-            Assert.True(ECDSASignature.ParseDER(signature, out var parsedSignature));
-            ECDSASignature swapRSSignature = new ECDSASignature(parsedSignature.S, parsedSignature.R);
-            Assert.That(verifyMethod(signedData, publicKey, swapRSSignature.ToDER()), Is.False);
+            Assert.False(SignatureUtils.Verify(signedData, new byte[] {0x02, 0xd0}, signature));
+            Assert.False(SignatureUtils.Verify(signedData, publicKey, new byte[] {0x30, 0x45}));
         }
 
-        private (byte[], byte[], byte[]) RestoreVerifyTestVector((string SignedData, string PublicKey, string Signature) testVector)
+        [Test]
+        public void TestVerifyConcurrency()
         {
-            Assert.True(HexUtils.TryGetBytes(testVector.SignedData, out byte[] signedData));
-            Assert.True(HexUtils.TryGetBytes(testVector.PublicKey, out byte[] publicKey));
-            Assert.True(HexUtils.TryGetBytes(testVector.Signature, out byte[] signature));
-            return (signedData, publicKey, signature);
+            byte[] signedData = HexUtils.GetBytesUnsafe("AA00000001");
+            byte[] publicKey = KnownAddresses.ReferenceExample.PublicKeyCompressed;
+            byte[] signature = HexUtils.GetBytesUnsafe("30450221008f4c18a6de5348db2bd3c3c9c880c18c9f68c327617f33834f4802a0ca76b63b02202e640e9cd8d503d216c6bdf725a1c377c1feedba6548e97a1e2d418a2e069fcc");
+
+            TestUtils.TestConcurrency(10, 100, (t, i) => SignatureUtils.Verify(signedData, publicKey, signature));
+        }
+
+        private class VerifyTestVector
+        {
+            public VerifyTestVector(string name, bool isValid, string signedData, byte[] publicKey, string signature)
+            {
+                Name = name;
+                IsValid = isValid;
+                SignedData = HexUtils.GetBytesUnsafe(signedData);
+                PublicKey = publicKey;
+                Signature = HexUtils.GetBytesUnsafe(signature);
+            }
+
+            public string Name { get; }
+            public bool IsValid { get; }
+            public byte[] SignedData { get; }
+            public byte[] PublicKey { get; }
+            public byte[] Signature { get; }
         }
     }
 }

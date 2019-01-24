@@ -33,11 +33,14 @@ namespace TestUtilities
         {
             public KnownAddress(string privateKey)
             {
-                HexUtils.TryGetBytes(privateKey, out var privateKeyBytes);
-                PrivateKey = privateKeyBytes;
+                PrivateKey = HexUtils.GetBytesUnsafe(privateKey);
+                PublicKeyCompressed = BitcoinPrivateKey.ToEncodedPublicKey(PrivateKey, true);
+                PublicKeyUncompressed = BitcoinPrivateKey.ToEncodedPublicKey(PrivateKey, false);
             }
 
             public byte[] PrivateKey { get; }
+            public byte[] PublicKeyCompressed { get; }
+            public byte[] PublicKeyUncompressed { get; }
         }
     }
 }

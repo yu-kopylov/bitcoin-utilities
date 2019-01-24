@@ -17,6 +17,23 @@ namespace Test.BitcoinUtilities
         }
 
         [Test]
+        public void TestGetBytesUnsafe()
+        {
+            Assert.Throws<ArgumentException>(() => HexUtils.GetBytesUnsafe(null));
+            Assert.Throws<ArgumentException>(() => HexUtils.GetBytesUnsafe("a"));
+            Assert.Throws<ArgumentException>(() => HexUtils.GetBytesUnsafe("aaa"));
+            Assert.Throws<ArgumentException>(() => HexUtils.GetBytesUnsafe("0Z"));
+            Assert.Throws<ArgumentException>(() => HexUtils.GetBytesUnsafe("Z0"));
+
+            Assert.That(HexUtils.GetBytesUnsafe(""), Is.EqualTo(new byte[0]));
+            Assert.That(HexUtils.GetBytesUnsafe("01"), Is.EqualTo(new byte[] {0x01}));
+            Assert.That(HexUtils.GetBytesUnsafe("FE"), Is.EqualTo(new byte[] {0xFE}));
+            Assert.That(HexUtils.GetBytesUnsafe("FeeF"), Is.EqualTo(new byte[] {0xFE, 0xEF}));
+            Assert.That(HexUtils.GetBytesUnsafe("0123456789ABCDEF"), Is.EqualTo(new byte[] {0x01, 0x23, 0x45, 0x67, 0x89, 0xAB, 0xCD, 0xEF}));
+            Assert.That(HexUtils.GetBytesUnsafe("0123456789abcdef"), Is.EqualTo(new byte[] {0x01, 0x23, 0x45, 0x67, 0x89, 0xAB, 0xCD, 0xEF}));
+        }
+
+        [Test]
         public void TestTryGetBytes()
         {
             byte[] bytes;
