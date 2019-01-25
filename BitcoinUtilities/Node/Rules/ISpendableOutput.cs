@@ -3,5 +3,6 @@
     public interface ISpendableOutput
     {
         ulong Value { get; }
+        byte[] PubkeyScript { get; }
     }
 }

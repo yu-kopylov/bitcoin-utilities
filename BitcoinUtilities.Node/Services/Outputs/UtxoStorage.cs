@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Data;
 using System.Data.SQLite;
 using System.Linq;
-using BitcoinUtilities.Collections;
 using BitcoinUtilities.P2P.Primitives;
 using NLog;
 
@@ -251,7 +250,7 @@ namespace BitcoinUtilities.Node.Services.Outputs
                     command.Parameters.Add("@OutputIndex", DbType.Int32).Value = output.OutputPoint.Index;
                     command.Parameters.Add("@Height", DbType.Int32).Value = output.Height;
                     command.Parameters.Add("@Value", DbType.UInt64).Value = output.Value;
-                    command.Parameters.Add("@Script", DbType.Binary).Value = output.Script;
+                    command.Parameters.Add("@Script", DbType.Binary).Value = output.PubkeyScript;
                     command.Parameters.Add("@SpentHeight", DbType.Int32).Value = output.SpentHeight;
 
                     command.ExecuteNonQuery();
@@ -274,7 +273,8 @@ namespace BitcoinUtilities.Node.Services.Outputs
                     command.Parameters.Add("@OutputIndex", DbType.Int32).Value = output.OutputPoint.Index;
                     command.Parameters.Add("@Height", DbType.Int32).Value = output.Height;
                     command.Parameters.Add("@Value", DbType.UInt64).Value = output.Value;
-                    command.Parameters.Add("@Script", DbType.Binary).Value = output.Script;
+                    // todo: rename Script column to PubkeyScript
+                    command.Parameters.Add("@Script", DbType.Binary).Value = output.PubkeyScript;
 
                     command.ExecuteNonQuery();
                     command.Parameters.Clear();

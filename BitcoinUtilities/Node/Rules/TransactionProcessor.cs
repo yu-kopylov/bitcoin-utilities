@@ -9,10 +9,10 @@ namespace BitcoinUtilities.Node.Rules
 {
     public class TransactionProcessor
     {
-        private readonly ScriptParser sctriptParser = new ScriptParser();
+        private readonly ScriptParser scriptParser = new ScriptParser();
 
         // todo: add tests
-        public void UpdateOutputs<TOutput>
+        public ProcessedTransaction[] UpdateOutputs<TOutput>
         (
             IUpdatableOutputSet<TOutput> outputs,
             int blockHeight,
@@ -22,6 +22,8 @@ namespace BitcoinUtilities.Node.Rules
         {
             ulong inputsSum = GetBlockReward(blockHeight);
             ulong outputsSum = 0;
+
+            ProcessedTransaction[] processedTransactions = new ProcessedTransaction[blockMessage.Transactions.Length];
 
             for (int transactionNumber = 0; transactionNumber < blockMessage.Transactions.Length; transactionNumber++)
             {
@@ -54,11 +56,19 @@ namespace BitcoinUtilities.Node.Rules
                 }
 
                 //todo: check transaction hash against genesis block transaction hash
-                if (transactionNumber != 0)
+                if (transactionNumber == 0)
                 {
-                    foreach (TxIn input in transaction.Inputs)
+                    processedTransactions[transactionNumber] = new ProcessedTransaction(transaction, transactionHash, new TransactionInput[0]);
+                }
+                else
+                {
+                    TransactionInput[] transactionInputs = new TransactionInput[transaction.Inputs.Length];
+
+                    for (int inputNum = 0; inputNum < transaction.Inputs.Length; inputNum++)
                     {
+                        TxIn input = transaction.Inputs[inputNum];
                         TOutput output = outputs.FindUnspentOutput(input.PreviousOutput);
+
                         if (output == null)
                         {
                             throw new BitcoinProtocolViolationException(
@@ -70,7 +80,7 @@ namespace BitcoinUtilities.Node.Rules
                         //todo: check for overflow
                         transactionInputsSum += output.Value;
 
-                        if (!sctriptParser.TryParse(input.SignatureScript, out var inputCommands))
+                        if (!scriptParser.TryParse(input.SignatureScript, out var inputCommands))
                         {
                             throw new BitcoinProtocolViolationException(
                                 $"The transaction '{HexUtils.GetString(transactionHash)}'" +
@@ -86,9 +96,11 @@ namespace BitcoinUtilities.Node.Rules
                                 $" has forbidden commands in the signature script.");
                         }
 
-                        //todo: check signature for the output
                         outputs.Spend(output, blockHeight);
+                        transactionInputs[inputNum] = new TransactionInput(output.Value, output.PubkeyScript);
                     }
+
+                    processedTransactions[transactionNumber] = new ProcessedTransaction(transaction, transactionHash, transactionInputs);
                 }
 
                 for (int outputNumber = 0; outputNumber < transaction.Outputs.Length; outputNumber++)
@@ -98,7 +110,7 @@ namespace BitcoinUtilities.Node.Rules
                     transactionOutputsSum += output.Value;
 
                     List<ScriptCommand> commands;
-                    if (!sctriptParser.TryParse(output.PubkeyScript, out commands))
+                    if (!scriptParser.TryParse(output.PubkeyScript, out commands))
                     {
                         //todo: how Bitcoin Core works in this scenario?
                         throw new BitcoinProtocolViolationException(
@@ -133,6 +145,8 @@ namespace BitcoinUtilities.Node.Rules
                     $" in the block '{HexUtils.GetString(blockHash)}'" +
                     $" is less than the sum of the outputs ({inputsSum} < {outputsSum}).");
             }
+
+            return processedTransactions;
         }
 
         private static bool IsValidSignatureCommand(byte code)

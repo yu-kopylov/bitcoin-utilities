@@ -345,7 +345,7 @@ namespace Test.BitcoinUtilities.Node.Services.Outputs
                 $"TxHash: {HexUtils.GetString(output.OutputPoint.Hash)}",
                 $"OutputIndex: {output.OutputPoint.Index}",
                 $"Value: {output.Value}",
-                $"Script: {HexUtils.GetString(output.Script)}",
+                $"PubkeyScript: {HexUtils.GetString(output.PubkeyScript)}",
                 $"SpentHeight: {output.SpentHeight}"
             );
         }

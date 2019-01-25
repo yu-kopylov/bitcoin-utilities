@@ -78,6 +78,8 @@
     <Compile Include="Node\NodeAddressCollection.cs" />
     <Compile Include="BitcoinPrivateKey.cs" />
     <Compile Include="Node\Rules\BlockContentValidator.cs" />
+    <Compile Include="Node\Rules\ProcessedTransaction.cs" />
+    <Compile Include="Node\Rules\TransactionInput.cs" />
     <Compile Include="Node\Rules\TransactionProcessor.cs" />
     <Compile Include="P2P\BitcoinServiceFlags.cs" />
     <Compile Include="Scripts\BitcoinCashSigHashCalculator.cs" />
