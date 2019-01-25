@@ -55,6 +55,7 @@ namespace BitcoinUtilities.Scripts
                 {
                     return false;
                 }
+
                 return IsTrue(dataStack[dataStack.Count - 1]);
             }
         }
@@ -104,10 +105,12 @@ namespace BitcoinUtilities.Scripts
                 //todo: make sure that this exception is never thrown
                 throw new InvalidOperationException($"Command '0x{command.Code:X2}' is not supported.");
             }
+
             if (!commandDefinition.IsControlCommand && !controlStack.ExecuteBranch)
             {
                 return;
             }
+
             commandDefinition.Execute(script, command);
         }
 
@@ -120,6 +123,7 @@ namespace BitcoinUtilities.Scripts
             {
                 commandDefinitions[op] = new CommandDefinition(false, PushData);
             }
+
             commandDefinitions[BitcoinScript.OP_PUSHDATA1] = new CommandDefinition(false, PushData1);
             commandDefinitions[BitcoinScript.OP_PUSHDATA2] = new CommandDefinition(false, PushData2);
             commandDefinitions[BitcoinScript.OP_PUSHDATA4] = new CommandDefinition(false, PushData4);
@@ -250,10 +254,12 @@ namespace BitcoinUtilities.Scripts
                 dataStack.RemoveAt(index);
                 condition = IsTrue(data);
             }
+
             if (command.Code == BitcoinScript.OP_NOTIF)
             {
                 condition = !condition;
             }
+
             controlStack.Push(condition);
         }
 
@@ -264,6 +270,7 @@ namespace BitcoinUtilities.Scripts
                 valid = false;
                 return;
             }
+
             bool executeBranch = !controlStack.ExecuteBranch;
             controlStack.Pop();
             controlStack.Push(executeBranch);
@@ -276,6 +283,7 @@ namespace BitcoinUtilities.Scripts
                 valid = false;
                 return;
             }
+
             controlStack.Pop();
         }
 
@@ -287,6 +295,7 @@ namespace BitcoinUtilities.Scripts
                 valid = false;
                 return;
             }
+
             if (!IsTrue(data))
             {
                 valid = false;
@@ -313,6 +322,7 @@ namespace BitcoinUtilities.Scripts
                 valid = false;
                 return;
             }
+
             altDataStack.Push(data);
         }
 
@@ -324,6 +334,7 @@ namespace BitcoinUtilities.Scripts
                 valid = false;
                 return;
             }
+
             byte[] data = altDataStack.Pop();
             dataStack.Add(data);
         }
@@ -336,6 +347,7 @@ namespace BitcoinUtilities.Scripts
                 valid = false;
                 return;
             }
+
             PopData();
             PopData();
         }
@@ -348,6 +360,7 @@ namespace BitcoinUtilities.Scripts
                 valid = false;
                 return;
             }
+
             byte[] item1 = dataStack[dataStack.Count - 1];
             byte[] item2 = dataStack[dataStack.Count - 2];
             dataStack.Add(item2);
@@ -362,6 +375,7 @@ namespace BitcoinUtilities.Scripts
                 valid = false;
                 return;
             }
+
             byte[] item1 = dataStack[dataStack.Count - 1];
             byte[] item2 = dataStack[dataStack.Count - 2];
             byte[] item3 = dataStack[dataStack.Count - 3];
@@ -378,6 +392,7 @@ namespace BitcoinUtilities.Scripts
                 valid = false;
                 return;
             }
+
             byte[] item1 = dataStack[dataStack.Count - 3];
             byte[] item2 = dataStack[dataStack.Count - 4];
             dataStack.Add(item2);
@@ -476,6 +491,7 @@ namespace BitcoinUtilities.Scripts
                 valid = false;
                 return;
             }
+
             dataStack.Add(item);
             dataStack.Add(item);
         }
@@ -488,6 +504,7 @@ namespace BitcoinUtilities.Scripts
                 valid = false;
                 return;
             }
+
             dataStack.RemoveAt(dataStack.Count - 2);
         }
 
@@ -499,6 +516,7 @@ namespace BitcoinUtilities.Scripts
                 valid = false;
                 return;
             }
+
             byte[] item = dataStack[dataStack.Count - 2];
             dataStack.Add(item);
         }
@@ -511,6 +529,7 @@ namespace BitcoinUtilities.Scripts
                 valid = false;
                 return;
             }
+
             byte[] numAsBytes = PopData();
             BigInteger numAsBigInt = new BigInteger(numAsBytes);
             if (numAsBigInt < 0 || numAsBigInt >= dataStack.Count)
@@ -518,6 +537,7 @@ namespace BitcoinUtilities.Scripts
                 valid = false;
                 return;
             }
+
             // We assume that dataStack.Count is always less then int.MaxValue. Therefore, this conversion should never fail.
             int num = (int) numAsBigInt;
             byte[] item = dataStack[dataStack.Count - num];
@@ -532,6 +552,7 @@ namespace BitcoinUtilities.Scripts
                 valid = false;
                 return;
             }
+
             byte[] numAsBytes = PopData();
             BigInteger numAsBigInt = new BigInteger(numAsBytes);
             if (numAsBigInt < 0 || numAsBigInt >= dataStack.Count)
@@ -539,6 +560,7 @@ namespace BitcoinUtilities.Scripts
                 valid = false;
                 return;
             }
+
             // We assume that dataStack.Count is always less then int.MaxValue. Therefore, this conversion should never fail.
             int num = (int) numAsBigInt;
             byte[] item = dataStack[dataStack.Count - num];
@@ -601,6 +623,7 @@ namespace BitcoinUtilities.Scripts
                 valid = false;
                 return;
             }
+
             byte[] item1 = PopData();
             byte[] item2 = PopData();
 
@@ -615,6 +638,7 @@ namespace BitcoinUtilities.Scripts
                 valid = false;
                 return;
             }
+
             byte[] item1 = PopData();
             byte[] item2 = PopData();
 
@@ -639,6 +663,7 @@ namespace BitcoinUtilities.Scripts
                 valid = false;
                 return;
             }
+
             dataStack.Add(CryptoUtils.RipeMd160(data));
         }
 
@@ -650,6 +675,7 @@ namespace BitcoinUtilities.Scripts
                 valid = false;
                 return;
             }
+
             dataStack.Add(CryptoUtils.Sha1(data));
         }
 
@@ -661,6 +687,7 @@ namespace BitcoinUtilities.Scripts
                 valid = false;
                 return;
             }
+
             dataStack.Add(CryptoUtils.Sha256(data));
         }
 
@@ -672,6 +699,7 @@ namespace BitcoinUtilities.Scripts
                 valid = false;
                 return;
             }
+
             dataStack.Add(CryptoUtils.RipeMd160(CryptoUtils.Sha256(data)));
         }
 
@@ -683,6 +711,7 @@ namespace BitcoinUtilities.Scripts
                 valid = false;
                 return;
             }
+
             dataStack.Add(CryptoUtils.DoubleSha256(data));
         }
 
@@ -711,7 +740,8 @@ namespace BitcoinUtilities.Scripts
 
         private void ExecuteCheckMultiSig(byte[] script, ScriptCommand command)
         {
-            throw new NotImplementedException("OP_CHECKMULTISIG is not implemented yet.");
+            bool success = CheckMultiSig(script);
+            dataStack.Add(success ? new byte[] {1} : new byte[0]);
         }
 
         private void ExecuteCheckMultiSigVerify(byte[] script, ScriptCommand command)
@@ -730,19 +760,13 @@ namespace BitcoinUtilities.Scripts
             byte[] pubKey = PopData();
             byte[] signatureBlock = PopData();
 
-            //todo: validate length first
-            SigHashType hashType = (SigHashType) signatureBlock[signatureBlock.Length - 1];
-            byte[] signature = new byte[signatureBlock.Length - 1];
-            Array.Copy(signatureBlock, 0, signature, 0, signatureBlock.Length - 1);
-
-            // todo: remove signatures from script
-            // todo: also remove all OP_CODESEPARATORs from script
-            byte[] subScript = script;
-            if (lastCodeSeparator >= 0)
+            if (!ParseSignatureBlock(signatureBlock, out byte[] signature, out var hashType))
             {
-                subScript = new byte[script.Length - lastCodeSeparator - 1];
-                Array.Copy(script, lastCodeSeparator + 1, subScript, 0, script.Length - lastCodeSeparator - 1);
+                valid = false;
+                return false;
             }
+
+            byte[] subScript = ExtractSubScript(script);
 
             if (sigHashCalculator == null)
             {
@@ -754,6 +778,122 @@ namespace BitcoinUtilities.Scripts
             return SignatureUtils.Verify(signedData, pubKey, signature);
         }
 
+        private bool CheckMultiSig(byte[] script)
+        {
+            if (dataStack.Count < 5)
+            {
+                valid = false;
+                return false;
+            }
+
+            byte[] publicKeyCountEncoded = PopData();
+            if (publicKeyCountEncoded.Length != 1)
+            {
+                valid = false;
+                return false;
+            }
+
+            // todo: is it correct to decode number this way?
+            int publicKeyCount = publicKeyCountEncoded[0];
+            if (publicKeyCount <= 0 || publicKeyCount >= dataStack.Count || publicKeyCount >= 0x7F)
+            {
+                valid = false;
+                return false;
+            }
+
+            byte[][] publicKeys = new byte[publicKeyCount][];
+            for (int i = 0; i < publicKeyCount; i++)
+            {
+                publicKeys[i] = PopData();
+            }
+
+            byte[] signatureCountEncoded = PopData();
+            if (signatureCountEncoded.Length != 1)
+            {
+                valid = false;
+                return false;
+            }
+
+            // todo: is it correct to decode number this way?
+            int signaturesCount = signatureCountEncoded[0];
+            if (signaturesCount <= 0 || signaturesCount >= dataStack.Count || signaturesCount >= 0x7F)
+            {
+                valid = false;
+                return false;
+            }
+
+            byte[][] signatures = new byte[signaturesCount][];
+            SigHashType[] hashTypes = new SigHashType[signaturesCount];
+            for (int i = 0; i < signaturesCount; i++)
+            {
+                byte[] signatureBlock = PopData();
+                if (!ParseSignatureBlock(signatureBlock, out signatures[i], out hashTypes[i]))
+                {
+                    valid = false;
+                    return false;
+                }
+            }
+
+            // one extra unused value
+            PopData();
+
+            byte[] subScript = ExtractSubScript(script);
+
+            if (sigHashCalculator == null)
+            {
+                throw new InvalidOperationException($"{nameof(SigHashCalculator)} is required for signature verification.");
+            }
+
+            int signatureIndex = 0;
+            SigHashType hashType = hashTypes[0];
+            byte[] signedData = sigHashCalculator.Calculate(hashType, subScript);
+
+            for (int publicKeyIndex = 0; publicKeyIndex < publicKeyCount && signatureIndex < signaturesCount; publicKeyIndex++)
+            {
+                if (hashTypes[signatureIndex] != hashType)
+                {
+                    hashType = hashTypes[signatureIndex];
+                    signedData = sigHashCalculator.Calculate(hashType, subScript);
+                }
+
+                if (SignatureUtils.Verify(signedData, publicKeys[publicKeyIndex], signatures[signatureIndex]))
+                {
+                    signatureIndex++;
+                }
+            }
+
+            return signatureIndex == signaturesCount;
+        }
+
+        private byte[] ExtractSubScript(byte[] script)
+        {
+            // todo: also remove all OP_CODESEPARATORs from script ?
+            byte[] subScript = script;
+            if (lastCodeSeparator >= 0)
+            {
+                subScript = new byte[script.Length - lastCodeSeparator - 1];
+                Array.Copy(script, lastCodeSeparator + 1, subScript, 0, script.Length - lastCodeSeparator - 1);
+            }
+
+            return subScript;
+        }
+
+        private static bool ParseSignatureBlock(byte[] signatureBlock, out byte[] signature, out SigHashType hashType)
+        {
+            if (signatureBlock.Length == 0)
+            {
+                signature = null;
+                hashType = 0;
+                return false;
+            }
+
+            hashType = (SigHashType) signatureBlock[signatureBlock.Length - 1];
+            signature = new byte[signatureBlock.Length - 1];
+            Array.Copy(signatureBlock, 0, signature, 0, signatureBlock.Length - 1);
+
+            return true;
+        }
+
         #endregion
 
         private byte[] PopData()
@@ -763,6 +903,7 @@ namespace BitcoinUtilities.Scripts
                 // todo: throw exception instead?
                 return null;
             }
+
             int index = dataStack.Count - 1;
             byte[] res = dataStack[index];
             dataStack.RemoveAt(index);
@@ -775,11 +916,13 @@ namespace BitcoinUtilities.Scripts
             {
                 return false;
             }
+
             int lastIndex = data.Length - 1;
             if (data[lastIndex] != 0 && data[lastIndex] != 0x80)
             {
                 return true;
             }
+
             for (int i = 0; i < lastIndex; i++)
             {
                 if (data[i] != 0)
@@ -787,6 +930,7 @@ namespace BitcoinUtilities.Scripts
                     return true;
                 }
             }
+
             return false;
         }
 
