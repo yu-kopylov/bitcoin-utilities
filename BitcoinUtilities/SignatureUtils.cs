@@ -122,46 +122,36 @@ namespace BitcoinUtilities
             return recoveredAddress == address;
         }
 
-        //todo: add tests, parameter validation and xml-doc
-        public static byte[] Sign(byte[] signedData, byte[] privateKey, bool useCompressedPublicKey)
+        /// <summary>
+        /// Signs the given data using the given private key.
+        /// </summary>
+        /// <param name="data">The data to sign.</param>
+        /// <param name="privateKey">A 32-byte array with the private key to use for signing.</param>
+        /// <exception cref="ArgumentException">If parameters are invalid.</exception>
+        /// <returns>A signature in DER encoding.</returns>
+        public static byte[] Sign(byte[] data, byte[] privateKey)
         {
+            if (data == null)
+            {
+                throw new ArgumentException($"The {nameof(data)} is null.", nameof(data));
+            }
+
+            if (!BitcoinPrivateKey.IsValid(privateKey))
+            {
+                throw new ArgumentException($"Invalid {nameof(privateKey)} value.", nameof(privateKey));
+            }
+
             ECPrivateKeyParameters parameters = new ECPrivateKeyParameters(new BigInteger(1, privateKey), domainParameters);
 
             ECDsaSigner signer = new ECDsaSigner(new HMacDsaKCalculator(new Sha256Digest()));
             signer.Init(true, parameters);
 
-            byte[] hash = CryptoUtils.DoubleSha256(signedData);
+            byte[] hash = CryptoUtils.DoubleSha256(data);
 
             BigInteger[] signatureArray = signer.GenerateSignature(hash);
             ECDSASignature ecdsaSignature = new ECDSASignature(signatureArray[0], NormalizeS(signatureArray[1]));
 
-            byte[] encodedPublicKey = BitcoinPrivateKey.ToEncodedPublicKey(privateKey, useCompressedPublicKey);
-
-            int pubKeyMaskOffset = useCompressedPublicKey ? 4 : 0;
-
-            Signature signature = null;
-
-            for (int i = 0; i < 4; i++)
-            {
-                Signature candidateSignature = new Signature();
-                candidateSignature.PublicKeyMask = i + pubKeyMaskOffset;
-                candidateSignature.EcdsaSignature = ecdsaSignature;
-
-                byte[] recoveredPublicKey = RecoverPublicKeyFromSignature(hash, candidateSignature);
-                if (recoveredPublicKey != null && recoveredPublicKey.SequenceEqual(encodedPublicKey))
-                {
-                    signature = candidateSignature;
-                    break;
-                }
-            }
-
-            if (signature == null)
-            {
-                // this should not happen
-                throw new Exception("The public key is not recoverable from signature.");
-            }
-
-            return signature.EcdsaSignature.ToDER();
+            return ecdsaSignature.ToDER();
         }
 
         /// <summary>

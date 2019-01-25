@@ -98,7 +98,7 @@ namespace BitcoinUtilities
                     SigHashType hashType = GetHashType();
 
                     byte[] signedData = hashCalculator.Calculate(hashType, input.PubkeyScript);
-                    byte[] signature = SignatureUtils.Sign(signedData, input.PrivateKey, input.IsCompressedAddress);
+                    byte[] signature = SignatureUtils.Sign(signedData, input.PrivateKey);
 
                     signatureScript = BitcoinScript.CreatePayToPubkeyHashSignature(hashType, publicKey, signature);
                 }

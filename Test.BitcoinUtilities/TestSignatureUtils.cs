@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Linq;
 using BitcoinUtilities;
 using NUnit.Framework;
+using Org.BouncyCastle.Math;
 using TestUtilities;
 
 namespace Test.BitcoinUtilities
@@ -163,6 +165,75 @@ namespace Test.BitcoinUtilities
             Console.WriteLine("Signature Header:\t0x{0:X2}", Convert.FromBase64String(signature)[0]);
             Assert.That(signature, Is.EqualTo(expectedSignature));
             Assert.True(SignatureUtils.VerifyMessage(address, message, signature));
+        }
+
+        [Test]
+        public void TestSign()
+        {
+            byte[] data = new byte[] {0xAA, 0x00};
+            byte[][] privateKeys = new byte[][]
+            {
+                KnownAddresses.ReferenceExample.PrivateKey,
+                KnownAddresses.Bip38Example.PrivateKey,
+                KnownAddresses.UncompressedX0.PrivateKey,
+                KnownAddresses.UncompressedX0.PrivateKey,
+                KnownAddresses.LowPoint.PrivateKey
+            };
+
+            BigInteger maxS = new BigInteger(1, HexUtils.GetBytesUnsafe("7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF5D576E7357A4501DDFE92F46681B20A0"));
+
+            foreach (byte[] privateKey in privateKeys)
+            {
+                byte[] publicKeyCompressed = BitcoinPrivateKey.ToEncodedPublicKey(privateKey, true);
+                byte[] publicKeyUncompressed = BitcoinPrivateKey.ToEncodedPublicKey(privateKey, false);
+                for (int i = 0; i < 32; i++)
+                {
+                    data[1] = (byte) i;
+                    byte[] signature = SignatureUtils.Sign(data, privateKey);
+
+                    Assert.True(SignatureUtils.Verify(data, publicKeyCompressed, signature));
+                    Assert.True(SignatureUtils.Verify(data, publicKeyUncompressed, signature));
+
+                    ECDSASignature.ParseDER(signature, out var parsedSignature);
+                    Assert.True(parsedSignature.S.CompareTo(maxS) <= 0, "S-Normalized (BIP-062)");
+                }
+            }
+        }
+
+        [Test]
+        public void TestSignValidation()
+        {
+            Assert.That(SignatureUtils.Sign(new byte[] {0xAB, 0x01}, Enumerable.Repeat<byte>(0x01, 32).ToArray()), Is.Not.Empty);
+
+            Assert.That(Assert.Throws<ArgumentException>(() => SignatureUtils.Sign(null, Enumerable.Repeat<byte>(0x01, 32).ToArray())).ParamName, Is.EqualTo("data"));
+            Assert.That(Assert.Throws<ArgumentException>(() => SignatureUtils.Sign(new byte[] {0xAB, 0x01}, null)).ParamName, Is.EqualTo("privateKey"));
+
+            Assert.That(Assert.Throws<ArgumentException>(() => SignatureUtils.Sign(new byte[] {0xAB, 0x01}, Enumerable.Repeat<byte>(0x01, 0).ToArray())).ParamName, Is.EqualTo("privateKey"));
+            Assert.That(Assert.Throws<ArgumentException>(() => SignatureUtils.Sign(new byte[] {0xAB, 0x01}, Enumerable.Repeat<byte>(0x01, 1).ToArray())).ParamName, Is.EqualTo("privateKey"));
+            Assert.That(Assert.Throws<ArgumentException>(() => SignatureUtils.Sign(new byte[] {0xAB, 0x01}, Enumerable.Repeat<byte>(0x01, 31).ToArray())).ParamName, Is.EqualTo("privateKey"));
+            Assert.That(Assert.Throws<ArgumentException>(() => SignatureUtils.Sign(new byte[] {0xAB, 0x01}, Enumerable.Repeat<byte>(0x01, 33).ToArray())).ParamName, Is.EqualTo("privateKey"));
+
+            Assert.That(Assert.Throws<ArgumentException>(() => SignatureUtils.Sign(new byte[] {0xAB, 0x01}, Enumerable.Repeat<byte>(0xFF, 32).ToArray())).ParamName, Is.EqualTo("privateKey"));
+        }
+
+        [Test]
+        public void TestSignDeterministic()
+        {
+            // this test verifies that HMAC-SHA256 is used for K selection
+            Assert.That(HexUtils.GetString(SignatureUtils.Sign(new byte[] {0xAB, 0x01}, KnownAddresses.ReferenceExample.PrivateKey)), Is.EqualTo(
+                "30440220089df30d4aefaf94910672038ef0befca8ffec30e71bf793da4509e4971a6dc6022045847fb8c224ae5484a43ae66dbe6690c1497a863e734b3881a5c0a45f87d1fe"
+            ));
+        }
+
+        [Test]
+        public void TestSignConcurrency()
+        {
+            byte[] expectedSignature = HexUtils.GetBytesUnsafe("30440220089df30d4aefaf94910672038ef0befca8ffec30e71bf793da4509e4971a6dc6022045847fb8c224ae5484a43ae66dbe6690c1497a863e734b3881a5c0a45f87d1fe");
+            TestUtils.TestConcurrency(10, 100, (t, i) =>
+            {
+                var signature = SignatureUtils.Sign(new byte[] {0xAB, 0x01}, KnownAddresses.ReferenceExample.PrivateKey);
+                return signature.SequenceEqual(expectedSignature);
+            });
         }
 
         [Test]
