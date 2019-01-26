@@ -11,6 +11,7 @@ using Org.BouncyCastle.Crypto.Parameters;
 using Org.BouncyCastle.Crypto.Signers;
 using Org.BouncyCastle.Math;
 using Org.BouncyCastle.Math.EC;
+using Secp256k1Net;
 
 namespace BitcoinUtilities
 {
@@ -24,6 +25,17 @@ namespace BitcoinUtilities
             new ECDomainParameters(curveParameters.Curve, curveParameters.G, curveParameters.N, curveParameters.H);
 
         private static readonly BigInteger halfCurveOrder = curveParameters.N.ShiftRight(1);
+
+        private static readonly Secp256k1 secp256k1Alg = new Secp256k1();
+
+        static SignatureUtils()
+        {
+            byte[] signature = HexUtils.GetBytesUnsafe("3bb676caa002484f83337f6127c3689f8cc180c8c9c3d32bdb4853dea6184c8fcc9f062e8a412d1e7ae94865baedfec177c3a125f7bdc616d203d5d89c0e642e");
+            byte[] hash = HexUtils.GetBytesUnsafe("408c89318182a9aba98618927f288e27ef9443839d262c73223162f56faba260");
+            byte[] publicKey = HexUtils.GetBytesUnsafe("5c6442dfb7950d78105f2c6ad6d36b691cb1b8a1018adc8b2bd0faaeae0aded00acb4876c929e934d9820eccd71e5d11bde22a84557e8e850e9429fba62852d8");
+            // Secp256k1.Net has lazy initialization for each method, so we need to initialize used methods before they are ready for multi-threaded environment.
+            secp256k1Alg.Verify(signature, hash, publicKey);
+        }
 
         /// <summary>
         /// Creates a signature for the given message and the given private key.
@@ -177,6 +189,11 @@ namespace BitcoinUtilities
                 return false;
             }
 
+            if (ecdsaSignature.R.SignValue < 0 || ecdsaSignature.S.SignValue < 0)
+            {
+                return false;
+            }
+
             byte[] hash = CryptoUtils.DoubleSha256(signedData);
 
             ECPoint q;
@@ -193,10 +210,28 @@ namespace BitcoinUtilities
                 return false;
             }
 
-            ECPublicKeyParameters parameters = new ECPublicKeyParameters(q, domainParameters);
-            ECDsaSigner signer = new ECDsaSigner();
-            signer.Init(false, parameters);
-            return signer.VerifySignature(hash, ecdsaSignature.R, ecdsaSignature.S);
+            byte[] x = q.XCoord.GetEncoded();
+            byte[] y = q.YCoord.GetEncoded();
+
+            byte[] binaryPublicKey = new byte[64];
+            Array.Copy(y, 0, binaryPublicKey, 0, y.Length);
+            Array.Copy(x, 0, binaryPublicKey, 32, x.Length);
+            Array.Reverse(binaryPublicKey);
+
+            byte[] r = ecdsaSignature.R.ToByteArrayUnsigned();
+            // Secp256k1.Net requires normalized S.
+            byte[] s = NormalizeS(ecdsaSignature.S).ToByteArrayUnsigned();
+            if (r.Length > 32 || s.Length > 32)
+            {
+                return false;
+            }
+
+            byte[] binarySignature = new byte[64];
+            Array.Copy(s, 0, binarySignature, 32 - s.Length, s.Length);
+            Array.Copy(r, 0, binarySignature, 64 - r.Length, r.Length);
+            Array.Reverse(binarySignature);
+
+            return secp256k1Alg.Verify(binarySignature, hash, binaryPublicKey);
         }
 
         /// <summary>
