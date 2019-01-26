@@ -29,12 +29,12 @@ namespace BitcoinUtilities.Scripts
         public const byte OP_PUSHDATA1 = 0x4C;
 
         /// <summary>
-        /// The next two bytes contain the number of bytes to be pushed onto the stack.
+        /// The next two bytes contain the number of bytes to be pushed onto the stack in little-endian order.
         /// </summary>
         public const byte OP_PUSHDATA2 = 0x4D;
 
         /// <summary>
-        /// The next four bytes contain the number of bytes to be pushed onto the stack.
+        /// The next four bytes contain the number of bytes to be pushed onto the stack in little-endian order.
         /// </summary>
         public const byte OP_PUSHDATA4 = 0x4E;
 

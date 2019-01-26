@@ -60,8 +60,8 @@ namespace BitcoinUtilities.Scripts
                     return false;
                 }
 
-                int dataLength = script[offset + 1];
-                dataLength = dataLength*256 + script[offset + 2];
+                int dataLength = script[offset + 2];
+                dataLength = dataLength*256 + script[offset + 1];
 
                 length = 3 + dataLength;
             }
@@ -73,10 +73,10 @@ namespace BitcoinUtilities.Scripts
                     return false;
                 }
 
-                int dataLength = script[offset + 1];
-                dataLength = dataLength*256 + script[offset + 2];
+                int dataLength = script[offset + 4];
                 dataLength = dataLength*256 + script[offset + 3];
-                dataLength = dataLength*256 + script[offset + 4];
+                dataLength = dataLength*256 + script[offset + 2];
+                dataLength = dataLength*256 + script[offset + 1];
 
                 if (dataLength < 0)
                 {

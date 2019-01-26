@@ -149,11 +149,11 @@ namespace Test.BitcoinUtilities.Scripts
             Assert.That(commands.Select(c => c.Offset), Is.EqualTo(new int[] {0}));
             Assert.That(commands.Select(c => c.Length), Is.EqualTo(new int[] {3}));
 
-            script = new byte[] {BitcoinScript.OP_PUSHDATA2, 0, 1};
+            script = new byte[] {BitcoinScript.OP_PUSHDATA2, 1, 0};
             Assert.False(parser.TryParse(script, out commands));
             Assert.That(commands, Is.Null);
 
-            script = new byte[] {BitcoinScript.OP_PUSHDATA2, 0, 1, 1};
+            script = new byte[] {BitcoinScript.OP_PUSHDATA2, 1, 0, 1};
             Assert.True(parser.TryParse(script, out commands));
             Assert.That(commands.Select(c => c.Code), Is.EqualTo(new byte[] {BitcoinScript.OP_PUSHDATA2}));
             Assert.That(commands.Select(c => c.Offset), Is.EqualTo(new int[] {0}));
@@ -161,15 +161,15 @@ namespace Test.BitcoinUtilities.Scripts
 
             script = new byte[0xFF82];
             script[0] = BitcoinScript.OP_PUSHDATA2;
-            script[1] = 0xFF;
-            script[2] = 0x80;
+            script[1] = 0x80;
+            script[2] = 0xFF;
             Assert.False(parser.TryParse(script, out commands));
             Assert.That(commands, Is.Null);
 
             script = new byte[0xFF83];
             script[0] = BitcoinScript.OP_PUSHDATA2;
-            script[1] = 0xFF;
-            script[2] = 0x80;
+            script[1] = 0x80;
+            script[2] = 0xFF;
             Assert.True(parser.TryParse(script, out commands));
             Assert.That(commands.Select(c => c.Code), Is.EqualTo(new byte[] {BitcoinScript.OP_PUSHDATA2}));
             Assert.That(commands.Select(c => c.Offset), Is.EqualTo(new int[] {0}));
@@ -178,16 +178,16 @@ namespace Test.BitcoinUtilities.Scripts
             script = new byte[13];
             script[0] = BitcoinScript.OP_TRUE;
             script[1] = BitcoinScript.OP_PUSHDATA2;
-            script[2] = 0;
-            script[3] = 10;
+            script[2] = 10;
+            script[3] = 0;
             Assert.False(parser.TryParse(script, out commands));
             Assert.That(commands, Is.Null);
 
             script = new byte[14];
             script[0] = BitcoinScript.OP_TRUE;
             script[1] = BitcoinScript.OP_PUSHDATA2;
-            script[2] = 0;
-            script[3] = 10;
+            script[2] = 10;
+            script[3] = 0;
             Assert.True(parser.TryParse(script, out commands));
             Assert.That(commands.Select(c => c.Code), Is.EqualTo(new byte[] {BitcoinScript.OP_TRUE, BitcoinScript.OP_PUSHDATA2}));
             Assert.That(commands.Select(c => c.Offset), Is.EqualTo(new int[] {0, 1}));
@@ -211,11 +211,11 @@ namespace Test.BitcoinUtilities.Scripts
             Assert.That(commands.Select(c => c.Offset), Is.EqualTo(new int[] {0}));
             Assert.That(commands.Select(c => c.Length), Is.EqualTo(new int[] {5}));
 
-            script = new byte[] {BitcoinScript.OP_PUSHDATA4, 0, 0, 0, 1};
+            script = new byte[] {BitcoinScript.OP_PUSHDATA4, 1, 0, 0, 0};
             Assert.False(parser.TryParse(script, out commands));
             Assert.That(commands, Is.Null);
 
-            script = new byte[] {BitcoinScript.OP_PUSHDATA4, 0, 0, 0, 1, 1};
+            script = new byte[] {BitcoinScript.OP_PUSHDATA4, 1, 0, 0, 0, 1};
             Assert.True(parser.TryParse(script, out commands));
             Assert.That(commands.Select(c => c.Code), Is.EqualTo(new byte[] {BitcoinScript.OP_PUSHDATA4}));
             Assert.That(commands.Select(c => c.Offset), Is.EqualTo(new int[] {0}));
@@ -223,19 +223,19 @@ namespace Test.BitcoinUtilities.Scripts
 
             script = new byte[0x01020384];
             script[0] = BitcoinScript.OP_PUSHDATA4;
-            script[1] = 0x01;
-            script[2] = 0x02;
-            script[3] = 0x03;
-            script[4] = 0x80;
+            script[1] = 0x80;
+            script[2] = 0x03;
+            script[3] = 0x02;
+            script[4] = 0x01;
             Assert.False(parser.TryParse(script, out commands));
             Assert.That(commands, Is.Null);
 
             script = new byte[0x01020385];
             script[0] = BitcoinScript.OP_PUSHDATA4;
-            script[1] = 0x01;
-            script[2] = 0x02;
-            script[3] = 0x03;
-            script[4] = 0x80;
+            script[1] = 0x80;
+            script[2] = 0x03;
+            script[3] = 0x02;
+            script[4] = 0x01;
             Assert.True(parser.TryParse(script, out commands));
             Assert.That(commands.Select(c => c.Code), Is.EqualTo(new byte[] {BitcoinScript.OP_PUSHDATA4}));
             Assert.That(commands.Select(c => c.Offset), Is.EqualTo(new int[] {0}));
@@ -244,20 +244,20 @@ namespace Test.BitcoinUtilities.Scripts
             script = new byte[15];
             script[0] = BitcoinScript.OP_TRUE;
             script[1] = BitcoinScript.OP_PUSHDATA4;
-            script[2] = 0;
+            script[2] = 10;
             script[3] = 0;
             script[4] = 0;
-            script[5] = 10;
+            script[5] = 0;
             Assert.False(parser.TryParse(script, out commands));
             Assert.That(commands, Is.Null);
 
             script = new byte[16];
             script[0] = BitcoinScript.OP_TRUE;
             script[1] = BitcoinScript.OP_PUSHDATA4;
-            script[2] = 0;
+            script[2] = 10;
             script[3] = 0;
             script[4] = 0;
-            script[5] = 10;
+            script[5] = 0;
             Assert.True(parser.TryParse(script, out commands));
             Assert.That(commands.Select(c => c.Code), Is.EqualTo(new byte[] {BitcoinScript.OP_TRUE, BitcoinScript.OP_PUSHDATA4}));
             Assert.That(commands.Select(c => c.Offset), Is.EqualTo(new int[] {0, 1}));
