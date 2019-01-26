@@ -106,6 +106,7 @@
     <Compile Include="TestTransactionBuilder.cs" />
     <Compile Include="TestUnixTime.cs" />
     <Compile Include="TestWif.cs" />
+    <Compile Include="Threading\TestConcurrentEnumerator.cs" />
     <Compile Include="Threading\TestEventServiceController.cs" />
   </ItemGroup>
   <ItemGroup>
