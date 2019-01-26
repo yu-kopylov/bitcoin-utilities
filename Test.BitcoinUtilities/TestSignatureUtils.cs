@@ -366,6 +366,24 @@ namespace Test.BitcoinUtilities
                     "AA00000004",
                     KnownAddresses.ReferenceExample.PublicKeyCompressed,
                     "3045022100cd46a1aa9795d12f3cd9629745d95d0e9ad053be232d0c66a7673c753ac7642c0220d2224357419d1c581f92fc3d046d46d45d3ec2bd446654aef5d67f45a0264b25"
+                ),
+                new VerifyTestVector
+                (
+                    "R is too long", false,
+                    "AA00000001",
+                    KnownAddresses.ReferenceExample.PublicKeyCompressed,
+                    "3046" +
+                    "022200cc8f4c18a6de5348db2bd3c3c9c880c18c9f68c327617f33834f4802a0ca76b63b" +
+                    "02202e640e9cd8d503d216c6bdf725a1c377c1feedba6548e97a1e2d418a2e069fcc"
+                ),
+                new VerifyTestVector
+                (
+                    "S is too long", false,
+                    "AA00000001",
+                    KnownAddresses.ReferenceExample.PublicKeyCompressed,
+                    "3046" +
+                    "0221008f4c18a6de5348db2bd3c3c9c880c18c9f68c327617f33834f4802a0ca76b63b" +
+                    "0221032e640e9cd8d503d216c6bdf725a1c377c1feedba6548e97a1e2d418a2e069fcc"
                 )
             };
 
