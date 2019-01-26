@@ -34,5 +34,105 @@ namespace BitcoinUtilities.Threading
             value = default(T);
             return false;
         }
+
+        public List<TResult> ProcessWith<TResource, TResult>(IReadOnlyList<TResource> resources, Func<TResource, IConcurrentEnumerator<T>, TResult> function)
+        {
+            List<TResult> results = new List<TResult>();
+            List<Exception> exceptions = new List<Exception>();
+
+            using (ManualResetEvent completionEvent = new ManualResetEvent(false))
+            {
+                ProcessingState<TResult> state = new ProcessingState<TResult>(completionEvent, resources.Count, results, exceptions);
+
+                foreach (TResource resource in resources)
+                {
+                    var workerThread = new WorkerThread<TResource, TResult>(state, resource, this, function);
+                    ThreadPool.QueueUserWorkItem(workerThread.Run);
+                }
+
+                completionEvent.WaitOne();
+            }
+
+            if (exceptions.Count != 0)
+            {
+                throw new AggregateException("Error in a the worker threads.", exceptions);
+            }
+
+            return results;
+        }
+
+        private class ProcessingState<TResult>
+        {
+            private readonly object monitor = new object();
+            private readonly ManualResetEvent completionEvent;
+
+            private int activeWorkers;
+            private readonly List<TResult> results;
+            private readonly List<Exception> exceptions;
+
+            public ProcessingState(ManualResetEvent completionEvent, int activeWorkers, List<TResult> results, List<Exception> exceptions)
+            {
+                this.completionEvent = completionEvent;
+                this.activeWorkers = activeWorkers;
+                this.results = results;
+                this.exceptions = exceptions;
+            }
+
+            public void ReportResult(TResult result)
+            {
+                lock (monitor)
+                {
+                    results.Add(result);
+                    RemoveWorker();
+                }
+            }
+
+            public void ReportException(Exception exception)
+            {
+                lock (monitor)
+                {
+                    exceptions.Add(exception);
+                    RemoveWorker();
+                }
+            }
+
+            private void RemoveWorker()
+            {
+                activeWorkers--;
+                if (activeWorkers == 0)
+                {
+                    completionEvent.Set();
+                }
+            }
+        }
+
+        private class WorkerThread<TResource, TResult>
+        {
+            private readonly ProcessingState<TResult> state;
+            private readonly TResource resource;
+            private readonly ConcurrentEnumerator<T> enumerator;
+            private readonly Func<TResource, IConcurrentEnumerator<T>, TResult> function;
+
+            public WorkerThread(ProcessingState<TResult> state, TResource resource, ConcurrentEnumerator<T> enumerator, Func<TResource, IConcurrentEnumerator<T>, TResult> function)
+            {
+                this.state = state;
+                this.resource = resource;
+                this.enumerator = enumerator;
+                this.function = function;
+            }
+
+            public void Run(object _)
+            {
+                try
+                {
+                    TResult result = function(resource, enumerator);
+                    state.ReportResult(result);
+                }
+                catch (Exception e)
+                {
+                    state.ReportException(e);
+                }
+            }
+        }
     }
 }
