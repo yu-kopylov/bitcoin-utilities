@@ -4,6 +4,7 @@ using System.Data;
 using System.Data.SQLite;
 using System.Linq;
 using BitcoinUtilities.P2P.Primitives;
+using BitcoinUtilities.Threading;
 using NLog;
 
 namespace BitcoinUtilities.Node.Services.Outputs
@@ -15,17 +16,25 @@ namespace BitcoinUtilities.Node.Services.Outputs
     {
         private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
 
-        private readonly SQLiteConnection conn;
+        private readonly SQLiteConnection[] connections;
 
-        private UtxoStorage(SQLiteConnection conn)
+        private UtxoStorage(SQLiteConnection[] connections)
         {
-            this.conn = conn;
+            this.connections = connections;
         }
 
         public void Dispose()
         {
-            conn.Close();
-            conn.Dispose();
+            foreach (var connection in connections)
+            {
+                connection.Close();
+                connection.Dispose();
+            }
+        }
+
+        private SQLiteConnection MainConnection
+        {
+            get { return connections[0]; }
         }
 
         public static UtxoStorage Open(string filename)
@@ -34,30 +43,52 @@ namespace BitcoinUtilities.Node.Services.Outputs
             connStrBuilder.DataSource = filename;
             connStrBuilder.JournalMode = SQLiteJournalModeEnum.Wal;
             connStrBuilder.SyncMode = SynchronizationModes.Off;
+            connStrBuilder.DefaultIsolationLevel = IsolationLevel.ReadCommitted;
 
-            var conn = new SQLiteConnection(connStrBuilder.ConnectionString);
-            conn.Open();
+            const int connectionCount = 4;
+            SQLiteConnection[] connections = new SQLiteConnection[connectionCount];
 
             try
             {
-                SqliteUtils.CheckSchema(conn, "Headers", typeof(UtxoStorage), "utxo-create.sql");
+                for (int i = 0; i < connectionCount; i++)
+                {
+                    var conn = new SQLiteConnection(connStrBuilder.ConnectionString);
+                    connections[i] = conn;
+                    conn.Open();
+                }
+
+                try
+                {
+                    SqliteUtils.CheckSchema(connections[0], "Headers", typeof(UtxoStorage), "utxo-create.sql");
+                }
+                catch (Exception ex)
+                {
+                    logger.Error(ex, $"Failed to verify schema in '{filename}'.");
+                    throw;
+                }
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                logger.Error(ex, $"Failed to verify schema in '{filename}'.");
-                conn.Close();
-                conn.Dispose();
+                foreach (SQLiteConnection connection in connections)
+                {
+                    if (connection != null)
+                    {
+                        connection.Close();
+                        connection.Dispose();
+                    }
+                }
+
                 throw;
             }
 
-            return new UtxoStorage(conn);
+            return new UtxoStorage(connections);
         }
 
         public UtxoHeader GetLastHeader()
         {
             UtxoHeader bestHeader;
 
-            using (var tx = conn.BeginTransaction())
+            using (var tx = MainConnection.BeginTransaction())
             {
                 bestHeader = ReadHeader("order by Height desc");
                 tx.Commit();
@@ -68,6 +99,22 @@ namespace BitcoinUtilities.Node.Services.Outputs
 
         public IReadOnlyCollection<UtxoOutput> GetUnspentOutputs(IEnumerable<byte[]> txHashes)
         {
+            var hashes = txHashes.Select(CopyHash).OrderBy(h => h[0]).ToArray();
+            var enumerator = new ConcurrentEnumerator<byte[]>(hashes);
+
+            List<List<UtxoOutput>> partialResults = enumerator.ProcessWith(connections, GetUnspentOutputs);
+
+            List<UtxoOutput> res = new List<UtxoOutput>();
+            foreach (List<UtxoOutput> partialResult in partialResults)
+            {
+                res.AddRange(partialResult);
+            }
+
+            return res;
+        }
+
+        private static List<UtxoOutput> GetUnspentOutputs(SQLiteConnection conn, IConcurrentEnumerator<byte[]> txHashes)
+        {
             List<UtxoOutput> res = new List<UtxoOutput>();
 
             using (var tx = conn.BeginTransaction())
@@ -77,7 +124,7 @@ namespace BitcoinUtilities.Node.Services.Outputs
                     conn
                 ))
                 {
-                    foreach (byte[] txHash in txHashes.Select(CopyHash).OrderBy(h => h[0]))
+                    while (txHashes.GetNext(out var txHash))
                     {
                         command.Parameters.Add("@TxHash", DbType.Binary).Value = txHash;
 
@@ -128,7 +175,7 @@ namespace BitcoinUtilities.Node.Services.Outputs
                 aggregateUpdate.Add(update);
             }
 
-            using (var tx = conn.BeginTransaction())
+            using (var tx = MainConnection.BeginTransaction())
             {
                 CheckStateBeforeUpdate(aggregateUpdate);
 
@@ -169,7 +216,7 @@ namespace BitcoinUtilities.Node.Services.Outputs
             using (SQLiteCommand command = new SQLiteCommand(
                 "insert into Headers(Hash, Height, IsReversible)" +
                 "values (@Hash, @Height, 1)",
-                conn
+                MainConnection
             ))
             {
                 foreach (byte[] headerHash in headerHashes)
@@ -187,7 +234,7 @@ namespace BitcoinUtilities.Node.Services.Outputs
 
         private UtxoHeader ReadHeader(string filterAndOrder, params Action<SQLiteParameterCollection>[] parameterSetters)
         {
-            using (SQLiteCommand command = new SQLiteCommand($"select Hash, Height, IsReversible from Headers {filterAndOrder} LIMIT 1", conn))
+            using (SQLiteCommand command = new SQLiteCommand($"select Hash, Height, IsReversible from Headers {filterAndOrder} LIMIT 1", MainConnection))
             {
                 foreach (var parameterSetter in parameterSetters)
                 {
@@ -216,7 +263,7 @@ namespace BitcoinUtilities.Node.Services.Outputs
         {
             using (SQLiteCommand command = new SQLiteCommand(
                 "delete from UnspentOutputs where TxHash=@TxHash and OutputIndex=@OutputIndex",
-                conn
+                MainConnection
             ))
             {
                 foreach (UtxoOutput output in outputs.OrderBy(p => p.OutputPoint.Hash[0]))
@@ -241,7 +288,7 @@ namespace BitcoinUtilities.Node.Services.Outputs
             using (SQLiteCommand command = new SQLiteCommand(
                 "insert into SpentOutputs(TxHash, OutputIndex, Height, Value, Script, SpentHeight)" +
                 "values (@TxHash, @OutputIndex, @Height, @Value, @Script, @SpentHeight)",
-                conn
+                MainConnection
             ))
             {
                 foreach (UtxoOutput output in unspentOutputs.OrderBy(p => p.Height))
@@ -264,7 +311,7 @@ namespace BitcoinUtilities.Node.Services.Outputs
             using (SQLiteCommand command = new SQLiteCommand(
                 "insert into UnspentOutputs(TxHash, OutputIndex, Height, Value, Script)" +
                 "values (@TxHash, @OutputIndex, @Height, @Value, @Script)",
-                conn
+                MainConnection
             ))
             {
                 foreach (UtxoOutput output in unspentOutputs.OrderBy(p => p.OutputPoint.Hash[0]))
@@ -284,7 +331,7 @@ namespace BitcoinUtilities.Node.Services.Outputs
 
         public void RevertTo(byte[] headerHash)
         {
-            using (var tx = conn.BeginTransaction())
+            using (var tx = MainConnection.BeginTransaction())
             {
                 var targetHeader = ReadHeader("where Hash=@Hash", p => p.AddWithValue("@Hash", headerHash));
                 if (targetHeader == null)
@@ -306,20 +353,20 @@ namespace BitcoinUtilities.Node.Services.Outputs
                     );
                 }
 
-                conn.ExecuteNonQuery(
+                MainConnection.ExecuteNonQuery(
                     "delete from Headers where Height > @Height",
                     p => p.AddWithValue("@Height", targetHeader.Height)
                 );
-                conn.ExecuteNonQuery(
+                MainConnection.ExecuteNonQuery(
                     "delete from UnspentOutputs where Height > @Height",
                     p => p.AddWithValue("@Height", targetHeader.Height)
                 );
-                conn.ExecuteNonQuery(
+                MainConnection.ExecuteNonQuery(
                     "insert into UnspentOutputs (TxHash, OutputIndex, Height, Value, Script)" +
                     "select TxHash, OutputIndex, Height, Value, Script from SpentOutputs where SpentHeight > @Height and Height <= @Height",
                     p => p.AddWithValue("@Height", targetHeader.Height)
                 );
-                conn.ExecuteNonQuery(
+                MainConnection.ExecuteNonQuery(
                     "delete from SpentOutputs where SpentHeight > @Height",
                     p => p.AddWithValue("@Height", targetHeader.Height)
                 );
@@ -335,7 +382,7 @@ namespace BitcoinUtilities.Node.Services.Outputs
         /// <param name="headerHash">The hash of the header that will no longer be reversible.</param>
         public void Truncate(byte[] headerHash)
         {
-            using (var tx = conn.BeginTransaction())
+            using (var tx = MainConnection.BeginTransaction())
             {
                 UtxoHeader header = ReadHeader("where Hash=@Hash", p => p.AddWithValue("@Hash", headerHash));
 
@@ -348,12 +395,12 @@ namespace BitcoinUtilities.Node.Services.Outputs
 
                 if (!header.IsReversible)
                 {
-                    // nothig to do, because rollback information was already removed
+                    // nothing to do, because rollback information was already removed
                     return;
                 }
 
-                conn.ExecuteNonQuery("update Headers set IsReversible=0 where Height <= @Height", p => p.AddWithValue("@Height", header.Height));
-                conn.ExecuteNonQuery("delete from SpentOutputs where SpentHeight <= @Height", p => p.AddWithValue("@Height", header.Height));
+                MainConnection.ExecuteNonQuery("update Headers set IsReversible=0 where Height <= @Height", p => p.AddWithValue("@Height", header.Height));
+                MainConnection.ExecuteNonQuery("delete from SpentOutputs where SpentHeight <= @Height", p => p.AddWithValue("@Height", header.Height));
 
                 tx.Commit();
             }

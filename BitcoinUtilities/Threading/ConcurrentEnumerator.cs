@@ -35,6 +35,15 @@ namespace BitcoinUtilities.Threading
             return false;
         }
 
+        /// <summary>
+        /// Concurrently applies the given function for each given resource and this enumerator.
+        /// </summary>
+        /// <typeparam name="TResource">The type of resource used by the function.</typeparam>
+        /// <typeparam name="TResult">The type of result returned by the function.</typeparam>
+        /// <param name="resources">The list of resources.</param>
+        /// <param name="function">The function to apply.</param>
+        /// <exception cref="AggregateException">If one of more function calls throws an exception.</exception>
+        /// <returns>A list of results returned by function calls.</returns>
         public List<TResult> ProcessWith<TResource, TResult>(IReadOnlyList<TResource> resources, Func<TResource, IConcurrentEnumerator<T>, TResult> function)
         {
             List<TResult> results = new List<TResult>();
