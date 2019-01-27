@@ -1,7 +1,9 @@
 ﻿using System;
+using System.Linq;
 using System.Text;
 using BitcoinUtilities;
 using NUnit.Framework;
+using TestUtilities;
 
 namespace Test.BitcoinUtilities
 {
@@ -68,6 +70,29 @@ namespace Test.BitcoinUtilities
 
             Assert.Throws<ArgumentNullException>(() => CryptoUtils.Sha256(null));
             Assert.That(CryptoUtils.Sha256(Encoding.ASCII.GetBytes("123")), Is.EqualTo(originalHash));
+        }
+
+        [Test]
+        public void TestSha256Concurrency()
+        {
+            byte[] shortData1 = Enumerable.Range(1, 128).Select(i => (byte) i).ToArray();
+            byte[] shortData2 = Enumerable.Range(100, 128).Select(i => (byte) i).ToArray();
+            byte[] longData = Enumerable.Range(1, 16384).Select(i => (byte) (i / 3)).ToArray();
+
+            byte[] shortData1DoubleHash = CryptoUtils.DoubleSha256(shortData1);
+            byte[] shortData2DoubleHash = CryptoUtils.DoubleSha256(shortData2);
+            byte[] shortData12Hash = CryptoUtils.Sha256(shortData1, shortData2);
+            byte[] longDataDoubleHash = CryptoUtils.DoubleSha256(longData);
+
+            TestUtils.TestConcurrency(16, 1000, (t, i) =>
+            {
+                bool res = true;
+                res &= CryptoUtils.DoubleSha256(shortData1).SequenceEqual(shortData1DoubleHash);
+                res &= CryptoUtils.DoubleSha256(shortData2).SequenceEqual(shortData2DoubleHash);
+                res &= CryptoUtils.Sha256(shortData1, shortData2).SequenceEqual(shortData12Hash);
+                res &= CryptoUtils.DoubleSha256(longData).SequenceEqual(longDataDoubleHash);
+                return res;
+            });
         }
 
         [Test]

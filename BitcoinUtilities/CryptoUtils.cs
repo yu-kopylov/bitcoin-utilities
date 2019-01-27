@@ -1,14 +1,13 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Security.Cryptography;
 
 namespace BitcoinUtilities
 {
-    //todo: test resource pool pattern
     //todo: add XMLDOC
     public static class CryptoUtils
     {
-        private static readonly object sha256Lock = new object();
-        private static SHA256 sha256Alg;
+        private static readonly ConcurrentBag<SHA256> sha256Algs = new ConcurrentBag<SHA256>();
 
         private static readonly object sha512Lock = new object();
         private static SHA512 sha512Alg;
@@ -21,14 +20,19 @@ namespace BitcoinUtilities
 
         public static byte[] DoubleSha256(byte[] text)
         {
-            lock (sha256Lock)
+            if (!sha256Algs.TryTake(out var sha256Alg))
             {
-                if (sha256Alg == null)
-                {
-                    sha256Alg = SHA256.Create();
-                }
+                sha256Alg = SHA256.Create();
+            }
+
+            try
+            {
                 sha256Alg.Initialize();
                 return sha256Alg.ComputeHash(sha256Alg.ComputeHash(text));
+            }
+            finally
+            {
+                sha256Algs.Add(sha256Alg);
             }
         }
 
@@ -47,12 +51,13 @@ namespace BitcoinUtilities
                 }
             }
 
-            lock (sha256Lock)
+            if (!sha256Algs.TryTake(out var sha256Alg))
             {
-                if (sha256Alg == null)
-                {
-                    sha256Alg = SHA256.Create();
-                }
+                sha256Alg = SHA256.Create();
+            }
+
+            try
+            {
                 sha256Alg.Initialize();
 
                 foreach (byte[] source in sources)
@@ -67,6 +72,10 @@ namespace BitcoinUtilities
                 sha256Alg.TransformFinalBlock(new byte[0], 0, 0);
 
                 return sha256Alg.Hash;
+            }
+            finally
+            {
+                sha256Algs.Add(sha256Alg);
             }
         }
 
@@ -91,6 +100,7 @@ namespace BitcoinUtilities
                 {
                     sha512Alg = SHA512.Create();
                 }
+
                 sha512Alg.Initialize();
 
                 foreach (byte[] source in sources)
@@ -116,6 +126,7 @@ namespace BitcoinUtilities
                 {
                     sha1Alg = SHA1.Create();
                 }
+
                 sha1Alg.Initialize();
                 return sha1Alg.ComputeHash(text);
             }
@@ -129,6 +140,7 @@ namespace BitcoinUtilities
                 {
                     ripeMd160Alg = RIPEMD160.Create();
                 }
+
                 ripeMd160Alg.Initialize();
                 return ripeMd160Alg.ComputeHash(text);
             }
