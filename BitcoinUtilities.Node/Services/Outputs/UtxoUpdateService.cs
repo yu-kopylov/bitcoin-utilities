@@ -203,7 +203,13 @@ namespace BitcoinUtilities.Node.Services.Outputs
 
         private void VerifySignatures(byte[] blockHash, ProcessedTransaction[] processedTransactions)
         {
-            foreach (var transaction in processedTransactions)
+            var enumerator = new ConcurrentEnumerator<ProcessedTransaction>(processedTransactions);
+            enumerator.ProcessWith(new object[4], (_, en) => VerifySignatures(blockHash, en));
+        }
+
+        private object VerifySignatures(byte[] blockHash, IConcurrentEnumerator<ProcessedTransaction> processedTransactions)
+        {
+            while (processedTransactions.GetNext(out var transaction))
             {
                 // explicitly define coinbase transaction?
                 if (transaction.Inputs.Length != 0)
@@ -220,6 +226,8 @@ namespace BitcoinUtilities.Node.Services.Outputs
                     }
                 }
             }
+
+            return null;
         }
 
         private bool VerifySignature(ProcessedTransaction transaction, int inputIndex)
