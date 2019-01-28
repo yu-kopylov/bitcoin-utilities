@@ -34,6 +34,10 @@ namespace BitcoinUtilities.Scripts
             {
                 return Calculate(sigHashType, subScript, mode: SigHashType.All, anyoneCanPay: false);
             }
+            else if (sigHashType == (SigHashType.All | SigHashType.AnyoneCanPay))
+            {
+                return Calculate(sigHashType, subScript, mode: SigHashType.All, anyoneCanPay: true);
+            }
             else if (sigHashType == (SigHashType.None | SigHashType.AnyoneCanPay))
             {
                 return Calculate(sigHashType, subScript, mode: SigHashType.None, anyoneCanPay: true);
