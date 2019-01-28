@@ -48,16 +48,17 @@ namespace BitcoinUtilities.P2P
         /// </summary>
         /// <param name="address">The address on which to listen for incoming connections.</param>
         /// <param name="port">The port on which to listen for incoming connections.</param>
+        /// <param name="networkMagic">Four defined bytes which start every message in the Bitcoin P2P protocol to allow seeking to the next message.</param>
         /// <param name="connectionHandler">An action to perform when connection is accepted.</param>
         /// <returns>A new instance of <see cref="BitcoinConnectionListener"/>.</returns>
-        /// <exception cref="SocketException">If listener failed to use privided host and port to accept connections.</exception>
-        public static BitcoinConnectionListener StartListener(IPAddress address, int port, BitcoinConnectionHandler connectionHandler)
+        /// <exception cref="SocketException">If listener failed to use provided host and port to accept connections.</exception>
+        public static BitcoinConnectionListener StartListener(IPAddress address, int port, uint networkMagic, BitcoinConnectionHandler connectionHandler)
         {
             TcpListener tcpListener = new TcpListener(address, port);
             tcpListener.Start();
 
             CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
-            ListenerThreadParams threadParams = new ListenerThreadParams(tcpListener, cancellationTokenSource.Token, connectionHandler);
+            ListenerThreadParams threadParams = new ListenerThreadParams(tcpListener, networkMagic, cancellationTokenSource.Token, connectionHandler);
 
             Thread listenerThread;
             try
@@ -97,7 +98,7 @@ namespace BitcoinUtilities.P2P
                     BitcoinConnection conn;
                     try
                     {
-                        conn = BitcoinConnection.Connect(tcpClient);
+                        conn = BitcoinConnection.Connect(tcpClient, threadParams.NetworkMagic);
                     }
                     catch (BitcoinNetworkException e)
                     {
@@ -125,14 +126,16 @@ namespace BitcoinUtilities.P2P
 
         private sealed class ListenerThreadParams
         {
-            public ListenerThreadParams(TcpListener tcpListener, CancellationToken cancellationToken, BitcoinConnectionHandler connectionHandler)
+            public ListenerThreadParams(TcpListener tcpListener, uint networkMagic, CancellationToken cancellationToken, BitcoinConnectionHandler connectionHandler)
             {
                 TcpListener = tcpListener;
+                NetworkMagic = networkMagic;
                 CancellationToken = cancellationToken;
                 ConnectionHandler = connectionHandler;
             }
 
             public TcpListener TcpListener { get; }
+            public uint NetworkMagic { get; }
             public CancellationToken CancellationToken { get; }
             public BitcoinConnectionHandler ConnectionHandler { get; }
         }

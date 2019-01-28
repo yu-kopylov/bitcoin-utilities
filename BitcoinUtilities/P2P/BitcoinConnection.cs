@@ -25,7 +25,7 @@ namespace BitcoinUtilities.P2P
 
         private const int MaxPayloadLength = 32 * 1024 * 1024;
 
-        private readonly byte[] magicBytes = new byte[] {0xF9, 0xBE, 0xB4, 0xD9};
+        private readonly byte[] networkMagic;
 
         private readonly object writeLock = new object();
 
@@ -35,10 +35,11 @@ namespace BitcoinUtilities.P2P
         private readonly TcpClient client;
         private readonly NetworkStream stream;
 
-        private BitcoinConnection(TcpClient client, NetworkStream stream, SHA256 sha256ReaderAlg, SHA256 sha256WriterAlg)
+        private BitcoinConnection(TcpClient client, NetworkStream stream, uint networkMagic, SHA256 sha256ReaderAlg, SHA256 sha256WriterAlg)
         {
             this.client = client;
             this.stream = stream;
+            this.networkMagic = new byte[] {(byte) (networkMagic >> 24), (byte) (networkMagic >> 16), (byte) (networkMagic >> 8), (byte) networkMagic};
             this.sha256ReaderAlg = sha256ReaderAlg;
             this.sha256WriterAlg = sha256WriterAlg;
         }
@@ -56,8 +57,9 @@ namespace BitcoinUtilities.P2P
         /// Creates a connection to a remote host.
         /// </summary>
         /// <param name="client">The underlying connection.</param>
+        /// <param name="networkMagic">Four defined bytes which start every message in the Bitcoin P2P protocol to allow seeking to the next message.</param>
         /// <exception cref="BitcoinNetworkException">Connection failed.</exception>
-        public static BitcoinConnection Connect(TcpClient client)
+        public static BitcoinConnection Connect(TcpClient client, uint networkMagic)
         {
             NetworkStream stream = null;
             SHA256 sha256ReaderAlg = null;
@@ -80,7 +82,7 @@ namespace BitcoinUtilities.P2P
                 throw new BitcoinNetworkException("Connection failed.", e);
             }
 
-            return new BitcoinConnection(client, stream, sha256ReaderAlg, sha256WriterAlg);
+            return new BitcoinConnection(client, stream, networkMagic, sha256ReaderAlg, sha256WriterAlg);
         }
 
         /// <summary>
@@ -88,8 +90,9 @@ namespace BitcoinUtilities.P2P
         /// </summary>
         /// <param name="host">The DNS name of the remote host.</param>
         /// <param name="port">The port number of the remote host.</param>
+        /// <param name="networkMagic">Four defined bytes which start every message in the Bitcoin P2P protocol to allow seeking to the next message.</param>
         /// <exception cref="BitcoinNetworkException">Connection failed.</exception>
-        public static BitcoinConnection Connect(string host, int port)
+        public static BitcoinConnection Connect(string host, int port, uint networkMagic)
         {
             TcpClient client;
             try
@@ -101,7 +104,7 @@ namespace BitcoinUtilities.P2P
                 throw new BitcoinNetworkException("Connection failed.", e);
             }
 
-            return Connect(client);
+            return Connect(client, networkMagic);
         }
 
         public IPEndPoint LocalEndPoint
@@ -127,13 +130,13 @@ namespace BitcoinUtilities.P2P
             if (commandBytes.Length > MaxCommandLength)
             {
                 throw new ArgumentException(
-                    $"Command length ({commandBytes.Length}) exeeds maximum command length ({MaxCommandLength}).", nameof(message)
+                    $"Command length ({commandBytes.Length}) exceeds maximum command length ({MaxCommandLength}).", nameof(message)
                 );
             }
 
             byte[] header = new byte[MessageHeaderLength];
 
-            Array.Copy(magicBytes, 0, header, 0, 4);
+            Array.Copy(networkMagic, 0, header, 0, 4);
             Array.Copy(commandBytes, 0, header, 4, commandBytes.Length);
 
             byte[] payloadLengthBytes = BitConverter.GetBytes(message.Payload.Length);
@@ -175,7 +178,7 @@ namespace BitcoinUtilities.P2P
 
             for (int i = 0; i < 4; i++)
             {
-                if (header[i] != magicBytes[i])
+                if (header[i] != networkMagic[i])
                 {
                     throw new BitcoinNetworkException("The magic value is invalid.");
                 }

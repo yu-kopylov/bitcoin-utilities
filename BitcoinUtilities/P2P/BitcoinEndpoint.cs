@@ -75,10 +75,11 @@ namespace BitcoinUtilities.P2P
         /// </summary>
         /// <param name="host">The DNS name of the remote host.</param>
         /// <param name="port">The port number of the remote host.</param>
+        /// <param name="networkMagic">Four defined bytes which start every message in the Bitcoin P2P protocol to allow seeking to the next message.</param>
         /// <exception cref="BitcoinNetworkException">A network or protocol error occured during the handshake.</exception>
-        public static BitcoinEndpoint Create(string host, int port)
+        public static BitcoinEndpoint Create(string host, int port, uint networkMagic)
         {
-            return Create(BitcoinConnection.Connect(host, port));
+            return Create(BitcoinConnection.Connect(host, port, networkMagic));
         }
 
         /// <summary>

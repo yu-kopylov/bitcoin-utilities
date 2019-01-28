@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using BitcoinUtilities.P2P;
 using BitcoinUtilities.P2P.Messages;
-using BitcoinUtilities.P2P.Primitives;
 
 namespace BitcoinUtilities
 {
@@ -11,6 +10,14 @@ namespace BitcoinUtilities
     /// </summary>
     public class NetworkParameters
     {
+        private const uint NetworkMagicCoreMain = 0xF9BEB4D9;
+        private const uint NetworkMagicCoreTestNet = 0x0B110907;
+        private const uint NetworkMagicCoreRegTest = 0xFABFB5DA;
+
+        private const uint NetworkMagicCashMain = 0xE3E1F3E8;
+        private const uint NetworkMagicCashTestNet = 0xF4E5F3F4;
+        private const uint NetworkMagicCashRegTest = 0xDAB5BFFA;
+
         private readonly List<string> dnsSeeds = new List<string>();
 
         private readonly Dictionary<int, byte[]> checkpoints = new Dictionary<int, byte[]>();
@@ -23,11 +30,13 @@ namespace BitcoinUtilities
         /// <para>The name of the network.</para>
         /// <para>It must be a valid file name, because it is used as part of the path to blockchain data.</para>
         /// </param>
+        /// <param name="networkMagic">Four defined bytes which start every message in the Bitcoin P2P protocol to allow seeking to the next message.</param>
         /// <param name="genesisBlock">The first block of the blockchain.</param>
-        public NetworkParameters(BitcoinFork fork, string name, byte[] genesisBlock)
+        public NetworkParameters(BitcoinFork fork, string name, uint networkMagic, byte[] genesisBlock)
         {
             Fork = fork;
             Name = name;
+            NetworkMagic = networkMagic;
             GenesisBlock = BitcoinStreamReader.FromBytes(genesisBlock, BlockMessage.Read);
         }
 
@@ -43,6 +52,14 @@ namespace BitcoinUtilities
         public string Name { get; }
 
         /// <summary>
+        /// Four defined bytes which start every message in the Bitcoin P2P protocol to allow seeking to the next message.
+        /// </summary>
+        /// <remarks>
+        /// See: https://bitcoin.org/en/glossary/start-string
+        /// </remarks>
+        public uint NetworkMagic { get; }
+
+        /// <summary>
         /// The first block of the blockchain.
         /// </summary>
         public BlockMessage GenesisBlock { get; }
@@ -51,7 +68,7 @@ namespace BitcoinUtilities
         {
             get
             {
-                var parameters = new NetworkParameters(BitcoinFork.Core, "bitcoin-core-main", P2P.GenesisBlock.Raw);
+                var parameters = new NetworkParameters(BitcoinFork.Core, "bitcoin-core-main", NetworkMagicCoreMain, P2P.GenesisBlock.Raw);
 
                 // DNS seeds taken from: https://github.com/bitcoin/bitcoin/blob/master/src/chainparams.cpp
                 parameters.AddDnsSeed("seed.bitcoin.sipa.be"); // Pieter Wuille
@@ -81,7 +98,7 @@ namespace BitcoinUtilities
         {
             get
             {
-                var parameters = new NetworkParameters(BitcoinFork.Cash, "bitcoin-cash-main", P2P.GenesisBlock.Raw);
+                var parameters = new NetworkParameters(BitcoinFork.Cash, "bitcoin-cash-main", NetworkMagicCashMain, P2P.GenesisBlock.Raw);
 
                 // DNS seeds taken from: https://github.com/bitcoinclassic/bitcoinclassic/blob/master/src/chainparams.cpp
                 parameters.AddDnsSeed("cash-seed.bitcoin.thomaszander.se");

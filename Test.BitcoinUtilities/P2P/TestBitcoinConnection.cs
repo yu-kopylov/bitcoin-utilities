@@ -1,5 +1,6 @@
 ﻿using System.Net;
 using System.Threading;
+using BitcoinUtilities;
 using BitcoinUtilities.P2P;
 using NUnit.Framework;
 
@@ -14,14 +15,14 @@ namespace Test.BitcoinUtilities.P2P
         {
             BitcoinMessage receivedMessage = null;
             using (AutoResetEvent messageReceived = new AutoResetEvent(false))
-            using (BitcoinConnectionListener listener = BitcoinConnectionListener.StartListener(IPAddress.Loopback, 0, conn =>
+            using (BitcoinConnectionListener listener = BitcoinConnectionListener.StartListener(IPAddress.Loopback, 0, NetworkParameters.BitcoinCoreMain.NetworkMagic, conn =>
             {
                 receivedMessage = conn.ReadMessage();
                 messageReceived.Set();
                 conn.Dispose();
             }))
             {
-                using (BitcoinConnection conn = BitcoinConnection.Connect("localhost", listener.Port))
+                using (BitcoinConnection conn = BitcoinConnection.Connect("localhost", listener.Port, NetworkParameters.BitcoinCoreMain.NetworkMagic))
                 {
                     byte[] payload = new byte[] {1, 2, 3, 4, 5};
 
@@ -37,9 +38,11 @@ namespace Test.BitcoinUtilities.P2P
         [Test]
         public void TestReadWriteWithClosedConnection()
         {
-            using (BitcoinConnectionListener listener = BitcoinConnectionListener.StartListener(IPAddress.Loopback, 0, conn => { conn.Dispose(); }))
+            using (BitcoinConnectionListener listener = BitcoinConnectionListener.StartListener(
+                IPAddress.Loopback, 0, NetworkParameters.BitcoinCoreMain.NetworkMagic, conn => { conn.Dispose(); })
+            )
             {
-                using (BitcoinConnection conn = BitcoinConnection.Connect("localhost", listener.Port))
+                using (BitcoinConnection conn = BitcoinConnection.Connect("localhost", listener.Port, NetworkParameters.BitcoinCoreMain.NetworkMagic))
                 {
                     Assert.Throws<BitcoinNetworkException>(() => conn.ReadMessage());
                     Assert.Throws<BitcoinNetworkException>(() => conn.WriteMessage(new BitcoinMessage("ABC", new byte[] {1, 2, 3, 4, 5})));
@@ -50,9 +53,11 @@ namespace Test.BitcoinUtilities.P2P
         [Test]
         public void TestWriteReadWithClosedConnection()
         {
-            using (BitcoinConnectionListener listener = BitcoinConnectionListener.StartListener(IPAddress.Loopback, 0, conn => { conn.Dispose(); }))
+            using (BitcoinConnectionListener listener = BitcoinConnectionListener.StartListener(
+                IPAddress.Loopback, 0, NetworkParameters.BitcoinCoreMain.NetworkMagic, conn => { conn.Dispose(); })
+            )
             {
-                using (BitcoinConnection conn = BitcoinConnection.Connect("localhost", listener.Port))
+                using (BitcoinConnection conn = BitcoinConnection.Connect("localhost", listener.Port, NetworkParameters.BitcoinCoreMain.NetworkMagic))
                 {
                     Thread.Sleep(100);
 
@@ -65,9 +70,11 @@ namespace Test.BitcoinUtilities.P2P
         [Test]
         public void TestRepeatableDispose()
         {
-            using (BitcoinConnectionListener listener = BitcoinConnectionListener.StartListener(IPAddress.Loopback, 0, conn => { conn.Dispose(); }))
+            using (BitcoinConnectionListener listener = BitcoinConnectionListener.StartListener(
+                IPAddress.Loopback, 0, NetworkParameters.BitcoinCoreMain.NetworkMagic, conn => { conn.Dispose(); })
+            )
             {
-                using (BitcoinConnection conn = BitcoinConnection.Connect("localhost", listener.Port))
+                using (BitcoinConnection conn = BitcoinConnection.Connect("localhost", listener.Port, NetworkParameters.BitcoinCoreMain.NetworkMagic))
                 {
                     conn.Dispose();
                     Assert.Throws<BitcoinNetworkException>(() => conn.WriteMessage(new BitcoinMessage("ABC", new byte[] {1, 2, 3, 4, 5})));
@@ -81,7 +88,7 @@ namespace Test.BitcoinUtilities.P2P
         {
             Assert.Throws<BitcoinNetworkException>(() =>
             {
-                using (BitcoinConnection.Connect("0.0.0.0", -1))
+                using (BitcoinConnection.Connect("0.0.0.0", -1, NetworkParameters.BitcoinCoreMain.NetworkMagic))
                 {
                     Assert.Fail("connection should not be created");
                 }

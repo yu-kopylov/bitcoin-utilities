@@ -135,7 +135,7 @@ namespace BitcoinUtilities.Node
 
             //todo: discover own external address? (it seems useless without external port)
             //todo: use setting to specify port and operating mode
-            connectionListener = BitcoinConnectionListener.StartListener(IPAddress.Any, 8333, HandleIncomingConnection);
+            connectionListener = BitcoinConnectionListener.StartListener(IPAddress.Any, 8333, networkParameters.NetworkMagic, HandleIncomingConnection);
 
             foreach (var module in modules)
             {
@@ -187,7 +187,7 @@ namespace BitcoinUtilities.Node
             BitcoinEndpoint endpoint;
             try
             {
-                endpoint = BitcoinEndpoint.Create(address.Address.ToString(), address.Port);
+                endpoint = BitcoinEndpoint.Create(address.Address.ToString(), address.Port, networkParameters.NetworkMagic);
             }
             catch (BitcoinNetworkException)
             {

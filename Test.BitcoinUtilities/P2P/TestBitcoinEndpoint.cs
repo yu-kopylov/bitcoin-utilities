@@ -1,5 +1,6 @@
 ﻿using System.Net;
 using System.Threading;
+using BitcoinUtilities;
 using BitcoinUtilities.P2P;
 using BitcoinUtilities.P2P.Messages;
 using BitcoinUtilities.P2P.Primitives;
@@ -23,9 +24,11 @@ namespace Test.BitcoinUtilities.P2P
         [Test]
         public void TestClientServerMessaging()
         {
-            using (var connectionListener = BitcoinConnectionListener.StartListener(IPAddress.Loopback, 0, conn => CreateServerEndpoint(conn)))
+            using (var connectionListener = BitcoinConnectionListener.StartListener(
+                IPAddress.Loopback, 0, NetworkParameters.BitcoinCoreMain.NetworkMagic, conn => CreateServerEndpoint(conn))
+            )
             {
-                using (BitcoinEndpoint endpoint = BitcoinEndpoint.Create("localhost", connectionListener.Port))
+                using (BitcoinEndpoint endpoint = BitcoinEndpoint.Create("localhost", connectionListener.Port, NetworkParameters.BitcoinCoreMain.NetworkMagic))
                 {
                     StartMessageListener(endpoint, false);
                     Thread.Sleep(100);
@@ -66,10 +69,10 @@ namespace Test.BitcoinUtilities.P2P
         {
             BitcoinEndpoint serverEndpoint = null;
             using (var connectionListener = BitcoinConnectionListener.StartListener(
-                IPAddress.Loopback, 0, conn => serverEndpoint = CreateServerEndpoint(conn)
+                IPAddress.Loopback, 0, NetworkParameters.BitcoinCoreMain.NetworkMagic, conn => serverEndpoint = CreateServerEndpoint(conn)
             ))
             {
-                using (BitcoinEndpoint clientEndpoint = BitcoinEndpoint.Create("localhost", connectionListener.Port))
+                using (BitcoinEndpoint clientEndpoint = BitcoinEndpoint.Create("localhost", connectionListener.Port, NetworkParameters.BitcoinCoreMain.NetworkMagic))
                 {
                     StartMessageListener(clientEndpoint, false);
                     Thread.Sleep(100);
@@ -107,10 +110,10 @@ namespace Test.BitcoinUtilities.P2P
         {
             BitcoinEndpoint serverEndpoint = null;
             using (var connectionListener = BitcoinConnectionListener.StartListener(
-                IPAddress.Loopback, 0, conn => serverEndpoint = CreateServerEndpoint(conn)
+                IPAddress.Loopback, 0, NetworkParameters.BitcoinCoreMain.NetworkMagic, conn => serverEndpoint = CreateServerEndpoint(conn)
             ))
             {
-                using (BitcoinEndpoint clientEndpoint = BitcoinEndpoint.Create("localhost", connectionListener.Port))
+                using (BitcoinEndpoint clientEndpoint = BitcoinEndpoint.Create("localhost", connectionListener.Port, NetworkParameters.BitcoinCoreMain.NetworkMagic))
                 {
                     StartMessageListener(clientEndpoint, false);
                     Thread.Sleep(100);
@@ -154,7 +157,7 @@ namespace Test.BitcoinUtilities.P2P
         {
             BitcoinEndpoint serverEndpoint = null;
             using (var connectionListener = BitcoinConnectionListener.StartListener(
-                IPAddress.Loopback, 0, conn =>
+                IPAddress.Loopback, 0, NetworkParameters.BitcoinCoreMain.NetworkMagic, conn =>
                 {
                     messageLog.Log("Server accepted connection.");
                     serverEndpoint = BitcoinEndpoint.Create(conn);
@@ -167,7 +170,7 @@ namespace Test.BitcoinUtilities.P2P
                 }
             ))
             {
-                using (BitcoinEndpoint clientEndpoint = BitcoinEndpoint.Create("localhost", connectionListener.Port))
+                using (BitcoinEndpoint clientEndpoint = BitcoinEndpoint.Create("localhost", connectionListener.Port, NetworkParameters.BitcoinCoreMain.NetworkMagic))
                 {
                     StartMessageListener(clientEndpoint, false);
                     Thread.Sleep(100);
@@ -206,7 +209,7 @@ namespace Test.BitcoinUtilities.P2P
         {
             BitcoinEndpoint serverEndpoint = null;
             using (var connectionListener = BitcoinConnectionListener.StartListener(
-                IPAddress.Loopback, 0, conn =>
+                IPAddress.Loopback, 0, NetworkParameters.BitcoinCoreMain.NetworkMagic, conn =>
                 {
                     messageLog.Log("Server accepted connection.");
                     serverEndpoint = BitcoinEndpoint.Create(conn);
@@ -219,7 +222,7 @@ namespace Test.BitcoinUtilities.P2P
                 }
             ))
             {
-                using (BitcoinEndpoint clientEndpoint = BitcoinEndpoint.Create("localhost", connectionListener.Port))
+                using (BitcoinEndpoint clientEndpoint = BitcoinEndpoint.Create("localhost", connectionListener.Port, NetworkParameters.BitcoinCoreMain.NetworkMagic))
                 {
                     StartMessageListener(clientEndpoint, false);
                     Thread.Sleep(100);
