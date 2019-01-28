@@ -9,6 +9,116 @@ namespace Test.BitcoinUtilities.Scripts
     public partial class TestScriptProcessor
     {
         [Test]
+        public void TestSubtract1()
+        {
+            ScriptProcessor processor = new ScriptProcessor();
+
+            // positive number
+            processor.Reset();
+            processor.Execute(new byte[]
+            {
+                BitcoinScript.OP_3,
+                BitcoinScript.OP_1SUB
+            });
+
+            Assert.True(processor.Valid);
+            Assert.That(processor.GetStack().Select(HexUtils.GetString), Is.EqualTo(new string[] {"02"}).IgnoreCase);
+
+            // negative number
+            processor.Reset();
+            processor.Execute(new byte[]
+            {
+                BitcoinScript.OP_PUSHDATA1, 1, 0x83,
+                BitcoinScript.OP_1SUB
+            });
+
+            Assert.True(processor.Valid);
+            Assert.That(processor.GetStack().Select(HexUtils.GetString), Is.EqualTo(new string[] {"84"}).IgnoreCase);
+
+            // zero
+            processor.Reset();
+            processor.Execute(new byte[]
+            {
+                BitcoinScript.OP_FALSE,
+                BitcoinScript.OP_1SUB
+            });
+
+            Assert.True(processor.Valid);
+            Assert.That(processor.GetStack().Select(HexUtils.GetString), Is.EqualTo(new string[] {"81"}).IgnoreCase);
+
+            // zero result
+            processor.Reset();
+            processor.Execute(new byte[]
+            {
+                BitcoinScript.OP_TRUE,
+                BitcoinScript.OP_1SUB
+            });
+
+            Assert.True(processor.Valid);
+            Assert.That(processor.GetStack().Select(HexUtils.GetString), Is.EqualTo(new string[] {""}).IgnoreCase);
+
+            // overflow
+            processor.Reset();
+            processor.Execute(new byte[]
+            {
+                BitcoinScript.OP_PUSHDATA1, 0x4, 0xFF, 0xFF, 0xFF, 0xFF,
+                BitcoinScript.OP_1SUB
+            });
+
+            Assert.True(processor.Valid);
+            Assert.That(processor.GetStack().Select(HexUtils.GetString), Is.EqualTo(new string[] {"0000008080"}).IgnoreCase);
+
+            // non-minimal (negative zero)
+            processor.Reset();
+            processor.Execute(new byte[]
+            {
+                BitcoinScript.OP_PUSHDATA1, 1, 0x80,
+                BitcoinScript.OP_1SUB
+            });
+
+            Assert.False(processor.Valid);
+
+            // non-minimal (positive)
+            processor.Reset();
+            processor.Execute(new byte[]
+            {
+                BitcoinScript.OP_PUSHDATA1, 2, 0x7F, 0x00,
+                BitcoinScript.OP_1SUB
+            });
+
+            Assert.False(processor.Valid);
+
+            // non-minimal (negative)
+            processor.Reset();
+            processor.Execute(new byte[]
+            {
+                BitcoinScript.OP_PUSHDATA1, 2, 0x7F, 0x80,
+                BitcoinScript.OP_1SUB
+            });
+
+            Assert.False(processor.Valid);
+
+            // input value too large
+            processor.Reset();
+            processor.Execute(new byte[]
+            {
+                BitcoinScript.OP_PUSHDATA1, 5, 0x11, 0x11, 0x11, 0x11, 0x11,
+                BitcoinScript.OP_1SUB
+            });
+
+            Assert.False(processor.Valid);
+
+            // input stack size (0)
+            processor.Reset();
+            processor.Execute(new byte[]
+            {
+                BitcoinScript.OP_1SUB
+            });
+
+            Assert.False(processor.Valid);
+        }
+
+        [Test]
         public void TestNot()
         {
             ScriptProcessor processor = new ScriptProcessor();

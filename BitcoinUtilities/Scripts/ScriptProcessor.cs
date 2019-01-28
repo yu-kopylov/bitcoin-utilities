@@ -178,6 +178,7 @@ namespace BitcoinUtilities.Scripts
 
             // Arithmetic
 
+            commandDefinitions[BitcoinScript.OP_1SUB] = new CommandDefinition(false, ExecuteSubtract1);
             commandDefinitions[BitcoinScript.OP_NOT] = new CommandDefinition(false, ExecuteNot);
             commandDefinitions[BitcoinScript.OP_ADD] = new CommandDefinition(false, ExecuteAdd);
             commandDefinitions[BitcoinScript.OP_SUB] = new CommandDefinition(false, ExecuteSubtract);
@@ -660,6 +661,25 @@ namespace BitcoinUtilities.Scripts
         #endregion
 
         #region Arithmetic Commands
+
+        private void ExecuteSubtract1(byte[] script, ScriptCommand command)
+        {
+            if (dataStack.Count < 1)
+            {
+                valid = false;
+                return;
+            }
+
+            byte[] item = PopData();
+
+            if (!ParseInt32(item, out long value))
+            {
+                valid = false;
+                return;
+            }
+
+            dataStack.Add(EncodeInt(value - 1));
+        }
 
         private void ExecuteNot(byte[] script, ScriptCommand command)
         {
