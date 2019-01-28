@@ -72,5 +72,36 @@ namespace Test.BitcoinUtilities.Scripts
             Assert.That(scriptProcessor.Valid);
             Assert.True(scriptProcessor.Success);
         }
+
+        [Test]
+        public void Test_Single_AnyoneCanPay()
+        {
+            // Block: 300992
+            // Tx Hash: d334a492582a069ae30277c94db99df3ac55cce10326bbde3946cdf0d7c8f903
+
+            byte[] txText = HexUtils.GetBytesUnsafe(
+                "010000000250d7d66f69f0b61a6d3e808707e441be0623493912b7893723b7befb3fece044000000006b483045022100bbf1696e71c1cf2b837d50b7c1218a59" +
+                "d61a1f97ea96467a67b2e01d053922ff0220665ab4873f7edc43a19571bd9c131fcd72ec60f172ee1ff0a4f18e69a9d8bbfd83210252ce4bdd3ce38b4ebbc5a6" +
+                "e1343608230da508ff12d23d85b58c964204c4cef3fffffffff178b861a99b6f6d5417688d107cc0e6d9ccba957bb8ec071dc4aa2ea619adfd000000006a4730" +
+                "440220368784ac516dab015a7191edca16c593e4af029f8b80356a6245eab4bf03247b022054d99ee0a005759691527c350e58c12e52f637c861710577b1ba2d" +
+                "8c04ceb5b501210329f1360be71c7d988f6d298f41a31b0ca822478dcf570b28a5d8a81002d233d3ffffffff02e4240100000000001976a914d84bcec5b65aa1" +
+                "a03d6abfd975824c75856a296188ac00000000000000000f6a0d73696e676c652b616e796f6e6500000000"
+            );
+
+            Tx tx = BitcoinStreamReader.FromBytes(txText, Tx.Read);
+
+            ISigHashCalculator sigHashCalculator = new BitcoinCoreSigHashCalculator(tx);
+            sigHashCalculator.InputIndex = 0;
+            sigHashCalculator.Amount = 79520;
+
+            ScriptProcessor scriptProcessor = new ScriptProcessor();
+            scriptProcessor.SigHashCalculator = sigHashCalculator;
+
+            scriptProcessor.Execute(tx.Inputs[0].SignatureScript);
+            scriptProcessor.Execute(HexUtils.GetBytesUnsafe("76a914d84bcec5b65aa1a03d6abfd975824c75856a296188ac"));
+
+            Assert.That(scriptProcessor.Valid);
+            Assert.True(scriptProcessor.Success);
+        }
     }
 }

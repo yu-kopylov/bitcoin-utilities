@@ -42,6 +42,10 @@ namespace BitcoinUtilities.Scripts
             {
                 return Calculate(sigHashType, subScript, mode: SigHashType.None, anyoneCanPay: true);
             }
+            else if (sigHashType == (SigHashType.Single | SigHashType.AnyoneCanPay) && InputIndex == 0)
+            {
+                return Calculate(sigHashType, subScript, mode: SigHashType.Single, anyoneCanPay: true);
+            }
             else
             {
                 //todo: exception type?
@@ -94,6 +98,17 @@ namespace BitcoinUtilities.Scripts
                 else if (mode == SigHashType.None)
                 {
                     writer.WriteCompact(0ul);
+                }
+                else if (mode == SigHashType.Single)
+                {
+                    writer.WriteCompact((ulong) InputIndex + 1);
+                    for (int i = 0; i < InputIndex; i++)
+                    {
+                        writer.Write(-1L);
+                        writer.WriteCompact(0UL);
+                    }
+
+                    transaction.Outputs[InputIndex].Write(writer);
                 }
                 else
                 {
