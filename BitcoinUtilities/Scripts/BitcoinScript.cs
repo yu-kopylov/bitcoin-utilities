@@ -276,6 +276,11 @@ namespace BitcoinUtilities.Scripts
         // If any opcode marked as disabled is present in a script - it must also abort and fail.
 
         /// <summary>
+        /// If the input is 0 or 1, it is flipped. Otherwise the output will be 0.
+        /// </summary>
+        public const byte OP_NOT = 0x91;
+        
+        /// <summary>
         /// a is added to b.
         /// </summary>
         public const byte OP_ADD = 0x93;
