@@ -178,7 +178,10 @@ namespace BitcoinUtilities.Scripts
 
             // Arithmetic
 
+            commandDefinitions[BitcoinScript.OP_1ADD] = new CommandDefinition(false, ExecuteAdd1);
             commandDefinitions[BitcoinScript.OP_1SUB] = new CommandDefinition(false, ExecuteSubtract1);
+            commandDefinitions[BitcoinScript.OP_NEGATE] = new CommandDefinition(false, ExecuteNegate);
+            commandDefinitions[BitcoinScript.OP_ABS] = new CommandDefinition(false, ExecuteAbs);
             commandDefinitions[BitcoinScript.OP_NOT] = new CommandDefinition(false, ExecuteNot);
             commandDefinitions[BitcoinScript.OP_ADD] = new CommandDefinition(false, ExecuteAdd);
             commandDefinitions[BitcoinScript.OP_SUB] = new CommandDefinition(false, ExecuteSubtract);
@@ -662,6 +665,25 @@ namespace BitcoinUtilities.Scripts
 
         #region Arithmetic Commands
 
+        private void ExecuteAdd1(byte[] script, ScriptCommand command)
+        {
+            if (dataStack.Count < 1)
+            {
+                valid = false;
+                return;
+            }
+
+            byte[] item = PopData();
+
+            if (!ParseInt32(item, out long value))
+            {
+                valid = false;
+                return;
+            }
+
+            dataStack.Add(EncodeInt(value + 1));
+        }
+
         private void ExecuteSubtract1(byte[] script, ScriptCommand command)
         {
             if (dataStack.Count < 1)
@@ -679,6 +701,44 @@ namespace BitcoinUtilities.Scripts
             }
 
             dataStack.Add(EncodeInt(value - 1));
+        }
+
+        private void ExecuteNegate(byte[] script, ScriptCommand command)
+        {
+            if (dataStack.Count < 1)
+            {
+                valid = false;
+                return;
+            }
+
+            byte[] item = PopData();
+
+            if (!ParseInt32(item, out long value))
+            {
+                valid = false;
+                return;
+            }
+
+            dataStack.Add(EncodeInt(-value));
+        }
+
+        private void ExecuteAbs(byte[] script, ScriptCommand command)
+        {
+            if (dataStack.Count < 1)
+            {
+                valid = false;
+                return;
+            }
+
+            byte[] item = PopData();
+
+            if (!ParseInt32(item, out long value))
+            {
+                valid = false;
+                return;
+            }
+
+            dataStack.Add(EncodeInt(value < 0 ? -value : value));
         }
 
         private void ExecuteNot(byte[] script, ScriptCommand command)
