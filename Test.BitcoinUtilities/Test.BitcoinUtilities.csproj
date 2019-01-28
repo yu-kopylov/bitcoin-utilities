@@ -57,6 +57,7 @@
     <Compile Include="Node\TestNodeAddressCollection.cs" />
     <Compile Include="P2P\Primitives\TestTxOutPoint.cs" />
     <Compile Include="P2P\TestBitcoinConnectionListener.cs" />
+    <Compile Include="Scripts\TestBitcoinCoreSigHashCalculator.cs" />
     <Compile Include="Scripts\TestControlStack.cs" />
     <Compile Include="Scripts\TestScriptParser.cs" />
     <Compile Include="Scripts\TestScriptProcessor.cs" />

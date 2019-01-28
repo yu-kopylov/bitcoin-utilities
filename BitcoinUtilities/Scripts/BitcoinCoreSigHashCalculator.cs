@@ -11,18 +11,13 @@ namespace BitcoinUtilities.Scripts
     public class BitcoinCoreSigHashCalculator : ISigHashCalculator
     {
         private readonly Tx transaction;
-        private int inputIndex;
 
         public BitcoinCoreSigHashCalculator(Tx transaction)
         {
             this.transaction = transaction;
         }
 
-        public int InputIndex
-        {
-            get { return inputIndex; }
-            set { inputIndex = value; }
-        }
+        public int InputIndex { get; set; }
 
         /// <summary>
         /// Bitcoin Core does not sign output values from original transactions.
@@ -35,36 +30,73 @@ namespace BitcoinUtilities.Scripts
 
         public byte[] Calculate(SigHashType sigHashType, byte[] subScript)
         {
-            // todo: add XMLDOC and test
-            // todo: support hashtypes other than SigHashType.All
-            if (sigHashType != SigHashType.All)
+            if (sigHashType == SigHashType.All)
+            {
+                return Calculate(sigHashType, subScript, mode: SigHashType.All, anyoneCanPay: false);
+            }
+            else if (sigHashType == (SigHashType.None | SigHashType.AnyoneCanPay))
+            {
+                return Calculate(sigHashType, subScript, mode: SigHashType.None, anyoneCanPay: true);
+            }
+            else
             {
                 //todo: exception type?
                 throw new InvalidOperationException($"Unexpected sigHashType: '{sigHashType}'.");
             }
+        }
 
+        private byte[] Calculate(SigHashType sigHashType, byte[] subScript, SigHashType mode, bool anyoneCanPay)
+        {
             MemoryStream mem = new MemoryStream();
+
             using (BitcoinStreamWriter writer = new BitcoinStreamWriter(mem))
             {
-                //todo: check if transaction exists
                 writer.Write(transaction.Version);
-                writer.WriteCompact((ulong) transaction.Inputs.Length);
-                for (int i = 0; i < transaction.Inputs.Length; i++)
+                if (anyoneCanPay)
                 {
-                    TxIn input = transaction.Inputs[i];
+                    writer.WriteCompact(1ul);
+
+                    TxIn input = transaction.Inputs[InputIndex];
                     input.PreviousOutput.Write(writer);
-                    if (inputIndex == i)
-                    {
-                        writer.WriteCompact((ulong) subScript.Length);
-                        writer.Write(subScript);
-                    }
-                    else
-                    {
-                        writer.WriteCompact(0);
-                    }
+                    writer.WriteCompact((ulong) subScript.Length);
+                    writer.Write(subScript);
                     writer.Write(input.Sequence);
                 }
-                writer.WriteArray(transaction.Outputs, (w, v) => v.Write(writer));
+                else
+                {
+                    writer.WriteCompact((ulong) transaction.Inputs.Length);
+                    for (int i = 0; i < transaction.Inputs.Length; i++)
+                    {
+                        TxIn input = transaction.Inputs[i];
+                        input.PreviousOutput.Write(writer);
+                        if (InputIndex == i)
+                        {
+                            writer.WriteCompact((ulong) subScript.Length);
+                            writer.Write(subScript);
+                        }
+                        else
+                        {
+                            writer.WriteCompact(0);
+                        }
+
+                        writer.Write(input.Sequence);
+                    }
+                }
+
+                if (mode == SigHashType.All)
+                {
+                    writer.WriteArray(transaction.Outputs, (w, v) => v.Write(writer));
+                }
+                else if (mode == SigHashType.None)
+                {
+                    writer.WriteCompact(0ul);
+                }
+                else
+                {
+                    //todo: exception type?
+                    throw new InvalidOperationException($"Unexpected sigHashType mode: '{mode}'.");
+                }
+
                 writer.Write(transaction.LockTime);
                 writer.Write((uint) sigHashType);
             }
