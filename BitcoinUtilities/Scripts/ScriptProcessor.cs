@@ -176,6 +176,11 @@ namespace BitcoinUtilities.Scripts
             commandDefinitions[BitcoinScript.OP_EQUAL] = new CommandDefinition(false, ExecuteEqual);
             commandDefinitions[BitcoinScript.OP_EQUALVERIFY] = new CommandDefinition(false, ExecuteEqualVerify);
 
+            // Arithmetic
+
+            commandDefinitions[BitcoinScript.OP_ADD] = new CommandDefinition(false, ExecuteAdd);
+            commandDefinitions[BitcoinScript.OP_SUB] = new CommandDefinition(false, ExecuteSubtract);
+
             // Crypto
 
             commandDefinitions[BitcoinScript.OP_RIPEMD160] = new CommandDefinition(false, ExecuteRipeMd160);
@@ -649,6 +654,132 @@ namespace BitcoinUtilities.Scripts
                 valid = false;
                 dataStack.Add(new byte[0]);
             }
+        }
+
+        #endregion
+
+        #region Arithmetic Commands
+
+        private void ExecuteAdd(byte[] script, ScriptCommand command)
+        {
+            if (dataStack.Count < 2)
+            {
+                valid = false;
+                return;
+            }
+
+            byte[] item1 = PopData();
+            byte[] item2 = PopData();
+
+            if (!ParseInt32(item2, out long a) || !ParseInt32(item1, out long b))
+            {
+                valid = false;
+                return;
+            }
+
+            dataStack.Add(EncodeInt(a + b));
+        }
+
+        private void ExecuteSubtract(byte[] script, ScriptCommand command)
+        {
+            if (dataStack.Count < 2)
+            {
+                valid = false;
+                return;
+            }
+
+            byte[] item1 = PopData();
+            byte[] item2 = PopData();
+
+            if (!ParseInt32(item2, out long a) || !ParseInt32(item1, out long b))
+            {
+                valid = false;
+                return;
+            }
+
+            dataStack.Add(EncodeInt(a - b));
+        }
+
+        private bool ParseInt32(byte[] encoded, out long value)
+        {
+            if (encoded.Length == 0)
+            {
+                value = 0;
+                return true;
+            }
+
+            if (encoded.Length > 4)
+            {
+                value = 0;
+                return false;
+            }
+
+            int lastIndex = encoded.Length - 1;
+
+            // Checking that encoding is minimal.
+            if ((encoded[lastIndex] & 0x7F) == 0)
+            {
+                // Last byte does not add value except for a sign. It is required only if previous byte used its highest bit for value.
+                // If there is no previous byte, then encoded value represents negative zero, which should have been represented as zero instead.
+                bool extraByteRequired = lastIndex > 0 && encoded[lastIndex - 1] >= 0x80;
+                if (!extraByteRequired)
+                {
+                    value = 0;
+                    return false;
+                }
+            }
+
+            // reading sign bit from the last byte
+            bool isNegative = encoded[lastIndex] >= 0x80;
+
+            long res = 0;
+            for (int i = 0; i < lastIndex; i++)
+            {
+                res |= ((long) encoded[i]) << (8 * i);
+            }
+
+            // excluding sign bit from the last byte
+            res |= ((long) (encoded[lastIndex] & 0x7F)) << (8 * lastIndex);
+
+            if (isNegative)
+            {
+                res = -res;
+            }
+
+            value = res;
+            return true;
+        }
+
+        private byte[] EncodeInt(long value)
+        {
+            if (value == 0)
+            {
+                return new byte[0];
+            }
+
+            List<byte> encoded = new List<byte>();
+
+            bool isNegative = value < 0;
+            long absValue = isNegative ? -value : value;
+
+            while (absValue != 0)
+            {
+                encoded.Add((byte) absValue);
+                absValue >>= 8;
+            }
+
+            int lastIndex = encoded.Count - 1;
+
+            if (encoded[lastIndex] >= 0x80)
+            {
+                encoded.Add(isNegative ? (byte) 0x80 : (byte) 0x00);
+            }
+            else if (isNegative)
+            {
+                encoded[lastIndex] |= 0x80;
+            }
+
+            return encoded.ToArray();
         }
 
         #endregion

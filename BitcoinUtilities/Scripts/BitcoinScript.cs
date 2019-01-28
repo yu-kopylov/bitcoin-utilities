@@ -269,6 +269,23 @@ namespace BitcoinUtilities.Scripts
         public const byte OP_EQUALVERIFY = 0x88;
 
         // ---------------------------------------------------------------------------------------
+        // ---- Arithmetic -----------------------------------------------------------------------
+        // ---------------------------------------------------------------------------------------
+        // Note: Arithmetic inputs are limited to signed 32-bit integers, but may overflow their output.
+        // If any input value for any of these commands is longer than 4 bytes, the script must abort and fail.
+        // If any opcode marked as disabled is present in a script - it must also abort and fail.
+
+        /// <summary>
+        /// a is added to b.
+        /// </summary>
+        public const byte OP_ADD = 0x93;
+        
+        /// <summary>
+        /// b is subtracted from a.
+        /// </summary>
+        public const byte OP_SUB = 0x94;
+        
+        // ---------------------------------------------------------------------------------------
         // ---- Crypto ---------------------------------------------------------------------------
         // ---------------------------------------------------------------------------------------
 
