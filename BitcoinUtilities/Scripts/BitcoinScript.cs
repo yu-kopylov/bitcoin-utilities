@@ -395,6 +395,16 @@ namespace BitcoinUtilities.Scripts
         public const byte OP_VER = 0x62;
 
         /// <summary>
+        /// Transaction is invalid even when occuring in an unexecuted OP_IF branch.
+        /// </summary>
+        public const byte OP_VERIF = 0x65;
+
+        /// <summary>
+        /// Transaction is invalid even when occuring in an unexecuted OP_IF branch.
+        /// </summary>
+        public const byte OP_VERNOTIF = 0x66;
+
+        /// <summary>
         /// Transaction is invalid unless occuring in an unexecuted OP_IF branch.
         /// </summary>
         public const byte OP_RESERVED1 = 0x89;

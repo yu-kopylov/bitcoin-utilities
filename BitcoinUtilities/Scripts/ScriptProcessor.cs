@@ -203,6 +203,9 @@ namespace BitcoinUtilities.Scripts
 
             // Reserved words
 
+            commandDefinitions[BitcoinScript.OP_VERIF] = new CommandDefinition(true, (_, __) => { valid = false; });
+            commandDefinitions[BitcoinScript.OP_VERNOTIF] = new CommandDefinition(true, (_, __) => { valid = false; });
+
             commandDefinitions[BitcoinScript.OP_RESERVED] = new CommandDefinition(false, (_, __) => { valid = false; });
             commandDefinitions[BitcoinScript.OP_VER] = new CommandDefinition(false, (_, __) => { valid = false; });
             commandDefinitions[BitcoinScript.OP_RESERVED1] = new CommandDefinition(false, (_, __) => { valid = false; });
