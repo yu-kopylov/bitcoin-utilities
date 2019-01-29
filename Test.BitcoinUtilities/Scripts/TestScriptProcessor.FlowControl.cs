@@ -7,6 +7,17 @@ namespace Test.BitcoinUtilities.Scripts
     public partial class TestScriptProcessor
     {
         [Test]
+        public void TestNop()
+        {
+            ScriptProcessor processor = new ScriptProcessor();
+
+            processor.Execute(new byte[] {BitcoinScript.OP_NOP});
+
+            Assert.True(processor.Valid);
+            Assert.That(processor.GetStack(), Is.Empty);
+        }
+
+        [Test]
         public void TestIf()
         {
             ScriptProcessor processor = new ScriptProcessor();

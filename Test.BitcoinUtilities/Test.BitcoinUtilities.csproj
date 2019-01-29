@@ -66,6 +66,7 @@
     <Compile Include="Scripts\TestScriptProcessor.BitwiseLogic.cs" />
     <Compile Include="Scripts\TestScriptProcessor.FlowControl.cs" />
     <Compile Include="Scripts\TestScriptProcessor.Constants.cs" />
+    <Compile Include="Scripts\TestScriptProcessor.ReservedWords.cs" />
     <Compile Include="P2P\Messages\TestHeadersMessage.cs" />
     <Compile Include="P2P\Messages\TestPongMessage.cs" />
     <Compile Include="P2P\Messages\TestPingMessage.cs" />

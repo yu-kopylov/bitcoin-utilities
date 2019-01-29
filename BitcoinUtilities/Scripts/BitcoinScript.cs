@@ -1,7 +1,9 @@
 ﻿using System;
+using System.Diagnostics.CodeAnalysis;
 
 namespace BitcoinUtilities.Scripts
 {
+    [SuppressMessage("ReSharper", "InconsistentNaming")]
     public static class BitcoinScript
     {
         // ---------------------------------------------------------------------------------------
@@ -382,6 +384,50 @@ namespace BitcoinUtilities.Scripts
         /// Same as OP_CHECKMULTISIG, but OP_VERIFY is executed afterward.
         /// </summary>
         public const byte OP_CHECKMULTISIGVERIFY = 0xAF;
+
+        // ---------------------------------------------------------------------------------------
+        // ---- Reserved words -------------------------------------------------------------------
+        // ---------------------------------------------------------------------------------------
+
+        /// <summary>
+        /// The word is ignored. Does not mark transaction as invalid.
+        /// </summary>
+        public const byte OP_NOP1 = 0xB0;
+
+        /// <summary>
+        /// The word is ignored. Does not mark transaction as invalid.
+        /// </summary>
+        public const byte OP_NOP4 = 0xB3;
+
+        /// <summary>
+        /// The word is ignored. Does not mark transaction as invalid.
+        /// </summary>
+        public const byte OP_NOP5 = 0xB4;
+
+        /// <summary>
+        /// The word is ignored. Does not mark transaction as invalid.
+        /// </summary>
+        public const byte OP_NOP6 = 0xB5;
+
+        /// <summary>
+        /// The word is ignored. Does not mark transaction as invalid.
+        /// </summary>
+        public const byte OP_NOP7 = 0xB6;
+
+        /// <summary>
+        /// The word is ignored. Does not mark transaction as invalid.
+        /// </summary>
+        public const byte OP_NOP8 = 0xB7;
+
+        /// <summary>
+        /// The word is ignored. Does not mark transaction as invalid.
+        /// </summary>
+        public const byte OP_NOP9 = 0xB8;
+
+        /// <summary>
+        /// The word is ignored. Does not mark transaction as invalid.
+        /// </summary>
+        public const byte OP_NOP10 = 0xB9;
 
         /// <summary>
         /// Extracts an address from the given pubkey script if it has a known format.

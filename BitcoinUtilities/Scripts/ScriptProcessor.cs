@@ -200,6 +200,16 @@ namespace BitcoinUtilities.Scripts
             commandDefinitions[BitcoinScript.OP_CHECKSIGVERIFY] = new CommandDefinition(false, ExecuteCheckSigVerify);
             commandDefinitions[BitcoinScript.OP_CHECKMULTISIG] = new CommandDefinition(false, ExecuteCheckMultiSig);
             commandDefinitions[BitcoinScript.OP_CHECKMULTISIGVERIFY] = new CommandDefinition(false, ExecuteCheckMultiSigVerify);
+
+            // Reserved words
+            commandDefinitions[BitcoinScript.OP_NOP1] = new CommandDefinition(false, (_, __) => { });
+            commandDefinitions[BitcoinScript.OP_NOP4] = new CommandDefinition(false, (_, __) => { });
+            commandDefinitions[BitcoinScript.OP_NOP5] = new CommandDefinition(false, (_, __) => { });
+            commandDefinitions[BitcoinScript.OP_NOP6] = new CommandDefinition(false, (_, __) => { });
+            commandDefinitions[BitcoinScript.OP_NOP7] = new CommandDefinition(false, (_, __) => { });
+            commandDefinitions[BitcoinScript.OP_NOP8] = new CommandDefinition(false, (_, __) => { });
+            commandDefinitions[BitcoinScript.OP_NOP9] = new CommandDefinition(false, (_, __) => { });
+            commandDefinitions[BitcoinScript.OP_NOP10] = new CommandDefinition(false, (_, __) => { });
         }
 
         private void ExecuteDisabled(byte[] script, ScriptCommand command)
