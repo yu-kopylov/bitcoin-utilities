@@ -310,6 +310,16 @@ namespace BitcoinUtilities.Scripts
         /// </summary>
         public const byte OP_SUB = 0x94;
 
+        /// <summary>
+        /// Returns the smaller of a and b.
+        /// </summary>
+        public const byte OP_MIN = 0xA3;
+
+        /// <summary>
+        /// Returns the larger of a and b.
+        /// </summary>
+        public const byte OP_MAX = 0xA4;
+
         // ---------------------------------------------------------------------------------------
         // ---- Crypto ---------------------------------------------------------------------------
         // ---------------------------------------------------------------------------------------

@@ -185,6 +185,8 @@ namespace BitcoinUtilities.Scripts
             commandDefinitions[BitcoinScript.OP_NOT] = new CommandDefinition(false, ExecuteNot);
             commandDefinitions[BitcoinScript.OP_ADD] = new CommandDefinition(false, ExecuteAdd);
             commandDefinitions[BitcoinScript.OP_SUB] = new CommandDefinition(false, ExecuteSubtract);
+            commandDefinitions[BitcoinScript.OP_MIN] = new CommandDefinition(false, ExecuteMin);
+            commandDefinitions[BitcoinScript.OP_MAX] = new CommandDefinition(false, ExecuteMax);
 
             // Crypto
 
@@ -805,6 +807,46 @@ namespace BitcoinUtilities.Scripts
             }
 
             dataStack.Add(EncodeInt(a - b));
+        }
+
+        private void ExecuteMin(byte[] script, ScriptCommand command)
+        {
+            if (dataStack.Count < 2)
+            {
+                valid = false;
+                return;
+            }
+
+            byte[] item1 = PopData();
+            byte[] item2 = PopData();
+
+            if (!ParseInt32(item2, out long a) || !ParseInt32(item1, out long b))
+            {
+                valid = false;
+                return;
+            }
+
+            dataStack.Add(EncodeInt(a < b ? a : b));
+        }
+
+        private void ExecuteMax(byte[] script, ScriptCommand command)
+        {
+            if (dataStack.Count < 2)
+            {
+                valid = false;
+                return;
+            }
+
+            byte[] item1 = PopData();
+            byte[] item2 = PopData();
+
+            if (!ParseInt32(item2, out long a) || !ParseInt32(item1, out long b))
+            {
+                valid = false;
+                return;
+            }
+
+            dataStack.Add(EncodeInt(a > b ? a : b));
         }
 
         private bool ParseInt32(byte[] encoded, out long value)
