@@ -65,11 +65,15 @@ namespace BitcoinUtilities.Node.Services.Blocks
             }
         }
 
-        public void AddBlock(byte[] hash, BlockMessage block)
+        public bool AddBlock(byte[] hash, BlockMessage block)
         {
             lock (monitor)
             {
-                blocks[hash] = block;
+                bool isNewBlock = !blocks.ContainsKey(hash);
+                if (isNewBlock)
+                {
+                    blocks[hash] = block;
+                }
 
                 if (requestCollection.MarkReceived(hash))
                 {
@@ -80,6 +84,8 @@ namespace BitcoinUtilities.Node.Services.Blocks
                 {
                     blocks.Remove(blocks.First().Key);
                 }
+
+                return isNewBlock;
             }
         }
     }

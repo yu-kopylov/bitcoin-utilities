@@ -69,6 +69,7 @@
     <Compile Include="Services\Blocks\BlocksModule.cs" />
     <Compile Include="Services\Blocks\BlockRepository.cs" />
     <Compile Include="Services\Blocks\BlockRequestCollection.cs" />
+    <Compile Include="Services\Blocks\BlockDownloadService.PerformanceCounters.cs" />
     <Compile Include="Services\Discovery\NodeDiscoveryModule.cs" />
     <Compile Include="Services\Headers\Blockchain.cs" />
     <Compile Include="Services\Headers\DbHeader.cs" />

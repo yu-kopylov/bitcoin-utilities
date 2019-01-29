@@ -106,7 +106,7 @@ namespace BitcoinUtilities.Node.Services.Outputs
                 var perOp = opCount == 0 ? "(0.0 ms/op)" : $"({time / (double) opCount:F1} ms/op)";
                 var totalPerOp = totalOpCount == 0 ? "(0.0 ms/op)" : $"({totalTime / (double) totalOpCount:F1} ms/op)";
 
-                return $"\t{name + ":",-24} {totalTime,8} ms {totalPerOp,14} | {time,8} ms {perOp,14}";
+                return $"\t{name + ":",-24} {totalTime,8} ms {totalPerOp,15} | {time,8} ms {perOp,15}";
             }
 
             private string FormatCounter(string name, long totalOpCount, long snapshotOpCount, long totalTime, long snapshotTime)
@@ -117,7 +117,7 @@ namespace BitcoinUtilities.Node.Services.Outputs
                 var perSec = time == 0 ? "(INF op/s)" : $"({opCount * 1000d / time:F1} op/s)";
                 var totalPerSec = totalTime == 0 ? "(INF op/s)" : $"({totalOpCount * 1000d / totalTime:F1} op/s)";
 
-                return $"\t{name + ":",-24} {totalOpCount,8} op {totalPerSec,14} | {opCount,8} op {perSec,14}";
+                return $"\t{name + ":",-24} {totalOpCount,8} op {totalPerSec,15} | {opCount,8} op {perSec,15}";
             }
         }
     }

@@ -9,11 +9,15 @@ using BitcoinUtilities.Node.Services.Headers;
 using BitcoinUtilities.P2P;
 using BitcoinUtilities.P2P.Messages;
 using BitcoinUtilities.P2P.Primitives;
+using NLog;
 
 namespace BitcoinUtilities.Node.Services.Blocks
 {
-    public class BlockDownloadService : EndpointEventHandlingService
+    public partial class BlockDownloadService : EndpointEventHandlingService
     {
+        private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
+        private static readonly PerformanceCounters performanceCounters = new PerformanceCounters(logger);
+
         private readonly BlockRequestCollection requestCollection;
         private readonly BlockRepository repository;
         private readonly BitcoinEndpoint endpoint;
@@ -116,7 +120,9 @@ namespace BitcoinUtilities.Node.Services.Blocks
                 return;
             }
 
-            repository.AddBlock(hash, blockMessage);
+            bool isNewBlock = repository.AddBlock(hash, blockMessage);
+
+            performanceCounters.BlockReceived(isNewBlock, blockMessage.Transactions.Length);
 
             inventory.Remove(hash);
             sentRequests.Remove(hash);
