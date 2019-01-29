@@ -7,9 +7,9 @@ namespace Test.BitcoinUtilities.Scripts
     public partial class TestScriptProcessor
     {
         [Test]
-        public void TestNopCommands()
+        public void TestReservedCommands_Nop()
         {
-            byte[] nopCommands = new byte[]
+            byte[] commands = new byte[]
             {
                 BitcoinScript.OP_NOP1,
                 BitcoinScript.OP_NOP4,
@@ -23,11 +23,45 @@ namespace Test.BitcoinUtilities.Scripts
 
             ScriptProcessor processor = new ScriptProcessor();
 
-            foreach (byte nopCommand in nopCommands)
+            foreach (byte command in commands)
             {
                 processor.Reset();
+                processor.Execute(new byte[] {command});
 
-                processor.Execute(new byte[] {nopCommand});
+                Assert.True(processor.Valid);
+                Assert.That(processor.GetStack(), Is.Empty);
+            }
+        }
+
+        [Test]
+        public void TestReservedCommands_FailWhenExecuted()
+        {
+            byte[] commands = new byte[]
+            {
+                BitcoinScript.OP_RESERVED,
+                BitcoinScript.OP_VER,
+                BitcoinScript.OP_RESERVED1,
+                BitcoinScript.OP_RESERVED2
+            };
+
+            ScriptProcessor processor = new ScriptProcessor();
+
+            foreach (byte command in commands)
+            {
+                processor.Reset();
+                processor.Execute(new byte[] {command});
+
+                Assert.False(processor.Valid);
+                Assert.That(processor.GetStack(), Is.Empty);
+
+                processor.Reset();
+                processor.Execute(new byte[]
+                {
+                    BitcoinScript.OP_FALSE,
+                    BitcoinScript.OP_IF,
+                    command,
+                    BitcoinScript.OP_ENDIF
+                });
 
                 Assert.True(processor.Valid);
                 Assert.That(processor.GetStack(), Is.Empty);

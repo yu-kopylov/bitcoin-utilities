@@ -46,11 +46,6 @@ namespace BitcoinUtilities.Scripts
         public const byte OP_1NEGATE = 0x4F;
 
         /// <summary>
-        /// Transaction is invalid unless occuring in an unexecuted OP_IF branch.
-        /// </summary>
-        public const byte OP_RESERVED = 0x50;
-
-        /// <summary>
         /// The number 1 is pushed onto the stack.
         /// </summary>
         public const byte OP_TRUE = 0x51;
@@ -388,6 +383,26 @@ namespace BitcoinUtilities.Scripts
         // ---------------------------------------------------------------------------------------
         // ---- Reserved words -------------------------------------------------------------------
         // ---------------------------------------------------------------------------------------
+
+        /// <summary>
+        /// Transaction is invalid unless occuring in an unexecuted OP_IF branch.
+        /// </summary>
+        public const byte OP_RESERVED = 0x50;
+
+        /// <summary>
+        /// Transaction is invalid unless occuring in an unexecuted OP_IF branch.
+        /// </summary>
+        public const byte OP_VER = 0x62;
+
+        /// <summary>
+        /// Transaction is invalid unless occuring in an unexecuted OP_IF branch.
+        /// </summary>
+        public const byte OP_RESERVED1 = 0x89;
+
+        /// <summary>
+        /// Transaction is invalid unless occuring in an unexecuted OP_IF branch.
+        /// </summary>
+        public const byte OP_RESERVED2 = 0x8A;
 
         /// <summary>
         /// The word is ignored. Does not mark transaction as invalid.

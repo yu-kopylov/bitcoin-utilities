@@ -202,6 +202,12 @@ namespace BitcoinUtilities.Scripts
             commandDefinitions[BitcoinScript.OP_CHECKMULTISIGVERIFY] = new CommandDefinition(false, ExecuteCheckMultiSigVerify);
 
             // Reserved words
+
+            commandDefinitions[BitcoinScript.OP_RESERVED] = new CommandDefinition(false, (_, __) => { valid = false; });
+            commandDefinitions[BitcoinScript.OP_VER] = new CommandDefinition(false, (_, __) => { valid = false; });
+            commandDefinitions[BitcoinScript.OP_RESERVED1] = new CommandDefinition(false, (_, __) => { valid = false; });
+            commandDefinitions[BitcoinScript.OP_RESERVED2] = new CommandDefinition(false, (_, __) => { valid = false; });
+
             commandDefinitions[BitcoinScript.OP_NOP1] = new CommandDefinition(false, (_, __) => { });
             commandDefinitions[BitcoinScript.OP_NOP4] = new CommandDefinition(false, (_, __) => { });
             commandDefinitions[BitcoinScript.OP_NOP5] = new CommandDefinition(false, (_, __) => { });
