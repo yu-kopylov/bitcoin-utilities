@@ -79,8 +79,7 @@ namespace BitcoinUtilities.Scripts
 
         public void Execute(byte[] script)
         {
-            List<ScriptCommand> commands;
-            if (!parser.TryParse(script, out commands))
+            if (!parser.TryParse(script, out var commands))
             {
                 valid = false;
                 return;
@@ -168,6 +167,14 @@ namespace BitcoinUtilities.Scripts
             commandDefinitions[BitcoinScript.OP_ROT] = new CommandDefinition(false, ExecuteRot);
             commandDefinitions[BitcoinScript.OP_SWAP] = new CommandDefinition(false, ExecuteSwap);
             commandDefinitions[BitcoinScript.OP_TUCK] = new CommandDefinition(false, ExecuteTuck);
+
+            // Splice
+
+            commandDefinitions[BitcoinScript.OP_CAT] = disabled;
+            commandDefinitions[BitcoinScript.OP_SUBSTR] = disabled;
+            commandDefinitions[BitcoinScript.OP_LEFT] = disabled;
+            commandDefinitions[BitcoinScript.OP_RIGHT] = disabled;
+            commandDefinitions[BitcoinScript.OP_SIZE] = new CommandDefinition(false, ExecuteSize);
 
             // Bitwise Logic
 
@@ -648,8 +655,23 @@ namespace BitcoinUtilities.Scripts
             }
 
             byte[] item = dataStack[dataStack.Count - 1];
-            ;
             dataStack.Insert(dataStack.Count - 2, item);
+        }
+
+        #endregion
+
+        #region Splice
+
+        private void ExecuteSize(byte[] script, ScriptCommand command)
+        {
+            if (dataStack.Count < 1)
+            {
+                valid = false;
+                return;
+            }
+
+            int size = dataStack[dataStack.Count - 1].Length;
+            dataStack.Add(EncodeInt(size));
         }
 
         #endregion

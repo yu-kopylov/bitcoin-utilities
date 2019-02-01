@@ -60,6 +60,7 @@
     <Compile Include="Scripts\TestBitcoinCoreSigHashCalculator.cs" />
     <Compile Include="Scripts\TestControlStack.cs" />
     <Compile Include="Scripts\TestScriptParser.cs" />
+    <Compile Include="Scripts\TestScriptProcessor.Splice.cs" />
     <Compile Include="Scripts\TestScriptProcessor.cs" />
     <Compile Include="Scripts\TestScriptProcessor.Arithmetic.cs" />
     <Compile Include="Scripts\TestScriptProcessor.Crypto.cs" />

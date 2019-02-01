@@ -127,27 +127,27 @@ namespace BitcoinUtilities.Scripts
         /// <summary>
         /// Puts the input onto the top of the alt stack.Removes it from the main stack.
         /// </summary>
-        public const byte OP_TOALTSTACK = 0x6b;
+        public const byte OP_TOALTSTACK = 0x6B;
 
         /// <summary>
         /// Puts the input onto the top of the main stack.Removes it from the alt stack.
         /// </summary>
-        public const byte OP_FROMALTSTACK = 0x6c;
+        public const byte OP_FROMALTSTACK = 0x6C;
 
         /// <summary>
         /// Removes the top two stack items.
         /// </summary>
-        public const byte OP_2DROP = 0x6d;
+        public const byte OP_2DROP = 0x6D;
 
         /// <summary>
         /// Duplicates the top two stack items.
         /// </summary>
-        public const byte OP_2DUP = 0x6e;
+        public const byte OP_2DUP = 0x6E;
 
         /// <summary>
         /// Duplicates the top three stack items.
         /// </summary>
-        public const byte OP_3DUP = 0x6f;
+        public const byte OP_3DUP = 0x6F;
 
         /// <summary>
         /// Copies the pair of items two spaces back in the stack to the front.
@@ -202,22 +202,63 @@ namespace BitcoinUtilities.Scripts
         /// <summary>
         /// The item n back in the stack is moved to the top.
         /// </summary>
-        public const byte OP_ROLL = 0x7a;
+        public const byte OP_ROLL = 0x7A;
 
         /// <summary>
         /// The top three items on the stack are rotated to the left.
         /// </summary>
-        public const byte OP_ROT = 0x7b;
+        public const byte OP_ROT = 0x7B;
 
         /// <summary>
         /// The top two items on the stack are swapped.
         /// </summary>
-        public const byte OP_SWAP = 0x7c;
+        public const byte OP_SWAP = 0x7C;
 
         /// <summary>
         /// The item at the top of the stack is copied and inserted before the second-to-top item.
         /// </summary>
-        public const byte OP_TUCK = 0x7d;
+        public const byte OP_TUCK = 0x7D;
+
+        // ---------------------------------------------------------------------------------------
+        // ---- Splice ---------------------------------------------------------------------------
+        // ---------------------------------------------------------------------------------------
+
+        /// <summary>
+        /// Concatenates two strings.
+        /// </summary>
+        /// <remarks>
+        /// This command is disabled.
+        /// </remarks>
+        public const byte OP_CAT = 0x7E;
+
+        /// <summary>
+        /// Returns a section of a string.
+        /// </summary>
+        /// <remarks>
+        /// This command is disabled.
+        /// </remarks>
+        public const byte OP_SUBSTR = 0x7F;
+
+        /// <summary>
+        /// Keeps only characters left of the specified point in a string.
+        /// </summary>
+        /// <remarks>
+        /// This command is disabled.
+        /// </remarks>
+        public const byte OP_LEFT = 0x80;
+
+        /// <summary>
+        /// Keeps only characters right of the specified point in a string.
+        /// </summary>
+        /// <remarks>
+        /// This command is disabled.
+        /// </remarks>
+        public const byte OP_RIGHT = 0x81;
+
+        /// <summary>
+        /// Pushes the string length of the top element of the stack (without popping it).
+        /// </summary>
+        public const byte OP_SIZE = 0x82;
 
         // ---------------------------------------------------------------------------------------
         // ---- Bitwise logic --------------------------------------------------------------------
@@ -429,7 +470,7 @@ namespace BitcoinUtilities.Scripts
         /// <para/>
         /// If all signatures are valid, 1 is returned, 0 otherwise. Due to a bug, one extra unused value is removed from the stack.
         /// </summary>
-        public const byte OP_CHECKMULTISIG = 0XAE;
+        public const byte OP_CHECKMULTISIG = 0xAE;
 
         /// <summary>
         /// Same as OP_CHECKMULTISIG, but OP_VERIFY is executed afterward.
