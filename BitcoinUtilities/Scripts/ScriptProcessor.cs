@@ -235,6 +235,19 @@ namespace BitcoinUtilities.Scripts
             commandDefinitions[BitcoinScript.OP_NOP8] = new CommandDefinition(false, (_, __) => { });
             commandDefinitions[BitcoinScript.OP_NOP9] = new CommandDefinition(false, (_, __) => { });
             commandDefinitions[BitcoinScript.OP_NOP10] = new CommandDefinition(false, (_, __) => { });
+
+            // Undefined
+
+            for (byte c = BitcoinScript.OP_NOP10 + 1; c < BitcoinScript.OP_PUBKEYHASH; c++)
+            {
+                commandDefinitions[c] = disabled;
+            }
+
+            // Pseudo-words
+
+            commandDefinitions[BitcoinScript.OP_PUBKEYHASH] = disabled;
+            commandDefinitions[BitcoinScript.OP_PUBKEY] = disabled;
+            commandDefinitions[BitcoinScript.OP_INVALIDOPCODE] = disabled;
         }
 
         #region Constants Commands

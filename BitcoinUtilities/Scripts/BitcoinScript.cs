@@ -312,6 +312,7 @@ namespace BitcoinUtilities.Scripts
         // Note: Arithmetic inputs are limited to signed 32-bit integers, but may overflow their output.
         // If any input value for any of these commands is longer than 4 bytes, the script must abort and fail.
         // If any opcode marked as disabled is present in a script - it must also abort and fail.
+        // ---------------------------------------------------------------------------------------
 
         /// <summary>
         /// 1 is added to the input.
@@ -550,6 +551,28 @@ namespace BitcoinUtilities.Scripts
         /// The word is ignored. Does not mark transaction as invalid.
         /// </summary>
         public const byte OP_NOP10 = 0xB9;
+
+        // ---------------------------------------------------------------------------------------
+        // ---- Pseudo-words ---------------------------------------------------------------------
+        // ---------------------------------------------------------------------------------------
+        // These words are used internally for assisting with transaction matching.
+        // They are invalid if used in actual scripts.
+        // ---------------------------------------------------------------------------------------
+
+        /// <summary>
+        /// Represents a public key hashed with OP_HASH160.
+        /// </summary>
+        public const byte OP_PUBKEYHASH = 0xFD;
+
+        /// <summary>
+        /// Represents a public key compatible with OP_CHECKSIG.
+        /// </summary>
+        public const byte OP_PUBKEY = 0xFE;
+
+        /// <summary>
+        /// Matches any opcode that is not yet assigned.
+        /// </summary>
+        public const byte OP_INVALIDOPCODE = 0xFF;
 
         /// <summary>
         /// Extracts an address from the given pubkey script if it has a known format.

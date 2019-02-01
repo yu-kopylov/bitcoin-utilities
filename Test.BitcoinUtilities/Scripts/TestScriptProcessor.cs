@@ -221,8 +221,8 @@ namespace Test.BitcoinUtilities.Scripts
                     BitcoinScript.OP_ENDIF
                 });
 
-                Assert.False(processor.Valid);
-                Assert.That(processor.GetStack(), Is.Empty);
+                Assert.False(processor.Valid, $"Command 0x{command:X2} was expected to be disabled.");
+                Assert.That(processor.GetStack(), Is.Empty, $"Command 0x{command:X2} was expected to be disabled.");
             }
         }
     }
