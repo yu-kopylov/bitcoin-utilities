@@ -194,6 +194,7 @@ namespace BitcoinUtilities.Scripts
             commandDefinitions[BitcoinScript.OP_NEGATE] = new CommandDefinition(false, ExecuteNegate);
             commandDefinitions[BitcoinScript.OP_ABS] = new CommandDefinition(false, ExecuteAbs);
             commandDefinitions[BitcoinScript.OP_NOT] = new CommandDefinition(false, ExecuteNot);
+            commandDefinitions[BitcoinScript.OP_0NOTEQUAL] = new CommandDefinition(false, ExecuteZeroNotEqual);
             commandDefinitions[BitcoinScript.OP_ADD] = new CommandDefinition(false, ExecuteAdd);
             commandDefinitions[BitcoinScript.OP_SUB] = new CommandDefinition(false, ExecuteSubtract);
             commandDefinitions[BitcoinScript.OP_MUL] = disabled;
@@ -824,6 +825,32 @@ namespace BitcoinUtilities.Scripts
             else
             {
                 dataStack.Add(new byte[0]);
+            }
+        }
+
+        private void ExecuteZeroNotEqual(byte[] script, ScriptCommand command)
+        {
+            if (dataStack.Count < 1)
+            {
+                valid = false;
+                return;
+            }
+
+            byte[] item = PopData();
+
+            if (!ParseInt32(item, out long value))
+            {
+                valid = false;
+                return;
+            }
+
+            if (value == 0)
+            {
+                dataStack.Add(new byte[0]);
+            }
+            else
+            {
+                dataStack.Add(new byte[] {1});
             }
         }
 

@@ -356,6 +356,11 @@ namespace BitcoinUtilities.Scripts
         public const byte OP_NOT = 0x91;
 
         /// <summary>
+        /// Returns 0 if the input is 0. 1 otherwise.
+        /// </summary>
+        public const byte OP_0NOTEQUAL = 0x92;
+
+        /// <summary>
         /// a is added to b.
         /// </summary>
         public const byte OP_ADD = 0x93;
