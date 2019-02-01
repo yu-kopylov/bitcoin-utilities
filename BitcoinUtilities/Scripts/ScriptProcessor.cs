@@ -202,8 +202,18 @@ namespace BitcoinUtilities.Scripts
             commandDefinitions[BitcoinScript.OP_MOD] = disabled;
             commandDefinitions[BitcoinScript.OP_LSHIFT] = disabled;
             commandDefinitions[BitcoinScript.OP_RSHIFT] = disabled;
+            commandDefinitions[BitcoinScript.OP_BOOLAND] = new CommandDefinition(false, ExecuteBoolAnd);
+            commandDefinitions[BitcoinScript.OP_BOOLOR] = new CommandDefinition(false, ExecuteBoolOr);
+            commandDefinitions[BitcoinScript.OP_NUMEQUAL] = new CommandDefinition(false, ExecuteNumEqual);
+            commandDefinitions[BitcoinScript.OP_NUMEQUALVERIFY] = new CommandDefinition(false, ExecuteNumEqualVerify);
+            commandDefinitions[BitcoinScript.OP_NUMNOTEQUAL] = new CommandDefinition(false, ExecuteNumNotEqual);
+            commandDefinitions[BitcoinScript.OP_LESSTHAN] = new CommandDefinition(false, ExecuteLessThan);
+            commandDefinitions[BitcoinScript.OP_GREATERTHAN] = new CommandDefinition(false, ExecuteGreaterThan);
+            commandDefinitions[BitcoinScript.OP_LESSTHANOREQUAL] = new CommandDefinition(false, ExecuteLessThanOrEqual);
+            commandDefinitions[BitcoinScript.OP_GREATERTHANOREQUAL] = new CommandDefinition(false, ExecuteGreaterThanOrEqual);
             commandDefinitions[BitcoinScript.OP_MIN] = new CommandDefinition(false, ExecuteMin);
             commandDefinitions[BitcoinScript.OP_MAX] = new CommandDefinition(false, ExecuteMax);
+            commandDefinitions[BitcoinScript.OP_WITHIN] = new CommandDefinition(false, ExecuteWithin);
 
             // Crypto
 
@@ -814,6 +824,109 @@ namespace BitcoinUtilities.Scripts
             dataStack.Add(EncodeInt(a - b));
         }
 
+        private void ExecuteBoolAnd(byte[] script, ScriptCommand command)
+        {
+            if (!PopInt32(out long a, out long b))
+            {
+                valid = false;
+                return;
+            }
+
+            dataStack.Add(EncodeBool(a != 0 && b != 0));
+        }
+
+        private void ExecuteBoolOr(byte[] script, ScriptCommand command)
+        {
+            if (!PopInt32(out long a, out long b))
+            {
+                valid = false;
+                return;
+            }
+
+            dataStack.Add(EncodeBool(a != 0 || b != 0));
+        }
+
+        private void ExecuteNumEqual(byte[] script, ScriptCommand command)
+        {
+            if (!PopInt32(out long a, out long b))
+            {
+                valid = false;
+                return;
+            }
+
+            dataStack.Add(EncodeBool(a == b));
+        }
+
+        private void ExecuteNumEqualVerify(byte[] script, ScriptCommand command)
+        {
+            if (!PopInt32(out long a, out long b))
+            {
+                valid = false;
+                return;
+            }
+
+            if (a != b)
+            {
+                valid = false;
+                dataStack.Add(new byte[0]);
+            }
+        }
+
+        private void ExecuteNumNotEqual(byte[] script, ScriptCommand command)
+        {
+            if (!PopInt32(out long a, out long b))
+            {
+                valid = false;
+                return;
+            }
+
+            dataStack.Add(EncodeBool(a != b));
+        }
+
+        private void ExecuteLessThan(byte[] script, ScriptCommand command)
+        {
+            if (!PopInt32(out long a, out long b))
+            {
+                valid = false;
+                return;
+            }
+
+            dataStack.Add(EncodeBool(a < b));
+        }
+
+        private void ExecuteGreaterThan(byte[] script, ScriptCommand command)
+        {
+            if (!PopInt32(out long a, out long b))
+            {
+                valid = false;
+                return;
+            }
+
+            dataStack.Add(EncodeBool(a > b));
+        }
+
+        private void ExecuteLessThanOrEqual(byte[] script, ScriptCommand command)
+        {
+            if (!PopInt32(out long a, out long b))
+            {
+                valid = false;
+                return;
+            }
+
+            dataStack.Add(EncodeBool(a <= b));
+        }
+
+        private void ExecuteGreaterThanOrEqual(byte[] script, ScriptCommand command)
+        {
+            if (!PopInt32(out long a, out long b))
+            {
+                valid = false;
+                return;
+            }
+
+            dataStack.Add(EncodeBool(a >= b));
+        }
+
         private void ExecuteMin(byte[] script, ScriptCommand command)
         {
             if (!PopInt32(out long a, out long b))
@@ -834,6 +947,17 @@ namespace BitcoinUtilities.Scripts
             }
 
             dataStack.Add(EncodeInt(a > b ? a : b));
+        }
+
+        private void ExecuteWithin(byte[] script, ScriptCommand command)
+        {
+            if (!PopInt32(out long a, out long b, out long c))
+            {
+                valid = false;
+                return;
+            }
+
+            dataStack.Add(EncodeBool(b <= a && a < c));
         }
 
         private bool PopInt32(out long a)
@@ -871,6 +995,31 @@ namespace BitcoinUtilities.Scripts
             {
                 a = 0;
                 b = 0;
+                return false;
+            }
+
+            return true;
+        }
+
+        private bool PopInt32(out long a, out long b, out long c)
+        {
+            if (dataStack.Count < 3)
+            {
+                a = 0;
+                b = 0;
+                c = 0;
+                return false;
+            }
+
+            byte[] item1 = PopData();
+            byte[] item2 = PopData();
+            byte[] item3 = PopData();
+
+            if (!ParseInt32(item3, out a) || !ParseInt32(item2, out b) || !ParseInt32(item1, out c))
+            {
+                a = 0;
+                b = 0;
+                c = 0;
                 return false;
             }
 

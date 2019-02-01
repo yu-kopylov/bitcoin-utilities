@@ -411,6 +411,51 @@ namespace BitcoinUtilities.Scripts
         public const byte OP_RSHIFT = 0x99;
 
         /// <summary>
+        /// If both a and b are not "" (null string), the output is 1. Otherwise 0.
+        /// </summary>
+        public const byte OP_BOOLAND = 0x9A;
+
+        /// <summary>
+        /// If a or b is not "" (null string), the output is 1. Otherwise 0.
+        /// </summary>
+        public const byte OP_BOOLOR = 0x9B;
+
+        /// <summary>
+        /// Returns 1 if the numbers are equal, 0 otherwise.
+        /// </summary>
+        public const byte OP_NUMEQUAL = 0x9C;
+
+        /// <summary>
+        /// Same as OP_NUMEQUAL, but runs OP_VERIFY afterward.
+        /// </summary>
+        public const byte OP_NUMEQUALVERIFY = 0x9D;
+
+        /// <summary>
+        /// Returns 1 if the numbers are not equal, 0 otherwise.
+        /// </summary>
+        public const byte OP_NUMNOTEQUAL = 0x9E;
+
+        /// <summary>
+        /// Returns 1 if a is less than b, 0 otherwise.
+        /// </summary>
+        public const byte OP_LESSTHAN = 0x9F;
+
+        /// <summary>
+        /// Returns 1 if a is greater than b, 0 otherwise.
+        /// </summary>
+        public const byte OP_GREATERTHAN = 0xA0;
+
+        /// <summary>
+        /// Returns 1 if a is less than or equal to b, 0 otherwise.
+        /// </summary>
+        public const byte OP_LESSTHANOREQUAL = 0xA1;
+
+        /// <summary>
+        /// Returns 1 if a is greater than or equal to b, 0 otherwise.
+        /// </summary>
+        public const byte OP_GREATERTHANOREQUAL = 0xA2;
+
+        /// <summary>
         /// Returns the smaller of a and b.
         /// </summary>
         public const byte OP_MIN = 0xA3;
@@ -419,6 +464,11 @@ namespace BitcoinUtilities.Scripts
         /// Returns the larger of a and b.
         /// </summary>
         public const byte OP_MAX = 0xA4;
+
+        /// <summary>
+        /// Returns 1 if x is within the specified range (left-inclusive), 0 otherwise.
+        /// </summary>
+        public const byte OP_WITHIN = 0xA5;
 
         // ---------------------------------------------------------------------------------------
         // ---- Crypto ---------------------------------------------------------------------------
