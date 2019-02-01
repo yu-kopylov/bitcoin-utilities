@@ -818,14 +818,7 @@ namespace BitcoinUtilities.Scripts
                 return;
             }
 
-            if (value == 0)
-            {
-                dataStack.Add(new byte[] {1});
-            }
-            else
-            {
-                dataStack.Add(new byte[0]);
-            }
+            dataStack.Add(EncodeBool(value == 0));
         }
 
         private void ExecuteZeroNotEqual(byte[] script, ScriptCommand command)
@@ -844,14 +837,7 @@ namespace BitcoinUtilities.Scripts
                 return;
             }
 
-            if (value == 0)
-            {
-                dataStack.Add(new byte[0]);
-            }
-            else
-            {
-                dataStack.Add(new byte[] {1});
-            }
+            dataStack.Add(EncodeBool(value != 0));
         }
 
         private void ExecuteAdd(byte[] script, ScriptCommand command)
@@ -982,6 +968,11 @@ namespace BitcoinUtilities.Scripts
 
             value = res;
             return true;
+        }
+
+        private byte[] EncodeBool(bool value)
+        {
+            return value ? new byte[] {1} : new byte[0];
         }
 
         private byte[] EncodeInt(long value)
