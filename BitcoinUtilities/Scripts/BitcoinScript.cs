@@ -283,6 +283,22 @@ namespace BitcoinUtilities.Scripts
         public const byte OP_1SUB = 0x8C;
 
         /// <summary>
+        /// The input is multiplied by 2.
+        /// </summary>
+        /// <remarks>
+        /// This command is disabled.
+        /// </remarks>
+        public const byte OP_2MUL = 0x8D;
+
+        /// <summary>
+        /// The input is divided by 2.
+        /// </summary>
+        /// <remarks>
+        /// This command is disabled.
+        /// </remarks>
+        public const byte OP_2DIV = 0x8E;
+
+        /// <summary>
         /// The sign of the input is flipped.
         /// </summary>
         public const byte OP_NEGATE = 0x8F;
@@ -306,6 +322,46 @@ namespace BitcoinUtilities.Scripts
         /// b is subtracted from a.
         /// </summary>
         public const byte OP_SUB = 0x94;
+
+        /// <summary>
+        /// a is multiplied by b.
+        /// </summary>
+        /// <remarks>
+        /// This command is disabled.
+        /// </remarks>
+        public const byte OP_MUL = 0x95;
+
+        /// <summary>
+        /// a is divided by b.
+        /// </summary>
+        /// <remarks>
+        /// This command is disabled.
+        /// </remarks>
+        public const byte OP_DIV = 0x96;
+
+        /// <summary>
+        /// Returns the remainder after dividing a by b.
+        /// </summary>
+        /// <remarks>
+        /// This command is disabled.
+        /// </remarks>
+        public const byte OP_MOD = 0x97;
+
+        /// <summary>
+        /// Shifts a left b bits, preserving sign.
+        /// </summary>
+        /// <remarks>
+        /// This command is disabled.
+        /// </remarks>
+        public const byte OP_LSHIFT = 0x98;
+
+        /// <summary>
+        /// Shifts a right b bits, preserving sign.
+        /// </summary>
+        /// <remarks>
+        /// This command is disabled.
+        /// </remarks>
+        public const byte OP_RSHIFT = 0x99;
 
         /// <summary>
         /// Returns the smaller of a and b.

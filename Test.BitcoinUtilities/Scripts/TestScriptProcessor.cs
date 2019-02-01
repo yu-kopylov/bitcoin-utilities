@@ -205,5 +205,25 @@ namespace Test.BitcoinUtilities.Scripts
                 Assert.True(processor.Success, $"Is Successful #{i}");
             }
         }
+
+        private void AssertFailWhenPresent(params byte[] commands)
+        {
+            ScriptProcessor processor = new ScriptProcessor();
+
+            foreach (byte command in commands)
+            {
+                processor.Reset();
+                processor.Execute(new byte[]
+                {
+                    BitcoinScript.OP_FALSE,
+                    BitcoinScript.OP_IF,
+                    command,
+                    BitcoinScript.OP_ENDIF
+                });
+
+                Assert.False(processor.Valid);
+                Assert.That(processor.GetStack(), Is.Empty);
+            }
+        }
     }
 }

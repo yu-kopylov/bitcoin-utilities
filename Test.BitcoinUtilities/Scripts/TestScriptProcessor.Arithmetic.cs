@@ -9,6 +9,21 @@ namespace Test.BitcoinUtilities.Scripts
     public partial class TestScriptProcessor
     {
         [Test]
+        public void TestArithmetic_FailWhenPresent()
+        {
+            AssertFailWhenPresent
+            (
+                BitcoinScript.OP_2MUL,
+                BitcoinScript.OP_2DIV,
+                BitcoinScript.OP_MUL,
+                BitcoinScript.OP_DIV,
+                BitcoinScript.OP_MOD,
+                BitcoinScript.OP_LSHIFT,
+                BitcoinScript.OP_RSHIFT
+            );
+        }
+
+        [Test]
         public void TestAdd1()
         {
             ScriptProcessor processor = new ScriptProcessor();

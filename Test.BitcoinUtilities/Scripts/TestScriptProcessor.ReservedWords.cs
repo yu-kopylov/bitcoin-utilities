@@ -71,28 +71,11 @@ namespace Test.BitcoinUtilities.Scripts
         [Test]
         public void TestReservedCommands_FailWhenPresent()
         {
-            byte[] commands = new byte[]
-            {
+            AssertFailWhenPresent
+            (
                 BitcoinScript.OP_VERIF,
                 BitcoinScript.OP_VERNOTIF
-            };
-
-            ScriptProcessor processor = new ScriptProcessor();
-
-            foreach (byte command in commands)
-            {
-                processor.Reset();
-                processor.Execute(new byte[]
-                {
-                    BitcoinScript.OP_FALSE,
-                    BitcoinScript.OP_IF,
-                    command,
-                    BitcoinScript.OP_ENDIF
-                });
-
-                Assert.False(processor.Valid);
-                Assert.That(processor.GetStack(), Is.Empty);
-            }
+            );
         }
     }
 }

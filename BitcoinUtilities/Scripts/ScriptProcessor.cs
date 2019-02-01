@@ -116,6 +116,8 @@ namespace BitcoinUtilities.Scripts
 
         private void CreateCommandDefinitions()
         {
+            CommandDefinition disabled = new CommandDefinition(true, (_, __) => { valid = false; });
+
             // Constants
 
             commandDefinitions[BitcoinScript.OP_FALSE] = new CommandDefinition(false, (script, command) => dataStack.Add(new byte[0]));
@@ -180,11 +182,18 @@ namespace BitcoinUtilities.Scripts
 
             commandDefinitions[BitcoinScript.OP_1ADD] = new CommandDefinition(false, ExecuteAdd1);
             commandDefinitions[BitcoinScript.OP_1SUB] = new CommandDefinition(false, ExecuteSubtract1);
+            commandDefinitions[BitcoinScript.OP_2MUL] = disabled;
+            commandDefinitions[BitcoinScript.OP_2DIV] = disabled;
             commandDefinitions[BitcoinScript.OP_NEGATE] = new CommandDefinition(false, ExecuteNegate);
             commandDefinitions[BitcoinScript.OP_ABS] = new CommandDefinition(false, ExecuteAbs);
             commandDefinitions[BitcoinScript.OP_NOT] = new CommandDefinition(false, ExecuteNot);
             commandDefinitions[BitcoinScript.OP_ADD] = new CommandDefinition(false, ExecuteAdd);
             commandDefinitions[BitcoinScript.OP_SUB] = new CommandDefinition(false, ExecuteSubtract);
+            commandDefinitions[BitcoinScript.OP_MUL] = disabled;
+            commandDefinitions[BitcoinScript.OP_DIV] = disabled;
+            commandDefinitions[BitcoinScript.OP_MOD] = disabled;
+            commandDefinitions[BitcoinScript.OP_LSHIFT] = disabled;
+            commandDefinitions[BitcoinScript.OP_RSHIFT] = disabled;
             commandDefinitions[BitcoinScript.OP_MIN] = new CommandDefinition(false, ExecuteMin);
             commandDefinitions[BitcoinScript.OP_MAX] = new CommandDefinition(false, ExecuteMax);
 
@@ -203,8 +212,8 @@ namespace BitcoinUtilities.Scripts
 
             // Reserved words
 
-            commandDefinitions[BitcoinScript.OP_VERIF] = new CommandDefinition(true, (_, __) => { valid = false; });
-            commandDefinitions[BitcoinScript.OP_VERNOTIF] = new CommandDefinition(true, (_, __) => { valid = false; });
+            commandDefinitions[BitcoinScript.OP_VERIF] = disabled;
+            commandDefinitions[BitcoinScript.OP_VERNOTIF] = disabled;
 
             commandDefinitions[BitcoinScript.OP_RESERVED] = new CommandDefinition(false, (_, __) => { valid = false; });
             commandDefinitions[BitcoinScript.OP_VER] = new CommandDefinition(false, (_, __) => { valid = false; });
