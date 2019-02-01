@@ -178,10 +178,10 @@ namespace BitcoinUtilities.Scripts
 
             // Bitwise Logic
 
-            commandDefinitions[BitcoinScript.OP_INVERT] = new CommandDefinition(true, ExecuteDisabled);
-            commandDefinitions[BitcoinScript.OP_AND] = new CommandDefinition(true, ExecuteDisabled);
-            commandDefinitions[BitcoinScript.OP_OR] = new CommandDefinition(true, ExecuteDisabled);
-            commandDefinitions[BitcoinScript.OP_XOR] = new CommandDefinition(true, ExecuteDisabled);
+            commandDefinitions[BitcoinScript.OP_INVERT] = disabled;
+            commandDefinitions[BitcoinScript.OP_AND] = disabled;
+            commandDefinitions[BitcoinScript.OP_OR] = disabled;
+            commandDefinitions[BitcoinScript.OP_XOR] = disabled;
             commandDefinitions[BitcoinScript.OP_EQUAL] = new CommandDefinition(false, ExecuteEqual);
             commandDefinitions[BitcoinScript.OP_EQUALVERIFY] = new CommandDefinition(false, ExecuteEqualVerify);
 
@@ -235,11 +235,6 @@ namespace BitcoinUtilities.Scripts
             commandDefinitions[BitcoinScript.OP_NOP8] = new CommandDefinition(false, (_, __) => { });
             commandDefinitions[BitcoinScript.OP_NOP9] = new CommandDefinition(false, (_, __) => { });
             commandDefinitions[BitcoinScript.OP_NOP10] = new CommandDefinition(false, (_, __) => { });
-        }
-
-        private void ExecuteDisabled(byte[] script, ScriptCommand command)
-        {
-            valid = false;
         }
 
         #region Constants Commands

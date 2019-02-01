@@ -7,71 +7,15 @@ namespace Test.BitcoinUtilities.Scripts
     public partial class TestScriptProcessor
     {
         [Test]
-        public void TestInvert()
+        public void TestBitwiseLogic_FailWhenPresent()
         {
-            ScriptProcessor processor = new ScriptProcessor();
-
-            processor.Execute(new byte[]
-            {
-                BitcoinScript.OP_FALSE,
-                BitcoinScript.OP_IF,
+            AssertFailWhenPresent
+            (
                 BitcoinScript.OP_INVERT,
-                BitcoinScript.OP_ENDIF
-            });
-
-            Assert.False(processor.Valid);
-            Assert.That(processor.GetStack(), Is.Empty);
-        }
-
-        [Test]
-        public void TestAnd()
-        {
-            ScriptProcessor processor = new ScriptProcessor();
-
-            processor.Execute(new byte[]
-            {
-                BitcoinScript.OP_FALSE,
-                BitcoinScript.OP_IF,
                 BitcoinScript.OP_AND,
-                BitcoinScript.OP_ENDIF
-            });
-
-            Assert.False(processor.Valid);
-            Assert.That(processor.GetStack(), Is.Empty);
-        }
-
-        [Test]
-        public void TestOr()
-        {
-            ScriptProcessor processor = new ScriptProcessor();
-
-            processor.Execute(new byte[]
-            {
-                BitcoinScript.OP_FALSE,
-                BitcoinScript.OP_IF,
                 BitcoinScript.OP_OR,
-                BitcoinScript.OP_ENDIF
-            });
-
-            Assert.False(processor.Valid);
-            Assert.That(processor.GetStack(), Is.Empty);
-        }
-
-        [Test]
-        public void TestXor()
-        {
-            ScriptProcessor processor = new ScriptProcessor();
-
-            processor.Execute(new byte[]
-            {
-                BitcoinScript.OP_FALSE,
-                BitcoinScript.OP_IF,
-                BitcoinScript.OP_XOR,
-                BitcoinScript.OP_ENDIF
-            });
-
-            Assert.False(processor.Valid);
-            Assert.That(processor.GetStack(), Is.Empty);
+                BitcoinScript.OP_XOR
+            );
         }
 
         [Test]
