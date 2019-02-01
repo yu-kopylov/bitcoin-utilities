@@ -728,15 +728,7 @@ namespace BitcoinUtilities.Scripts
 
         private void ExecuteAdd1(byte[] script, ScriptCommand command)
         {
-            if (dataStack.Count < 1)
-            {
-                valid = false;
-                return;
-            }
-
-            byte[] item = PopData();
-
-            if (!ParseInt32(item, out long value))
+            if (!PopInt32(out long value))
             {
                 valid = false;
                 return;
@@ -747,15 +739,7 @@ namespace BitcoinUtilities.Scripts
 
         private void ExecuteSubtract1(byte[] script, ScriptCommand command)
         {
-            if (dataStack.Count < 1)
-            {
-                valid = false;
-                return;
-            }
-
-            byte[] item = PopData();
-
-            if (!ParseInt32(item, out long value))
+            if (!PopInt32(out long value))
             {
                 valid = false;
                 return;
@@ -766,15 +750,7 @@ namespace BitcoinUtilities.Scripts
 
         private void ExecuteNegate(byte[] script, ScriptCommand command)
         {
-            if (dataStack.Count < 1)
-            {
-                valid = false;
-                return;
-            }
-
-            byte[] item = PopData();
-
-            if (!ParseInt32(item, out long value))
+            if (!PopInt32(out long value))
             {
                 valid = false;
                 return;
@@ -785,15 +761,7 @@ namespace BitcoinUtilities.Scripts
 
         private void ExecuteAbs(byte[] script, ScriptCommand command)
         {
-            if (dataStack.Count < 1)
-            {
-                valid = false;
-                return;
-            }
-
-            byte[] item = PopData();
-
-            if (!ParseInt32(item, out long value))
+            if (!PopInt32(out long value))
             {
                 valid = false;
                 return;
@@ -804,15 +772,7 @@ namespace BitcoinUtilities.Scripts
 
         private void ExecuteNot(byte[] script, ScriptCommand command)
         {
-            if (dataStack.Count < 1)
-            {
-                valid = false;
-                return;
-            }
-
-            byte[] item = PopData();
-
-            if (!ParseInt32(item, out long value))
+            if (!PopInt32(out long value))
             {
                 valid = false;
                 return;
@@ -823,15 +783,7 @@ namespace BitcoinUtilities.Scripts
 
         private void ExecuteZeroNotEqual(byte[] script, ScriptCommand command)
         {
-            if (dataStack.Count < 1)
-            {
-                valid = false;
-                return;
-            }
-
-            byte[] item = PopData();
-
-            if (!ParseInt32(item, out long value))
+            if (!PopInt32(out long value))
             {
                 valid = false;
                 return;
@@ -842,16 +794,7 @@ namespace BitcoinUtilities.Scripts
 
         private void ExecuteAdd(byte[] script, ScriptCommand command)
         {
-            if (dataStack.Count < 2)
-            {
-                valid = false;
-                return;
-            }
-
-            byte[] item1 = PopData();
-            byte[] item2 = PopData();
-
-            if (!ParseInt32(item2, out long a) || !ParseInt32(item1, out long b))
+            if (!PopInt32(out long a, out long b))
             {
                 valid = false;
                 return;
@@ -862,16 +805,7 @@ namespace BitcoinUtilities.Scripts
 
         private void ExecuteSubtract(byte[] script, ScriptCommand command)
         {
-            if (dataStack.Count < 2)
-            {
-                valid = false;
-                return;
-            }
-
-            byte[] item1 = PopData();
-            byte[] item2 = PopData();
-
-            if (!ParseInt32(item2, out long a) || !ParseInt32(item1, out long b))
+            if (!PopInt32(out long a, out long b))
             {
                 valid = false;
                 return;
@@ -882,16 +816,7 @@ namespace BitcoinUtilities.Scripts
 
         private void ExecuteMin(byte[] script, ScriptCommand command)
         {
-            if (dataStack.Count < 2)
-            {
-                valid = false;
-                return;
-            }
-
-            byte[] item1 = PopData();
-            byte[] item2 = PopData();
-
-            if (!ParseInt32(item2, out long a) || !ParseInt32(item1, out long b))
+            if (!PopInt32(out long a, out long b))
             {
                 valid = false;
                 return;
@@ -902,22 +827,54 @@ namespace BitcoinUtilities.Scripts
 
         private void ExecuteMax(byte[] script, ScriptCommand command)
         {
-            if (dataStack.Count < 2)
-            {
-                valid = false;
-                return;
-            }
-
-            byte[] item1 = PopData();
-            byte[] item2 = PopData();
-
-            if (!ParseInt32(item2, out long a) || !ParseInt32(item1, out long b))
+            if (!PopInt32(out long a, out long b))
             {
                 valid = false;
                 return;
             }
 
             dataStack.Add(EncodeInt(a > b ? a : b));
+        }
+
+        private bool PopInt32(out long a)
+        {
+            if (dataStack.Count < 1)
+            {
+                a = 0;
+                return false;
+            }
+
+            byte[] item = PopData();
+
+            if (!ParseInt32(item, out a))
+            {
+                a = 0;
+                return false;
+            }
+
+            return true;
+        }
+
+        private bool PopInt32(out long a, out long b)
+        {
+            if (dataStack.Count < 2)
+            {
+                a = 0;
+                b = 0;
+                return false;
+            }
+
+            byte[] item1 = PopData();
+            byte[] item2 = PopData();
+
+            if (!ParseInt32(item2, out a) || !ParseInt32(item1, out b))
+            {
+                a = 0;
+                b = 0;
+                return false;
+            }
+
+            return true;
         }
 
         private bool ParseInt32(byte[] encoded, out long value)
