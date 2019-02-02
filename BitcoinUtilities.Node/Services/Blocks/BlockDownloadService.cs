@@ -22,6 +22,8 @@ namespace BitcoinUtilities.Node.Services.Blocks
         private readonly BlockRepository repository;
         private readonly BitcoinEndpoint endpoint;
 
+        private readonly Random random = new Random();
+
         private readonly LinkedDictionary<byte[], DateTime> inventory = new LinkedDictionary<byte[], DateTime>(ByteArrayComparer.Instance);
         private readonly LinkedDictionary<byte[], DateTime> sentRequests = new LinkedDictionary<byte[], DateTime>(ByteArrayComparer.Instance);
 
@@ -62,8 +64,8 @@ namespace BitcoinUtilities.Node.Services.Blocks
             }
 
             // todo: check constant
-            List<DbHeader> tmp = pendingRequests.Where(h => inventory.ContainsKey(h.Hash) /*&& !sentRequests.ContainsKey(h.Hash)*/).ToList();
-            List<DbHeader> requestableBlocks = tmp.Take(20) /*.Union(tmp.Skip(random.Next(10)).Take(49))*/.ToList();
+            List<DbHeader> tmp = pendingRequests.Where(h => inventory.ContainsKey(h.Hash) && !sentRequests.ContainsKey(h.Hash)).ToList();
+            List<DbHeader> requestableBlocks = tmp.Take(1).Union(tmp.Skip(10 + random.Next(40)).Take(1)).ToList();
             //var requestableBlocks = tmp.Skip(random.Next(50)).Take(20 + random.Next(30)).ToList();
             if (requestableBlocks.Any())
             {
@@ -72,21 +74,21 @@ namespace BitcoinUtilities.Node.Services.Blocks
                 InventoryVector[] inventoryVectors = requestableBlocks.Select(b => new InventoryVector(InventoryVectorType.MsgBlock, b.Hash)).ToArray();
                 endpoint.WriteMessage(new GetDataMessage(inventoryVectors));
 
-                sentRequests.Clear();
+                //sentRequests.Clear();
                 //inventory.Clear();
                 foreach (var header in requestableBlocks)
                 {
                     sentRequests.Add(header.Hash, utcNow);
                 }
 
-                //awaitableBlocksCount += requestableBlocks.Count;
-                awaitableBlocksCount = requestableBlocks.Count;
+                awaitableBlocksCount += requestableBlocks.Count;
+                //awaitableBlocksCount = sentRequests.Count;
                 //return;
             }
 
             // todo: check constant
-            if (awaitableBlocksCount < 10)
-                //if (awaitableBlocksCount == 0)
+            // if (awaitableBlocksCount < 10)
+            if (awaitableBlocksCount == 0)
             {
                 byte[] locator = pendingRequests.FirstOrDefault()?.ParentHash;
                 if (locator != null)
@@ -144,7 +146,7 @@ namespace BitcoinUtilities.Node.Services.Blocks
         private static void RemoveOutdatedEntries(LinkedDictionary<byte[], DateTime> entries)
         {
             //todo: check constants
-            DateTime outdatedEntryDate = DateTime.UtcNow.AddSeconds(-10);
+            DateTime outdatedEntryDate = DateTime.UtcNow.AddSeconds(-120);
             List<byte[]> outdatedEntries = entries.Where(p => p.Value <= outdatedEntryDate).Select(p => p.Key).ToList();
             foreach (byte[] hash in outdatedEntries)
             {
