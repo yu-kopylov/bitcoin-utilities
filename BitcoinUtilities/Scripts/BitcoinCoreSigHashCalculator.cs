@@ -30,27 +30,10 @@ namespace BitcoinUtilities.Scripts
 
         public byte[] Calculate(SigHashType sigHashType, byte[] subScript)
         {
-            if (sigHashType == SigHashType.All)
-            {
-                return Calculate(sigHashType, subScript, mode: SigHashType.All, anyoneCanPay: false);
-            }
-            else if (sigHashType == (SigHashType.All | SigHashType.AnyoneCanPay))
-            {
-                return Calculate(sigHashType, subScript, mode: SigHashType.All, anyoneCanPay: true);
-            }
-            else if (sigHashType == (SigHashType.None | SigHashType.AnyoneCanPay))
-            {
-                return Calculate(sigHashType, subScript, mode: SigHashType.None, anyoneCanPay: true);
-            }
-            else if (sigHashType == (SigHashType.Single | SigHashType.AnyoneCanPay) && InputIndex == 0)
-            {
-                return Calculate(sigHashType, subScript, mode: SigHashType.Single, anyoneCanPay: true);
-            }
-            else
-            {
-                //todo: exception type?
-                throw new InvalidOperationException($"Unexpected sigHashType: '{sigHashType}'.");
-            }
+            bool anyoneCanPay = sigHashType.HasFlag(SigHashType.AnyoneCanPay);
+            SigHashType mode = sigHashType & ~SigHashType.AnyoneCanPay;
+
+            return Calculate(sigHashType, subScript, mode, anyoneCanPay);
         }
 
         private byte[] Calculate(SigHashType sigHashType, byte[] subScript, SigHashType mode, bool anyoneCanPay)
@@ -87,7 +70,14 @@ namespace BitcoinUtilities.Scripts
                             writer.WriteCompact(0);
                         }
 
-                        writer.Write(input.Sequence);
+                        if (InputIndex != i && (mode == SigHashType.None || mode == SigHashType.Single))
+                        {
+                            writer.Write(0u);
+                        }
+                        else
+                        {
+                            writer.Write(input.Sequence);
+                        }
                     }
                 }
 
@@ -101,6 +91,16 @@ namespace BitcoinUtilities.Scripts
                 }
                 else if (mode == SigHashType.Single)
                 {
+                    if (InputIndex >= transaction.Outputs.Length)
+                    {
+                        // Note: The transaction that uses SIGHASH_SINGLE type of signature should not have more inputs than outputs.
+                        // However if it does (because of the pre-existing implementation), it shall not be rejected,
+                        // but instead for every "illegal" input (meaning: an input that has an index bigger than the maximum output index) the node should still verify it,
+                        // though assuming the hash of 0000000000000000000000000000000000000000000000000000000000000001
+                        //todo: exception type?
+                        throw new InvalidOperationException("A transaction that uses SIGHASH_SINGLE type of signature should not have more inputs than outputs.");
+                    }
+
                     writer.WriteCompact((ulong) InputIndex + 1);
                     for (int i = 0; i < InputIndex; i++)
                     {
@@ -113,7 +113,7 @@ namespace BitcoinUtilities.Scripts
                 else
                 {
                     //todo: exception type?
-                    throw new InvalidOperationException($"Unexpected sigHashType mode: '{mode}'.");
+                    throw new InvalidOperationException($"Unexpected signature hash type: '{mode}'.");
                 }
 
                 writer.Write(transaction.LockTime);
