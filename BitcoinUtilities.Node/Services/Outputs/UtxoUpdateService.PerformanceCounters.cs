@@ -11,16 +11,18 @@ namespace BitcoinUtilities.Node.Services.Outputs
             private readonly ILogger logger;
 
             private readonly Stopwatch runningTime = new Stopwatch();
-            private readonly Stopwatch blockFetchingTime = new Stopwatch();
+            private readonly Stopwatch waitingTime = new Stopwatch();
             private readonly Stopwatch blockProcessingTime = new Stopwatch();
+            private readonly Stopwatch blockSavingTime = new Stopwatch();
             private long blockRequestCount;
             private long blockResponsesCount;
             private long processedBlocksCount;
             private long processedTxCount;
 
             private long runningTimeSnapshot;
-            private long blockFetchingTimeSnapshot;
+            private long blockWaitingTimeSnapshot;
             private long blockProcessingTimeSnapshot;
+            private long blockSavingTimeSnapshot;
             private long blockRequestCountSnapshot;
             private long blockResponsesCountSnapshot;
             private long processedBlocksCountSnapshot;
@@ -38,13 +40,12 @@ namespace BitcoinUtilities.Node.Services.Outputs
 
             public void BlockRequestSent()
             {
-                blockFetchingTime.Start();
                 blockRequestCount++;
             }
 
             public void BlockReceived()
             {
-                blockFetchingTime.Stop();
+                waitingTime.Stop();
                 blockProcessingTime.Start();
                 blockResponsesCount++;
             }
@@ -52,6 +53,7 @@ namespace BitcoinUtilities.Node.Services.Outputs
             public void BlockProcessed(int txCount)
             {
                 blockProcessingTime.Stop();
+                waitingTime.Start();
                 processedBlocksCount++;
                 processedTxCount += txCount;
                 LogStatistic();
@@ -60,16 +62,30 @@ namespace BitcoinUtilities.Node.Services.Outputs
             public void BlockDiscarded()
             {
                 blockProcessingTime.Stop();
+                waitingTime.Start();
                 LogStatistic();
+            }
+
+            public void SavingStarted()
+            {
+                waitingTime.Stop();
+                blockSavingTime.Start();
+            }
+
+            public void SavingComplete()
+            {
+                blockSavingTime.Stop();
+                waitingTime.Start();
             }
 
             private void LogStatistic()
             {
                 long runningTimeValue = runningTime.ElapsedMilliseconds;
-                long blockFetchingTimeValue = blockFetchingTime.ElapsedMilliseconds;
+                long blockWaitingTimeValue = waitingTime.ElapsedMilliseconds;
                 long blockProcessingTimeValue = blockProcessingTime.ElapsedMilliseconds;
+                long blockSavingTimeValue = blockSavingTime.ElapsedMilliseconds;
 
-                if (runningTimeSnapshot + 60000 <= runningTimeValue || blockResponsesCountSnapshot + 1000 <= blockResponsesCount)
+                if (runningTimeSnapshot + 60000 <= runningTimeValue)
                 {
                     if (logger.IsDebugEnabled)
                     {
@@ -78,8 +94,9 @@ namespace BitcoinUtilities.Node.Services.Outputs
                         sb.AppendLine($"{nameof(UtxoUpdateService)} Performance");
 
                         sb.AppendLine(FormatTimeCounter("Running Time", runningTimeValue, runningTimeSnapshot, blockResponsesCount, blockResponsesCountSnapshot));
-                        sb.AppendLine(FormatTimeCounter("Block Fetching Time", blockFetchingTimeValue, blockFetchingTimeSnapshot, blockResponsesCount, blockResponsesCountSnapshot));
+                        sb.AppendLine(FormatTimeCounter("Waiting Time", blockWaitingTimeValue, blockWaitingTimeSnapshot, blockResponsesCount, blockResponsesCountSnapshot));
                         sb.AppendLine(FormatTimeCounter("Block Processing Time", blockProcessingTimeValue, blockProcessingTimeSnapshot, blockResponsesCount, blockResponsesCountSnapshot));
+                        sb.AppendLine(FormatTimeCounter("Block Saving Time", blockSavingTimeValue, blockSavingTimeSnapshot, blockResponsesCount, blockResponsesCountSnapshot));
                         sb.AppendLine(FormatCounter("Block Request Count", blockRequestCount, blockRequestCountSnapshot, runningTimeValue, runningTimeSnapshot));
                         sb.AppendLine(FormatCounter("Block Response Count", blockResponsesCount, blockResponsesCountSnapshot, runningTimeValue, runningTimeSnapshot));
                         sb.AppendLine(FormatCounter("Processed Blocks", processedBlocksCount, processedBlocksCountSnapshot, runningTimeValue, runningTimeSnapshot));
@@ -89,8 +106,9 @@ namespace BitcoinUtilities.Node.Services.Outputs
                     }
 
                     runningTimeSnapshot = runningTimeValue;
-                    blockFetchingTimeSnapshot = blockFetchingTimeValue;
+                    blockWaitingTimeSnapshot = blockWaitingTimeValue;
                     blockProcessingTimeSnapshot = blockProcessingTimeValue;
+                    blockSavingTimeSnapshot = blockSavingTimeValue;
                     blockRequestCountSnapshot = blockRequestCount;
                     blockResponsesCountSnapshot = blockResponsesCount;
                     processedBlocksCountSnapshot = processedBlocksCount;

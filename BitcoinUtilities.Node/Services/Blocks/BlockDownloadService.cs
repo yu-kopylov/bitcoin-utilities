@@ -57,37 +57,41 @@ namespace BitcoinUtilities.Node.Services.Blocks
             var pendingRequests = requestCollection.GetPendingRequests();
 
             int awaitableBlocksCount = pendingRequests.Count(h => sentRequests.ContainsKey(h.Hash));
-            // todo: check constant
             if (awaitableBlocksCount >= 10)
             {
                 return;
             }
 
-            // todo: check constant
-            List<DbHeader> tmp = pendingRequests.Where(h => inventory.ContainsKey(h.Hash) && !sentRequests.ContainsKey(h.Hash)).ToList();
-            List<DbHeader> requestableBlocks = tmp.Take(1).Union(tmp.Skip(10 + random.Next(40)).Take(1)).ToList();
-            //var requestableBlocks = tmp.Skip(random.Next(50)).Take(20 + random.Next(30)).ToList();
-            if (requestableBlocks.Any())
+            List<DbHeader> requestableBlocks = pendingRequests.Where(h => inventory.ContainsKey(h.Hash) && !sentRequests.ContainsKey(h.Hash)).ToList();
+
+            List<DbHeader> newRequests = new List<DbHeader>();
+            if (random.Next(4) == 0)
+            {
+                newRequests.AddRange(requestableBlocks.Take(1));
+            }
+            else
+            {
+                newRequests.AddRange(requestableBlocks.Skip(random.Next(10)).Take(1));
+            }
+
+            newRequests.AddRange(requestableBlocks.Skip(10 + random.Next(190)).Take(1));
+            newRequests.AddRange(requestableBlocks.Skip(10 + random.Next(190)).Except(newRequests).Take(1));
+
+            if (newRequests.Any())
             {
                 DateTime utcNow = DateTime.UtcNow;
 
-                InventoryVector[] inventoryVectors = requestableBlocks.Select(b => new InventoryVector(InventoryVectorType.MsgBlock, b.Hash)).ToArray();
+                InventoryVector[] inventoryVectors = newRequests.Select(b => new InventoryVector(InventoryVectorType.MsgBlock, b.Hash)).ToArray();
                 endpoint.WriteMessage(new GetDataMessage(inventoryVectors));
 
-                //sentRequests.Clear();
-                //inventory.Clear();
-                foreach (var header in requestableBlocks)
+                foreach (var header in newRequests)
                 {
                     sentRequests.Add(header.Hash, utcNow);
                 }
 
-                awaitableBlocksCount += requestableBlocks.Count;
-                //awaitableBlocksCount = sentRequests.Count;
-                //return;
+                awaitableBlocksCount += newRequests.Count;
             }
 
-            // todo: check constant
-            // if (awaitableBlocksCount < 10)
             if (awaitableBlocksCount == 0)
             {
                 byte[] locator = pendingRequests.FirstOrDefault()?.ParentHash;

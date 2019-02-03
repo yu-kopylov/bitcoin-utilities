@@ -6,6 +6,7 @@ using BitcoinUtilities;
 using BitcoinUtilities.Node.Events;
 using BitcoinUtilities.Node.Services.Headers;
 using BitcoinUtilities.Node.Services.Outputs;
+using BitcoinUtilities.Node.Services.Outputs.Events;
 using BitcoinUtilities.P2P;
 using BitcoinUtilities.P2P.Messages;
 using BitcoinUtilities.Threading;
@@ -44,9 +45,12 @@ namespace Test.BitcoinUtilities.Node.Services.Outputs
                 var blockchain = new Blockchain(headerStorage, blocks[0].BlockHeader);
                 blockchain.Add(headers);
 
+                var utxoUpdateService = new UtxoUpdateService(controller, blockchain, utxoStorage);
+
                 MessageLog log = new MessageLog();
                 controller.AddService(new EventLoggingService(log));
-                controller.AddService(new UtxoUpdateService(controller, blockchain, utxoStorage));
+                controller.AddService(utxoUpdateService);
+                controller.AddService(new SignatureValidationService(controller));
                 controller.Start();
                 Thread.Sleep(100);
 
@@ -62,8 +66,10 @@ namespace Test.BitcoinUtilities.Node.Services.Outputs
 
                 Assert.AreEqual(new string[]
                 {
+                    $"SignatureValidationRequest: {HexUtils.GetString(headers[0].Hash)}",
                     $"PrefetchBlocksEvent: Headers[4] ({HexUtils.GetString(headers[1].Hash)})",
-                    $"RequestBlockEvent: {HexUtils.GetString(headers[1].Hash)}"
+                    $"RequestBlockEvent: {HexUtils.GetString(headers[1].Hash)}",
+                    $"SignatureValidationResponse: {HexUtils.GetString(headers[0].Hash)}, True"
                 }, log.GetLog());
 
                 log.Clear();
@@ -72,9 +78,13 @@ namespace Test.BitcoinUtilities.Node.Services.Outputs
 
                 Assert.AreEqual(new string[]
                 {
+                    $"SignatureValidationRequest: {HexUtils.GetString(headers[1].Hash)}",
                     $"PrefetchBlocksEvent: Headers[3] ({HexUtils.GetString(headers[2].Hash)})",
-                    $"RequestBlockEvent: {HexUtils.GetString(headers[2].Hash)}"
+                    $"RequestBlockEvent: {HexUtils.GetString(headers[2].Hash)}",
+                    $"SignatureValidationResponse: {HexUtils.GetString(headers[1].Hash)}, True"
                 }, log.GetLog());
+
+                utxoUpdateService.SaveValidatedUpdates();
 
                 var expectedOutputs = blocks
                     .Take(2)
@@ -102,6 +112,8 @@ namespace Test.BitcoinUtilities.Node.Services.Outputs
             {
                 On<PrefetchBlocksEvent>(e => log.Log($"PrefetchBlocksEvent: Headers[{e.Headers.Count}] ({HexUtils.GetString(e.Headers.FirstOrDefault()?.Hash)})"));
                 On<RequestBlockEvent>(e => log.Log($"RequestBlockEvent: {HexUtils.GetString(e.Hash)}"));
+                On<SignatureValidationRequest>(e => log.Log($"SignatureValidationRequest: {HexUtils.GetString(e.Header.Hash)}"));
+                On<SignatureValidationResponse>(e => log.Log($"SignatureValidationResponse: {HexUtils.GetString(e.Header.Hash)}, {e.Valid}"));
             }
         }
     }

@@ -47,6 +47,25 @@ namespace BitcoinUtilities.Node.Services.Outputs
             existingTransactions.UnionWith(appendedTransactions);
         }
 
+        public void MoveCreatedToExisting()
+        {
+            foreach (var output in existingSpentOutputs)
+            {
+                existingUnspentOutputs.Remove(output);
+            }
+
+            existingSpentOutputs.Clear();
+
+            foreach (var output in createdUnspentOutputs)
+            {
+                existingUnspentOutputs.Add(output);
+                existingTransactions.Add(output.OutputPoint.Hash);
+            }
+
+            createdUnspentOutputs.Clear();
+            createdSpentOutputs.Clear();
+        }
+
         public IReadOnlyCollection<UtxoOutput> FindUnspentOutputs(byte[] transactionHash)
         {
             List<UtxoOutput> res = new List<UtxoOutput>();
@@ -94,8 +113,7 @@ namespace BitcoinUtilities.Node.Services.Outputs
 
         private class OutputSet : IEnumerable<UtxoOutput>
         {
-            private readonly Dictionary<byte[], Dictionary<int, UtxoOutput>> outputsByTxHash
-                = new Dictionary<byte[], Dictionary<int, UtxoOutput>>(ByteArrayComparer.Instance);
+            private readonly Dictionary<byte[], Dictionary<int, UtxoOutput>> outputsByTxHash = new Dictionary<byte[], Dictionary<int, UtxoOutput>>(ByteArrayComparer.Instance);
 
             public void Add(UtxoOutput output)
             {
@@ -165,6 +183,11 @@ namespace BitcoinUtilities.Node.Services.Outputs
                         yield return output;
                     }
                 }
+            }
+
+            public void Clear()
+            {
+                outputsByTxHash.Clear();
             }
 
             IEnumerator IEnumerable.GetEnumerator()

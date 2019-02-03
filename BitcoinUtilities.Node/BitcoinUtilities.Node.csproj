@@ -79,6 +79,9 @@
     <Compile Include="Services\Headers\HeaderSubChain.cs" />
     <Compile Include="Services\Discovery\NodeDiscoveryService.cs" />
     <Compile Include="Components\EndpointEventHandlingService.cs" />
+    <Compile Include="Services\Outputs\Events\SignatureValidationResponse.cs" />
+    <Compile Include="Services\Outputs\Events\SignatureValidationRequest.cs" />
+    <Compile Include="Services\Outputs\SignatureValidationService.cs" />
     <Compile Include="Services\Outputs\UtxoModule.cs" />
     <Compile Include="Services\Outputs\UtxoUpdateService.PerformanceCounters.cs" />
     <Compile Include="Services\Outputs\UpdatableOutputSet.cs" />

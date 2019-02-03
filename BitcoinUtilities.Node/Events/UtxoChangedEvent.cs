@@ -8,11 +8,13 @@ namespace BitcoinUtilities.Node.Events
     /// </summary>
     public class UtxoChangedEvent
     {
-        public UtxoChangedEvent(DbHeader lastHeader)
+        public UtxoChangedEvent(byte[] lastHeaderHash, int lastHeaderHeight)
         {
-            LastHeader = lastHeader;
+            LastHeaderHash = lastHeaderHash;
+            LastHeaderHeight = lastHeaderHeight;
         }
 
-        public DbHeader LastHeader { get; }
+        public byte[] LastHeaderHash { get; }
+        public int LastHeaderHeight { get; }
     }
 }

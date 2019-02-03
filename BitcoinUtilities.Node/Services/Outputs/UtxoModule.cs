@@ -14,7 +14,11 @@ namespace BitcoinUtilities.Node.Services.Outputs
 
         public IReadOnlyCollection<IEventHandlingService> CreateNodeServices(BitcoinNode node, CancellationToken cancellationToken)
         {
-            return new IEventHandlingService[] {new UtxoUpdateService(node.EventServiceController, node.Blockchain, node.UtxoStorage)};
+            return new IEventHandlingService[]
+            {
+                new UtxoUpdateService(node.EventServiceController, node.Blockchain, node.UtxoStorage),
+                new SignatureValidationService(node.EventServiceController)
+            };
         }
 
         public IReadOnlyCollection<IEventHandlingService> CreateEndpointServices(BitcoinNode node, BitcoinEndpoint endpoint)

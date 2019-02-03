@@ -1,11 +1,13 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using BitcoinUtilities.Node.Events;
 using BitcoinUtilities.Node.Rules;
 using BitcoinUtilities.Node.Services.Headers;
+using BitcoinUtilities.Node.Services.Outputs.Events;
 using BitcoinUtilities.P2P;
 using BitcoinUtilities.P2P.Messages;
 using BitcoinUtilities.P2P.Primitives;
-using BitcoinUtilities.Scripts;
 using BitcoinUtilities.Threading;
 using NLog;
 
@@ -23,6 +25,14 @@ namespace BitcoinUtilities.Node.Services.Outputs
 
         private readonly PerformanceCounters performanceCounters = new PerformanceCounters(logger);
 
+        private readonly Queue<UnsavedUtxoUpdate> updatesAwaitingValidation = new Queue<UnsavedUtxoUpdate>();
+        private readonly Queue<UnsavedUtxoUpdate> validatedUpdates = new Queue<UnsavedUtxoUpdate>();
+        private readonly Queue<UnsavedUtxoUpdate> unsavedUpdates = new Queue<UnsavedUtxoUpdate>();
+
+        private UtxoHeader lastSavedHeader;
+        private UtxoHeader lastProcessedHeader;
+        private DbHeader lastRequestedHeader;
+
         public UtxoUpdateService(IEventDispatcher eventDispatcher, Blockchain blockchain, UtxoStorage utxoStorage)
         {
             this.eventDispatcher = eventDispatcher;
@@ -32,29 +42,43 @@ namespace BitcoinUtilities.Node.Services.Outputs
             // todo: do not call RequestBlocks in response to BestHeadChangedEvent too often
             On<BestHeadChangedEvent>(e => RequestBlocks());
             On<BlockAvailableEvent>(AddRequestedBlock);
+            On<SignatureValidationResponse>(SaveValidatedBlock);
         }
 
         public override void OnStart()
         {
             base.OnStart();
             performanceCounters.StartRunning();
+
+            lastSavedHeader = utxoStorage.GetLastHeader();
+            lastProcessedHeader = lastSavedHeader;
+
             RequestBlocks();
         }
 
         private void RequestBlocks()
         {
-            UtxoHeader utxoHead = utxoStorage.GetLastHeader();
-            HeaderSubChain chain = GetChainForUpdate(utxoHead);
+            if (updatesAwaitingValidation.Count >= 16)
+            {
+                return;
+            }
+
+            HeaderSubChain chain = GetChainForUpdate(lastProcessedHeader);
             if (chain == null)
             {
                 return;
             }
 
-            int requiredBlockHeight = GetRequiredBlockHeight(utxoHead);
+            int requiredBlockHeight = GetNextBlockHeight(lastProcessedHeader);
+            DbHeader requiredHeader = chain.GetBlockByHeight(requiredBlockHeight);
 
-            performanceCounters.BlockRequestSent();
-            eventDispatcher.Raise(new PrefetchBlocksEvent(this, chain.GetChildSubChain(requiredBlockHeight, 2000)));
-            eventDispatcher.Raise(new RequestBlockEvent(this, chain.GetBlockByHeight(requiredBlockHeight).Hash));
+            if (lastRequestedHeader == null || !lastRequestedHeader.Hash.SequenceEqual(requiredHeader.Hash))
+            {
+                lastRequestedHeader = requiredHeader;
+                eventDispatcher.Raise(new PrefetchBlocksEvent(this, chain.GetChildSubChain(requiredBlockHeight, 2000)));
+                eventDispatcher.Raise(new RequestBlockEvent(this, requiredHeader.Hash));
+                performanceCounters.BlockRequestSent();
+            }
         }
 
         private HeaderSubChain GetChainForUpdate(UtxoHeader utxoHead)
@@ -70,7 +94,7 @@ namespace BitcoinUtilities.Node.Services.Outputs
             while (chain == null)
             {
                 DbHeader blockChainHead = blockchain.GetBestHead();
-                int requiredBlockHeight = GetRequiredBlockHeight(utxoHead);
+                int requiredBlockHeight = GetNextBlockHeight(utxoHead);
 
                 if (requiredBlockHeight > blockChainHead.Height)
                 {
@@ -112,7 +136,7 @@ namespace BitcoinUtilities.Node.Services.Outputs
             }
 
             var lastChainTail = cachedChainForUpdate.GetBlockByOffset(cachedChainForUpdate.Count - 1);
-            int requiredBlockHeight = GetRequiredBlockHeight(utxoHead);
+            int requiredBlockHeight = GetNextBlockHeight(utxoHead);
 
             if (requiredBlockHeight < lastChainTail.Height || requiredBlockHeight > lastChainHead.Height)
             {
@@ -133,7 +157,7 @@ namespace BitcoinUtilities.Node.Services.Outputs
         {
             performanceCounters.BlockReceived();
 
-            if (IncludeBlock(evt))
+            if (ProcessBlock(evt))
             {
                 performanceCounters.BlockProcessed(evt.Block.Transactions.Length);
             }
@@ -145,32 +169,19 @@ namespace BitcoinUtilities.Node.Services.Outputs
             RequestBlocks();
         }
 
-        private bool IncludeBlock(BlockAvailableEvent evt)
+        private bool ProcessBlock(BlockAvailableEvent evt)
         {
-            UtxoHeader utxoHead = utxoStorage.GetLastHeader();
-            HeaderSubChain chain = GetChainForUpdate(utxoHead);
-
-            if (chain != null)
+            var nextHeader = GetNextHeaderInChain(lastProcessedHeader);
+            if (nextHeader == null || !nextHeader.Hash.SequenceEqual(evt.HeaderHash))
             {
-                int requiredBlockHeight = GetRequiredBlockHeight(utxoHead);
-                DbHeader requiredHeader = chain.GetBlockByHeight(requiredBlockHeight);
-                if (ByteArrayComparer.Instance.Equals(requiredHeader.Hash, evt.HeaderHash))
-                {
-                    utxoStorage.Update(CreateAndValidateUtxoUpdate(requiredHeader, evt.Block));
-                    eventDispatcher.Raise(new UtxoChangedEvent(requiredHeader));
-                    return true;
-                }
+                return false;
             }
 
-            return false;
+            PrepareUtxoUpdate(nextHeader, evt.Block);
+            return true;
         }
 
-        private static int GetRequiredBlockHeight(UtxoHeader utxoHead)
-        {
-            return utxoHead == null ? 0 : utxoHead.Height + 1;
-        }
-
-        private UtxoUpdate CreateAndValidateUtxoUpdate(DbHeader header, BlockMessage block)
+        private void PrepareUtxoUpdate(DbHeader header, BlockMessage block)
         {
             HashSet<byte[]> relatedTxHashes = new HashSet<byte[]>(ByteArrayComparer.Instance);
 
@@ -189,61 +200,122 @@ namespace BitcoinUtilities.Node.Services.Outputs
             UpdatableOutputSet outputSet = new UpdatableOutputSet();
             outputSet.AppendExistingUnspentOutputs(existingOutputs);
 
+            foreach (var unsavedUtxoUpdate in unsavedUpdates)
+            {
+                Replay(outputSet, relatedTxHashes, unsavedUtxoUpdate);
+            }
+
             TransactionProcessor txProcessor = new TransactionProcessor();
             var processedTransactions = txProcessor.UpdateOutputs(outputSet, header.Height, header.Hash, block);
-
-            VerifySignatures(header.Hash, processedTransactions);
 
             UtxoUpdate update = new UtxoUpdate(header.Height, header.Hash, header.ParentHash);
             update.ExistingSpentOutputs.AddRange(outputSet.ExistingSpentOutputs);
             update.CreatedUnspentOutputs.AddRange(outputSet.CreatedUnspentOutputs);
 
-            return update;
+            var unsavedUpdate = new UnsavedUtxoUpdate(header, update);
+            updatesAwaitingValidation.Enqueue(unsavedUpdate);
+            unsavedUpdates.Enqueue(unsavedUpdate);
+
+            lastProcessedHeader = new UtxoHeader(header.Hash, header.Height, true);
+
+            eventDispatcher.Raise(new SignatureValidationRequest(header, processedTransactions));
         }
 
-        private void VerifySignatures(byte[] blockHash, ProcessedTransaction[] processedTransactions)
+        private void Replay(UpdatableOutputSet outputSet, HashSet<byte[]> relatedTxHashes, UnsavedUtxoUpdate unsavedUtxoUpdate)
         {
-            var enumerator = new ConcurrentEnumerator<ProcessedTransaction>(processedTransactions);
-            enumerator.ProcessWith(new object[4], (_, en) => VerifySignatures(blockHash, en));
-        }
-
-        private object VerifySignatures(byte[] blockHash, IConcurrentEnumerator<ProcessedTransaction> processedTransactions)
-        {
-            while (processedTransactions.GetNext(out var transaction))
+            foreach (var output in unsavedUtxoUpdate.UtxoUpdate.ExistingSpentOutputs.Where(o => relatedTxHashes.Contains(o.OutputPoint.Hash)))
             {
-                // explicitly define coinbase transaction?
-                if (transaction.Inputs.Length != 0)
-                {
-                    for (int inputIndex = 0; inputIndex < transaction.Inputs.Length; inputIndex++)
-                    {
-                        if (!VerifySignature(transaction, inputIndex))
-                        {
-                            throw new BitcoinProtocolViolationException(
-                                $"The transaction '{HexUtils.GetString(transaction.TxHash)}'" +
-                                $" in block '{HexUtils.GetString(blockHash)}'" +
-                                $" has an invalid signature script for input {inputIndex}.");
-                        }
-                    }
-                }
+                var outputInSet = outputSet.FindUnspentOutput(output.OutputPoint);
+                outputSet.Spend(outputInSet, unsavedUtxoUpdate.Header.Height);
             }
 
-            return null;
+            foreach (var output in unsavedUtxoUpdate.UtxoUpdate.CreatedUnspentOutputs.Where(o => relatedTxHashes.Contains(o.OutputPoint.Hash)))
+            {
+                outputSet.CreateUnspentOutput(output.OutputPoint.Hash, output.OutputPoint.Index, unsavedUtxoUpdate.Header.Height, new TxOut(output.Value, output.PubkeyScript));
+            }
+
+            outputSet.MoveCreatedToExisting();
         }
 
-        private bool VerifySignature(ProcessedTransaction transaction, int inputIndex)
+        private void SaveValidatedBlock(SignatureValidationResponse validationResponse)
         {
-            ISigHashCalculator sigHashCalculator = new BitcoinCoreSigHashCalculator(transaction.Transaction);
+            performanceCounters.SavingStarted();
+            if (updatesAwaitingValidation.Count == 0 || !updatesAwaitingValidation.Peek().Header.Hash.SequenceEqual(validationResponse.Header.Hash))
+            {
+                throw new InvalidOperationException("Something went wrong, we got validation response not for the first block in queue.");
+            }
 
-            sigHashCalculator.InputIndex = inputIndex;
-            sigHashCalculator.Amount = transaction.Inputs[inputIndex].Value;
+            var validatedUpdate = updatesAwaitingValidation.Dequeue();
+            validatedUpdates.Enqueue(validatedUpdate);
 
-            ScriptProcessor scriptProcessor = new ScriptProcessor();
-            scriptProcessor.SigHashCalculator = sigHashCalculator;
+            if (validatedUpdates.Count >= 10)
+            {
+                SaveValidatedUpdates();
+            }
 
-            scriptProcessor.Execute(transaction.Transaction.Inputs[inputIndex].SignatureScript);
-            scriptProcessor.Execute(transaction.Inputs[inputIndex].PubKeyScript);
+            RequestBlocks();
+            performanceCounters.SavingComplete();
+        }
 
-            return scriptProcessor.Valid && scriptProcessor.Success;
+        internal void SaveValidatedUpdates()
+        {
+            // todo: method is internal for tests only
+            var nextHeader = GetNextHeaderInChain(lastSavedHeader);
+            if (nextHeader == null || !nextHeader.Hash.SequenceEqual(validatedUpdates.Peek().Header.Hash))
+            {
+                throw new InvalidOperationException("Something went wrong. First block no longer matches either storage state or the current chain.");
+            }
+
+            List<UtxoUpdate> updatesToSave = new List<UtxoUpdate>();
+
+            foreach (var update in validatedUpdates)
+            {
+                var unsavedUpdate = unsavedUpdates.Dequeue();
+                if (update != unsavedUpdate)
+                {
+                    throw new InvalidOperationException("Something went wrong. Order of blocks in validated queue and unsaved queue is different.");
+                }
+
+                updatesToSave.Add(update.UtxoUpdate);
+            }
+
+            validatedUpdates.Clear();
+
+            // todo: what is storage throws exception?
+            utxoStorage.Update(updatesToSave);
+            lastSavedHeader = utxoStorage.GetLastHeader();
+            eventDispatcher.Raise(new UtxoChangedEvent(lastSavedHeader.Hash, lastSavedHeader.Height));
+        }
+
+        private DbHeader GetNextHeaderInChain(UtxoHeader currentHeader)
+        {
+            HeaderSubChain chain = GetChainForUpdate(currentHeader);
+
+            if (chain == null)
+            {
+                return null;
+            }
+
+            int nextHeaderHeight = GetNextBlockHeight(currentHeader);
+            DbHeader nextHeader = chain.GetBlockByHeight(nextHeaderHeight);
+            return nextHeader;
+        }
+
+        private static int GetNextBlockHeight(UtxoHeader currentHeader)
+        {
+            return currentHeader == null ? 0 : currentHeader.Height + 1;
+        }
+
+        private class UnsavedUtxoUpdate
+        {
+            public UnsavedUtxoUpdate(DbHeader header, UtxoUpdate utxoUpdate)
+            {
+                Header = header;
+                UtxoUpdate = utxoUpdate;
+            }
+
+            public DbHeader Header { get; }
+            public UtxoUpdate UtxoUpdate { get; }
         }
     }
 }
