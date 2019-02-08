@@ -22,7 +22,7 @@ namespace BitcoinUtilities.Node.Rules
             HashSet<byte[]> transactionHashSet = new HashSet<byte[]>(ByteArrayComparer.Instance);
             foreach (Tx transaction in block.Transactions)
             {
-                byte[] hash = CryptoUtils.DoubleSha256(BitcoinStreamWriter.GetBytes(transaction.Write));
+                byte[] hash = transaction.Hash;
                 if (!transactionHashSet.Add(hash))
                 {
                     // Duplicate transactions can be used to construct invalid block that has same merkle tree root as valid block.

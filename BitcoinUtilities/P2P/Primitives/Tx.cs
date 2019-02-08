@@ -3,12 +3,14 @@
     /// <summary>
     /// A bitcoin transaction.
     /// </summary>
-    public struct Tx
+    public class Tx
     {
         private readonly uint version;
         private readonly TxIn[] inputs;
         private readonly TxOut[] outputs;
         private readonly uint lockTime;
+
+        private byte[] hash;
 
         public Tx(uint version, TxIn[] inputs, TxOut[] outputs, uint lockTime)
         {
@@ -52,6 +54,22 @@
             get { return lockTime; }
         }
 
+        /// <summary>
+        /// Hash of this transaction.
+        /// </summary>
+        public byte[] Hash
+        {
+            get
+            {
+                if (hash == null)
+                {
+                    hash = CryptoUtils.DoubleSha256(BitcoinStreamWriter.GetBytes(Write));
+                }
+
+                return hash;
+            }
+        }
+
         public void Write(BitcoinStreamWriter writer)
         {
             writer.Write(version);
@@ -63,8 +81,8 @@
         public static Tx Read(BitcoinStreamReader reader)
         {
             uint version = reader.ReadUInt32();
-            TxIn[] inputs = reader.ReadArray(1024*1024, TxIn.Read);
-            TxOut[] outputs = reader.ReadArray(1024*1024, TxOut.Read);
+            TxIn[] inputs = reader.ReadArray(1024 * 1024, TxIn.Read);
+            TxOut[] outputs = reader.ReadArray(1024 * 1024, TxOut.Read);
             uint lockTime = reader.ReadUInt32();
             return new Tx(version, inputs, outputs, lockTime);
         }

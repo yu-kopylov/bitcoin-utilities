@@ -192,7 +192,7 @@ namespace BitcoinUtilities.Node.Services.Outputs
                     relatedTxHashes.Add(input.PreviousOutput.Hash);
                 }
 
-                relatedTxHashes.Add(CryptoUtils.DoubleSha256(BitcoinStreamWriter.GetBytes(tx.Write)));
+                relatedTxHashes.Add(tx.Hash);
             }
 
             IReadOnlyCollection<UtxoOutput> existingOutputs = utxoStorage.GetUnspentOutputs(relatedTxHashes);

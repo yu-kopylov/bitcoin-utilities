@@ -39,7 +39,7 @@ namespace BitcoinUtilities.Node.Services.Outputs
                         if (!VerifySignature(scriptProcessor, transaction, inputIndex))
                         {
                             throw new BitcoinProtocolViolationException(
-                                $"The transaction '{HexUtils.GetString(transaction.TxHash)}'" +
+                                $"The transaction '{HexUtils.GetString(transaction.Transaction.Hash)}'" +
                                 $" in block '{HexUtils.GetString(blockHash)}'" +
                                 $" has an invalid signature script for input {inputIndex}.");
                         }

@@ -51,7 +51,7 @@ namespace BitcoinUtilities.P2P
             {
                 BlockMessage typedMessage = (BlockMessage) message;
                 FormatValue("header hash", typedMessage.BlockHeader, v => HexUtils.GetString(CryptoUtils.DoubleSha256(BitcoinStreamWriter.GetBytes(v.Write))));
-                FormatCollection("transactions", typedMessage.Transactions, v => HexUtils.GetString(CryptoUtils.DoubleSha256(BitcoinStreamWriter.GetBytes(v.Write))));
+                FormatCollection("transactions", typedMessage.Transactions, v => HexUtils.GetString(v.Hash));
             }
             else if (message is HeadersMessage)
             {

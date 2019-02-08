@@ -27,7 +27,7 @@ namespace BitcoinUtilities
             List<byte[]> hashes = new List<byte[]>(transactions.Length);
             foreach (Tx transaction in transactions)
             {
-                hashes.Add(CryptoUtils.DoubleSha256(BitcoinStreamWriter.GetBytes(transaction.Write)));
+                hashes.Add(transaction.Hash);
             }
 
             return GetTreeRoot(hashes);
@@ -47,15 +47,17 @@ namespace BitcoinUtilities
 
             while (hashes.Count > 1)
             {
-                List<byte[]> newHashes = new List<byte[]>((hashes.Count + 1)/2);
+                List<byte[]> newHashes = new List<byte[]>((hashes.Count + 1) / 2);
                 for (int i = 0; i < hashes.Count; i += 2)
                 {
                     byte[] hash1 = hashes[i];
                     byte[] hash2 = (i + 1 < hashes.Count) ? hashes[i + 1] : hashes[i];
                     newHashes.Add(CryptoUtils.Sha256(CryptoUtils.Sha256(hash1, hash2)));
                 }
+
                 hashes = newHashes;
             }
+
             return hashes[0];
         }
     }

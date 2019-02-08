@@ -94,7 +94,7 @@ namespace Test.BitcoinUtilities.Node.Services.Outputs
 
                 var allTxHashes = blocks
                     .SelectMany(b => b.Transactions)
-                    .Select(tx => CryptoUtils.DoubleSha256(BitcoinStreamWriter.GetBytes(tx.Write)))
+                    .Select(tx => tx.Hash)
                     .ToList();
 
                 var unspentOutputs = utxoStorage.GetUnspentOutputs(allTxHashes);

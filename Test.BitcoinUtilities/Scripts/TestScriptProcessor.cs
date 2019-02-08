@@ -46,8 +46,8 @@ namespace Test.BitcoinUtilities.Scripts
             Tx coinbaseTransaction2 = BitcoinStreamReader.FromBytes(coinbaseTransaction2Raw, Tx.Read);
 
             Dictionary<byte[], Tx> coinbaseTransactions = new Dictionary<byte[], Tx>(ByteArrayComparer.Instance);
-            coinbaseTransactions.Add(CryptoUtils.DoubleSha256(BitcoinStreamWriter.GetBytes(coinbaseTransaction1.Write)), coinbaseTransaction1);
-            coinbaseTransactions.Add(CryptoUtils.DoubleSha256(BitcoinStreamWriter.GetBytes(coinbaseTransaction2.Write)), coinbaseTransaction2);
+            coinbaseTransactions.Add(coinbaseTransaction1.Hash, coinbaseTransaction1);
+            coinbaseTransactions.Add(coinbaseTransaction2.Hash, coinbaseTransaction2);
 
             string spendingTransactionHex =
                 "02000000027014bdd90ea084655ab60f222a41e8f7ff132df35d9eea59344946d9bf14ed1c0000000048473044022039b640b6dccd8cedb7a5fd8967fc2bc752b440b6268fdbbc26d208079ab5948e0220339f42ac6d64689fe03aac0b04fbbf53bbffa5c3114d5336bc0bbaf4b1407f2101feffffffcd81b703b64608be8b5f0391c5d31e42df10bf3d2e702293dec7ca3972e8a2b30000000049483045022100ac63b6110185158f67af94a78ddf1fcc5e65ae4c382f448b45a7055a37b3b95a02201569acb3faca81bac7a4ebc4a2ef227a4a58785bb87618162c750915d85b425c01feffffff02606b042a010000001976a914e40e7ce54385d0c3cbf6c4adf5cace59e021cadc88ac50cd022a010000001976a914c2d6ece921ae0105fd6ac79b32ef1c685217ad2988ac7b000000";
@@ -137,8 +137,8 @@ namespace Test.BitcoinUtilities.Scripts
             Tx coinbaseTransaction2 = BitcoinStreamReader.FromBytes(coinbaseTransaction2Raw, Tx.Read);
 
             Dictionary<byte[], Tx> coinbaseTransactions = new Dictionary<byte[], Tx>(ByteArrayComparer.Instance);
-            coinbaseTransactions.Add(CryptoUtils.DoubleSha256(BitcoinStreamWriter.GetBytes(coinbaseTransaction1.Write)), coinbaseTransaction1);
-            coinbaseTransactions.Add(CryptoUtils.DoubleSha256(BitcoinStreamWriter.GetBytes(coinbaseTransaction2.Write)), coinbaseTransaction2);
+            coinbaseTransactions.Add(coinbaseTransaction1.Hash, coinbaseTransaction1);
+            coinbaseTransactions.Add(coinbaseTransaction2.Hash, coinbaseTransaction2);
 
             string spendingTransactionHex =
                 "01000000028a06a27e85d102306b97213057bf7dd6f1c31318a7aea4bfb838d494d735b38b0000000048473044022070d7270dcd0acafcc71944342806382badfc77123a35bea1c160b8fc4a11063002207ad1116b3d64cbab2e6237ca3199bbf513a2deec0f3007f7ede90394b84da6a241ffffffff0134e33fa8e49a82ef9b2adaf7d62044354f4fa04fe8088917c1d11dd845ca11000000004847304402200cdaa419fb200016b6eadc141aa4fc62b21e521fc3bd9cd37f3c18e66832c5ea02206b8af8a8005ffc9c51e8dd97217e43ab86b00cf39be911cde1711081bddc82d141ffffffff02606b042a010000001976a914c2d6ece921ae0105fd6ac79b32ef1c685217ad2988ac6036f829010000001976a914e40e7ce54385d0c3cbf6c4adf5cace59e021cadc88ac00000000";

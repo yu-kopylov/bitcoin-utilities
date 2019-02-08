@@ -32,7 +32,7 @@ namespace BitcoinUtilities.Node.Rules
                 ulong transactionInputsSum = 0;
                 ulong transactionOutputsSum = 0;
 
-                byte[] transactionHash = CryptoUtils.DoubleSha256(BitcoinStreamWriter.GetBytes(transaction.Write));
+                byte[] transactionHash = transaction.Hash;
 
                 IReadOnlyCollection<TOutput> unspentOutputs = outputs.FindUnspentOutputs(transactionHash);
                 if (unspentOutputs.Any())
@@ -58,7 +58,7 @@ namespace BitcoinUtilities.Node.Rules
                 //todo: check transaction hash against genesis block transaction hash
                 if (transactionNumber == 0)
                 {
-                    processedTransactions[transactionNumber] = new ProcessedTransaction(transaction, transactionHash, new TransactionInput[0]);
+                    processedTransactions[transactionNumber] = new ProcessedTransaction(transaction, new TransactionInput[0]);
                 }
                 else
                 {
@@ -100,7 +100,7 @@ namespace BitcoinUtilities.Node.Rules
                         transactionInputs[inputNum] = new TransactionInput(output.Value, output.PubkeyScript);
                     }
 
-                    processedTransactions[transactionNumber] = new ProcessedTransaction(transaction, transactionHash, transactionInputs);
+                    processedTransactions[transactionNumber] = new ProcessedTransaction(transaction, transactionInputs);
                 }
 
                 for (int outputNumber = 0; outputNumber < transaction.Outputs.Length; outputNumber++)

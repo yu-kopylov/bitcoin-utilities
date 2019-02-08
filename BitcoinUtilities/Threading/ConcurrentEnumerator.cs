@@ -64,7 +64,7 @@ namespace BitcoinUtilities.Threading
 
             if (exceptions.Count != 0)
             {
-                throw new AggregateException("Error in a the worker threads.", exceptions);
+                throw new AggregateException("Error in one of the worker threads.", exceptions);
             }
 
             return results;
