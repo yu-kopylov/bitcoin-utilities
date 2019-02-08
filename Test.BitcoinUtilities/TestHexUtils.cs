@@ -13,7 +13,18 @@ namespace Test.BitcoinUtilities
             Assert.Throws<ArgumentNullException>(() => HexUtils.GetString(null));
 
             Assert.That(HexUtils.GetString(new byte[0]), Is.EqualTo(""));
+            Assert.That(HexUtils.GetString(new byte[] {0x01}), Is.EqualTo("01"));
             Assert.That(HexUtils.GetString(new byte[] {0x01, 0x23, 0x45, 0x67, 0x89, 0xAB, 0xCD, 0xEF}), Is.EqualTo("0123456789abcdef"));
+        }
+
+        [Test]
+        public void TestGetReversedString()
+        {
+            Assert.Throws<ArgumentNullException>(() => HexUtils.GetReversedString(null));
+
+            Assert.That(HexUtils.GetReversedString(new byte[0]), Is.EqualTo(""));
+            Assert.That(HexUtils.GetReversedString(new byte[] {0x01}), Is.EqualTo("01"));
+            Assert.That(HexUtils.GetReversedString(new byte[] {0xEF, 0xCD, 0xAB, 0x89, 0x67, 0x45, 0x23, 0x01}), Is.EqualTo("0123456789abcdef"));
         }
 
         [Test]

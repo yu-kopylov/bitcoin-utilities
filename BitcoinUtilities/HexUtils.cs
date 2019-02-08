@@ -30,6 +30,31 @@ namespace BitcoinUtilities
         }
 
         /// <summary>
+        /// Converts a byte array to a hexadecimal string using reverse byte order.
+        /// </summary>
+        /// <param name="array">The byte array to convert.</param>
+        /// <returns>A hexadecimal string converted from the given array.</returns>
+        /// <exception cref="ArgumentNullException">If the given array is null.</exception>
+        public static string GetReversedString(byte[] array)
+        {
+            if (array == null)
+            {
+                throw new ArgumentNullException(nameof(array), "The given array is null.");
+            }
+
+            char[] octets = new char[array.Length * 2];
+            int ofs = octets.Length - 2;
+            foreach (byte b in array)
+            {
+                octets[ofs] = GetOctet(b >> 4);
+                octets[ofs + 1] = GetOctet(b & 0xF);
+                ofs -= 2;
+            }
+
+            return new string(octets);
+        }
+
+        /// <summary>
         /// Converts a hexadecimal string to a byte array.
         /// </summary>
         /// <param name="hex">The string to convert. The only allowed characters are 0-9, a-z, A-Z.</param>

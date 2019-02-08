@@ -1,5 +1,4 @@
-﻿using System;
-using BitcoinUtilities;
+﻿using BitcoinUtilities;
 using BitcoinUtilities.P2P;
 using BitcoinUtilities.P2P.Primitives;
 
@@ -9,15 +8,9 @@ namespace Test.BitcoinUtilities.Scripts
     {
         public TransactionInputExample(string name, int blockHeight, string transaction, int inputIndex, ulong inputValue, string inputScript)
         {
-            byte[] transactionText = HexUtils.GetBytesUnsafe(transaction);
-
-            byte[] transactionHash = CryptoUtils.DoubleSha256(transactionText);
-            Array.Reverse(transactionHash);
-
             Name = name;
             BlockHeight = blockHeight;
-            Transaction = BitcoinStreamReader.FromBytes(transactionText, Tx.Read);
-            TransactionHash = HexUtils.GetString(transactionHash);
+            Transaction = BitcoinStreamReader.FromBytes(HexUtils.GetBytesUnsafe(transaction), Tx.Read);
             InputIndex = inputIndex;
             InputValue = inputValue;
             InputScript = HexUtils.GetBytesUnsafe(inputScript);
@@ -27,7 +20,6 @@ namespace Test.BitcoinUtilities.Scripts
 
         public int BlockHeight { get; }
         public Tx Transaction { get; }
-        public string TransactionHash { get; }
 
         public int InputIndex { get; }
         public ulong InputValue { get; }
@@ -35,7 +27,7 @@ namespace Test.BitcoinUtilities.Scripts
 
         public override string ToString()
         {
-            return $"\"{Name}\" {{{BlockHeight} - {TransactionHash} - {InputIndex}}}";
+            return $"\"{Name}\" {{{BlockHeight} - {HexUtils.GetReversedString(Transaction.Hash)} - {InputIndex}}}";
         }
     }
 }
