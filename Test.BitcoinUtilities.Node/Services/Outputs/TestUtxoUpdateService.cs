@@ -54,35 +54,35 @@ namespace Test.BitcoinUtilities.Node.Services.Outputs
                 controller.Start();
                 Thread.Sleep(100);
 
-                Assert.AreEqual(new string[]
+                Assert.That(log.GetLog(), Is.EquivalentTo(new string[]
                 {
                     $"PrefetchBlocksEvent: Headers[5] ({HexUtils.GetString(headers[0].Hash)})",
                     $"RequestBlockEvent: {HexUtils.GetString(headers[0].Hash)}"
-                }, log.GetLog());
+                }));
 
                 log.Clear();
                 controller.Raise(new BlockAvailableEvent(headers[0].Hash, blocks[0]));
                 Thread.Sleep(100);
 
-                Assert.AreEqual(new string[]
+                Assert.That(log.GetLog(), Is.EquivalentTo(new string[]
                 {
                     $"SignatureValidationRequest: {HexUtils.GetString(headers[0].Hash)}",
                     $"PrefetchBlocksEvent: Headers[4] ({HexUtils.GetString(headers[1].Hash)})",
                     $"RequestBlockEvent: {HexUtils.GetString(headers[1].Hash)}",
                     $"SignatureValidationResponse: {HexUtils.GetString(headers[0].Hash)}, True"
-                }, log.GetLog());
+                }));
 
                 log.Clear();
                 controller.Raise(new BlockAvailableEvent(headers[1].Hash, blocks[1]));
                 Thread.Sleep(100);
 
-                Assert.AreEqual(new string[]
+                Assert.That(log.GetLog(), Is.EquivalentTo(new string[]
                 {
                     $"SignatureValidationRequest: {HexUtils.GetString(headers[1].Hash)}",
                     $"PrefetchBlocksEvent: Headers[3] ({HexUtils.GetString(headers[2].Hash)})",
                     $"RequestBlockEvent: {HexUtils.GetString(headers[2].Hash)}",
                     $"SignatureValidationResponse: {HexUtils.GetString(headers[1].Hash)}, True"
-                }, log.GetLog());
+                }));
 
                 utxoUpdateService.SaveValidatedUpdates();
 
