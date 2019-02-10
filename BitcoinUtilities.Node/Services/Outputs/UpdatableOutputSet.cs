@@ -10,78 +10,53 @@ namespace BitcoinUtilities.Node.Services.Outputs
     public class UpdatableOutputSet : IUpdatableOutputSet<UtxoOutput>
     {
         private readonly HashSet<byte[]> existingTransactions = new HashSet<byte[]>(ByteArrayComparer.Instance);
-        private readonly OutputSet existingUnspentOutputs = new OutputSet();
-        private readonly List<UtxoOutput> existingSpentOutputs = new List<UtxoOutput>();
-
-        private readonly OutputSet createdUnspentOutputs = new OutputSet();
-        private readonly List<UtxoOutput> createdSpentOutputs = new List<UtxoOutput>();
+        private readonly OutputSet outputs = new OutputSet();
+        private readonly List<UtxoOperation> operations = new List<UtxoOperation>();
 
         public bool HasExistingTransaction(byte[] txHash)
         {
             return existingTransactions.Contains(txHash);
         }
 
-        public IEnumerable<UtxoOutput> ExistingSpentOutputs => existingSpentOutputs;
-        public IEnumerable<UtxoOutput> CreatedUnspentOutputs => createdUnspentOutputs;
-        public IEnumerable<UtxoOutput> CreatedSpentOutputs => createdSpentOutputs;
+        public IReadOnlyList<UtxoOperation> Operations => operations;
 
-        public void AppendExistingUnspentOutputs(IEnumerable<UtxoOutput> outputs)
+        public void AppendExistingUnspentOutputs(IEnumerable<UtxoOutput> existingOutputs)
         {
             HashSet<byte[]> appendedTransactions = new HashSet<byte[]>(ByteArrayComparer.Instance);
-            foreach (UtxoOutput output in outputs)
+            foreach (UtxoOutput output in existingOutputs)
             {
-                if (existingTransactions.Contains(output.OutputPoint.Hash))
+                if (existingTransactions.Contains(output.OutPoint.Hash))
                 {
                     throw new InvalidOperationException(
-                        $"An output from the transaction '{HexUtils.GetString(output.OutputPoint.Hash)}'" +
+                        $"An output from the transaction '{HexUtils.GetString(output.OutPoint.Hash)}'" +
                         $" was already added to the {nameof(UpdatableOutputSet)}." +
                         $" All outputs from one transaction should be added at the same time for BIP-30 validation to work." +
                         $" Use '{nameof(HasExistingTransaction)}' method to avoid fetching already included transactions from a database."
                     );
                 }
 
-                existingUnspentOutputs.Add(output);
-                appendedTransactions.Add(output.OutputPoint.Hash);
+                outputs.Add(output);
+                appendedTransactions.Add(output.OutPoint.Hash);
             }
 
             existingTransactions.UnionWith(appendedTransactions);
         }
 
-        public void MoveCreatedToExisting()
+        public void ClearOperations()
         {
-            foreach (var output in existingSpentOutputs)
-            {
-                existingUnspentOutputs.Remove(output);
-            }
-
-            existingSpentOutputs.Clear();
-
-            foreach (var output in createdUnspentOutputs)
-            {
-                existingUnspentOutputs.Add(output);
-                existingTransactions.Add(output.OutputPoint.Hash);
-            }
-
-            createdUnspentOutputs.Clear();
-            createdSpentOutputs.Clear();
+            operations.Clear();
         }
 
         public IReadOnlyCollection<UtxoOutput> FindUnspentOutputs(byte[] transactionHash)
         {
             List<UtxoOutput> res = new List<UtxoOutput>();
-            res.AddRange(existingUnspentOutputs.GetByTxHash(transactionHash));
-            res.AddRange(createdUnspentOutputs.GetByTxHash(transactionHash));
+            res.AddRange(outputs.GetByTxHash(transactionHash));
             return res;
         }
 
         public UtxoOutput FindUnspentOutput(TxOutPoint outPoint)
         {
-            if (existingUnspentOutputs.TryGetValue(outPoint, out var output))
-            {
-                return output;
-            }
-
-            if (createdUnspentOutputs.TryGetValue(outPoint, out output))
+            if (outputs.TryGetValue(outPoint, out var output))
             {
                 return output;
             }
@@ -89,26 +64,21 @@ namespace BitcoinUtilities.Node.Services.Outputs
             return null;
         }
 
-        public void CreateUnspentOutput(byte[] txHash, int outputIndex, int height, TxOut txOut)
+        public void CreateUnspentOutput(byte[] txHash, int outputIndex, ulong value, byte[] pubkeyScript)
         {
-            createdUnspentOutputs.Add(new UtxoOutput(txHash, outputIndex, height, txOut));
+            var output = new UtxoOutput(new TxOutPoint(txHash, outputIndex), value, pubkeyScript);
+            outputs.Add(output);
+            operations.Add(UtxoOperation.Create(output));
         }
 
-        public void Spend(UtxoOutput output, int blockHeight)
+        public void Spend(UtxoOutput output)
         {
-            UtxoOutput spentOutput = output.Spend(blockHeight);
-            if (existingUnspentOutputs.Remove(output))
+            if (!outputs.Remove(output.OutPoint))
             {
-                existingSpentOutputs.Add(spentOutput);
+                throw new InvalidOperationException($"Attempt to spend a non-existent output '{output.OutPoint}'.");
             }
-            else if (createdUnspentOutputs.Remove(output))
-            {
-                createdSpentOutputs.Add(spentOutput);
-            }
-            else
-            {
-                throw new InvalidOperationException($"Attempt to spend a non-existent output '{output.OutputPoint}'.");
-            }
+
+            operations.Add(UtxoOperation.Spend(output));
         }
 
         private class OutputSet : IEnumerable<UtxoOutput>
@@ -117,40 +87,33 @@ namespace BitcoinUtilities.Node.Services.Outputs
 
             public void Add(UtxoOutput output)
             {
-                if (!outputsByTxHash.TryGetValue(output.OutputPoint.Hash, out var outputsByIndex))
+                if (!outputsByTxHash.TryGetValue(output.OutPoint.Hash, out var outputsByIndex))
                 {
                     outputsByIndex = new Dictionary<int, UtxoOutput>();
-                    outputsByTxHash.Add(output.OutputPoint.Hash, outputsByIndex);
+                    outputsByTxHash.Add(output.OutPoint.Hash, outputsByIndex);
                 }
 
-                outputsByIndex.Add(output.OutputPoint.Index, output);
+                outputsByIndex.Add(output.OutPoint.Index, output);
             }
 
-            public bool Remove(UtxoOutput output)
+            public bool Remove(TxOutPoint outPoint)
             {
-                if (!outputsByTxHash.TryGetValue(output.OutputPoint.Hash, out var outputsByIndex))
+                if (!outputsByTxHash.TryGetValue(outPoint.Hash, out var outputsByIndex))
                 {
                     return false;
                 }
 
-                if (outputsByIndex.TryGetValue(output.OutputPoint.Index, out var existingOutput))
+                if (!outputsByIndex.Remove(outPoint.Index))
                 {
-                    if (output != existingOutput)
-                    {
-                        throw new InvalidOperationException($"Mismatch in output version upon deletion of '{output.OutputPoint}'.");
-                    }
-
-                    outputsByIndex.Remove(output.OutputPoint.Index);
-
-                    if (outputsByIndex.Count == 0)
-                    {
-                        outputsByTxHash.Remove(output.OutputPoint.Hash);
-                    }
-
-                    return true;
+                    return false;
                 }
 
-                return false;
+                if (outputsByIndex.Count == 0)
+                {
+                    outputsByTxHash.Remove(outPoint.Hash);
+                }
+
+                return true;
             }
 
             public bool TryGetValue(TxOutPoint outPoint, out UtxoOutput output)
@@ -183,11 +146,6 @@ namespace BitcoinUtilities.Node.Services.Outputs
                         yield return output;
                     }
                 }
-            }
-
-            public void Clear()
-            {
-                outputsByTxHash.Clear();
             }
 
             IEnumerator IEnumerable.GetEnumerator()

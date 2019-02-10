@@ -1,57 +1,49 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Collections.Generic;
 using BitcoinUtilities.P2P.Primitives;
 
 namespace BitcoinUtilities.Node.Services.Outputs
 {
+    /// <summary>
+    /// Aggregates operations into two independent sets of spent and created outputs.
+    /// Operations that cancel each other do not add outputs to the sets.
+    /// </summary>
     public class UtxoAggregateUpdate
     {
-        public int FirstHeaderHeight { get; private set; }
-        public byte[] FirstHeaderParent { get; private set; }
+        private readonly Dictionary<TxOutPoint, UtxoOutput> createdOutputs = new Dictionary<TxOutPoint, UtxoOutput>();
+        private readonly List<TxOutPoint> spentOutputs = new List<TxOutPoint>();
 
-        public List<byte[]> HeaderHashes { get; } = new List<byte[]>();
+        public IEnumerable<UtxoOutput> CreatedOutputs => createdOutputs.Values;
+        public IEnumerable<TxOutPoint> SpentOutputs => spentOutputs;
 
-        public List<UtxoOutput> AllSpentOutputs { get; } = new List<UtxoOutput>();
-        public List<UtxoOutput> ExistingSpentOutputs { get; } = new List<UtxoOutput>();
-        public Dictionary<TxOutPoint, UtxoOutput> UnspentOutputs { get; } = new Dictionary<TxOutPoint, UtxoOutput>();
-
-        public void Add(UtxoUpdate update)
+        public void Add(IReadOnlyList<UtxoOperation> operations)
         {
-            if (HeaderHashes.Count == 0)
+            Add(operations, false);
+        }
+
+        public void AddReversals(IReadOnlyList<UtxoOperation> operations)
+        {
+            Add(operations, true);
+        }
+
+        private void Add(IReadOnlyList<UtxoOperation> operations, bool revert)
+        {
+            foreach (var operation in operations)
             {
-                FirstHeaderHeight = update.Height;
-                FirstHeaderParent = update.ParentHash;
-            }
-            else
-            {
-                if (
-                    update.Height != FirstHeaderHeight + HeaderHashes.Count ||
-                    !ByteArrayComparer.Instance.Equals(update.ParentHash, HeaderHashes.Last())
-                )
+                if (operation.Spent != revert)
                 {
-                    throw new InvalidOperationException("UTXO update does not follow previous update.");
+                    if (createdOutputs.Remove(operation.Output.OutPoint))
+                    {
+                        // Output was created and spent withing the same batch. No changes to UnspentOutputs will be required.
+                    }
+                    else
+                    {
+                        spentOutputs.Add(operation.Output.OutPoint);
+                    }
                 }
-            }
-
-            HeaderHashes.Add(update.HeaderHash);
-
-            foreach (UtxoOutput output in update.ExistingSpentOutputs)
-            {
-                // todo: this seems to be a wrong place to set heigh
-                UtxoOutput spentOutput = output.Spend(update.Height);
-
-                AllSpentOutputs.Add(spentOutput);
-
-                if (!UnspentOutputs.Remove(output.OutputPoint))
+                else
                 {
-                    ExistingSpentOutputs.Add(spentOutput);
+                    createdOutputs.Add(operation.Output.OutPoint, operation.Output);
                 }
-            }
-
-            foreach (UtxoOutput output in update.CreatedUnspentOutputs)
-            {
-                UnspentOutputs.Add(output.OutputPoint, output);
             }
         }
     }

@@ -36,19 +36,19 @@ namespace Test.BitcoinUtilities.Node.Services.Outputs
             byte[] header2 = CryptoUtils.DoubleSha256(Encoding.ASCII.GetBytes("header2"));
             byte[] header2Tx1 = CryptoUtils.DoubleSha256(Encoding.ASCII.GetBytes("header2Tx1"));
 
-            UtxoOutput header0Tx1Out0 = new UtxoOutput(new TxOutPoint(header0Tx1, 0), 0, 100, new byte[] {0, 1, 0}, -1);
-            UtxoOutput header0Tx1Out1 = new UtxoOutput(new TxOutPoint(header0Tx1, 1), 0, 200, new byte[] {0, 1, 1}, -1);
-            UtxoOutput header0Tx2Out0 = new UtxoOutput(new TxOutPoint(header0Tx2, 0), 0, 300, new byte[] {0, 2, 0}, -1);
-            UtxoOutput header0Tx2Out1 = new UtxoOutput(new TxOutPoint(header0Tx2, 1), 0, 400, new byte[] {0, 2, 1}, -1);
+            UtxoOutput header0Tx1Out0 = new UtxoOutput(new TxOutPoint(header0Tx1, 0), 100, new byte[] {0, 1, 0});
+            UtxoOutput header0Tx1Out1 = new UtxoOutput(new TxOutPoint(header0Tx1, 1), 200, new byte[] {0, 1, 1});
+            UtxoOutput header0Tx2Out0 = new UtxoOutput(new TxOutPoint(header0Tx2, 0), 300, new byte[] {0, 2, 0});
+            UtxoOutput header0Tx2Out1 = new UtxoOutput(new TxOutPoint(header0Tx2, 1), 400, new byte[] {0, 2, 1});
 
-            UtxoOutput header1Tx1Out0 = new UtxoOutput(new TxOutPoint(header1Tx1, 0), 1, 500, new byte[] {1, 1, 0}, -1);
-            UtxoOutput header1Tx2Out0 = new UtxoOutput(new TxOutPoint(header1Tx2, 0), 1, 600, new byte[] {1, 2, 0}, -1);
-            UtxoOutput header1Tx2Out1 = new UtxoOutput(new TxOutPoint(header1Tx2, 1), 1, 700, new byte[] {1, 2, 1}, -1);
+            UtxoOutput header1Tx1Out0 = new UtxoOutput(new TxOutPoint(header1Tx1, 0), 500, new byte[] {1, 1, 0});
+            UtxoOutput header1Tx2Out0 = new UtxoOutput(new TxOutPoint(header1Tx2, 0), 600, new byte[] {1, 2, 0});
+            UtxoOutput header1Tx2Out1 = new UtxoOutput(new TxOutPoint(header1Tx2, 1), 700, new byte[] {1, 2, 1});
 
-            UtxoOutput header2Tx1Out0 = new UtxoOutput(new TxOutPoint(header2Tx1, 0), 2, 0x1234567890123450ul, new byte[] {1, 2, 0}, -1);
-            UtxoOutput header2Tx1Out1 = new UtxoOutput(new TxOutPoint(header2Tx1, 1), 2, 0xF234567890123450ul, new byte[] {2, 1, 1}, -1);
+            UtxoOutput header2Tx1Out0 = new UtxoOutput(new TxOutPoint(header2Tx1, 0), 0x1234567890123450ul, new byte[] {1, 2, 0});
+            UtxoOutput header2Tx1Out1 = new UtxoOutput(new TxOutPoint(header2Tx1, 1), 0xF234567890123450ul, new byte[] {2, 1, 1});
 
-            var allTxHashes = new List<byte[]>
+            var allTxHashes = new HashSet<byte[]>(ByteArrayComparer.Instance)
             {
                 header0Tx1,
                 header0Tx2,
@@ -62,27 +62,27 @@ namespace Test.BitcoinUtilities.Node.Services.Outputs
             using (UtxoStorage storage1 = UtxoStorage.Open(filename))
             {
                 var update0 = new UtxoUpdate(0, header0, new byte[32]);
-                update0.CreatedUnspentOutputs.Add(header0Tx1Out0);
-                update0.CreatedUnspentOutputs.Add(header0Tx1Out1);
-                update0.CreatedUnspentOutputs.Add(header0Tx2Out0);
-                update0.CreatedUnspentOutputs.Add(header0Tx2Out1);
+                update0.Operations.Add(UtxoOperation.Create(header0Tx1Out0));
+                update0.Operations.Add(UtxoOperation.Create(header0Tx1Out1));
+                update0.Operations.Add(UtxoOperation.Create(header0Tx2Out0));
+                update0.Operations.Add(UtxoOperation.Create(header0Tx2Out1));
 
                 storage1.Update(update0);
 
                 var update1 = new UtxoUpdate(1, header1, header0);
-                update1.ExistingSpentOutputs.Add(header0Tx1Out0);
-                update1.ExistingSpentOutputs.Add(header0Tx2Out1);
-                update1.CreatedUnspentOutputs.Add(header1Tx1Out0);
-                update1.CreatedUnspentOutputs.Add(header1Tx2Out0);
-                update1.CreatedUnspentOutputs.Add(header1Tx2Out1);
+                update1.Operations.Add(UtxoOperation.Spend(header0Tx1Out0));
+                update1.Operations.Add(UtxoOperation.Spend(header0Tx2Out1));
+                update1.Operations.Add(UtxoOperation.Create(header1Tx1Out0));
+                update1.Operations.Add(UtxoOperation.Create(header1Tx2Out0));
+                update1.Operations.Add(UtxoOperation.Create(header1Tx2Out1));
 
                 storage1.Update(update1);
 
                 var update2 = new UtxoUpdate(2, header2, header1);
-                update2.ExistingSpentOutputs.Add(header0Tx1Out1);
-                update2.ExistingSpentOutputs.Add(header1Tx2Out0);
-                update2.CreatedUnspentOutputs.Add(header2Tx1Out0);
-                update2.CreatedUnspentOutputs.Add(header2Tx1Out1);
+                update2.Operations.Add(UtxoOperation.Spend(header0Tx1Out1));
+                update2.Operations.Add(UtxoOperation.Spend(header1Tx2Out0));
+                update2.Operations.Add(UtxoOperation.Create(header2Tx1Out0));
+                update2.Operations.Add(UtxoOperation.Create(header2Tx1Out1));
 
                 storage1.Update(update2);
             }
@@ -136,19 +136,19 @@ namespace Test.BitcoinUtilities.Node.Services.Outputs
             byte[] header2 = CryptoUtils.DoubleSha256(Encoding.ASCII.GetBytes("header2"));
             byte[] header2Tx1 = CryptoUtils.DoubleSha256(Encoding.ASCII.GetBytes("header2Tx1"));
 
-            UtxoOutput header0Tx1Out0 = new UtxoOutput(new TxOutPoint(header0Tx1, 0), 0, 100, new byte[] {0, 1, 0}, -1);
-            UtxoOutput header0Tx1Out1 = new UtxoOutput(new TxOutPoint(header0Tx1, 1), 0, 200, new byte[] {0, 1, 1}, -1);
-            UtxoOutput header0Tx2Out0 = new UtxoOutput(new TxOutPoint(header0Tx2, 0), 0, 300, new byte[] {0, 2, 0}, -1);
-            UtxoOutput header0Tx2Out1 = new UtxoOutput(new TxOutPoint(header0Tx2, 1), 0, 400, new byte[] {0, 2, 1}, -1);
+            UtxoOutput header0Tx1Out0 = new UtxoOutput(new TxOutPoint(header0Tx1, 0), 100, new byte[] {0, 1, 0});
+            UtxoOutput header0Tx1Out1 = new UtxoOutput(new TxOutPoint(header0Tx1, 1), 200, new byte[] {0, 1, 1});
+            UtxoOutput header0Tx2Out0 = new UtxoOutput(new TxOutPoint(header0Tx2, 0), 300, new byte[] {0, 2, 0});
+            UtxoOutput header0Tx2Out1 = new UtxoOutput(new TxOutPoint(header0Tx2, 1), 400, new byte[] {0, 2, 1});
 
-            UtxoOutput header1Tx1Out0 = new UtxoOutput(new TxOutPoint(header1Tx1, 0), 1, 500, new byte[] {1, 1, 0}, -1);
-            UtxoOutput header1Tx2Out0 = new UtxoOutput(new TxOutPoint(header1Tx2, 0), 1, 600, new byte[] {1, 2, 0}, -1);
-            UtxoOutput header1Tx2Out1 = new UtxoOutput(new TxOutPoint(header1Tx2, 1), 1, 700, new byte[] {1, 2, 1}, -1);
+            UtxoOutput header1Tx1Out0 = new UtxoOutput(new TxOutPoint(header1Tx1, 0), 500, new byte[] {1, 1, 0});
+            UtxoOutput header1Tx2Out0 = new UtxoOutput(new TxOutPoint(header1Tx2, 0), 600, new byte[] {1, 2, 0});
+            UtxoOutput header1Tx2Out1 = new UtxoOutput(new TxOutPoint(header1Tx2, 1), 700, new byte[] {1, 2, 1});
 
-            UtxoOutput header2Tx1Out0 = new UtxoOutput(new TxOutPoint(header2Tx1, 0), 2, 0x1234567890123450ul, new byte[] {1, 2, 0}, -1);
-            UtxoOutput header2Tx1Out1 = new UtxoOutput(new TxOutPoint(header2Tx1, 1), 2, 0xF234567890123450ul, new byte[] {2, 1, 1}, -1);
+            UtxoOutput header2Tx1Out0 = new UtxoOutput(new TxOutPoint(header2Tx1, 0), 0x1234567890123450ul, new byte[] {1, 2, 0});
+            UtxoOutput header2Tx1Out1 = new UtxoOutput(new TxOutPoint(header2Tx1, 1), 0xF234567890123450ul, new byte[] {2, 1, 1});
 
-            var allTxHashes = new List<byte[]>
+            var allTxHashes = new HashSet<byte[]>(ByteArrayComparer.Instance)
             {
                 header0Tx1,
                 header0Tx2,
@@ -162,25 +162,25 @@ namespace Test.BitcoinUtilities.Node.Services.Outputs
             using (UtxoStorage storage1 = UtxoStorage.Open(filename))
             {
                 var update0 = new UtxoUpdate(0, header0, new byte[32]);
-                update0.CreatedUnspentOutputs.Add(header0Tx1Out0);
-                update0.CreatedUnspentOutputs.Add(header0Tx1Out1);
-                update0.CreatedUnspentOutputs.Add(header0Tx2Out0);
-                update0.CreatedUnspentOutputs.Add(header0Tx2Out1);
+                update0.Operations.Add(UtxoOperation.Create(header0Tx1Out0));
+                update0.Operations.Add(UtxoOperation.Create(header0Tx1Out1));
+                update0.Operations.Add(UtxoOperation.Create(header0Tx2Out0));
+                update0.Operations.Add(UtxoOperation.Create(header0Tx2Out1));
 
 
                 var update1 = new UtxoUpdate(1, header1, header0);
-                update1.ExistingSpentOutputs.Add(header0Tx1Out0);
-                update1.ExistingSpentOutputs.Add(header0Tx2Out1);
-                update1.CreatedUnspentOutputs.Add(header1Tx1Out0);
-                update1.CreatedUnspentOutputs.Add(header1Tx2Out0);
-                update1.CreatedUnspentOutputs.Add(header1Tx2Out1);
+                update1.Operations.Add(UtxoOperation.Spend(header0Tx1Out0));
+                update1.Operations.Add(UtxoOperation.Spend(header0Tx2Out1));
+                update1.Operations.Add(UtxoOperation.Create(header1Tx1Out0));
+                update1.Operations.Add(UtxoOperation.Create(header1Tx2Out0));
+                update1.Operations.Add(UtxoOperation.Create(header1Tx2Out1));
 
 
                 var update2 = new UtxoUpdate(2, header2, header1);
-                update2.ExistingSpentOutputs.Add(header0Tx1Out1);
-                update2.ExistingSpentOutputs.Add(header1Tx2Out0);
-                update2.CreatedUnspentOutputs.Add(header2Tx1Out0);
-                update2.CreatedUnspentOutputs.Add(header2Tx1Out1);
+                update2.Operations.Add(UtxoOperation.Spend(header0Tx1Out1));
+                update2.Operations.Add(UtxoOperation.Spend(header1Tx2Out0));
+                update2.Operations.Add(UtxoOperation.Create(header2Tx1Out0));
+                update2.Operations.Add(UtxoOperation.Create(header2Tx1Out1));
 
 
                 storage1.Update(new UtxoUpdate[] {update0, update1, update2});
@@ -246,8 +246,8 @@ namespace Test.BitcoinUtilities.Node.Services.Outputs
                         for (int outputIndex = 0; outputIndex < 2; outputIndex++)
                         {
                             TxOutPoint outPoint = new TxOutPoint(txHash, outputIndex);
-                            UtxoOutput output = new UtxoOutput(outPoint, height, 123, new byte[] {32}, -1);
-                            update.CreatedUnspentOutputs.Add(output);
+                            UtxoOutput output = new UtxoOutput(outPoint, 123, new byte[] {32});
+                            update.Operations.Add(UtxoOperation.Create(output));
                         }
                     }
 
@@ -258,14 +258,15 @@ namespace Test.BitcoinUtilities.Node.Services.Outputs
                         {
                             int outputIndex = random.Next(existingOutputs.Count);
 
-                            update.ExistingSpentOutputs.Add(existingOutputs[outputIndex]);
+                            update.Operations.Add(UtxoOperation.Spend(existingOutputs[outputIndex]));
 
                             existingOutputs[outputIndex] = existingOutputs[existingOutputs.Count - 1];
                             existingOutputs.RemoveAt(existingOutputs.Count - 1);
                         }
 
-                        var requiredOutPoints = new HashSet<TxOutPoint>(update.ExistingSpentOutputs.Select(o => o.OutputPoint));
-                        var requiredTxHashes = new HashSet<byte[]>(requiredOutPoints.Select(o => o.Hash));
+                        var spendingOperations = update.Operations.Where(o => o.Spent).ToList();
+                        var requiredOutPoints = new HashSet<TxOutPoint>(spendingOperations.Select(o => o.Output.OutPoint));
+                        var requiredTxHashes = new HashSet<byte[]>(requiredOutPoints.Select(o => o.Hash), ByteArrayComparer.Instance);
                         // emulating searches for already spent transactions
                         requiredTxHashes.Add(CryptoUtils.DoubleSha256(Encoding.ASCII.GetBytes($"Header: {height}, Tx: Fake1")));
                         requiredTxHashes.Add(CryptoUtils.DoubleSha256(Encoding.ASCII.GetBytes($"Header: {height}, Tx: Fake2")));
@@ -275,28 +276,30 @@ namespace Test.BitcoinUtilities.Node.Services.Outputs
                         Stopwatch sw = Stopwatch.StartNew();
 
                         IReadOnlyCollection<UtxoOutput> foundOutputs = storage.GetUnspentOutputs(requiredTxHashes)
-                            .Where(o => requiredOutPoints.Contains(o.OutputPoint))
+                            .Where(o => requiredOutPoints.Contains(o.OutPoint))
                             .ToList();
                         File.AppendAllText(logFilename,
-                            $"Read {foundOutputs.Count} of {update.ExistingSpentOutputs.Count} outputs" +
+                            $"Read {foundOutputs.Count} of {spendingOperations.Count} outputs" +
                             $" to spend in header {height} in {sw.ElapsedMilliseconds} ms.\r\n");
 
                         sw.Restart();
 
-                        Dictionary<TxOutPoint, UtxoOutput> foundOutputsByOutPoint = foundOutputs.ToDictionary(o => o.OutputPoint);
+                        Dictionary<TxOutPoint, UtxoOutput> foundOutputsByOutPoint = foundOutputs.ToDictionary(o => o.OutPoint);
 
                         foreach (UtxoUpdate pendingUpdate in pendingUpdates)
                         {
-                            foreach (var output in pendingUpdate.ExistingSpentOutputs)
+                            foreach (var operation in pendingUpdate.Operations.Where(op => requiredOutPoints.Contains(op.Output.OutPoint)))
                             {
-                                foundOutputsByOutPoint.Remove(output.OutputPoint);
-                            }
-
-                            foreach (var output in pendingUpdate.CreatedUnspentOutputs)
-                            {
-                                if (requiredOutPoints.Contains(output.OutputPoint))
+                                if (operation.Spent)
                                 {
-                                    foundOutputsByOutPoint.Add(output.OutputPoint, output);
+                                    if (!foundOutputsByOutPoint.Remove(operation.Output.OutPoint))
+                                    {
+                                        throw new InvalidOperationException("Spending non-existing output.");
+                                    }
+                                }
+                                else
+                                {
+                                    foundOutputsByOutPoint.Add(operation.Output.OutPoint, operation.Output);
                                 }
                             }
                         }
@@ -314,7 +317,9 @@ namespace Test.BitcoinUtilities.Node.Services.Outputs
                     }
 
                     pendingUpdates.Add(update);
-                    existingOutputs.AddRange(update.CreatedUnspentOutputs);
+                    var tempAggregate = new UtxoAggregateUpdate();
+                    tempAggregate.Add(update.Operations);
+                    existingOutputs.AddRange(tempAggregate.CreatedOutputs);
 
                     if (pendingUpdates.Count >= 100)
                     {
@@ -331,9 +336,8 @@ namespace Test.BitcoinUtilities.Node.Services.Outputs
         private string[] SortAndFormat(IEnumerable<UtxoOutput> outputs)
         {
             return outputs
-                .OrderBy(o => o.Height)
-                .ThenBy(o => HexUtils.GetString(o.OutputPoint.Hash))
-                .ThenBy(o => o.OutputPoint.Index)
+                .OrderBy(o => HexUtils.GetString(o.OutPoint.Hash))
+                .ThenBy(o => o.OutPoint.Index)
                 .Select(FormatOutput)
                 .ToArray();
         }
@@ -341,12 +345,10 @@ namespace Test.BitcoinUtilities.Node.Services.Outputs
         private string FormatOutput(UtxoOutput output)
         {
             return string.Join(", ",
-                $"Height: {output.Height}",
-                $"TxHash: {HexUtils.GetString(output.OutputPoint.Hash)}",
-                $"OutputIndex: {output.OutputPoint.Index}",
+                $"TxHash: {HexUtils.GetString(output.OutPoint.Hash)}",
+                $"OutputIndex: {output.OutPoint.Index}",
                 $"Value: {output.Value}",
-                $"PubkeyScript: {HexUtils.GetString(output.PubkeyScript)}",
-                $"SpentHeight: {output.SpentHeight}"
+                $"PubkeyScript: {HexUtils.GetString(output.PubkeyScript)}"
             );
         }
     }

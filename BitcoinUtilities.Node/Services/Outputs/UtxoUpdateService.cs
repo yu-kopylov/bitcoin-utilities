@@ -25,9 +25,9 @@ namespace BitcoinUtilities.Node.Services.Outputs
 
         private readonly PerformanceCounters performanceCounters = new PerformanceCounters(logger);
 
-        private readonly Queue<UnsavedUtxoUpdate> updatesAwaitingValidation = new Queue<UnsavedUtxoUpdate>();
-        private readonly Queue<UnsavedUtxoUpdate> validatedUpdates = new Queue<UnsavedUtxoUpdate>();
-        private readonly Queue<UnsavedUtxoUpdate> unsavedUpdates = new Queue<UnsavedUtxoUpdate>();
+        private readonly Queue<UtxoUpdate> updatesAwaitingValidation = new Queue<UtxoUpdate>();
+        private readonly Queue<UtxoUpdate> validatedUpdates = new Queue<UtxoUpdate>();
+        private readonly Queue<UtxoUpdate> unsavedUpdates = new Queue<UtxoUpdate>();
 
         private UtxoHeader lastSavedHeader;
         private UtxoHeader lastProcessedHeader;
@@ -209,38 +209,45 @@ namespace BitcoinUtilities.Node.Services.Outputs
             var processedTransactions = txProcessor.UpdateOutputs(outputSet, header.Height, header.Hash, block);
 
             UtxoUpdate update = new UtxoUpdate(header.Height, header.Hash, header.ParentHash);
-            update.ExistingSpentOutputs.AddRange(outputSet.ExistingSpentOutputs);
-            update.CreatedUnspentOutputs.AddRange(outputSet.CreatedUnspentOutputs);
+            update.Operations.AddRange(outputSet.Operations);
 
-            var unsavedUpdate = new UnsavedUtxoUpdate(header, update);
-            updatesAwaitingValidation.Enqueue(unsavedUpdate);
-            unsavedUpdates.Enqueue(unsavedUpdate);
+            updatesAwaitingValidation.Enqueue(update);
+            unsavedUpdates.Enqueue(update);
 
             lastProcessedHeader = new UtxoHeader(header.Hash, header.Height, true);
 
             eventDispatcher.Raise(new SignatureValidationRequest(header, processedTransactions));
         }
 
-        private void Replay(UpdatableOutputSet outputSet, HashSet<byte[]> relatedTxHashes, UnsavedUtxoUpdate unsavedUtxoUpdate)
+        private void Replay(UpdatableOutputSet outputSet, HashSet<byte[]> relatedTxHashes, UtxoUpdate unsavedUtxoUpdate)
         {
-            foreach (var output in unsavedUtxoUpdate.UtxoUpdate.ExistingSpentOutputs.Where(o => relatedTxHashes.Contains(o.OutputPoint.Hash)))
+            foreach (UtxoOperation operation in unsavedUtxoUpdate.Operations)
             {
-                var outputInSet = outputSet.FindUnspentOutput(output.OutputPoint);
-                outputSet.Spend(outputInSet, unsavedUtxoUpdate.Header.Height);
+                UtxoOutput output = operation.Output;
+                TxOutPoint outPoint = output.OutPoint;
+
+                if (!relatedTxHashes.Contains(outPoint.Hash))
+                {
+                    continue;
+                }
+
+                if (operation.Spent)
+                {
+                    outputSet.Spend(output);
+                }
+                else
+                {
+                    outputSet.CreateUnspentOutput(outPoint.Hash, outPoint.Index, output.Value, output.PubkeyScript);
+                }
             }
 
-            foreach (var output in unsavedUtxoUpdate.UtxoUpdate.CreatedUnspentOutputs.Where(o => relatedTxHashes.Contains(o.OutputPoint.Hash)))
-            {
-                outputSet.CreateUnspentOutput(output.OutputPoint.Hash, output.OutputPoint.Index, unsavedUtxoUpdate.Header.Height, new TxOut(output.Value, output.PubkeyScript));
-            }
-
-            outputSet.MoveCreatedToExisting();
+            outputSet.ClearOperations();
         }
 
         private void SaveValidatedBlock(SignatureValidationResponse validationResponse)
         {
             performanceCounters.SavingStarted();
-            if (updatesAwaitingValidation.Count == 0 || !updatesAwaitingValidation.Peek().Header.Hash.SequenceEqual(validationResponse.Header.Hash))
+            if (updatesAwaitingValidation.Count == 0 || !updatesAwaitingValidation.Peek().HeaderHash.SequenceEqual(validationResponse.Header.Hash))
             {
                 throw new InvalidOperationException("Something went wrong, we got validation response not for the first block in queue.");
             }
@@ -261,7 +268,7 @@ namespace BitcoinUtilities.Node.Services.Outputs
         {
             // todo: method is internal for tests only
             var nextHeader = GetNextHeaderInChain(lastSavedHeader);
-            if (nextHeader == null || !nextHeader.Hash.SequenceEqual(validatedUpdates.Peek().Header.Hash))
+            if (nextHeader == null || !nextHeader.Hash.SequenceEqual(validatedUpdates.Peek().HeaderHash))
             {
                 throw new InvalidOperationException("Something went wrong. First block no longer matches either storage state or the current chain.");
             }
@@ -276,12 +283,12 @@ namespace BitcoinUtilities.Node.Services.Outputs
                     throw new InvalidOperationException("Something went wrong. Order of blocks in validated queue and unsaved queue is different.");
                 }
 
-                updatesToSave.Add(update.UtxoUpdate);
+                updatesToSave.Add(update);
             }
 
             validatedUpdates.Clear();
 
-            // todo: what is storage throws exception?
+            // todo: what if storage throws exception?
             utxoStorage.Update(updatesToSave);
             lastSavedHeader = utxoStorage.GetLastHeader();
             eventDispatcher.Raise(new UtxoChangedEvent(lastSavedHeader.Hash, lastSavedHeader.Height));
@@ -304,18 +311,6 @@ namespace BitcoinUtilities.Node.Services.Outputs
         private static int GetNextBlockHeight(UtxoHeader currentHeader)
         {
             return currentHeader == null ? 0 : currentHeader.Height + 1;
-        }
-
-        private class UnsavedUtxoUpdate
-        {
-            public UnsavedUtxoUpdate(DbHeader header, UtxoUpdate utxoUpdate)
-            {
-                Header = header;
-                UtxoUpdate = utxoUpdate;
-            }
-
-            public DbHeader Header { get; }
-            public UtxoUpdate UtxoUpdate { get; }
         }
     }
 }

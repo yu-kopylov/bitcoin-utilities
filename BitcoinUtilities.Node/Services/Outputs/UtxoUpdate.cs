@@ -14,7 +14,6 @@ namespace BitcoinUtilities.Node.Services.Outputs
         public int Height { get; }
         public byte[] HeaderHash { get; }
         public byte[] ParentHash { get; }
-        public List<UtxoOutput> ExistingSpentOutputs { get; } = new List<UtxoOutput>();
-        public List<UtxoOutput> CreatedUnspentOutputs { get; } = new List<UtxoOutput>();
+        public List<UtxoOperation> Operations { get; } = new List<UtxoOperation>();
     }
 }

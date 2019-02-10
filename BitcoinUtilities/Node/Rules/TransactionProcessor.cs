@@ -40,10 +40,10 @@ namespace BitcoinUtilities.Node.Rules
                     //todo: use network settings
                     if (blockHeight == 91842 || blockHeight == 91880)
                     {
-                        // this blocks are exceptions from BIP-30
-                        foreach (TOutput unspentOutput in unspentOutputs)
+                        // those blocks are exceptions from BIP-30
+                        foreach (TOutput output in unspentOutputs)
                         {
-                            outputs.Spend(unspentOutput, blockHeight);
+                            outputs.Spend(output);
                         }
                     }
                     else
@@ -96,7 +96,7 @@ namespace BitcoinUtilities.Node.Rules
                                 $" has forbidden commands in the signature script.");
                         }
 
-                        outputs.Spend(output, blockHeight);
+                        outputs.Spend(output);
                         transactionInputs[inputNum] = new TransactionInput(output.Value, output.PubkeyScript);
                     }
 
@@ -119,7 +119,7 @@ namespace BitcoinUtilities.Node.Rules
                             $" has an invalid pubkey script.");
                     }
 
-                    outputs.CreateUnspentOutput(transactionHash, outputNumber, blockHeight, output);
+                    outputs.CreateUnspentOutput(transactionHash, outputNumber, output.Value, output.PubkeyScript);
                 }
 
                 if (transactionNumber != 0 && transactionInputsSum < transactionOutputsSum)

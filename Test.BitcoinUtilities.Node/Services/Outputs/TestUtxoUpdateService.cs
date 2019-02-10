@@ -92,10 +92,10 @@ namespace Test.BitcoinUtilities.Node.Services.Outputs
                     .SelectMany(tx => tx.Outputs)
                     .ToList();
 
-                var allTxHashes = blocks
+                var allTxHashes = new HashSet<byte[]>(blocks
                     .SelectMany(b => b.Transactions)
                     .Select(tx => tx.Hash)
-                    .ToList();
+                );
 
                 var unspentOutputs = utxoStorage.GetUnspentOutputs(allTxHashes);
 

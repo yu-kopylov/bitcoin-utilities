@@ -76,6 +76,11 @@ namespace BitcoinUtilities.Node.Services.Blocks
 
             newRequests.AddRange(requestableBlocks.Skip(10 + random.Next(190)).Take(1));
             newRequests.AddRange(requestableBlocks.Skip(10 + random.Next(190)).Except(newRequests).Take(1));
+            int extraRequestCount = random.Next(3);
+            for (int i = 0; i < extraRequestCount; i++)
+            {
+                newRequests.AddRange(requestableBlocks.Skip(10 + random.Next(190)).Except(newRequests).Take(1));
+            }
 
             if (newRequests.Any())
             {
