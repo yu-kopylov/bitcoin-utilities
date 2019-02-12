@@ -1,5 +1,5 @@
 ﻿using System.Collections.Generic;
-using BitcoinUtilities.Node.Services.Headers;
+using BitcoinUtilities.Node.Modules.Headers;
 using BitcoinUtilities.P2P.Messages;
 
 namespace BitcoinUtilities.Node.Events

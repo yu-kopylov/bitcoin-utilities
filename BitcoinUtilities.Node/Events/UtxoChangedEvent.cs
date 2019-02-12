@@ -1,5 +1,4 @@
-﻿using BitcoinUtilities.Node.Services.Headers;
-using BitcoinUtilities.Node.Services.Outputs;
+﻿using BitcoinUtilities.Node.Modules.Outputs;
 
 namespace BitcoinUtilities.Node.Events
 {

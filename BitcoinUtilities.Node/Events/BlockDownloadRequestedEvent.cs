@@ -1,4 +1,4 @@
-﻿using BitcoinUtilities.Node.Services.Blocks;
+﻿using BitcoinUtilities.Node.Modules.Blocks;
 
 namespace BitcoinUtilities.Node.Events
 {

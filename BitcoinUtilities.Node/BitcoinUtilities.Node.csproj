@@ -65,34 +65,34 @@
     <Compile Include="Events\UtxoChangedEvent.cs" />
     <Compile Include="Components\INodeModule.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Services\Blocks\BlockDownloadService.cs" />
-    <Compile Include="Services\Blocks\BlocksModule.cs" />
-    <Compile Include="Services\Blocks\BlockRepository.cs" />
-    <Compile Include="Services\Blocks\BlockRequestCollection.cs" />
-    <Compile Include="Services\Blocks\BlockDownloadService.PerformanceCounters.cs" />
-    <Compile Include="Services\Discovery\NodeDiscoveryModule.cs" />
-    <Compile Include="Services\Headers\Blockchain.cs" />
-    <Compile Include="Services\Headers\DbHeader.cs" />
-    <Compile Include="Services\Headers\HeaderDownloadService.cs" />
-    <Compile Include="Services\Headers\HeadersModule.cs" />
-    <Compile Include="Services\Headers\HeaderStorage.cs" />
-    <Compile Include="Services\Headers\HeaderSubChain.cs" />
-    <Compile Include="Services\Discovery\NodeDiscoveryService.cs" />
+    <Compile Include="Modules\Blocks\BlockDownloadService.cs" />
+    <Compile Include="Modules\Blocks\BlocksModule.cs" />
+    <Compile Include="Modules\Blocks\BlockRepository.cs" />
+    <Compile Include="Modules\Blocks\BlockRequestCollection.cs" />
+    <Compile Include="Modules\Blocks\BlockDownloadService.PerformanceCounters.cs" />
+    <Compile Include="Modules\Discovery\NodeDiscoveryModule.cs" />
+    <Compile Include="Modules\Headers\Blockchain.cs" />
+    <Compile Include="Modules\Headers\DbHeader.cs" />
+    <Compile Include="Modules\Headers\HeaderDownloadService.cs" />
+    <Compile Include="Modules\Headers\HeadersModule.cs" />
+    <Compile Include="Modules\Headers\HeaderStorage.cs" />
+    <Compile Include="Modules\Headers\HeaderSubChain.cs" />
+    <Compile Include="Modules\Discovery\NodeDiscoveryService.cs" />
     <Compile Include="Components\EndpointEventHandlingService.cs" />
-    <Compile Include="Services\Outputs\Events\SignatureValidationResponse.cs" />
-    <Compile Include="Services\Outputs\Events\SignatureValidationRequest.cs" />
-    <Compile Include="Services\Outputs\SignatureValidationService.cs" />
-    <Compile Include="Services\Outputs\UtxoModule.cs" />
-    <Compile Include="Services\Outputs\UtxoOperation.cs" />
-    <Compile Include="Services\Outputs\UtxoUpdateService.PerformanceCounters.cs" />
-    <Compile Include="Services\Outputs\UpdatableOutputSet.cs" />
-    <Compile Include="Services\Outputs\UtxoAggregateUpdate.cs" />
-    <Compile Include="Services\Outputs\UtxoHeader.cs" />
-    <Compile Include="Services\Outputs\UtxoOutput.cs" />
-    <Compile Include="Services\Outputs\UtxoStorage.cs" />
-    <Compile Include="Services\Outputs\UtxoUpdate.cs" />
-    <Compile Include="Services\Outputs\UtxoUpdateService.cs" />
-    <Compile Include="Services\SqliteUtils.cs" />
+    <Compile Include="Modules\Outputs\Events\SignatureValidationResponse.cs" />
+    <Compile Include="Modules\Outputs\Events\SignatureValidationRequest.cs" />
+    <Compile Include="Modules\Outputs\SignatureValidationService.cs" />
+    <Compile Include="Modules\Outputs\UtxoModule.cs" />
+    <Compile Include="Modules\Outputs\UtxoOperation.cs" />
+    <Compile Include="Modules\Outputs\UtxoUpdateService.PerformanceCounters.cs" />
+    <Compile Include="Modules\Outputs\UpdatableOutputSet.cs" />
+    <Compile Include="Modules\Outputs\UtxoAggregateUpdate.cs" />
+    <Compile Include="Modules\Outputs\UtxoHeader.cs" />
+    <Compile Include="Modules\Outputs\UtxoOutput.cs" />
+    <Compile Include="Modules\Outputs\UtxoStorage.cs" />
+    <Compile Include="Modules\Outputs\UtxoUpdate.cs" />
+    <Compile Include="Modules\Outputs\UtxoUpdateService.cs" />
+    <Compile Include="Modules\SqliteUtils.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\BitcoinUtilities\BitcoinUtilities.csproj">
@@ -108,10 +108,10 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="Services\Headers\headers-create.sql" />
+    <EmbeddedResource Include="Modules\Headers\headers-create.sql" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="Services\Outputs\utxo-create.sql" />
+    <EmbeddedResource Include="Modules\Outputs\utxo-create.sql" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="..\packages\System.Data.SQLite.Core.1.0.109.2\build\net46\System.Data.SQLite.Core.targets" Condition="Exists('..\packages\System.Data.SQLite.Core.1.0.109.2\build\net46\System.Data.SQLite.Core.targets')" />

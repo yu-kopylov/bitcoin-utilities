@@ -52,11 +52,11 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Services\Headers\TestBlockchain.cs" />
-    <Compile Include="Services\Headers\TestHeaderStorage.cs" />
-    <Compile Include="Services\Outputs\TestUpdatableOutputSet.cs" />
-    <Compile Include="Services\Outputs\TestUtxoStorage.cs" />
-    <Compile Include="Services\Outputs\TestUtxoUpdateService.cs" />
+    <Compile Include="Modules\Headers\TestBlockchain.cs" />
+    <Compile Include="Modules\Headers\TestHeaderStorage.cs" />
+    <Compile Include="Modules\Outputs\TestUpdatableOutputSet.cs" />
+    <Compile Include="Modules\Outputs\TestUtxoStorage.cs" />
+    <Compile Include="Modules\Outputs\TestUtxoUpdateService.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\BitcoinUtilities.Node\BitcoinUtilities.Node.csproj">
@@ -72,9 +72,7 @@
       <Name>TestUtilities</Name>
     </ProjectReference>
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Services\Blocks\" />
-  </ItemGroup>
+  <ItemGroup />
   <ItemGroup>
     <None Include="packages.config" />
   </ItemGroup>
