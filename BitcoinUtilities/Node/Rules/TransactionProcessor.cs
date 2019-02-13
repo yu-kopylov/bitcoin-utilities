@@ -108,17 +108,6 @@ namespace BitcoinUtilities.Node.Rules
                     TxOut output = transaction.Outputs[outputNumber];
                     //todo: check for overflow
                     transactionOutputsSum += output.Value;
-
-                    List<ScriptCommand> commands;
-                    if (!scriptParser.TryParse(output.PubkeyScript, out commands))
-                    {
-                        //todo: how Bitcoin Core works in this scenario?
-                        throw new BitcoinProtocolViolationException(
-                            $"The output of transaction '{HexUtils.GetString(transactionHash)}'" +
-                            $" in block '{HexUtils.GetString(blockHash)}'" +
-                            $" has an invalid pubkey script.");
-                    }
-
                     outputs.CreateUnspentOutput(transactionHash, outputNumber, output.Value, output.PubkeyScript);
                 }
 
