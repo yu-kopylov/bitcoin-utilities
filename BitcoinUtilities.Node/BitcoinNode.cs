@@ -98,7 +98,7 @@ namespace BitcoinUtilities.Node
             get { return networkParameters; }
         }
 
-        public EventServiceController EventServiceController
+        public IEventDispatcher EventDispatcher
         {
             get { return eventServiceController; }
         }
@@ -118,6 +118,11 @@ namespace BitcoinUtilities.Node
         private void OnPropertyChanged([CallerMemberName] string propertyName = null)
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
+
+        public void AddModule(INodeModule module)
+        {
+            modules.Add(module);
         }
 
         public void Start()

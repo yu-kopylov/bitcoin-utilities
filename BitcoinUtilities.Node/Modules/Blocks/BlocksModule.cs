@@ -11,7 +11,7 @@ namespace BitcoinUtilities.Node.Modules.Blocks
         public void CreateResources(BitcoinNode node, string dataFolder)
         {
             node.Resources.Add(new BlockRequestCollection());
-            node.Resources.Add(new BlockRepository(node.EventServiceController, node.Resources.Get<BlockRequestCollection>()));
+            node.Resources.Add(new BlockRepository(node.EventDispatcher, node.Resources.Get<BlockRequestCollection>()));
 
             var genesisBlock = node.NetworkParameters.GenesisBlock;
             byte[] genesisBlockHash = CryptoUtils.DoubleSha256(BitcoinStreamWriter.GetBytes(genesisBlock.BlockHeader.Write));

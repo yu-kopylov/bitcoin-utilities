@@ -17,7 +17,7 @@ namespace BitcoinUtilities.Node.Modules.Outputs
             try
             {
                 storage = UtxoStorage.Open(Path.Combine(dataFolder, "utxo.db"));
-                repository = new UtxoRepository(storage, node.EventServiceController);
+                repository = new UtxoRepository(storage, node.EventDispatcher);
                 node.Resources.Add(repository);
             }
             catch (Exception)
@@ -32,8 +32,8 @@ namespace BitcoinUtilities.Node.Modules.Outputs
         {
             return new IEventHandlingService[]
             {
-                new UtxoUpdateService(node.EventServiceController, node.Blockchain, node.Resources.Get<UtxoRepository>()),
-                new SignatureValidationService(node.EventServiceController)
+                new UtxoUpdateService(node.EventDispatcher, node.Blockchain, node.Resources.Get<UtxoRepository>()),
+                new SignatureValidationService(node.EventDispatcher)
             };
         }
 

@@ -6,7 +6,7 @@ namespace BitcoinUtilities.GUI.ViewModels
 {
     public class UIUpdaterService : EventHandlingService
     {
-        public UIUpdaterService(IViewContext viewContext, BitcoinNodeViewModel viewModel, ApplicationContext applicationContext, string nodeStateChangedEventType)
+        public UIUpdaterService(ApplicationContext applicationContext, IViewContext viewContext, BitcoinNodeViewModel viewModel, string nodeStateChangedEventType)
         {
             // todo: this service is prone to deadlocks on shutdown: (uiThread: "stop button" -> serviceThread.Join; serviceThread: event -> ui.invoke)
             On<NodeConnectionsChangedEvent>(e => applicationContext.EventManager.Notify(nodeStateChangedEventType));

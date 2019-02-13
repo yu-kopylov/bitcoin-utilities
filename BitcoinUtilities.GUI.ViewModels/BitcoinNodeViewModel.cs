@@ -113,6 +113,11 @@ namespace BitcoinUtilities.GUI.ViewModels
 
             string dataFolder = Path.Combine(applicationContext.Settings.BlockchainFolder, networkParameters.Name);
             BitcoinNode node = new BitcoinNode(networkParameters, dataFolder);
+
+            const string nodeStateChangedEventType = "NodeStateChanged";
+            // todo: rethink service -> UI notifications patterns
+            node.AddModule(new UIModule(applicationContext, viewContext, this, nodeStateChangedEventType));
+
             try
             {
                 node.Start();
@@ -132,11 +137,7 @@ namespace BitcoinUtilities.GUI.ViewModels
             }
 
             //todo: unregister handlers?
-            const string nodeStateChangedEventType = "NodeStateChanged";
             node.PropertyChanged += (sender, args) => applicationContext.EventManager.Notify(nodeStateChangedEventType);
-
-            // todo: rethink service -> UI notifications patterns
-            node.EventServiceController.AddService(new UIUpdaterService(viewContext, this, applicationContext, nodeStateChangedEventType));
 
             //todo: updates are too frequent, consider adding a delay to EventManager
             applicationContext.EventManager.Watch(nodeStateChangedEventType, OnNodePropertyChanged);
