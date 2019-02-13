@@ -18,6 +18,8 @@ namespace BitcoinUtilities.Node.Modules.Outputs
 
         private readonly SQLiteConnection[] connections;
 
+        private bool disposed;
+
         private UtxoStorage(SQLiteConnection[] connections)
         {
             this.connections = connections;
@@ -37,11 +39,18 @@ namespace BitcoinUtilities.Node.Modules.Outputs
 
         public void Dispose()
         {
+            if (disposed)
+            {
+                return;
+            }
+
             foreach (var connection in connections)
             {
                 connection.Close();
                 connection.Dispose();
             }
+
+            disposed = true;
         }
 
         private SQLiteConnection MainConnection

@@ -14,10 +14,11 @@ namespace BitcoinUtilities.Node.Components
         /// Creates resources that will be used by services.
         /// </summary>
         /// <param name="node">The node that will host services that will use created resources.</param>
-        void CreateResources(BitcoinNode node);
+        /// <param name="dataFolder">The folder that module should use to store its files.</param>
+        void CreateResources(BitcoinNode node, string dataFolder);
 
         /// <summary>
-        /// This method is called diring the start of a <see cref="BitcoinNode"/>.
+        /// This method is called during the start of a <see cref="BitcoinNode"/>.
         /// </summary>
         /// <param name="node">The node that will use created services.</param>
         /// <param name="cancellationToken">A cancellation token that can be used to stop long-running operations.</param>

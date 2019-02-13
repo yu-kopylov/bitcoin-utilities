@@ -32,10 +32,10 @@ namespace BitcoinUtilities.Node
         private readonly NodeResourceCollection resources = new NodeResourceCollection();
 
         private readonly NetworkParameters networkParameters;
+        private readonly string dataFolder;
 
         private readonly HeaderStorage headerStorage;
         private readonly Blockchain blockchain;
-        private readonly UtxoStorage utxoStorage;
 
         private NodeAddressCollection addressCollection;
         private NodeConnectionCollection connectionCollection;
@@ -48,6 +48,7 @@ namespace BitcoinUtilities.Node
         public BitcoinNode(NetworkParameters networkParameters, string dataFolder)
         {
             this.networkParameters = networkParameters;
+            this.dataFolder = dataFolder;
 
             Directory.CreateDirectory(dataFolder);
 
@@ -55,7 +56,6 @@ namespace BitcoinUtilities.Node
             // todo: align creation of files and folders
             this.headerStorage = HeaderStorage.Open(Path.Combine(dataFolder, "headers.db"));
             this.blockchain = new Blockchain(headerStorage, networkParameters.GenesisBlock.BlockHeader);
-            this.utxoStorage = UtxoStorage.Open(Path.Combine(dataFolder, "utxo.db"));
 
             modules.Add(new NodeDiscoveryModule());
             modules.Add(new HeadersModule());
@@ -69,7 +69,6 @@ namespace BitcoinUtilities.Node
 
             // todo: safely dispose all, even if one is failing
             headerStorage?.Dispose();
-            utxoStorage?.Dispose();
             cancellationTokenSource.Dispose();
         }
 
@@ -114,11 +113,6 @@ namespace BitcoinUtilities.Node
             get { return blockchain; }
         }
 
-        public UtxoStorage UtxoStorage
-        {
-            get { return utxoStorage; }
-        }
-
         public event PropertyChangedEventHandler PropertyChanged;
 
         private void OnPropertyChanged([CallerMemberName] string propertyName = null)
@@ -139,7 +133,7 @@ namespace BitcoinUtilities.Node
 
             foreach (var module in modules)
             {
-                module.CreateResources(this);
+                module.CreateResources(this, dataFolder);
             }
 
             foreach (var module in modules)

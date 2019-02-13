@@ -8,7 +8,7 @@ namespace BitcoinUtilities.Node.Modules.Headers
 {
     public class HeadersModule : INodeModule
     {
-        public void CreateResources(BitcoinNode node)
+        public void CreateResources(BitcoinNode node, string dataFolder)
         {
         }
 

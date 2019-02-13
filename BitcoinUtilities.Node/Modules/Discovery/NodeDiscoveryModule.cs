@@ -8,7 +8,7 @@ namespace BitcoinUtilities.Node.Modules.Discovery
 {
     public class NodeDiscoveryModule : INodeModule
     {
-        public void CreateResources(BitcoinNode node)
+        public void CreateResources(BitcoinNode node, string dataFolder)
         {
         }
 

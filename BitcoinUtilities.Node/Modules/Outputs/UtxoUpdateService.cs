@@ -18,7 +18,7 @@ namespace BitcoinUtilities.Node.Modules.Outputs
 
         private readonly IEventDispatcher eventDispatcher;
         private readonly Blockchain blockchain;
-        private readonly UtxoStorage utxoStorage;
+        private readonly UtxoRepository utxoRepository;
 
         private HeaderSubChain cachedChainForUpdate;
 
@@ -32,11 +32,11 @@ namespace BitcoinUtilities.Node.Modules.Outputs
         private UtxoHeader lastProcessedHeader;
         private DbHeader lastRequestedHeader;
 
-        public UtxoUpdateService(IEventDispatcher eventDispatcher, Blockchain blockchain, UtxoStorage utxoStorage)
+        public UtxoUpdateService(IEventDispatcher eventDispatcher, Blockchain blockchain, UtxoRepository utxoRepository)
         {
             this.eventDispatcher = eventDispatcher;
             this.blockchain = blockchain;
-            this.utxoStorage = utxoStorage;
+            this.utxoRepository = utxoRepository;
 
             // todo: do not call RequestBlocks in response to BestHeadChangedEvent too often
             On<BestHeadChangedEvent>(e => RequestBlocks());
@@ -49,7 +49,7 @@ namespace BitcoinUtilities.Node.Modules.Outputs
             base.OnStart();
             performanceCounters.StartRunning();
 
-            lastSavedHeader = utxoStorage.GetLastHeader();
+            lastSavedHeader = utxoRepository.GetLastHeader();
             lastProcessedHeader = lastSavedHeader;
 
             RequestBlocks();
@@ -194,7 +194,7 @@ namespace BitcoinUtilities.Node.Modules.Outputs
                 relatedTxHashes.Add(tx.Hash);
             }
 
-            IReadOnlyCollection<UtxoOutput> existingOutputs = utxoStorage.GetUnspentOutputs(relatedTxHashes);
+            IReadOnlyCollection<UtxoOutput> existingOutputs = utxoRepository.GetUnspentOutputs(relatedTxHashes);
 
             UpdatableOutputSet outputSet = new UpdatableOutputSet();
             outputSet.AppendExistingUnspentOutputs(existingOutputs);
@@ -287,10 +287,7 @@ namespace BitcoinUtilities.Node.Modules.Outputs
 
             validatedUpdates.Clear();
 
-            // todo: what if storage throws exception?
-            utxoStorage.Update(updatesToSave);
-            lastSavedHeader = utxoStorage.GetLastHeader();
-            eventDispatcher.Raise(new UtxoChangedEvent(lastSavedHeader.Hash, lastSavedHeader.Height));
+            lastSavedHeader = utxoRepository.Update(updatesToSave);
         }
 
         private DbHeader GetNextHeaderInChain(UtxoHeader currentHeader)

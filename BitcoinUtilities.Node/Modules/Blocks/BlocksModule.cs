@@ -8,7 +8,7 @@ namespace BitcoinUtilities.Node.Modules.Blocks
 {
     public class BlocksModule : INodeModule
     {
-        public void CreateResources(BitcoinNode node)
+        public void CreateResources(BitcoinNode node, string dataFolder)
         {
             node.Resources.Add(new BlockRequestCollection());
             node.Resources.Add(new BlockRepository(node.EventServiceController, node.Resources.Get<BlockRequestCollection>()));
