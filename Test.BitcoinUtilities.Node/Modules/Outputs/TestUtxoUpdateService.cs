@@ -85,8 +85,6 @@ namespace Test.BitcoinUtilities.Node.Modules.Outputs
                     $"SignatureValidationResponse: {HexUtils.GetString(headers[1].Hash)}, True"
                 }));
 
-                utxoUpdateService.SaveValidatedUpdates();
-
                 var expectedOutputs = blocks
                     .Take(2)
                     .SelectMany(b => b.Transactions)
@@ -98,7 +96,7 @@ namespace Test.BitcoinUtilities.Node.Modules.Outputs
                     .Select(tx => tx.Hash)
                 );
 
-                var unspentOutputs = utxoStorage.GetUnspentOutputs(allTxHashes);
+                var unspentOutputs = utxoRepository.GetUnspentOutputs(allTxHashes);
 
                 Assume.That(expectedOutputs.Count, Is.EqualTo(2));
                 Assert.That(unspentOutputs.Count, Is.EqualTo(expectedOutputs.Count));

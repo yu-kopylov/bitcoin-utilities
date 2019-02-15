@@ -25,10 +25,7 @@ namespace BitcoinUtilities.Node.Modules.Outputs
         private readonly PerformanceCounters performanceCounters = new PerformanceCounters(logger);
 
         private readonly Queue<UtxoUpdate> updatesAwaitingValidation = new Queue<UtxoUpdate>();
-        private readonly Queue<UtxoUpdate> validatedUpdates = new Queue<UtxoUpdate>();
-        private readonly Queue<UtxoUpdate> unsavedUpdates = new Queue<UtxoUpdate>();
 
-        private UtxoHeader lastSavedHeader;
         private UtxoHeader lastProcessedHeader;
         private DbHeader lastRequestedHeader;
 
@@ -49,8 +46,7 @@ namespace BitcoinUtilities.Node.Modules.Outputs
             base.OnStart();
             performanceCounters.StartRunning();
 
-            lastSavedHeader = utxoRepository.GetLastHeader();
-            lastProcessedHeader = lastSavedHeader;
+            lastProcessedHeader = utxoRepository.GetLastHeader();
 
             RequestBlocks();
         }
@@ -176,11 +172,11 @@ namespace BitcoinUtilities.Node.Modules.Outputs
                 return false;
             }
 
-            PrepareUtxoUpdate(nextHeader, evt.Block);
+            PrepareUpdate(nextHeader, evt.Block);
             return true;
         }
 
-        private void PrepareUtxoUpdate(DbHeader header, BlockMessage block)
+        private void PrepareUpdate(DbHeader header, BlockMessage block)
         {
             HashSet<byte[]> relatedTxHashes = new HashSet<byte[]>(ByteArrayComparer.Instance);
 
@@ -199,7 +195,7 @@ namespace BitcoinUtilities.Node.Modules.Outputs
             UpdatableOutputSet outputSet = new UpdatableOutputSet();
             outputSet.AppendExistingUnspentOutputs(existingOutputs);
 
-            foreach (var unsavedUtxoUpdate in unsavedUpdates)
+            foreach (var unsavedUtxoUpdate in updatesAwaitingValidation)
             {
                 Replay(outputSet, relatedTxHashes, unsavedUtxoUpdate);
             }
@@ -211,7 +207,6 @@ namespace BitcoinUtilities.Node.Modules.Outputs
             update.Operations.AddRange(outputSet.Operations);
 
             updatesAwaitingValidation.Enqueue(update);
-            unsavedUpdates.Enqueue(update);
 
             lastProcessedHeader = new UtxoHeader(header.Hash, header.Height, true);
 
@@ -251,43 +246,18 @@ namespace BitcoinUtilities.Node.Modules.Outputs
                 throw new InvalidOperationException("Something went wrong, we got validation response not for the first block in queue.");
             }
 
-            var validatedUpdate = updatesAwaitingValidation.Dequeue();
-            validatedUpdates.Enqueue(validatedUpdate);
+            var update = updatesAwaitingValidation.Dequeue();
 
-            if (validatedUpdates.Count >= 10)
+            if (!validationResponse.Valid)
             {
-                SaveValidatedUpdates();
+                // todo: mark block as invalid in blockchain and continue
+                throw new InvalidOperationException($"Transactions of block '{HexUtils.GetReversedString(update.HeaderHash)} ({update.Height})' did not pass validation.");
             }
+
+            utxoRepository.Update(update);
 
             RequestBlocks();
             performanceCounters.SavingComplete();
-        }
-
-        internal void SaveValidatedUpdates()
-        {
-            // todo: method is internal for tests only
-            var nextHeader = GetNextHeaderInChain(lastSavedHeader);
-            if (nextHeader == null || !nextHeader.Hash.SequenceEqual(validatedUpdates.Peek().HeaderHash))
-            {
-                throw new InvalidOperationException("Something went wrong. First block no longer matches either storage state or the current chain.");
-            }
-
-            List<UtxoUpdate> updatesToSave = new List<UtxoUpdate>();
-
-            foreach (var update in validatedUpdates)
-            {
-                var unsavedUpdate = unsavedUpdates.Dequeue();
-                if (update != unsavedUpdate)
-                {
-                    throw new InvalidOperationException("Something went wrong. Order of blocks in validated queue and unsaved queue is different.");
-                }
-
-                updatesToSave.Add(update);
-            }
-
-            validatedUpdates.Clear();
-
-            lastSavedHeader = utxoRepository.Update(updatesToSave);
         }
 
         private DbHeader GetNextHeaderInChain(UtxoHeader currentHeader)

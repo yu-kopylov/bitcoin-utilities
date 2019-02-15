@@ -15,6 +15,12 @@ namespace BitcoinUtilities.Node.Modules.Outputs
         public IEnumerable<UtxoOutput> CreatedOutputs => createdOutputs.Values;
         public IEnumerable<TxOutPoint> SpentOutputs => spentOutputs;
 
+        public void Clear()
+        {
+            createdOutputs.Clear();
+            spentOutputs.Clear();
+        }
+
         public void Add(IReadOnlyList<UtxoOperation> operations)
         {
             Add(operations, false);

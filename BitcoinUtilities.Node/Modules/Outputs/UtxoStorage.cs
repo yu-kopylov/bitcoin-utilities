@@ -195,7 +195,8 @@ namespace BitcoinUtilities.Node.Modules.Outputs
 
             using (var tx = MainConnection.BeginTransaction())
             {
-                CheckStateBeforeUpdate(updates[0]);
+                UtxoHeader lastHeader = ReadHeader("order by Height desc");
+                updates[0].CheckFollows(lastHeader);
 
                 int truncateHeight = Math.Max(MinimumLogHeight, updates[updates.Count - 1].Height - MaximumLogLength);
                 TruncateOperations(truncateHeight);
@@ -220,25 +221,6 @@ namespace BitcoinUtilities.Node.Modules.Outputs
                 if (update.Height != prevUpdate.Height + 1 || !update.ParentHash.SequenceEqual(prevUpdate.HeaderHash))
                 {
                     throw new InvalidOperationException("UTXO update does not follow previous update.");
-                }
-            }
-        }
-
-        private void CheckStateBeforeUpdate(UtxoUpdate firstUpdate)
-        {
-            UtxoHeader lastHeader = ReadHeader("order by Height desc");
-            if (firstUpdate.Height == 0)
-            {
-                if (lastHeader != null)
-                {
-                    throw new InvalidOperationException("Cannot insert a root header into the UTXO storage, because it already has headers.");
-                }
-            }
-            else
-            {
-                if (lastHeader == null || lastHeader.Height != firstUpdate.Height - 1 || !lastHeader.Hash.SequenceEqual(firstUpdate.ParentHash))
-                {
-                    throw new InvalidOperationException("The last header in the UTXO storage does not match the parent header of the update.");
                 }
             }
         }
