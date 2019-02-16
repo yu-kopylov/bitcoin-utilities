@@ -68,17 +68,9 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\packages\Secp256k1.Net.0.1.52\content\native\linux-x64\libsecp256k1.so">
-      <Link>libsecp256k1.so</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
     <None Include="App.config" />
-    <None Include="..\packages\Secp256k1.Net.0.1.52\content\native\win-x64\secp256k1.dll">
-      <Link>secp256k1.dll</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
     <Content Include="NLog.config">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <None Include="packages.config" />
   </ItemGroup>
