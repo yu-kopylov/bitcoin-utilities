@@ -48,6 +48,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="BitcoinNodeView.cs" />
     <Compile Include="Components\ButtonsPanel.cs" />
     <Compile Include="Components\EmptyDialog.cs" />
     <Compile Include="Components\HorizontalDivider.cs" />
@@ -55,9 +56,6 @@
     <Compile Include="Components\PropertiesTable.cs" />
     <Compile Include="BioRandomDialog.xeto.cs">
       <DependentUpon>BioRandomDialog.xeto</DependentUpon>
-    </Compile>
-    <Compile Include="BitcoinNodeView.xeto.cs">
-      <DependentUpon>BitcoinNodeView.xeto</DependentUpon>
     </Compile>
     <Compile Include="MainForm.xeto.cs">
       <DependentUpon>MainForm.xeto</DependentUpon>
@@ -76,11 +74,6 @@
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="BioRandomDialog.xeto">
-      <SubType>Designer</SubType>
-    </EmbeddedResource>
-  </ItemGroup>
-  <ItemGroup>
-    <EmbeddedResource Include="BitcoinNodeView.xeto">
       <SubType>Designer</SubType>
     </EmbeddedResource>
   </ItemGroup>

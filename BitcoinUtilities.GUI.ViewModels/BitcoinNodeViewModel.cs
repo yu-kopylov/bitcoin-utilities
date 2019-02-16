@@ -14,8 +14,8 @@ namespace BitcoinUtilities.GUI.ViewModels
 
         private string state;
 
-        private int bestHeaderHeight;
-        private int bestChainHeight;
+        private int blockchainHeight;
+        private int utxoHeight;
 
         private int incomingConnectionsCount;
         private int outgoingConnectionsCount;
@@ -40,22 +40,22 @@ namespace BitcoinUtilities.GUI.ViewModels
             }
         }
 
-        public int BestHeaderHeight
+        public int BlockchainHeight
         {
-            get { return bestHeaderHeight; }
+            get { return blockchainHeight; }
             private set
             {
-                bestHeaderHeight = value;
+                blockchainHeight = value;
                 OnPropertyChanged();
             }
         }
 
-        public int BestChainHeight
+        public int UtxoHeight
         {
-            get { return bestChainHeight; }
+            get { return utxoHeight; }
             set
             {
-                bestChainHeight = value;
+                utxoHeight = value;
                 OnPropertyChanged();
             }
         }
@@ -161,8 +161,8 @@ namespace BitcoinUtilities.GUI.ViewModels
             if (node == null)
             {
                 State = "No Node";
-                BestHeaderHeight = 0;
-                BestChainHeight = 0;
+                BlockchainHeight = 0;
+                UtxoHeight = 0;
                 IncomingConnectionsCount = 0;
                 OutgoingConnectionsCount = 0;
                 CanStartNode = true;
@@ -171,7 +171,7 @@ namespace BitcoinUtilities.GUI.ViewModels
             }
 
             State = node.Started ? "Started" : "Stopped";
-            BestHeaderHeight = node.Blockchain?.GetBestHead()?.Height ?? 0;
+            BlockchainHeight = node.Blockchain?.GetBestHead()?.Height ?? 0;
             // todo: BestChainHeight = node.UtxoStorage?.GetLastHeader()?.Height ?? 0; (thread-safe?)
             IncomingConnectionsCount = node.ConnectionCollection.IncomingConnectionsCount;
             OutgoingConnectionsCount = node.ConnectionCollection.OutgoingConnectionsCount;

@@ -10,9 +10,17 @@ namespace BitcoinUtilities.GUI.Views.Components
             Spacing = new Size(5, 5);
         }
 
-        public void AddFolder(string labelText, string propertyName)
+        public void AddLabel(string caption, string propertyName)
         {
-            var binding = new PropertyBinding<string>(propertyName);
+            var binding = new PropertyBinding<string>(propertyName, ignoreCase: false);
+            var label = new Label();
+            label.TextBinding.BindDataContext(binding);
+            AddRow(caption, label);
+        }
+
+        public void AddFolder(string caption, string propertyName)
+        {
+            var binding = new PropertyBinding<string>(propertyName, ignoreCase: false);
             var textBox = new TextBox();
             var browseButton = new Button {Text = "Browse..."};
 
@@ -31,7 +39,7 @@ namespace BitcoinUtilities.GUI.Views.Components
             inputAndButtonTable.Spacing = new Size(5, 5);
             inputAndButtonTable.Rows.Add(new TableRow(new TableCell(textBox) {ScaleWidth = true}, new TableCell(browseButton)));
 
-            AddRow(labelText, inputAndButtonTable);
+            AddRow(caption, inputAndButtonTable);
         }
 
         private void AddRow(string labelText, Control control)
