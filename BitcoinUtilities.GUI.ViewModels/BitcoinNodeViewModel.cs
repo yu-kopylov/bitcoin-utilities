@@ -13,6 +13,7 @@ namespace BitcoinUtilities.GUI.ViewModels
         private readonly IViewContext viewContext;
 
         private string state;
+        private string network;
 
         private int blockchainHeight;
         private int utxoHeight;
@@ -36,6 +37,16 @@ namespace BitcoinUtilities.GUI.ViewModels
             private set
             {
                 state = value;
+                OnPropertyChanged();
+            }
+        }
+
+        public string Network
+        {
+            get { return network; }
+            set
+            {
+                network = value;
                 OnPropertyChanged();
             }
         }
@@ -109,7 +120,12 @@ namespace BitcoinUtilities.GUI.ViewModels
 
         public void StartNode()
         {
-            NetworkParameters networkParameters = NetworkParameters.BitcoinCoreMain;
+            if (!NetworkParameters.TryGetByName(applicationContext.Settings.Network, out var networkParameters))
+            {
+                // todo: add standard error dialog
+                viewContext.ShowError(new Exception($"Unknown network name: {applicationContext.Settings.Network ?? "null"}."));
+                return;
+            }
 
             string dataFolder = Path.Combine(applicationContext.Settings.BlockchainFolder, networkParameters.Name);
             BitcoinNode node = new BitcoinNode(networkParameters, dataFolder);
@@ -155,12 +171,13 @@ namespace BitcoinUtilities.GUI.ViewModels
             viewContext.Invoke(UpdateValues);
         }
 
-        private void UpdateValues()
+        public void UpdateValues()
         {
             BitcoinNode node = applicationContext.BitcoinNode;
             if (node == null)
             {
                 State = "No Node";
+                Network = applicationContext.Settings.Network;
                 BlockchainHeight = 0;
                 UtxoHeight = 0;
                 IncomingConnectionsCount = 0;
@@ -171,6 +188,7 @@ namespace BitcoinUtilities.GUI.ViewModels
             }
 
             State = node.Started ? "Started" : "Stopped";
+            Network = node.NetworkParameters.Name;
             BlockchainHeight = node.Blockchain?.GetBestHead()?.Height ?? 0;
             // todo: BestChainHeight = node.UtxoStorage?.GetLastHeader()?.Height ?? 0; (thread-safe?)
             IncomingConnectionsCount = node.ConnectionCollection.IncomingConnectionsCount;

@@ -1,4 +1,5 @@
-﻿using Eto.Drawing;
+﻿using System.Collections.Generic;
+using Eto.Drawing;
 using Eto.Forms;
 
 namespace BitcoinUtilities.GUI.Views.Components
@@ -16,6 +17,19 @@ namespace BitcoinUtilities.GUI.Views.Components
             var label = new Label();
             label.TextBinding.BindDataContext(binding);
             AddRow(caption, label);
+        }
+
+        public void AddDropDown(string caption, string propertyName, string listPropertyName)
+        {
+            var valueBinding = new PropertyBinding<object>(propertyName, ignoreCase: false);
+            var listBinding = new PropertyBinding<IEnumerable<object>>(listPropertyName, ignoreCase: false);
+            var dataStoreBinding = new PropertyBinding<IEnumerable<object>>(nameof(DropDown.DataStore));
+
+            var dropDown = new DropDown();
+            dropDown.SelectedValueBinding.BindDataContext(valueBinding);
+            dropDown.BindDataContext(dataStoreBinding, listBinding);
+
+            AddRow(caption, dropDown);
         }
 
         public void AddFolder(string caption, string propertyName)

@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using BitcoinUtilities.GUI.Models;
 
@@ -8,8 +9,8 @@ namespace BitcoinUtilities.GUI.ViewModels
     {
         private readonly ApplicationContext applicationContext;
 
+        private string network;
         private string blockchainFolder;
-
         private string walletFolder;
 
         public SettingsViewModel(ApplicationContext applicationContext)
@@ -18,6 +19,18 @@ namespace BitcoinUtilities.GUI.ViewModels
 
             Init(applicationContext.Settings);
         }
+
+        public string Network
+        {
+            get { return network; }
+            set
+            {
+                network = value;
+                OnPropertyChanged();
+            }
+        }
+
+        public string[] KnownNetworks { get; } = NetworkParameters.KnownNetworks.Select(n => n.Name).ToArray();
 
         public string BlockchainFolder
         {
@@ -48,6 +61,7 @@ namespace BitcoinUtilities.GUI.ViewModels
 
         public void Apply()
         {
+            applicationContext.Settings.Network = Network;
             applicationContext.Settings.BlockchainFolder = BlockchainFolder;
             applicationContext.Settings.WalletFolder = WalletFolder;
             //todo: handle error
@@ -62,6 +76,7 @@ namespace BitcoinUtilities.GUI.ViewModels
 
         private void Init(Settings settings)
         {
+            Network = settings.Network;
             BlockchainFolder = settings.BlockchainFolder;
             WalletFolder = settings.WalletFolder;
         }

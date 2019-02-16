@@ -8,6 +8,9 @@ namespace BitcoinUtilities.GUI.Models.Formats
     internal class SettingsFormat
     {
         [DataMember]
+        public string Network { get; set; }
+
+        [DataMember]
         public string BlockchainFolder { get; set; }
 
         [DataMember]
@@ -17,6 +20,7 @@ namespace BitcoinUtilities.GUI.Models.Formats
         {
             SettingsFormat res = new SettingsFormat();
 
+            res.Network = settings.Network;
             res.BlockchainFolder = settings.BlockchainFolder;
             res.WalletFolder = settings.WalletFolder;
 
@@ -25,6 +29,7 @@ namespace BitcoinUtilities.GUI.Models.Formats
 
         public void ApplyTo(Settings settings)
         {
+            settings.Network = Network;
             settings.BlockchainFolder = BlockchainFolder;
             settings.WalletFolder = WalletFolder;
         }

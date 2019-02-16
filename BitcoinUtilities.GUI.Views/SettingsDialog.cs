@@ -10,6 +10,7 @@ namespace BitcoinUtilities.GUI.Views
             Title = "Settings";
 
             var propertiesTable = new PropertiesTable();
+            propertiesTable.AddDropDown("Network", nameof(Settings.Network), nameof(Settings.KnownNetworks));
             propertiesTable.AddFolder("Blockchain Folder", nameof(Settings.BlockchainFolder));
             propertiesTable.AddFolder("Wallet Folder", nameof(Settings.WalletFolder));
             ContentPanel.Content = propertiesTable;

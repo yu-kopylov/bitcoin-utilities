@@ -36,6 +36,11 @@ namespace BitcoinUtilities.GUI.Models
         }
 
         /// <summary>
+        /// The network to use.
+        /// </summary>
+        public string Network { get; set; }
+
+        /// <summary>
         /// A folder in which a blockchain would be stored.
         /// </summary>
         public string BlockchainFolder { get; set; }
@@ -51,6 +56,7 @@ namespace BitcoinUtilities.GUI.Models
         public void SetDefaults()
         {
             string documentsFolder = Environment.GetFolderPath(Environment.SpecialFolder.Personal);
+            Network = NetworkParameters.BitcoinCoreMain.Name;
             BlockchainFolder = Path.Combine(documentsFolder, "BitcoinUtilities", "Blockchain");
             WalletFolder = Path.Combine(documentsFolder, "BitcoinUtilities", "Wallet");
         }
@@ -79,6 +85,7 @@ namespace BitcoinUtilities.GUI.Models
                 logger.Error(e, "Invalid settings file format.");
                 return false;
             }
+
             settingsFormat.ApplyTo(this);
             return true;
         }

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using BitcoinUtilities.P2P;
 using BitcoinUtilities.P2P.Messages;
 
@@ -17,6 +18,12 @@ namespace BitcoinUtilities
         private const uint NetworkMagicCashMain = 0xE3E1F3E8;
         private const uint NetworkMagicCashTestNet = 0xF4E5F3F4;
         private const uint NetworkMagicCashRegTest = 0xDAB5BFFA;
+
+        private static readonly NetworkParameters[] knownNetworks = new[]
+        {
+            BitcoinCoreMain,
+            BitcoinCashMain
+        };
 
         private readonly List<string> dnsSeeds = new List<string>();
 
@@ -38,6 +45,14 @@ namespace BitcoinUtilities
             Name = name;
             NetworkMagic = networkMagic;
             GenesisBlock = BitcoinStreamReader.FromBytes(genesisBlock, BlockMessage.Read);
+        }
+
+        public static IReadOnlyList<NetworkParameters> KnownNetworks => knownNetworks;
+
+        public static bool TryGetByName(string name, out NetworkParameters networkParameters)
+        {
+            networkParameters = knownNetworks.FirstOrDefault(n => n.Name == name);
+            return networkParameters != null;
         }
 
         /// <summary>
@@ -140,7 +155,7 @@ namespace BitcoinUtilities
         /// Adds a DNS seed if it was not added before.
         /// </summary>
         /// <param name="dnsSeed">The DNS seed.</param>
-        public void AddDnsSeed(string dnsSeed)
+        private void AddDnsSeed(string dnsSeed)
         {
             if (dnsSeeds.Contains(dnsSeed))
             {
@@ -164,7 +179,7 @@ namespace BitcoinUtilities
         /// </summary>
         /// <param name="blockHeight">The height of the block.</param>
         /// <param name="blockHash">Hash of the block.</param>
-        public void AddCheckpoint(int blockHeight, string blockHash)
+        private void AddCheckpoint(int blockHeight, string blockHash)
         {
             if (!HexUtils.TryGetBytes(blockHash, out var hash))
             {

@@ -10,6 +10,7 @@ namespace BitcoinUtilities.GUI.Views
         {
             var propertiesTable = new PropertiesTable();
             propertiesTable.AddLabel("State:", nameof(ViewModel.State));
+            propertiesTable.AddLabel("Network:", nameof(ViewModel.Network));
             propertiesTable.AddLabel("Blockchain Height:", nameof(ViewModel.BlockchainHeight));
             propertiesTable.AddLabel("UTXO Height:", nameof(ViewModel.UtxoHeight));
             propertiesTable.AddLabel("Incoming Connections:", nameof(ViewModel.IncomingConnectionsCount));
@@ -45,6 +46,8 @@ namespace BitcoinUtilities.GUI.Views
             SettingsDialog dialog = new SettingsDialog();
             dialog.DataContext = ViewModel.CreateSettingsViewModel();
             dialog.ShowModal(this);
+            // todo: settings dialog creation and call to UpdateValues should be in the view-model
+            ViewModel.UpdateValues();
         }
     }
 }
