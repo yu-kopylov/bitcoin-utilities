@@ -19,6 +19,7 @@ namespace BitcoinUtilities.GUI.ViewModels
         private string password = "test";
         private string privateKey = "KwdMAjGmerYanjeui5SHS7JkmpZvVipYvB2LJGU1ZxJwYvP98617";
         private byte[] qrCodeImage;
+        private string encryptedKey;
 
         public PaperWalletViewModel(IViewContext viewContext)
         {
@@ -62,6 +63,16 @@ namespace BitcoinUtilities.GUI.ViewModels
             }
         }
 
+        public string EncryptedKey
+        {
+            get { return encryptedKey; }
+            set
+            {
+                encryptedKey = value;
+                OnPropertyChanged();
+            }
+        }
+
         public event PropertyChangedEventHandler PropertyChanged;
 
         protected virtual void OnPropertyChanged([CallerMemberName] string propertyName = null)
@@ -82,12 +93,13 @@ namespace BitcoinUtilities.GUI.ViewModels
 
         private void UpdateImage()
         {
-            viewContext.Invoke(() => { QrCodeImage = null; });
+            viewContext.Invoke(() =>
+            {
+                EncryptedKey = null;
+                QrCodeImage = null;
+            });
 
-            byte[] privateKeyBytes;
-            bool compressed;
-
-            if (!Wif.TryDecode(BitcoinNetworkKind.Main, privateKey, out privateKeyBytes, out compressed))
+            if (!Wif.TryDecode(BitcoinNetworkKind.Main, privateKey, out var privateKeyBytes, out var compressed))
             {
                 return;
             }
@@ -113,7 +125,11 @@ namespace BitcoinUtilities.GUI.ViewModels
 
             byte[] bitmapBytes = mem.ToArray();
 
-            viewContext.Invoke(() => { QrCodeImage = bitmapBytes; });
+            viewContext.Invoke(() =>
+            {
+                EncryptedKey = encryptedKey;
+                QrCodeImage = bitmapBytes;
+            });
         }
     }
 }

@@ -19,6 +19,22 @@ namespace BitcoinUtilities.GUI.Views.Components
             AddRow(caption, label);
         }
 
+        public void AddTextBox(string caption, string propertyName)
+        {
+            var binding = new PropertyBinding<string>(propertyName, ignoreCase: false);
+            var textBox = new TextBox();
+            textBox.TextBinding.BindDataContext(binding);
+            AddRow(caption, textBox);
+        }
+
+        public void AddPasswordBox(string caption, string propertyName)
+        {
+            var binding = new PropertyBinding<string>(propertyName, ignoreCase: false);
+            var passwordBox = new PasswordBox();
+            passwordBox.TextBinding.BindDataContext(binding);
+            AddRow(caption, passwordBox);
+        }
+
         public void AddDropDown(string caption, string propertyName, string listPropertyName)
         {
             var valueBinding = new PropertyBinding<object>(propertyName, ignoreCase: false);
@@ -56,9 +72,9 @@ namespace BitcoinUtilities.GUI.Views.Components
             AddRow(caption, inputAndButtonTable);
         }
 
-        private void AddRow(string labelText, Control control)
+        private void AddRow(string caption, Control control)
         {
-            var label = new Label {Text = labelText, TextAlignment = TextAlignment.Right, VerticalAlignment = VerticalAlignment.Center};
+            var label = new Label {Text = caption, TextAlignment = TextAlignment.Right, VerticalAlignment = VerticalAlignment.Center};
             var row = new TableRow();
             row.Cells.Add(new TableCell(label));
             row.Cells.Add(new TableCell(control) {ScaleWidth = true});

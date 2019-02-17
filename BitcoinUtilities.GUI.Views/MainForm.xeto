@@ -9,9 +9,7 @@
   >
   <TabControl TabPosition="Left">
     <TabPage Text="Paper Wallet">
-      <StackLayout HorizontalContentAlignment="Stretch">
-        <v:PaperWalletView DataContext="{Binding PaperWallet}"/>
-      </StackLayout>
+      <v:PaperWalletView DataContext="{Binding PaperWallet}"/>
     </TabPage>
     <TabPage Text="Random Number Generator">
       <StackLayout>
