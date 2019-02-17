@@ -1,6 +1,7 @@
 ﻿using System;
 using BitcoinUtilities.GUI.ViewModels;
 using BitcoinUtilities.GUI.Views.Components;
+using Eto.Drawing;
 using Eto.Forms;
 
 namespace BitcoinUtilities.GUI.Views
@@ -13,8 +14,8 @@ namespace BitcoinUtilities.GUI.Views
         public MainForm()
         {
             Title = "Bitcoin Utilities";
-            Width = 800;
-            Height = 600;
+            Size = new Size(800, 600);
+            MinimumSize = new Size(600, 450);
 
             var tabControl = new TabControl {TabPosition = DockPosition.Left};
             tabControl.Pages.Add(new TabPage {Text = "Paper Wallet", Content = paperWalletView});

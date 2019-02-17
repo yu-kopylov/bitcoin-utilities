@@ -32,7 +32,6 @@ namespace BitcoinUtilities.GUI.Views
         {
             if (bitmapBytes == null)
             {
-                //todo: ImageView from Eto.Forms 2.2.0 crashes with null image in GTK3 (should be fixed in next release)
                 return emptyBitmap;
             }
 

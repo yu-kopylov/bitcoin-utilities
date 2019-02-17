@@ -42,8 +42,10 @@ namespace BitcoinUtilities.GUI.Views.Components
             var dataStoreBinding = new PropertyBinding<IEnumerable<object>>(nameof(DropDown.DataStore));
 
             var dropDown = new DropDown();
-            dropDown.SelectedValueBinding.BindDataContext(valueBinding);
+
+            // Order of bindings is important. If value is bound before list, value is ignored.
             dropDown.BindDataContext(dataStoreBinding, listBinding);
+            dropDown.SelectedValueBinding.BindDataContext(valueBinding);
 
             AddRow(caption, dropDown);
         }
