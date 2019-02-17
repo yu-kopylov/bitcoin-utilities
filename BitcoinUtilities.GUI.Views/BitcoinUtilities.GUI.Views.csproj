@@ -55,18 +55,11 @@
     <Compile Include="Components\HorizontalDivider.cs" />
     <Compile Include="Components\PaddedPanel.cs" />
     <Compile Include="Components\PropertiesTable.cs" />
-    <Compile Include="MainForm.xeto.cs">
-      <DependentUpon>MainForm.xeto</DependentUpon>
-    </Compile>
+    <Compile Include="MainForm.cs" />
     <Compile Include="PaperWalletView.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SettingsDialog.cs" />
     <Compile Include="ViewContext.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <EmbeddedResource Include="MainForm.xeto">
-      <SubType>Designer</SubType>
-    </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\BitcoinUtilities.GUI.ViewModels\BitcoinUtilities.GUI.ViewModels.csproj">
