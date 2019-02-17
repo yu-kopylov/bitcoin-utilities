@@ -16,8 +16,6 @@ namespace BitcoinUtilities
         private float previousX;
         private float previousY;
 
-        private int entropy;
-
         public BioRandom()
         {
             Reset();
@@ -26,10 +24,7 @@ namespace BitcoinUtilities
         /// <summary>
         /// An estimated bits of entropy in the collected data.
         /// </summary>
-        public int Entropy
-        {
-            get { return entropy; }
-        }
+        public int Entropy { get; private set; }
 
         /// <summary>
         /// Adds the mouse coordinates to the collected data.
@@ -46,7 +41,7 @@ namespace BitcoinUtilities
                 writer.Write(y);
                 writer.Write(stopwatch.ElapsedTicks);
 
-                entropy += 3;
+                Entropy += 3;
                 previousX = x;
                 previousY = y;
             }
@@ -68,7 +63,7 @@ namespace BitcoinUtilities
             hashSource = new MemoryStream();
             writer = new BinaryWriter(hashSource);
             stopwatch = Stopwatch.StartNew();
-            entropy = 0;
+            Entropy = 0;
             previousX = 0;
             previousY = 0;
         }
