@@ -58,10 +58,10 @@ namespace Test.BitcoinUtilities
             Assert.That(DifficultyUtils.DifficultyTargetToWork(-1), Is.EqualTo(Math.Pow(2, 256)));
             Assert.That(DifficultyUtils.DifficultyTargetToWork(0), Is.EqualTo(Math.Pow(2, 256)));
             Assert.That(DifficultyUtils.DifficultyTargetToWork(1), Is.EqualTo(Math.Pow(2, 255)));
-            Assert.That(DifficultyUtils.DifficultyTargetToWork(2), Is.EqualTo(Math.Pow(2, 256)/3).Within(1e-10).Percent);
+            Assert.That(DifficultyUtils.DifficultyTargetToWork(2), Is.EqualTo(Math.Pow(2, 256) / 3).Within(1e-10).Percent);
             Assert.That(DifficultyUtils.DifficultyTargetToWork(3), Is.EqualTo(Math.Pow(2, 254)));
             Assert.That(DifficultyUtils.DifficultyTargetToWork(BigInteger.Pow(2, 254)), Is.EqualTo(4));
-            Assert.That(DifficultyUtils.DifficultyTargetToWork(BigInteger.Pow(2, 256)/3), Is.EqualTo(3).Within(1e-10).Percent);
+            Assert.That(DifficultyUtils.DifficultyTargetToWork(BigInteger.Pow(2, 256) / 3), Is.EqualTo(3).Within(1e-10).Percent);
             Assert.That(DifficultyUtils.DifficultyTargetToWork(BigInteger.Pow(2, 255)), Is.EqualTo(2));
             Assert.That(DifficultyUtils.DifficultyTargetToWork(BigInteger.Pow(2, 256)), Is.EqualTo(1));
             Assert.That(DifficultyUtils.DifficultyTargetToWork(BigInteger.Pow(2, 257)), Is.EqualTo(1));
@@ -75,17 +75,13 @@ namespace Test.BitcoinUtilities
 
             Assert.That(DifficultyUtils.CalculateNewTarget(difficultyAdjustmentIntervalInSeconds, 1000000), Is.EqualTo(new BigInteger(1000000)));
 
-            Assert.That(DifficultyUtils.CalculateNewTarget(difficultyAdjustmentIntervalInSeconds/2, 1000000), Is.EqualTo(new BigInteger(500000)));
-            Assert.That(DifficultyUtils.CalculateNewTarget(difficultyAdjustmentIntervalInSeconds/4, 1000000), Is.EqualTo(new BigInteger(250000)));
-            Assert.That(DifficultyUtils.CalculateNewTarget(difficultyAdjustmentIntervalInSeconds/8, 1000000), Is.EqualTo(new BigInteger(250000)));
+            Assert.That(DifficultyUtils.CalculateNewTarget(difficultyAdjustmentIntervalInSeconds / 2, 1000000), Is.EqualTo(new BigInteger(500000)));
+            Assert.That(DifficultyUtils.CalculateNewTarget(difficultyAdjustmentIntervalInSeconds / 4, 1000000), Is.EqualTo(new BigInteger(250000)));
+            Assert.That(DifficultyUtils.CalculateNewTarget(difficultyAdjustmentIntervalInSeconds / 8, 1000000), Is.EqualTo(new BigInteger(250000)));
 
-            Assert.That(DifficultyUtils.CalculateNewTarget(difficultyAdjustmentIntervalInSeconds*2, 1000000), Is.EqualTo(new BigInteger(2000000)));
-            Assert.That(DifficultyUtils.CalculateNewTarget(difficultyAdjustmentIntervalInSeconds*4, 1000000), Is.EqualTo(new BigInteger(4000000)));
-            Assert.That(DifficultyUtils.CalculateNewTarget(difficultyAdjustmentIntervalInSeconds*8, 1000000), Is.EqualTo(new BigInteger(4000000)));
-
-            BigInteger maxTarget = DifficultyUtils.MaxDifficultyTarget;
-            Assert.That(DifficultyUtils.CalculateNewTarget(difficultyAdjustmentIntervalInSeconds, maxTarget), Is.EqualTo(maxTarget));
-            Assert.That(DifficultyUtils.CalculateNewTarget(difficultyAdjustmentIntervalInSeconds*2, maxTarget), Is.EqualTo(maxTarget));
+            Assert.That(DifficultyUtils.CalculateNewTarget(difficultyAdjustmentIntervalInSeconds * 2, 1000000), Is.EqualTo(new BigInteger(2000000)));
+            Assert.That(DifficultyUtils.CalculateNewTarget(difficultyAdjustmentIntervalInSeconds * 4, 1000000), Is.EqualTo(new BigInteger(4000000)));
+            Assert.That(DifficultyUtils.CalculateNewTarget(difficultyAdjustmentIntervalInSeconds * 8, 1000000), Is.EqualTo(new BigInteger(4000000)));
         }
     }
 }

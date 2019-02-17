@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using System.Numerics;
 using BitcoinUtilities.P2P;
 using BitcoinUtilities.P2P.Messages;
 
@@ -18,6 +20,16 @@ namespace BitcoinUtilities
         private const uint NetworkMagicCashMain = 0xE3E1F3E8;
         private const uint NetworkMagicCashTestNet = 0xF4E5F3F4;
         private const uint NetworkMagicCashRegTest = 0xDAB5BFFA;
+
+        /// <summary>
+        /// Target that matches minimum difficulty of the main network.
+        /// </summary>
+        private static readonly BigInteger MaxDifficultyTargetMain = DifficultyUtils.NBitsToTarget(0x1D00FFFF);
+
+        /// <summary>
+        /// Target that matches minimum difficulty of the regtest network.
+        /// </summary>
+        private static readonly BigInteger MaxDifficultyTargetRegTest = DifficultyUtils.NBitsToTarget(0x207FFFFF);
 
         private static readonly NetworkParameters[] knownNetworks = new[]
         {
@@ -39,11 +51,12 @@ namespace BitcoinUtilities
         /// </param>
         /// <param name="networkMagic">Four defined bytes which start every message in the Bitcoin P2P protocol to allow seeking to the next message.</param>
         /// <param name="genesisBlock">The first block of the blockchain.</param>
-        public NetworkParameters(BitcoinFork fork, string name, uint networkMagic, byte[] genesisBlock)
+        public NetworkParameters(BitcoinFork fork, string name, uint networkMagic, BigInteger maxDifficultyTarget, byte[] genesisBlock)
         {
             Fork = fork;
             Name = name;
             NetworkMagic = networkMagic;
+            MaxDifficultyTarget = maxDifficultyTarget;
             GenesisBlock = BitcoinStreamReader.FromBytes(genesisBlock, BlockMessage.Read);
         }
 
@@ -75,15 +88,25 @@ namespace BitcoinUtilities
         public uint NetworkMagic { get; }
 
         /// <summary>
+        /// Maximum difficulty target for the network. It defines minimum difficulty of the network.
+        /// </summary>
+        /// <remarks>
+        /// See: https://bitcoin.org/en/developer-reference#target-nbits
+        /// </remarks>
+        public BigInteger MaxDifficultyTarget { get; }
+
+        /// <summary>
         /// The first block of the blockchain.
         /// </summary>
         public BlockMessage GenesisBlock { get; }
 
+        [SuppressMessage("ReSharper", "CommentTypo")]
+        [SuppressMessage("ReSharper", "StringLiteralTypo")]
         public static NetworkParameters BitcoinCoreMain
         {
             get
             {
-                var parameters = new NetworkParameters(BitcoinFork.Core, "bitcoin-core-main", NetworkMagicCoreMain, P2P.GenesisBlock.Raw);
+                var parameters = new NetworkParameters(BitcoinFork.Core, "bitcoin-core-main", NetworkMagicCoreMain, MaxDifficultyTargetMain, P2P.GenesisBlock.Raw);
 
                 // DNS seeds taken from: https://github.com/bitcoin/bitcoin/blob/master/src/chainparams.cpp
                 parameters.AddDnsSeed("seed.bitcoin.sipa.be"); // Pieter Wuille
@@ -109,11 +132,13 @@ namespace BitcoinUtilities
             }
         }
 
+        [SuppressMessage("ReSharper", "CommentTypo")]
+        [SuppressMessage("ReSharper", "StringLiteralTypo")]
         public static NetworkParameters BitcoinCashMain
         {
             get
             {
-                var parameters = new NetworkParameters(BitcoinFork.Cash, "bitcoin-cash-main", NetworkMagicCashMain, P2P.GenesisBlock.Raw);
+                var parameters = new NetworkParameters(BitcoinFork.Cash, "bitcoin-cash-main", NetworkMagicCashMain, MaxDifficultyTargetMain, P2P.GenesisBlock.Raw);
 
                 // DNS seeds taken from: https://github.com/bitcoinclassic/bitcoinclassic/blob/master/src/chainparams.cpp
                 parameters.AddDnsSeed("cash-seed.bitcoin.thomaszander.se");

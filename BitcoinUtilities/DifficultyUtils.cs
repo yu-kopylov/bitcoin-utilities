@@ -7,10 +7,7 @@ namespace BitcoinUtilities
     {
         //todo: use network settings instead?
         public const int DifficultyAdjustmentIntervalInBlocks = 2016;
-        public const int DifficultyAdjustmentIntervalInSeconds = 14*24*60*60;
-
-        //todo: use network settings instead?
-        public static readonly BigInteger MaxDifficultyTarget = NBitsToTarget(0x1D00FFFF);
+        public const int DifficultyAdjustmentIntervalInSeconds = 14 * 24 * 60 * 60;
 
         private static readonly BigInteger power256Of2 = BigInteger.Pow(2, 256);
 
@@ -34,11 +31,11 @@ namespace BitcoinUtilities
 
             if (exp >= 0)
             {
-                res = mantissa*BigInteger.Pow(256, exp);
+                res = mantissa * BigInteger.Pow(256, exp);
             }
             else
             {
-                res = mantissa/BigInteger.Pow(256, -exp);
+                res = mantissa / BigInteger.Pow(256, -exp);
             }
 
             return res;
@@ -59,7 +56,7 @@ namespace BitcoinUtilities
             int mantissa = 0;
             for (int i = 0; i < 3 && i < targetBytes.Length; i++)
             {
-                mantissa += targetBytes[targetBytes.Length - i - 1] << ((2 - i)*8);
+                mantissa += targetBytes[targetBytes.Length - i - 1] << ((2 - i) * 8);
             }
 
             return (uint) ((exp << 24) + mantissa);
@@ -101,26 +98,17 @@ namespace BitcoinUtilities
         /// <remarks>Specification: https://en.bitcoin.it/wiki/Protocol_rules#Difficulty_change </remarks>
         public static BigInteger CalculateNewTarget(uint timeSpent, BigInteger oldTarget)
         {
-            if (timeSpent < DifficultyAdjustmentIntervalInSeconds/4)
+            if (timeSpent < DifficultyAdjustmentIntervalInSeconds / 4)
             {
-                timeSpent = DifficultyAdjustmentIntervalInSeconds/4;
-            }
-            if (timeSpent > DifficultyAdjustmentIntervalInSeconds*4)
-            {
-                timeSpent = DifficultyAdjustmentIntervalInSeconds*4;
+                timeSpent = DifficultyAdjustmentIntervalInSeconds / 4;
             }
 
-            BigInteger newTarget = oldTarget*timeSpent/DifficultyAdjustmentIntervalInSeconds;
-
-            // todo: use network settings
-            // min difficulty is defined in https://bitcoin.org/en/developer-reference#target-nbits
-
-            if (newTarget > MaxDifficultyTarget)
+            if (timeSpent > DifficultyAdjustmentIntervalInSeconds * 4)
             {
-                newTarget = MaxDifficultyTarget;
+                timeSpent = DifficultyAdjustmentIntervalInSeconds * 4;
             }
 
-            return newTarget;
+            return oldTarget * timeSpent / DifficultyAdjustmentIntervalInSeconds;
         }
     }
 }

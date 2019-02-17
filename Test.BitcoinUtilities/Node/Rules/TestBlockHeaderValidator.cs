@@ -21,9 +21,9 @@ namespace Test.BitcoinUtilities.Node.Rules
         [Test]
         public void TestNBitsValidStatic()
         {
-            Assert.True(BlockHeaderValidator.IsNBitsValid(genesisBlockHeader));
+            Assert.True(BlockHeaderValidator.IsNBitsValid(NetworkParameters.BitcoinCoreMain, genesisBlockHeader));
 
-            Assert.False(BlockHeaderValidator.IsNBitsValid(new BlockHeader(
+            Assert.False(BlockHeaderValidator.IsNBitsValid(NetworkParameters.BitcoinCoreMain, new BlockHeader(
                 genesisBlockHeader.Version,
                 genesisBlockHeader.PrevBlock,
                 genesisBlockHeader.MerkleRoot,

@@ -18,6 +18,7 @@ namespace BitcoinUtilities.Node.Modules.Blocks
         private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
         private static readonly PerformanceCounters performanceCounters = new PerformanceCounters(logger);
 
+        private readonly NetworkParameters networkParameters;
         private readonly BlockRequestCollection requestCollection;
         private readonly BlockRepository repository;
         private readonly BitcoinEndpoint endpoint;
@@ -28,11 +29,13 @@ namespace BitcoinUtilities.Node.Modules.Blocks
         private readonly LinkedDictionary<byte[], DateTime> sentRequests = new LinkedDictionary<byte[], DateTime>(ByteArrayComparer.Instance);
 
         public BlockDownloadService(
+            NetworkParameters networkParameters,
             BlockRequestCollection requestCollection,
             BlockRepository repository,
             BitcoinEndpoint endpoint
         ) : base(endpoint)
         {
+            this.networkParameters = networkParameters;
             this.requestCollection = requestCollection;
             this.repository = repository;
             this.endpoint = endpoint;
@@ -143,7 +146,7 @@ namespace BitcoinUtilities.Node.Modules.Blocks
 
         private bool IsBlockValid(BlockMessage blockMessage, byte[] hash)
         {
-            if (!BlockHeaderValidator.IsValid(blockMessage.BlockHeader, hash))
+            if (!BlockHeaderValidator.IsValid(networkParameters, blockMessage.BlockHeader, hash))
             {
                 return false;
             }

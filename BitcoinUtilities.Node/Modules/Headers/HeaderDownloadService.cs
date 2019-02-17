@@ -135,7 +135,7 @@ namespace BitcoinUtilities.Node.Modules.Headers
             return newChain;
         }
 
-        private static List<DbHeader> CreateAndValidateDbHeaders(BlockHeader[] messageHeaders)
+        private List<DbHeader> CreateAndValidateDbHeaders(BlockHeader[] messageHeaders)
         {
             List<DbHeader> headers = new List<DbHeader>(messageHeaders.Length);
 
@@ -144,7 +144,7 @@ namespace BitcoinUtilities.Node.Modules.Headers
                 // todo: we would not need write method if payload were passed with event
                 byte[] hash = CryptoUtils.DoubleSha256(BitcoinStreamWriter.GetBytes(header.Write));
 
-                if (!BlockHeaderValidator.IsValid(header, hash))
+                if (!BlockHeaderValidator.IsValid(networkParameters, header, hash))
                 {
                     //todo: disconnect node
                     throw new BitcoinProtocolViolationException($"Invalid block header received. Hash: '{HexUtils.GetString(hash)}'.");

@@ -19,10 +19,10 @@ namespace BitcoinUtilities.Node.Rules
         /// <param name="header">The header to validate.</param>
         /// <param name="hash">The hash of the given header.</param>
         /// <returns>True if header is valid; otherwise, false.</returns>
-        public static bool IsValid(BlockHeader header, byte[] hash)
+        public static bool IsValid(NetworkParameters networkParameters, BlockHeader header, byte[] hash)
         {
             return
-                IsNBitsValid(header) &&
+                IsNBitsValid(networkParameters, header) &&
                 IsTimestampValid(header) &&
                 IsHashValid(header, hash);
         }
@@ -42,7 +42,7 @@ namespace BitcoinUtilities.Node.Rules
                 return ByteArrayComparer.Instance.Equals(checkpointHash, header.Hash);
             }
 
-            return IsTimeStampValid(header, parentChain) && IsNBitsValid(networkParameters.Fork, header, parentChain);
+            return IsTimeStampValid(header, parentChain) && IsNBitsValid(networkParameters, header, parentChain);
         }
 
         /// <summary>
@@ -58,10 +58,10 @@ namespace BitcoinUtilities.Node.Rules
         /// <summary>
         /// Checks that the difficulty defined by the nBits field is not lower than the network minimum.
         /// </summary>
-        internal static bool IsNBitsValid(BlockHeader header)
+        internal static bool IsNBitsValid(NetworkParameters networkParameters, BlockHeader header)
         {
             BigInteger target = DifficultyUtils.NBitsToTarget(header.NBits);
-            return target <= DifficultyUtils.MaxDifficultyTarget;
+            return target <= networkParameters.MaxDifficultyTarget;
         }
 
         /// <summary>
@@ -110,20 +110,34 @@ namespace BitcoinUtilities.Node.Rules
         /// <summary>
         /// Checks that the nBits field of a block follow protocol rules.
         /// </summary>
-        internal static bool IsNBitsValid(BitcoinFork fork, IValidatableHeader header, ISubchain<IValidatableHeader> parentChain)
+        internal static bool IsNBitsValid(NetworkParameters networkParameters, IValidatableHeader header, ISubchain<IValidatableHeader> parentChain)
         {
-            uint expectedNBits = CalculateNextNBits(fork, parentChain);
+            uint expectedNBits = CalculateNextNBits(networkParameters, parentChain);
             return expectedNBits == header.NBits;
         }
 
         /// <summary>
         /// Calculates new NBits for a block that will be added after the given chain.
         /// </summary>
-        private static uint CalculateNextNBits(BitcoinFork fork, ISubchain<IValidatableHeader> parentChain)
+        private static uint CalculateNextNBits(NetworkParameters networkParameters, ISubchain<IValidatableHeader> parentChain)
+        {
+            BigInteger nextTarget = CalculateNextTarget(networkParameters.Fork, parentChain);
+            if (nextTarget > networkParameters.MaxDifficultyTarget)
+            {
+                nextTarget = networkParameters.MaxDifficultyTarget;
+            }
+
+            return DifficultyUtils.TargetToNBits(nextTarget);
+        }
+
+        /// <summary>
+        /// Calculates new difficulty target for a block that will be added after the given chain.
+        /// </summary>
+        private static BigInteger CalculateNextTarget(BitcoinFork fork, ISubchain<IValidatableHeader> parentChain)
         {
             if (fork == BitcoinFork.Core)
             {
-                return CalculateNextNBitsCoreOriginal(parentChain);
+                return CalculateNextTargetCoreOriginal(parentChain);
             }
 
             if (fork == BitcoinFork.Cash)
@@ -131,16 +145,16 @@ namespace BitcoinUtilities.Node.Rules
                 uint timestamp = GetMedianTimePast(parentChain, parentChain.GetBlockByOffset(0).Height);
                 if (timestamp >= 1510600000)
                 {
-                    return CalculateNextNBitsCash20171113(parentChain);
+                    return CalculateNextTargetCash20171113(parentChain);
                 }
 
                 // In the past such delays were happening only in the beginning, so it should be fine to apply new algorithm after for all blocks after year 2017.
                 if (timestamp >= 1483228800)
                 {
-                    return CalculateNextNBitsCashOriginal(parentChain);
+                    return CalculateNextTargetCashOriginal(parentChain);
                 }
 
-                return CalculateNextNBitsCoreOriginal(parentChain);
+                return CalculateNextTargetCoreOriginal(parentChain);
             }
 
             throw new InvalidOperationException($"Difficulty adjustment algorithm is not defined for fork {fork} at height {parentChain.GetBlockByOffset(0).Height}.");
@@ -149,7 +163,7 @@ namespace BitcoinUtilities.Node.Rules
         /// <summary>
         /// Calculates new NBits for a block that will be added after the given chain using Bitcoin Core rules.
         /// </summary>
-        private static uint CalculateNextNBitsCoreOriginal(ISubchain<IValidatableHeader> parentChain)
+        private static BigInteger CalculateNextTargetCoreOriginal(ISubchain<IValidatableHeader> parentChain)
         {
             //todo: add test for this method
 
@@ -157,7 +171,7 @@ namespace BitcoinUtilities.Node.Rules
 
             if (blockHeight % DifficultyUtils.DifficultyAdjustmentIntervalInBlocks != 0)
             {
-                return parentChain.GetBlockByOffset(0).NBits;
+                return DifficultyUtils.NBitsToTarget(parentChain.GetBlockByOffset(0).NBits);
             }
 
             IValidatableHeader baseBlock = parentChain.GetBlockByHeight(blockHeight - DifficultyUtils.DifficultyAdjustmentIntervalInBlocks);
@@ -169,10 +183,7 @@ namespace BitcoinUtilities.Node.Rules
             uint timeSpent = prevBlock.Timestamp - baseBlock.Timestamp;
 
             BigInteger oldTarget = DifficultyUtils.NBitsToTarget(prevBlock.NBits);
-
-            var newTarget = DifficultyUtils.CalculateNewTarget(timeSpent, oldTarget);
-
-            return DifficultyUtils.TargetToNBits(newTarget);
+            return DifficultyUtils.CalculateNewTarget(timeSpent, oldTarget);
         }
 
         /// <summary>
@@ -180,12 +191,13 @@ namespace BitcoinUtilities.Node.Rules
         /// <para/>
         /// 12 hours adjustment algorithm: https://github.com/Bitcoin-ABC/bitcoin-abc/blob/master/src/pow.cpp
         /// </summary>
-        private static uint CalculateNextNBitsCashOriginal(ISubchain<IValidatableHeader> parentChain)
+        private static BigInteger CalculateNextTargetCashOriginal(ISubchain<IValidatableHeader> parentChain)
         {
             //todo: add test for this method
 
             int blockHeight = parentChain.GetBlockByOffset(0).Height + 1;
-            IValidatableHeader parentBlock = parentChain.GetBlockByOffset(0);
+            IValidatableHeader prevBlock = parentChain.GetBlockByOffset(0);
+            BigInteger oldTarget = DifficultyUtils.NBitsToTarget(prevBlock.NBits);
 
             if (blockHeight % DifficultyUtils.DifficultyAdjustmentIntervalInBlocks != 0)
             {
@@ -193,17 +205,14 @@ namespace BitcoinUtilities.Node.Rules
                 // target by 25% (which reduces the difficulty by 20%). This ensure the
                 // chain do not get stuck in case we lose hashrate abruptly.
 
-                BigInteger expectedTarget = DifficultyUtils.NBitsToTarget(parentBlock.NBits);
-
-                uint timeSpent6 = GetMedianTimePast(parentChain, parentBlock.Height) - GetMedianTimePast(parentChain, parentBlock.Height - 6);
+                uint timeSpent6 = GetMedianTimePast(parentChain, prevBlock.Height) - GetMedianTimePast(parentChain, prevBlock.Height - 6);
 
                 if (timeSpent6 >= 12 * 3600)
                 {
-                    expectedTarget = expectedTarget + (expectedTarget >> 2);
-                    return DifficultyUtils.TargetToNBits(expectedTarget);
+                    return oldTarget + (oldTarget >> 2);
                 }
 
-                return parentChain.GetBlockByOffset(0).NBits;
+                return oldTarget;
             }
 
             IValidatableHeader baseBlock = parentChain.GetBlockByHeight(blockHeight - DifficultyUtils.DifficultyAdjustmentIntervalInBlocks);
@@ -211,13 +220,9 @@ namespace BitcoinUtilities.Node.Rules
             // Note: There is a known bug here. It known as "off-by-one" or "Time Warp Bug".
             // Bug Description: http://bitcoin.stackexchange.com/questions/20597/where-exactly-is-the-off-by-one-difficulty-bug
             // Related Attack Description: https://bitcointalk.org/index.php?topic=43692.msg521772#msg521772
-            uint timeSpent = parentBlock.Timestamp - baseBlock.Timestamp;
+            uint timeSpent = prevBlock.Timestamp - baseBlock.Timestamp;
 
-            BigInteger oldTarget = DifficultyUtils.NBitsToTarget(parentBlock.NBits);
-
-            var newTarget = DifficultyUtils.CalculateNewTarget(timeSpent, oldTarget);
-
-            return DifficultyUtils.TargetToNBits(newTarget);
+            return DifficultyUtils.CalculateNewTarget(timeSpent, oldTarget);
         }
 
         /// <summary>
@@ -225,7 +230,7 @@ namespace BitcoinUtilities.Node.Rules
         /// <para/>
         /// Specification: https://github.com/Bitcoin-UAHF/spec/blob/master/nov-13-hardfork-spec.md
         /// </summary>
-        private static uint CalculateNextNBitsCash20171113(ISubchain<IValidatableHeader> parentChain)
+        private static BigInteger CalculateNextTargetCash20171113(ISubchain<IValidatableHeader> parentChain)
         {
             //todo: add test for this method
 
@@ -254,15 +259,7 @@ namespace BitcoinUtilities.Node.Rules
             }
 
             BigInteger projectedWork = workPerformed * 600 / timespan;
-
-            BigInteger expectedTarget = (BigInteger.Pow(2, 256) - projectedWork) / projectedWork;
-
-            if (expectedTarget > DifficultyUtils.MaxDifficultyTarget)
-            {
-                expectedTarget = DifficultyUtils.MaxDifficultyTarget;
-            }
-
-            return DifficultyUtils.TargetToNBits(expectedTarget);
+            return (BigInteger.Pow(2, 256) - projectedWork) / projectedWork;
         }
 
         private static BigInteger GetBlockProof(uint nBits)
