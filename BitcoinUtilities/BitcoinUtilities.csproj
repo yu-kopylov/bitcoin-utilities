@@ -142,7 +142,6 @@
     <Compile Include="Storage\StoredBlock.cs" />
     <Compile Include="Storage\Subchain.cs" />
     <Compile Include="SystemTime.cs" />
-    <Compile Include="P2P\GenesisBlock.cs" />
     <Compile Include="P2P\Messages\BlockMessage.cs" />
     <Compile Include="P2P\Messages\TxMessage.cs" />
     <Compile Include="P2P\Primitives\Tx.cs" />

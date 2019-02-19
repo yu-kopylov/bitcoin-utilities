@@ -1,9 +1,7 @@
 ﻿using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using BitcoinUtilities;
 using BitcoinUtilities.Node.Rules;
-using BitcoinUtilities.P2P;
 using BitcoinUtilities.P2P.Messages;
 using BitcoinUtilities.P2P.Primitives;
 using NUnit.Framework;
@@ -17,15 +15,14 @@ namespace Test.BitcoinUtilities.Node.Rules
         [Test]
         public void TestKnownBlocks()
         {
-            List<byte[]> knownBlocks = new List<byte[]>();
-            knownBlocks.Add(GenesisBlock.Raw);
-            knownBlocks.Add(KnownBlocks.Block100000.Content);
-            knownBlocks.Add(KnownBlocks.Block100001.Content);
-            knownBlocks.Add(KnownBlocks.Block100002.Content);
+            List<BlockMessage> knownBlocks = new List<BlockMessage>();
+            knownBlocks.Add(NetworkParameters.BitcoinCoreMain.GenesisBlock);
+            knownBlocks.Add(KnownBlocks.Block100000.Block);
+            knownBlocks.Add(KnownBlocks.Block100001.Block);
+            knownBlocks.Add(KnownBlocks.Block100002.Block);
 
-            foreach (byte[] rawBlock in knownBlocks)
+            foreach (BlockMessage block in knownBlocks)
             {
-                BlockMessage block = BlockMessage.Read(new BitcoinStreamReader(new MemoryStream(rawBlock)));
                 Assert.True(BlockContentValidator.IsMerkleTreeValid(block));
                 Assert.True(BlockContentValidator.IsValidCoinbaseTransaction(block));
             }
@@ -34,7 +31,7 @@ namespace Test.BitcoinUtilities.Node.Rules
         [Test]
         public void TestNoTransactions()
         {
-            BlockMessage block = new BlockMessage(GenesisBlock.GetHeader(), new Tx[0]);
+            BlockMessage block = new BlockMessage(NetworkParameters.BitcoinCoreMain.GenesisBlock.BlockHeader, new Tx[0]);
             Assert.False(BlockContentValidator.IsMerkleTreeValid(block));
         }
 

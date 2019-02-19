@@ -21,6 +21,24 @@ namespace BitcoinUtilities
         private const uint NetworkMagicCashTestNet = 0xF4E5F3F4;
         private const uint NetworkMagicCashRegTest = 0xDAB5BFFA;
 
+        private static readonly byte[] genesisBlockMain = HexUtils.GetBytesUnsafe
+        (
+            "0100000000000000000000000000000000000000000000000000000000000000000000003BA3EDFD7A7B12B27AC72C3E67768F617FC81BC3888A51323A9FB8AA" +
+            "4B1E5E4A29AB5F49FFFF001D1DAC2B7C0101000000010000000000000000000000000000000000000000000000000000000000000000FFFFFFFF4D04FFFF001D" +
+            "0104455468652054696D65732030332F4A616E2F32303039204368616E63656C6C6F72206F6E206272696E6B206F66207365636F6E64206261696C6F75742066" +
+            "6F722062616E6B73FFFFFFFF0100F2052A01000000434104678AFDB0FE5548271967F1A67130B7105CD6A828E03909A67962E0EA1F61DEB649F6BC3F4CEF38C4" +
+            "F35504E51EC112DE5C384DF7BA0B8D578A4C702B6BF11D5FAC00000000"
+        );
+
+        private static readonly byte[] genesisBlockRegTest = HexUtils.GetBytesUnsafe
+        (
+            "0100000000000000000000000000000000000000000000000000000000000000000000003BA3EDFD7A7B12B27AC72C3E67768F617FC81BC3888A51323A9FB8AA" +
+            "4B1E5E4ADAE5494DFFFF7F20020000000101000000010000000000000000000000000000000000000000000000000000000000000000FFFFFFFF4D04FFFF001D" +
+            "0104455468652054696D65732030332F4A616E2F32303039204368616E63656C6C6F72206F6E206272696E6B206F66207365636F6E64206261696C6F75742066" +
+            "6F722062616E6B73FFFFFFFF0100F2052A01000000434104678AFDB0FE5548271967F1A67130B7105CD6A828E03909A67962E0EA1F61DEB649F6BC3F4CEF38C4" +
+            "F35504E51EC112DE5C384DF7BA0B8D578A4C702B6BF11D5FAC00000000"
+        );
+
         /// <summary>
         /// Target that matches minimum difficulty of the main network.
         /// </summary>
@@ -34,7 +52,9 @@ namespace BitcoinUtilities
         private static readonly NetworkParameters[] knownNetworks = new[]
         {
             BitcoinCoreMain,
-            BitcoinCashMain
+            BitcoinCoreRegTest,
+            BitcoinCashMain,
+            BitcoinCashRegTest
         };
 
         private readonly List<string> dnsSeeds = new List<string>();
@@ -96,6 +116,11 @@ namespace BitcoinUtilities
         public BigInteger MaxDifficultyTarget { get; }
 
         /// <summary>
+        /// Flag indicating whether difficulty target should be calculated based on previous blocks or remain constant.
+        /// </summary>
+        public bool DifficultyAdjustmentEnabled { get; private set; } = true;
+
+        /// <summary>
         /// The first block of the blockchain.
         /// </summary>
         public BlockMessage GenesisBlock { get; }
@@ -106,7 +131,7 @@ namespace BitcoinUtilities
         {
             get
             {
-                var parameters = new NetworkParameters(BitcoinFork.Core, "bitcoin-core-main", NetworkMagicCoreMain, MaxDifficultyTargetMain, P2P.GenesisBlock.Raw);
+                var parameters = new NetworkParameters(BitcoinFork.Core, "bitcoin-core-main", NetworkMagicCoreMain, MaxDifficultyTargetMain, genesisBlockMain);
 
                 // DNS seeds taken from: https://github.com/bitcoin/bitcoin/blob/master/src/chainparams.cpp
                 parameters.AddDnsSeed("seed.bitcoin.sipa.be"); // Pieter Wuille
@@ -132,13 +157,23 @@ namespace BitcoinUtilities
             }
         }
 
+        public static NetworkParameters BitcoinCoreRegTest
+        {
+            get
+            {
+                var parameters = new NetworkParameters(BitcoinFork.Core, "bitcoin-core-regtest", NetworkMagicCoreRegTest, MaxDifficultyTargetRegTest, genesisBlockRegTest);
+                parameters.DifficultyAdjustmentEnabled = false;
+                return parameters;
+            }
+        }
+
         [SuppressMessage("ReSharper", "CommentTypo")]
         [SuppressMessage("ReSharper", "StringLiteralTypo")]
         public static NetworkParameters BitcoinCashMain
         {
             get
             {
-                var parameters = new NetworkParameters(BitcoinFork.Cash, "bitcoin-cash-main", NetworkMagicCashMain, MaxDifficultyTargetMain, P2P.GenesisBlock.Raw);
+                var parameters = new NetworkParameters(BitcoinFork.Cash, "bitcoin-cash-main", NetworkMagicCashMain, MaxDifficultyTargetMain, genesisBlockMain);
 
                 // DNS seeds taken from: https://github.com/bitcoinclassic/bitcoinclassic/blob/master/src/chainparams.cpp
                 parameters.AddDnsSeed("cash-seed.bitcoin.thomaszander.se");
@@ -172,6 +207,16 @@ namespace BitcoinUtilities
                 parameters.AddCheckpoint(500000, "000000000000000005e14d3f9fdfb70745308706615cfa9edca4f4558332b201");
                 parameters.AddCheckpoint(504032, "00000000000000000343e9875012f2062554c8752929892c82a0c0743ac7dcfd");
 
+                return parameters;
+            }
+        }
+
+        public static NetworkParameters BitcoinCashRegTest
+        {
+            get
+            {
+                var parameters = new NetworkParameters(BitcoinFork.Cash, "bitcoin-cash-regtest", NetworkMagicCashRegTest, MaxDifficultyTargetRegTest, genesisBlockRegTest);
+                parameters.DifficultyAdjustmentEnabled = false;
                 return parameters;
             }
         }

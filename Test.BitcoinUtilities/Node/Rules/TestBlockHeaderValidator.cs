@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Numerics;
 using BitcoinUtilities;
 using BitcoinUtilities.Node.Rules;
-using BitcoinUtilities.P2P;
 using BitcoinUtilities.P2P.Primitives;
 using BitcoinUtilities.Storage;
 using NUnit.Framework;
@@ -14,7 +13,7 @@ namespace Test.BitcoinUtilities.Node.Rules
     [TestFixture]
     public class TestBlockHeaderValidator
     {
-        private static readonly BlockHeader genesisBlockHeader = GenesisBlock.GetHeader();
+        private static readonly BlockHeader genesisBlockHeader = NetworkParameters.BitcoinCoreMain.GenesisBlock.BlockHeader;
 
         //todo: generate blocks to test BlockHeaderValidator.IsValid method instead of testing each method ?
 

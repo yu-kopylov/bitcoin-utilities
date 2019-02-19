@@ -121,6 +121,11 @@ namespace BitcoinUtilities.Node.Rules
         /// </summary>
         private static uint CalculateNextNBits(NetworkParameters networkParameters, ISubchain<IValidatableHeader> parentChain)
         {
+            if (!networkParameters.DifficultyAdjustmentEnabled)
+            {
+                return parentChain.GetBlockByOffset(0).NBits;
+            }
+
             BigInteger nextTarget = CalculateNextTarget(networkParameters.Fork, parentChain);
             if (nextTarget > networkParameters.MaxDifficultyTarget)
             {

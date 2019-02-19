@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using BitcoinUtilities;
-using BitcoinUtilities.P2P;
 using BitcoinUtilities.P2P.Messages;
 using BitcoinUtilities.P2P.Primitives;
 using NUnit.Framework;
@@ -26,7 +24,7 @@ namespace Test.BitcoinUtilities
         [Test]
         public void TestGetTreeRootOnGenesisBlock()
         {
-            BlockMessage block = BlockMessage.Read(new BitcoinStreamReader(new MemoryStream(GenesisBlock.Raw)));
+            BlockMessage block = NetworkParameters.BitcoinCoreMain.GenesisBlock;
             byte[] calculatedHash = MerkleTreeUtils.GetTreeRoot(block.Transactions);
             Assert.That(calculatedHash, Is.EqualTo(block.BlockHeader.MerkleRoot));
         }
