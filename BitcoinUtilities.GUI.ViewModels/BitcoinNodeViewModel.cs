@@ -28,6 +28,7 @@ namespace BitcoinUtilities.GUI.ViewModels
         {
             this.applicationContext = applicationContext;
             this.viewContext = viewContext;
+            this.UtxoLookup = new UtxoLookupViewModel(viewContext, this);
             UpdateValues();
         }
 
@@ -111,6 +112,11 @@ namespace BitcoinUtilities.GUI.ViewModels
             }
         }
 
+        // todo: this view should have its own node, to allow multiple nodes
+        public BitcoinNode BitcoinNode => applicationContext.BitcoinNode;
+
+        public UtxoLookupViewModel UtxoLookup { get; }
+
         public event PropertyChangedEventHandler PropertyChanged;
 
         protected virtual void OnPropertyChanged([CallerMemberName] string propertyName = null)
@@ -122,8 +128,7 @@ namespace BitcoinUtilities.GUI.ViewModels
         {
             if (!NetworkParameters.TryGetByName(applicationContext.Settings.Network, out var networkParameters))
             {
-                // todo: add standard error dialog
-                viewContext.ShowError(new Exception($"Unknown network name: {applicationContext.Settings.Network ?? "null"}."));
+                viewContext.ShowError($"Unknown network name: {applicationContext.Settings.Network ?? "null"}.");
                 return;
             }
 

@@ -5,6 +5,12 @@ namespace BitcoinUtilities.GUI.ViewModels
     public interface IViewContext
     {
         /// <summary>
+        /// Displays error message.
+        /// </summary>
+        /// <param name="message">The message.</param>
+        void ShowError(string message);
+
+        /// <summary>
         /// Displays information about an exception.
         /// </summary>
         /// <param name="e">The exception.</param>

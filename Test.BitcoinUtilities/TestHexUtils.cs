@@ -82,5 +82,44 @@ namespace Test.BitcoinUtilities
             Assert.True(HexUtils.TryGetBytes("0123456789abcdef", out bytes));
             Assert.That(bytes, Is.EqualTo(new byte[] {0x01, 0x23, 0x45, 0x67, 0x89, 0xAB, 0xCD, 0xEF}));
         }
+
+        [Test]
+        public void TestTryGetReversedBytes()
+        {
+            byte[] bytes;
+
+            Assert.False(HexUtils.TryGetReversedBytes(null, out bytes));
+            Assert.That(bytes, Is.Null);
+
+            Assert.False(HexUtils.TryGetReversedBytes("a", out bytes));
+            Assert.That(bytes, Is.Null);
+
+            Assert.False(HexUtils.TryGetReversedBytes("aaa", out bytes));
+            Assert.That(bytes, Is.Null);
+
+            Assert.False(HexUtils.TryGetReversedBytes("0Z", out bytes));
+            Assert.That(bytes, Is.Null);
+
+            Assert.False(HexUtils.TryGetReversedBytes("Z0", out bytes));
+            Assert.That(bytes, Is.Null);
+
+            Assert.True(HexUtils.TryGetReversedBytes("", out bytes));
+            Assert.That(bytes, Is.EqualTo(new byte[0]));
+
+            Assert.True(HexUtils.TryGetReversedBytes("01", out bytes));
+            Assert.That(bytes, Is.EqualTo(new byte[] {0x01}));
+
+            Assert.True(HexUtils.TryGetReversedBytes("FE", out bytes));
+            Assert.That(bytes, Is.EqualTo(new byte[] {0xFE}));
+
+            Assert.True(HexUtils.TryGetReversedBytes("FeeF", out bytes));
+            Assert.That(bytes, Is.EqualTo(new byte[] {0xEF, 0xFE}));
+
+            Assert.True(HexUtils.TryGetReversedBytes("0123456789ABCDEF", out bytes));
+            Assert.That(bytes, Is.EqualTo(new byte[] {0xEF, 0xCD, 0xAB, 0x89, 0x67, 0x45, 0x23, 0x01}));
+
+            Assert.True(HexUtils.TryGetReversedBytes("0123456789abcdef", out bytes));
+            Assert.That(bytes, Is.EqualTo(new byte[] {0xEF, 0xCD, 0xAB, 0x89, 0x67, 0x45, 0x23, 0x01}));
+        }
     }
 }

@@ -13,6 +13,11 @@ namespace BitcoinUtilities.GUI.Views
             this.window = window;
         }
 
+        public void ShowError(string message)
+        {
+            MessageBox.Show(window, message, MessageBoxType.Error);
+        }
+
         public void ShowError(Exception e)
         {
             MessageBox.Show(window, e.Message, MessageBoxType.Error);

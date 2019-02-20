@@ -54,6 +54,8 @@
     <Compile Include="SettingsViewModel.cs" />
     <Compile Include="UIModule.cs" />
     <Compile Include="UIUpdaterService.cs" />
+    <Compile Include="UtxoLookupViewModel.cs" />
+    <Compile Include="UtxoOutputViewModel.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\BitcoinUtilities.GUI.Models\BitcoinUtilities.GUI.Models.csproj">

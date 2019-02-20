@@ -78,6 +78,22 @@ namespace BitcoinUtilities
         /// <returns>true if string was converted to bytes; otherwise, false.</returns>
         public static bool TryGetBytes(string hex, out byte[] result)
         {
+            return TryGetBytes(hex, out result, false);
+        }
+
+        /// <summary>
+        /// Converts a hexadecimal string to a byte array using reverse byte order.
+        /// </summary>
+        /// <param name="hex">The string to convert. The only allowed characters are 0-9, a-z, A-Z.</param>
+        /// <param name="result">A byte array converted from the given string; or null if conversion failed.</param>
+        /// <returns>true if string was converted to bytes; otherwise, false.</returns>
+        public static bool TryGetReversedBytes(string hex, out byte[] result)
+        {
+            return TryGetBytes(hex, out result, true);
+        }
+
+        private static bool TryGetBytes(string hex, out byte[] result, bool reverseResult)
+        {
             result = null;
 
             if (hex == null || hex.Length % 2 != 0)
@@ -90,13 +106,17 @@ namespace BitcoinUtilities
 
             for (int i = 0, ofs = 0; i < arrayLength; i++, ofs += 2)
             {
-                byte hi, low;
-                if (!TryParseOctet(hex[ofs], out hi) || !TryParseOctet(hex[ofs + 1], out low))
+                if (!TryParseOctet(hex[ofs], out byte hi) || !TryParseOctet(hex[ofs + 1], out byte low))
                 {
                     return false;
                 }
 
                 array[i] = (byte) (hi << 4 | low);
+            }
+
+            if (reverseResult)
+            {
+                Array.Reverse(array);
             }
 
             result = array;
