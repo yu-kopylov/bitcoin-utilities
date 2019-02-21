@@ -15,6 +15,14 @@ namespace BitcoinUtilities.P2P.Messages
     {
         public const string Command = "getheaders";
 
+        /// <summary>
+        /// The maximum number of entries in a locator.
+        /// </summary>
+        /// <remarks>
+        /// Introduced in Bitcoin Core v0.17.0.
+        /// </remarks>
+        public const int MaxLocatorSize = 101;
+
         private readonly int protocolVersion;
         private readonly List<byte[]> locatorHashes;
         private readonly byte[] hashStop;
@@ -63,6 +71,7 @@ namespace BitcoinUtilities.P2P.Messages
             {
                 writer.Write(hash);
             }
+
             writer.Write(hashStop);
         }
 

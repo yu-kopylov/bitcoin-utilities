@@ -172,13 +172,13 @@ namespace BitcoinUtilities.Node.Modules.Headers
         {
             List<DbHeader> locatorHeaders = new List<DbHeader>();
 
-            locatorHeaders.AddRange(blockchain.GetSubChain(knownHeader.ParentHash, 999) ?? Enumerable.Empty<DbHeader>());
+            locatorHeaders.AddRange(blockchain.GetSubChain(knownHeader.ParentHash, GetHeadersMessage.MaxLocatorSize / 2) ?? Enumerable.Empty<DbHeader>());
             locatorHeaders.Add(knownHeader);
 
             DbHeader bestHead = blockchain.GetBestHead(knownHeader.Hash);
             if (bestHead != null && bestHead.Height != knownHeader.Height)
             {
-                int bestRelatedChainLength = Math.Min(bestHead.Height - knownHeader.Height, 1000);
+                int bestRelatedChainLength = Math.Min(bestHead.Height - knownHeader.Height, GetHeadersMessage.MaxLocatorSize / 2);
                 var bestRelatedChain = blockchain.GetSubChain(bestHead.Hash, bestRelatedChainLength);
                 if (bestRelatedChain != null)
                 {
@@ -188,7 +188,7 @@ namespace BitcoinUtilities.Node.Modules.Headers
 
             locatorHeaders.Reverse();
 
-            return locatorHeaders.Select(h => h.Hash).ToArray();
+            return locatorHeaders.Take(GetHeadersMessage.MaxLocatorSize).Select(h => h.Hash).ToArray();
         }
     }
 }
