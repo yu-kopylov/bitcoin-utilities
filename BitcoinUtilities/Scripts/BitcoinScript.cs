@@ -649,14 +649,20 @@ namespace BitcoinUtilities.Scripts
                 return Base58Check.Encode(address);
             }
 
+            if (TryParsePayToPubkey(pubkeyScript, out byte[] publicKey))
+            {
+                // todo: use network parameters
+                return BitcoinAddress.FromPublicKey(BitcoinNetworkKind.Main, publicKey);
+            }
+
             return null;
         }
 
         /// <summary>
-        /// Tests if the given input is a pay-to-pubkey-hash script.
+        /// Checks if the given pubkey script is a pay-to-pubkey-hash script.
         /// </summary>
-        /// <param name="pubkeyScript">The array of bytes to test.</param>
-        /// <returns>true if the given input is a pay-to-pubkey-hash script; otherwise false.</returns>
+        /// <param name="pubkeyScript">The pubkey script.</param>
+        /// <returns>true if the given input is a pay-to-pubkey-hash script; otherwise, false.</returns>
         public static bool IsPayToPubkeyHash(byte[] pubkeyScript)
         {
             if (pubkeyScript == null || pubkeyScript.Length != 25)
@@ -672,11 +678,45 @@ namespace BitcoinUtilities.Scripts
                 pubkeyScript[24] == OP_CHECKSIG;
         }
 
+        /// <summary>
+        /// Checks if the given pubkey script is a pay-to-pubkey script.
+        /// </summary>
+        /// <remarks>
+        /// This method does not check if public key has correct encoding.
+        /// </remarks>
+        /// <param name="pubkeyScript">The pubkey script.</param>
+        /// <param name="publicKey">If script is a pay-to-pubkey script, contains the public key from it; otherwise, contains null.</param>
+        /// <returns>true if the given input is a pay-to-pubkey script; otherwise, false.</returns>
+        public static bool TryParsePayToPubkey(byte[] pubkeyScript, out byte[] publicKey)
+        {
+            publicKey = null;
+
+            // Constants below are used to check both opcode and public key length at the same time.
+            const int minPubkeyLength = 33;
+            const int maxPubkeyLength = 65;
+
+            if (pubkeyScript == null || pubkeyScript.Length == 0)
+            {
+                return false;
+            }
+
+            byte op1 = pubkeyScript[0];
+            byte op2 = pubkeyScript[pubkeyScript.Length - 1];
+
+            if (op2 != OP_CHECKSIG || op1 + 2 != pubkeyScript.Length || op1 < minPubkeyLength || op1 > maxPubkeyLength)
+            {
+                return false;
+            }
+
+            publicKey = new byte[op1];
+            Array.Copy(pubkeyScript, 1, publicKey, 0, op1);
+            return true;
+        }
+
         // todo: add tests and xml-doc
         public static byte[] CreatePayToPubkeyHash(string address)
         {
-            byte[] addressBytes;
-            if (!Base58Check.TryDecode(address, out addressBytes))
+            if (!Base58Check.TryDecode(address, out var addressBytes))
             {
                 throw new ArgumentException("Address is not in Base58Check format.", nameof(address));
             }
