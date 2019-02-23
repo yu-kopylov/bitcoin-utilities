@@ -8,10 +8,12 @@ namespace BitcoinUtilities.GUI.ViewModels
     {
         public UtxoOutputViewModel(UtxoOutput output)
         {
+            Output = output;
             Address = BitcoinScript.GetAddressFromPubkeyScript(output.PubkeyScript);
             FormattedValue = output.Value.ToString("0,000", CultureInfo.InvariantCulture);
         }
 
+        public UtxoOutput Output { get; }
         public string Address { get; }
         public string FormattedValue { get; }
     }

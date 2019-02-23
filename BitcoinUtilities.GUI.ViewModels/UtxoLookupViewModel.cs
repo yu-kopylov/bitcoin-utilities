@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using BitcoinUtilities.Node.Modules.Outputs;
 
@@ -47,11 +48,10 @@ namespace BitcoinUtilities.GUI.ViewModels
                 return;
             }
 
-            var bitcoinNode = Node.BitcoinNode;
-            if (bitcoinNode == null || !bitcoinNode.Started)
+            var bitcoinNode = Node.GetStartedNodeOrShowError();
+
+            if (bitcoinNode == null)
             {
-                // todo: also detect when node is stopping
-                viewContext.ShowError("Bitcoin node is not started.");
                 return;
             }
 
@@ -61,6 +61,11 @@ namespace BitcoinUtilities.GUI.ViewModels
             {
                 UnspentOutputs.Add(new UtxoOutputViewModel(output));
             }
+        }
+
+        public void AddToInputs(IEnumerable<UtxoOutputViewModel> outputs)
+        {
+            Node?.TransactionBuilder?.AddInputs(outputs.Select(o => o.Output));
         }
     }
 }

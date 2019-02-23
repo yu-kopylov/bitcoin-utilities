@@ -28,7 +28,10 @@ namespace BitcoinUtilities.GUI.ViewModels
         {
             this.applicationContext = applicationContext;
             this.viewContext = viewContext;
+
             this.UtxoLookup = new UtxoLookupViewModel(viewContext, this);
+            this.TransactionBuilder = new TransactionBuilderViewModel(viewContext, this);
+
             UpdateValues();
         }
 
@@ -116,6 +119,8 @@ namespace BitcoinUtilities.GUI.ViewModels
         public BitcoinNode BitcoinNode => applicationContext.BitcoinNode;
 
         public UtxoLookupViewModel UtxoLookup { get; }
+
+        public TransactionBuilderViewModel TransactionBuilder { get; }
 
         public event PropertyChangedEventHandler PropertyChanged;
 
@@ -205,6 +210,20 @@ namespace BitcoinUtilities.GUI.ViewModels
         public SettingsViewModel CreateSettingsViewModel()
         {
             return new SettingsViewModel(applicationContext);
+        }
+
+        public BitcoinNode GetStartedNodeOrShowError()
+        {
+            var bitcoinNode = BitcoinNode;
+
+            if (bitcoinNode == null || !bitcoinNode.Started)
+            {
+                // todo: also detect when node is stopping
+                viewContext.ShowError("Bitcoin node is not started.");
+                return null;
+            }
+
+            return bitcoinNode;
         }
     }
 }

@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using BitcoinUtilities.GUI.ViewModels;
 using BitcoinUtilities.GUI.Views.Components;
 using Eto.Drawing;
@@ -34,10 +35,10 @@ namespace BitcoinUtilities.GUI.Views
 
             resultsGrid.Columns.Add(new GridColumn {HeaderText = "Address", DataCell = new TextBoxCell(nameof(UtxoOutputViewModel.Address))});
             resultsGrid.Columns.Add(new GridColumn {HeaderText = "Value", DataCell = new TextBoxCell(nameof(UtxoOutputViewModel.FormattedValue))});
-            resultsGrid.Height = 200;
+            resultsGrid.ContextMenu = new ContextMenu(new MenuItem[] {new ButtonMenuItem((_, __) => ViewModel?.AddToInputs(resultsGrid.SelectedItems.Cast<UtxoOutputViewModel>())) {Text = "Add to Inputs"}});
 
             Rows.Add(new TableRow(searchPanel));
-            Rows.Add(new TableRow(resultsGrid));
+            Rows.Add(new TableRow(resultsGrid) {ScaleHeight = true});
         }
 
         private UtxoLookupViewModel ViewModel => DataContext as UtxoLookupViewModel;

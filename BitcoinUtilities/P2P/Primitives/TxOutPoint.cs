@@ -68,7 +68,7 @@ namespace BitcoinUtilities.P2P.Primitives
 
         public override string ToString()
         {
-            return HexUtils.GetString(Hash) + ":" + Index;
+            return HexUtils.GetReversedString(Hash) + ":" + Index;
         }
     }
 }

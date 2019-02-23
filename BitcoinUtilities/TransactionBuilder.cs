@@ -83,24 +83,29 @@ namespace BitcoinUtilities
                 hashCalculator.InputIndex = i;
                 hashCalculator.Amount = input.Value;
 
+                SigHashType hashType = GetHashType();
+                byte[] signedData = hashCalculator.Calculate(hashType, input.PubkeyScript);
+                byte[] signature = SignatureUtils.Sign(signedData, input.PrivateKey);
+
                 byte[] signatureScript;
 
+                // todo: use network parameters or compare public key hashes
+                byte[] publicKey = BitcoinPrivateKey.ToEncodedPublicKey(input.PrivateKey, input.IsCompressedAddress);
+                string privateKeyAddress = BitcoinAddress.FromPublicKey(BitcoinNetworkKind.Main, publicKey);
+                string outputAddress = BitcoinScript.GetAddressFromPubkeyScript(input.PubkeyScript);
+                if (outputAddress != privateKeyAddress)
+                {
+                    throw new InvalidOperationException($"Address in PubkeyScript does not match private key address for input #{i}: '{outputAddress}', '{privateKeyAddress}'.");
+                }
+
+                //todo: separate this signature generation from builder
                 if (BitcoinScript.IsPayToPubkeyHash(input.PubkeyScript))
                 {
-                    string outputAddress = BitcoinScript.GetAddressFromPubkeyScript(input.PubkeyScript);
-                    byte[] publicKey = BitcoinPrivateKey.ToEncodedPublicKey(input.PrivateKey, input.IsCompressedAddress);
-                    string privateKeyAddress = BitcoinAddress.FromPublicKey(BitcoinNetworkKind.Main, publicKey);
-                    if (outputAddress != privateKeyAddress)
-                    {
-                        throw new InvalidOperationException($"Address in PubkeyScript does not match private key address for input #{i}: '{outputAddress}', '{privateKeyAddress}'.");
-                    }
-
-                    SigHashType hashType = GetHashType();
-
-                    byte[] signedData = hashCalculator.Calculate(hashType, input.PubkeyScript);
-                    byte[] signature = SignatureUtils.Sign(signedData, input.PrivateKey);
-
                     signatureScript = BitcoinScript.CreatePayToPubkeyHashSignature(hashType, publicKey, signature);
+                }
+                else if (BitcoinScript.TryParsePayToPubkey(input.PubkeyScript, out var inputPublicKey))
+                {
+                    signatureScript = BitcoinScript.CreatePayToPubkeySignature(hashType, signature);
                 }
                 else
                 {
@@ -119,10 +124,12 @@ namespace BitcoinUtilities
             {
                 return new BitcoinCoreSigHashCalculator(transaction);
             }
+
             if (fork == BitcoinFork.Cash)
             {
                 return new BitcoinCashSigHashCalculator(transaction);
             }
+
             // todo: exception type?
             throw new InvalidOperationException($"Unexpected fork: '{fork}'.");
         }
@@ -133,10 +140,12 @@ namespace BitcoinUtilities
             {
                 return SigHashType.All;
             }
+
             if (fork == BitcoinFork.Cash)
             {
                 return SigHashType.All | SigHashType.ForkId;
             }
+
             // todo: exception type?
             throw new InvalidOperationException($"Unexpected fork: '{fork}'.");
         }

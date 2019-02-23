@@ -24,7 +24,7 @@ namespace BitcoinUtilities.GUI.Views
             bioRandomDialogButton.Click += ShowBioRandomDialog;
             tabControl.Pages.Add(new TabPage {Text = "Random Number Generator", Content = new StackLayout {Items = {new PaddedPanel(bioRandomDialogButton)}}});
 
-            tabControl.Pages.Add(new TabPage {Text = "Bitcoin Node", Content = new StackLayout {Items = {bitcoinNodeView}, HorizontalContentAlignment = HorizontalAlignment.Stretch}});
+            tabControl.Pages.Add(new TabPage {Text = "Bitcoin Node", Content = bitcoinNodeView});
 
             Content = tabControl;
         }

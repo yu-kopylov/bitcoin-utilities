@@ -52,6 +52,7 @@
     <Compile Include="PaperWalletViewModel.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SettingsViewModel.cs" />
+    <Compile Include="TransactionBuilderViewModel.cs" />
     <Compile Include="UIModule.cs" />
     <Compile Include="UIUpdaterService.cs" />
     <Compile Include="UtxoLookupViewModel.cs" />

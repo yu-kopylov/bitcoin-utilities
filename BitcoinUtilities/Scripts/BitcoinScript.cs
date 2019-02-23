@@ -745,5 +745,15 @@ namespace BitcoinUtilities.Scripts
             Array.Copy(publicKey, 0, script, 3 + signature.Length, publicKey.Length);
             return script;
         }
+
+        // todo: add tests and xml-doc, validate parameters (including length up to OP_PUSHDATA_LEN_75)
+        public static byte[] CreatePayToPubkeySignature(SigHashType hashType, byte[] signature)
+        {
+            byte[] script = new byte[2 + signature.Length];
+            script[0] = (byte) (signature.Length + 1);
+            Array.Copy(signature, 0, script, 1, signature.Length);
+            script[1 + signature.Length] = (byte) hashType;
+            return script;
+        }
     }
 }

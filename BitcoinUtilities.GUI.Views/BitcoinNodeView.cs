@@ -1,7 +1,6 @@
 ﻿using System;
 using BitcoinUtilities.GUI.ViewModels;
 using BitcoinUtilities.GUI.Views.Components;
-using Eto.Drawing;
 using Eto.Forms;
 
 namespace BitcoinUtilities.GUI.Views
@@ -9,6 +8,7 @@ namespace BitcoinUtilities.GUI.Views
     public class BitcoinNodeView : Panel
     {
         private readonly UtxoLookupView utxoLookupView = new UtxoLookupView();
+        private readonly TransactionBuilderView transactionBuilderView = new TransactionBuilderView();
 
         public BitcoinNodeView()
         {
@@ -32,7 +32,9 @@ namespace BitcoinUtilities.GUI.Views
             mainTable.Rows.Add(new HorizontalDivider());
             mainTable.Rows.Add(new PaddedPanel(buttonsPanel));
             mainTable.Rows.Add(new HeaderPanel("UTXO Lookup"));
-            mainTable.Rows.Add(new PaddedPanel(utxoLookupView));
+            mainTable.Rows.Add(new PaddedPanel(utxoLookupView){Height = 150});
+            mainTable.Rows.Add(new HeaderPanel("Transaction Builder"));
+            mainTable.Rows.Add(new TableRow(new PaddedPanel(transactionBuilderView)) {ScaleHeight = true});
 
             Content = mainTable;
         }
@@ -43,6 +45,7 @@ namespace BitcoinUtilities.GUI.Views
         {
             base.OnDataContextChanged(e);
             utxoLookupView.DataContext = ViewModel?.UtxoLookup;
+            transactionBuilderView.DataContext = ViewModel?.TransactionBuilder;
         }
 
         private void StartNode()
