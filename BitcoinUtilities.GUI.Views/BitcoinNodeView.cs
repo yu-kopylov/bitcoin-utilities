@@ -1,6 +1,7 @@
 ﻿using System;
 using BitcoinUtilities.GUI.ViewModels;
 using BitcoinUtilities.GUI.Views.Components;
+using BitcoinUtilities.GUI.Views.Wallet;
 using Eto.Forms;
 
 namespace BitcoinUtilities.GUI.Views
@@ -9,6 +10,7 @@ namespace BitcoinUtilities.GUI.Views
     {
         private readonly UtxoLookupView utxoLookupView = new UtxoLookupView();
         private readonly TransactionBuilderView transactionBuilderView = new TransactionBuilderView();
+        private readonly WalletView walletView = new WalletView();
 
         public BitcoinNodeView()
         {
@@ -27,16 +29,19 @@ namespace BitcoinUtilities.GUI.Views
 
             var mainTable = new TableLayout();
 
-            mainTable.Rows.Add(new HeaderPanel("Bitcoin Node"));
             mainTable.Rows.Add(new PaddedPanel(propertiesTable));
             mainTable.Rows.Add(new HorizontalDivider());
             mainTable.Rows.Add(new PaddedPanel(buttonsPanel));
-            mainTable.Rows.Add(new HeaderPanel("UTXO Lookup"));
-            mainTable.Rows.Add(new PaddedPanel(utxoLookupView){Height = 150});
-            mainTable.Rows.Add(new HeaderPanel("Transaction Builder"));
-            mainTable.Rows.Add(new TableRow(new PaddedPanel(transactionBuilderView)) {ScaleHeight = true});
+            mainTable.Rows.Add(new Panel());
 
-            Content = mainTable;
+            var tabControl = new TabControl();
+
+            tabControl.Pages.Add(new TabPage {Text = "Overview", Content = mainTable});
+            tabControl.Pages.Add(new TabPage {Text = "Wallet", Content = walletView});
+            tabControl.Pages.Add(new TabPage {Text = "Transaction Builder", Content = transactionBuilderView});
+            tabControl.Pages.Add(new TabPage {Text = "UTXO Lookup", Content = utxoLookupView});
+
+            Content = tabControl;
         }
 
         private BitcoinNodeViewModel ViewModel => DataContext as BitcoinNodeViewModel;
@@ -44,8 +49,9 @@ namespace BitcoinUtilities.GUI.Views
         protected override void OnDataContextChanged(EventArgs e)
         {
             base.OnDataContextChanged(e);
-            utxoLookupView.DataContext = ViewModel?.UtxoLookup;
-            transactionBuilderView.DataContext = ViewModel?.TransactionBuilder;
+            utxoLookupView.ViewModel = ViewModel?.UtxoLookup;
+            transactionBuilderView.ViewModel = ViewModel?.TransactionBuilder;
+            walletView.ViewModel = ViewModel?.Wallet;
         }
 
         private void StartNode()

@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using BitcoinUtilities.GUI.ViewModels;
 using BitcoinUtilities.GUI.Views.Components;
+using Eto.Drawing;
 using Eto.Forms;
 
 namespace BitcoinUtilities.GUI.Views
@@ -9,6 +10,8 @@ namespace BitcoinUtilities.GUI.Views
     {
         public TransactionBuilderView()
         {
+            Spacing = new Size(5, 5);
+
             GridView inputsGrid = new GridView();
             // todo: enable copy from grid
             // todo: enable deletion
@@ -45,6 +48,10 @@ namespace BitcoinUtilities.GUI.Views
             Rows.Add(buttonsPanel);
         }
 
-        private TransactionBuilderViewModel ViewModel => DataContext as TransactionBuilderViewModel;
+        public TransactionBuilderViewModel ViewModel
+        {
+            get { return DataContext as TransactionBuilderViewModel; }
+            set { DataContext = value; }
+        }
     }
 }

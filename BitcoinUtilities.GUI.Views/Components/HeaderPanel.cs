@@ -3,6 +3,7 @@ using Eto.Forms;
 
 namespace BitcoinUtilities.GUI.Views.Components
 {
+    // todo: remove?
     public class HeaderPanel : Panel
     {
         public HeaderPanel(string text)

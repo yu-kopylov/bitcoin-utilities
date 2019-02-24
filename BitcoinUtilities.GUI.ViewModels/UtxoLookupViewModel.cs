@@ -65,7 +65,16 @@ namespace BitcoinUtilities.GUI.ViewModels
 
         public void AddToInputs(IEnumerable<UtxoOutputViewModel> outputs)
         {
-            Node?.TransactionBuilder?.AddInputs(outputs.Select(o => o.Output));
+            var txBuilder = Node?.TransactionBuilder;
+            if (txBuilder == null)
+            {
+                return;
+            }
+
+            foreach (var output in outputs)
+            {
+                txBuilder.AddInput(output.Output.OutPoint, output.Output.Value, output.Output.PubkeyScript);
+            }
         }
     }
 }

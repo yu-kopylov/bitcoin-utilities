@@ -57,6 +57,12 @@
     <Compile Include="UIUpdaterService.cs" />
     <Compile Include="UtxoLookupViewModel.cs" />
     <Compile Include="UtxoOutputViewModel.cs" />
+    <Compile Include="Wallet\AddWalletAddressViewModel.cs" />
+    <Compile Include="Wallet\WalletAddressViewModel.cs" />
+    <Compile Include="Wallet\WalletOutputViewModel.cs" />
+    <Compile Include="Wallet\WalletUIModule.cs" />
+    <Compile Include="Wallet\WalletUIUpdaterService.cs" />
+    <Compile Include="Wallet\WalletViewModel.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\BitcoinUtilities.GUI.Models\BitcoinUtilities.GUI.Models.csproj">

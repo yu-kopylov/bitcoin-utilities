@@ -37,7 +37,7 @@ namespace Test.BitcoinUtilities
 
             Assert.That(tx.Outputs[0].Value, Is.EqualTo(0xF123456789012345));
             Assert.That(BitcoinScript.IsPayToPubkeyHash(tx.Outputs[0].PubkeyScript));
-            Assert.That(BitcoinScript.GetAddressFromPubkeyScript(tx.Outputs[0].PubkeyScript), Is.EqualTo(destAddress));
+            Assert.That(BitcoinScript.GetAddressFromPubkeyScript(BitcoinNetworkKind.Main, tx.Outputs[0].PubkeyScript), Is.EqualTo(destAddress));
 
             ISigHashCalculator sigHashCalculator = new BitcoinCoreSigHashCalculator(tx);
             sigHashCalculator.InputIndex = 0;
@@ -78,7 +78,7 @@ namespace Test.BitcoinUtilities
 
             Assert.That(tx.Outputs[0].Value, Is.EqualTo(0xF123456789012345));
             Assert.That(BitcoinScript.IsPayToPubkeyHash(tx.Outputs[0].PubkeyScript));
-            Assert.That(BitcoinScript.GetAddressFromPubkeyScript(tx.Outputs[0].PubkeyScript), Is.EqualTo(destAddress));
+            Assert.That(BitcoinScript.GetAddressFromPubkeyScript(BitcoinNetworkKind.Main, tx.Outputs[0].PubkeyScript), Is.EqualTo(destAddress));
 
             ISigHashCalculator sigHashCalculator = new BitcoinCashSigHashCalculator(tx);
             sigHashCalculator.InputIndex = 0;

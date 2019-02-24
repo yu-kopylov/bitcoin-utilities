@@ -15,15 +15,15 @@ namespace Test.BitcoinUtilities.Scripts
             Assert.That(BitcoinScript.IsPayToPubkeyHash(null), Is.False);
             Assert.That(BitcoinScript.IsPayToPubkeyHash(new byte[0]), Is.False);
 
-            Assert.That(BitcoinScript.GetAddressFromPubkeyScript(null), Is.Null);
-            Assert.That(BitcoinScript.GetAddressFromPubkeyScript(new byte[0]), Is.Null);
+            Assert.That(BitcoinScript.GetAddressFromPubkeyScript(BitcoinNetworkKind.Main, null), Is.Null);
+            Assert.That(BitcoinScript.GetAddressFromPubkeyScript(BitcoinNetworkKind.Main, new byte[0]), Is.Null);
 
             // this sample was taken from the output in the block 728
             byte[] sampleScript = new byte[] {0x76, 0xA9, 0x14, 0x12, 0xAB, 0x8D, 0xC5, 0x88, 0xCA, 0x9D, 0x57, 0x87, 0xDD, 0xE7, 0xEB, 0x29, 0x56, 0x9D, 0xA6, 0x3C, 0x3A, 0x23, 0x8C, 0x88, 0xAC};
             string sampleAddress = "12higDjoCCNXSA95xZMWUdPvXNmkAduhWv";
 
             Assert.That(BitcoinScript.IsPayToPubkeyHash(sampleScript), Is.True);
-            Assert.That(BitcoinScript.GetAddressFromPubkeyScript(sampleScript), Is.EqualTo(sampleAddress));
+            Assert.That(BitcoinScript.GetAddressFromPubkeyScript(BitcoinNetworkKind.Main, sampleScript), Is.EqualTo(sampleAddress));
 
             // corrupt opcode
             byte[][] corruptOpcodeScripts =
@@ -39,7 +39,7 @@ namespace Test.BitcoinUtilities.Scripts
             foreach (byte[] script in corruptOpcodeScripts)
             {
                 Assert.That(BitcoinScript.IsPayToPubkeyHash(script), Is.False);
-                Assert.That(BitcoinScript.GetAddressFromPubkeyScript(script), Is.Null);
+                Assert.That(BitcoinScript.GetAddressFromPubkeyScript(BitcoinNetworkKind.Main, script), Is.Null);
             }
 
             // extra byte
@@ -59,7 +59,7 @@ namespace Test.BitcoinUtilities.Scripts
             foreach (byte[] script in extraByteScripts)
             {
                 Assert.That(BitcoinScript.IsPayToPubkeyHash(script), Is.False);
-                Assert.That(BitcoinScript.GetAddressFromPubkeyScript(script), Is.Null);
+                Assert.That(BitcoinScript.GetAddressFromPubkeyScript(BitcoinNetworkKind.Main, script), Is.Null);
             }
 
 
@@ -79,7 +79,7 @@ namespace Test.BitcoinUtilities.Scripts
             foreach (byte[] script in missingByteScripts)
             {
                 Assert.That(BitcoinScript.IsPayToPubkeyHash(script), Is.False);
-                Assert.That(BitcoinScript.GetAddressFromPubkeyScript(script), Is.Null);
+                Assert.That(BitcoinScript.GetAddressFromPubkeyScript(BitcoinNetworkKind.Main, script), Is.Null);
             }
         }
 
@@ -93,12 +93,12 @@ namespace Test.BitcoinUtilities.Scripts
                 "96b538e853519c726a2c91e61ec11600ae1390813a627c66fb8be7947be63c52" +
                 "da7589379515d4e0a604f8141781e62294721166bf621e73a82cbf2342c858ee"
             ).IgnoreCase);
-            Assert.That(BitcoinScript.GetAddressFromPubkeyScript(pubkeyScript), Is.EqualTo("12c6DSiU4Rq3P4ZxziKxzrL5LmMBrzjrJX"));
+            Assert.That(BitcoinScript.GetAddressFromPubkeyScript(BitcoinNetworkKind.Main, pubkeyScript), Is.EqualTo("12c6DSiU4Rq3P4ZxziKxzrL5LmMBrzjrJX"));
 
             byte[] zeroPubkeyScript = new byte[] {BitcoinScript.OP_FALSE, BitcoinScript.OP_CHECKSIG};
             Assert.That(BitcoinScript.TryParsePayToPubkey(zeroPubkeyScript, out pubkey), Is.False);
             Assert.That(pubkey, Is.Null);
-            Assert.That(BitcoinScript.GetAddressFromPubkeyScript(zeroPubkeyScript), Is.Null);
+            Assert.That(BitcoinScript.GetAddressFromPubkeyScript(BitcoinNetworkKind.Main, zeroPubkeyScript), Is.Null);
 
             byte[] corruptedPubkeyScript;
 
@@ -107,21 +107,21 @@ namespace Test.BitcoinUtilities.Scripts
 
             Assert.That(BitcoinScript.TryParsePayToPubkey(corruptedPubkeyScript, out pubkey), Is.False);
             Assert.That(pubkey, Is.Null);
-            Assert.That(BitcoinScript.GetAddressFromPubkeyScript(corruptedPubkeyScript), Is.Null);
+            Assert.That(BitcoinScript.GetAddressFromPubkeyScript(BitcoinNetworkKind.Main, corruptedPubkeyScript), Is.Null);
 
             corruptedPubkeyScript = pubkeyScript.ToArray();
             corruptedPubkeyScript[0]--;
 
             Assert.That(BitcoinScript.TryParsePayToPubkey(corruptedPubkeyScript, out pubkey), Is.False);
             Assert.That(pubkey, Is.Null);
-            Assert.That(BitcoinScript.GetAddressFromPubkeyScript(corruptedPubkeyScript), Is.Null);
+            Assert.That(BitcoinScript.GetAddressFromPubkeyScript(BitcoinNetworkKind.Main, corruptedPubkeyScript), Is.Null);
 
             corruptedPubkeyScript = pubkeyScript.ToArray();
             corruptedPubkeyScript[corruptedPubkeyScript.Length - 1]--;
 
             Assert.That(BitcoinScript.TryParsePayToPubkey(corruptedPubkeyScript, out pubkey), Is.False);
             Assert.That(pubkey, Is.Null);
-            Assert.That(BitcoinScript.GetAddressFromPubkeyScript(corruptedPubkeyScript), Is.Null);
+            Assert.That(BitcoinScript.GetAddressFromPubkeyScript(BitcoinNetworkKind.Main, corruptedPubkeyScript), Is.Null);
         }
     }
 }

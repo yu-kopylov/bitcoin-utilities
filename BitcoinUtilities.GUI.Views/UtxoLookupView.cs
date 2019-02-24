@@ -41,6 +41,10 @@ namespace BitcoinUtilities.GUI.Views
             Rows.Add(new TableRow(resultsGrid) {ScaleHeight = true});
         }
 
-        private UtxoLookupViewModel ViewModel => DataContext as UtxoLookupViewModel;
+        public UtxoLookupViewModel ViewModel
+        {
+            get { return DataContext as UtxoLookupViewModel; }
+            set { DataContext = value; }
+        }
     }
 }

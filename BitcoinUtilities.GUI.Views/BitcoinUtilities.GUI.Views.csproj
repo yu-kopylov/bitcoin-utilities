@@ -65,6 +65,8 @@
     <Compile Include="TransactionBuilderView.cs" />
     <Compile Include="UtxoLookupView.cs" />
     <Compile Include="ViewContext.cs" />
+    <Compile Include="Wallet\AddWalletAddressDialog.cs" />
+    <Compile Include="Wallet\WalletView.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\BitcoinUtilities.GUI.ViewModels\BitcoinUtilities.GUI.ViewModels.csproj">

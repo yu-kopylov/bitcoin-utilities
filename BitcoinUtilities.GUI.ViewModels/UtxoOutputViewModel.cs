@@ -9,7 +9,8 @@ namespace BitcoinUtilities.GUI.ViewModels
         public UtxoOutputViewModel(UtxoOutput output)
         {
             Output = output;
-            Address = BitcoinScript.GetAddressFromPubkeyScript(output.PubkeyScript);
+            // todo: use network parameters
+            Address = BitcoinScript.GetAddressFromPubkeyScript(BitcoinNetworkKind.Main, output.PubkeyScript);
             FormattedValue = output.Value.ToString("0,000", CultureInfo.InvariantCulture);
         }
 

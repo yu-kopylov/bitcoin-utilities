@@ -1,10 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Globalization;
 using System.Runtime.CompilerServices;
-using BitcoinUtilities.Node.Modules.Outputs;
 using BitcoinUtilities.P2P;
 using BitcoinUtilities.P2P.Primitives;
 using BitcoinUtilities.Scripts;
@@ -17,7 +15,6 @@ namespace BitcoinUtilities.GUI.ViewModels
         {
             ViewContext = viewContext;
             Node = node;
-            Outputs.Add(new TransactionOutputViewModel());
         }
 
         private IViewContext ViewContext { get; }
@@ -26,12 +23,24 @@ namespace BitcoinUtilities.GUI.ViewModels
         public ObservableCollection<TransactionInputViewModel> Inputs { get; } = new ObservableCollection<TransactionInputViewModel>();
         public ObservableCollection<TransactionOutputViewModel> Outputs { get; } = new ObservableCollection<TransactionOutputViewModel>();
 
-        public void AddInputs(IEnumerable<UtxoOutput> inputs)
+        public void AddInput(TxOutPoint outPoint, ulong value, byte[] pubkeyScript, byte[] privateKey = null)
         {
-            foreach (var input in inputs)
+            // todo: use real implementation
+            var networkKind = Node.BitcoinNode.NetworkParameters.Name.Contains("test") ? BitcoinNetworkKind.Test : BitcoinNetworkKind.Main;
+
+            var input = new TransactionInputViewModel(outPoint, value, pubkeyScript);
+            if (privateKey != null)
             {
-                Inputs.Add(new TransactionInputViewModel(input.OutPoint, input.PubkeyScript, input.Value));
+                // todo: use network parameters
+                input.Wif = Wif.Encode(networkKind, privateKey, true);
             }
+
+            Inputs.Add(input);
+        }
+
+        public void AddOutput(string address, ulong value)
+        {
+            Outputs.Add(new TransactionOutputViewModel {Address = address, Value = value});
         }
 
         public void Create()
@@ -42,10 +51,13 @@ namespace BitcoinUtilities.GUI.ViewModels
                 return;
             }
 
+            // todo: use real implementation
+            var networkKind = bitcoinNode.NetworkParameters.Name.Contains("test") ? BitcoinNetworkKind.Test : BitcoinNetworkKind.Main;
+
             TransactionBuilder builder = new TransactionBuilder(bitcoinNode.NetworkParameters.Fork);
             foreach (var input in Inputs)
             {
-                if (!Wif.TryDecode(BitcoinNetworkKind.Test, input.Wif, out var privateKey, out var compressed))
+                if (!Wif.TryDecode(networkKind, input.Wif, out var privateKey, out var compressed))
                 {
                     ViewContext.ShowError("Invalid WIF encoding.");
                     return;
@@ -80,17 +92,18 @@ namespace BitcoinUtilities.GUI.ViewModels
     {
         private string wif;
 
-        public TransactionInputViewModel(TxOutPoint outPoint, byte[] pubkeyScript, ulong value)
+        public TransactionInputViewModel(TxOutPoint outPoint, ulong value, byte[] pubkeyScript)
         {
             OutPoint = outPoint;
             TransactionId = HexUtils.GetReversedString(outPoint.Hash);
             OutputIndex = outPoint.Index;
 
-            PubkeyScript = pubkeyScript;
-            Address = BitcoinScript.GetAddressFromPubkeyScript(pubkeyScript);
-
             Value = value;
             FormattedValue = value.ToString("0,000", CultureInfo.InvariantCulture);
+
+            PubkeyScript = pubkeyScript;
+            // todo: use network parameters
+            Address = BitcoinScript.GetAddressFromPubkeyScript(BitcoinNetworkKind.Main, pubkeyScript);
         }
 
         public TxOutPoint OutPoint { get; }

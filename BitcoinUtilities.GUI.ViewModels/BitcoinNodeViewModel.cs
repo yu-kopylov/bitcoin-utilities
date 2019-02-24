@@ -3,7 +3,9 @@ using System.ComponentModel;
 using System.IO;
 using System.Runtime.CompilerServices;
 using BitcoinUtilities.GUI.Models;
+using BitcoinUtilities.GUI.ViewModels.Wallet;
 using BitcoinUtilities.Node;
+using BitcoinUtilities.Node.Modules.Wallet;
 
 namespace BitcoinUtilities.GUI.ViewModels
 {
@@ -31,6 +33,7 @@ namespace BitcoinUtilities.GUI.ViewModels
 
             this.UtxoLookup = new UtxoLookupViewModel(viewContext, this);
             this.TransactionBuilder = new TransactionBuilderViewModel(viewContext, this);
+            this.Wallet = new WalletViewModel(viewContext, this);
 
             UpdateValues();
         }
@@ -119,8 +122,8 @@ namespace BitcoinUtilities.GUI.ViewModels
         public BitcoinNode BitcoinNode => applicationContext.BitcoinNode;
 
         public UtxoLookupViewModel UtxoLookup { get; }
-
         public TransactionBuilderViewModel TransactionBuilder { get; }
+        public WalletViewModel Wallet { get; }
 
         public event PropertyChangedEventHandler PropertyChanged;
 
@@ -143,6 +146,13 @@ namespace BitcoinUtilities.GUI.ViewModels
             const string nodeStateChangedEventType = "NodeStateChanged";
             // todo: rethink service -> UI notifications patterns
             node.AddModule(new UIModule(applicationContext, viewContext, this, nodeStateChangedEventType));
+
+            // todo: enable for main network
+            if (node.NetworkParameters.Name.Contains("test"))
+            {
+                node.AddModule(new WalletModule());
+                node.AddModule(new WalletUIModule(viewContext, Wallet));
+            }
 
             try
             {

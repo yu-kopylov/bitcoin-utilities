@@ -632,9 +632,10 @@ namespace BitcoinUtilities.Scripts
         /// <summary>
         /// Extracts an address from the given pubkey script if it has a known format.
         /// </summary>
+        /// <param name="networkKind">The kind of a network the extracted address will be used for.</param>
         /// <param name="pubkeyScript">The array of bytes with a pubkey script.</param>
         /// <returns>An address in the Base58Check encoding if it was extracted successfully; otherwise, null.</returns>
-        public static string GetAddressFromPubkeyScript(byte[] pubkeyScript)
+        public static string GetAddressFromPubkeyScript(BitcoinNetworkKind networkKind, byte[] pubkeyScript)
         {
             if (pubkeyScript == null)
             {
@@ -643,8 +644,9 @@ namespace BitcoinUtilities.Scripts
 
             if (IsPayToPubkeyHash(pubkeyScript))
             {
-                //todo: set first byte according to the Network type (0x00 for Main Network)
                 byte[] address = new byte[21];
+                // todo: use code from network parameters
+                address[0] = (byte) (networkKind == BitcoinNetworkKind.Main ? 0x00 : 0x6F);
                 Array.Copy(pubkeyScript, 3, address, 1, 20);
                 return Base58Check.Encode(address);
             }
@@ -652,7 +654,7 @@ namespace BitcoinUtilities.Scripts
             if (TryParsePayToPubkey(pubkeyScript, out byte[] publicKey))
             {
                 // todo: use network parameters
-                return BitcoinAddress.FromPublicKey(BitcoinNetworkKind.Main, publicKey);
+                return BitcoinAddress.FromPublicKey(networkKind, publicKey);
             }
 
             return null;

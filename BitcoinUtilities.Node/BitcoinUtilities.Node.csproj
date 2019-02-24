@@ -93,6 +93,12 @@
     <Compile Include="Modules\Outputs\UtxoUpdate.cs" />
     <Compile Include="Modules\Outputs\UtxoUpdateService.cs" />
     <Compile Include="Modules\SqliteUtils.cs" />
+    <Compile Include="Modules\Wallet\Events\WalletAddressChangedEvent.cs" />
+    <Compile Include="Modules\Wallet\Events\WalletBalanceChangedEvent.cs" />
+    <Compile Include="Modules\Wallet\Wallet.cs" />
+    <Compile Include="Modules\Wallet\WalletModule.cs" />
+    <Compile Include="Modules\Wallet\WalletOutput.cs" />
+    <Compile Include="Modules\Wallet\WalletUpdateService.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
