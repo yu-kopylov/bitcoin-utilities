@@ -75,8 +75,10 @@
     <Compile Include="BioRandom.cs" />
     <Compile Include="Bip38.cs" />
     <Compile Include="BitcoinAddress.cs" />
+    <Compile Include="BitcoinAddressUsage.cs" />
     <Compile Include="BitcoinFork.cs" />
     <Compile Include="BitcoinNetworkKind.cs" />
+    <Compile Include="CashAddr.cs" />
     <Compile Include="Collections\CollectionUtils.cs" />
     <Compile Include="DifficultyUtils.cs" />
     <Compile Include="ECDSASignature.cs" />

@@ -44,7 +44,7 @@ namespace BitcoinUtilities
             }
 
             byte[] addressBytes = new byte[21];
-            addressBytes[0] = GetAddressVersion(networkKind);
+            addressBytes[0] = EncodeAddressVersion(networkKind, BitcoinAddressUsage.PayToPublicKeyHash);
             using (SHA256 sha256Alg = SHA256.Create())
             {
                 using (RIPEMD160 ripemd160Alg = RIPEMD160.Create())
@@ -57,20 +57,107 @@ namespace BitcoinUtilities
             return Base58Check.Encode(addressBytes);
         }
 
+        public static bool TryDecode(string address, out BitcoinNetworkKind networkKind, out BitcoinAddressUsage addressUsage, out byte[] publicKeyHash)
+        {
+            // todo: add XMLDOC and tests
+
+            // todo: do we really need so many parameters (networkKind, addressUsage)? Should we just have some network-specific formatters?
+
+            networkKind = default(BitcoinNetworkKind);
+            addressUsage = default(BitcoinAddressUsage);
+            publicKeyHash = null;
+
+            if (!Base58Check.TryDecode(address, out byte[] decodedBytes))
+            {
+                return false;
+            }
+
+            if (decodedBytes.Length != 21)
+            {
+                return false;
+            }
+
+            if (!TryDecodeAddressVersion(decodedBytes[0], out networkKind, out addressUsage))
+            {
+                return false;
+            }
+
+            publicKeyHash = new byte[decodedBytes.Length - 1];
+            Array.Copy(decodedBytes, 1, publicKeyHash, 0, publicKeyHash.Length);
+
+            return true;
+        }
+
         /// <summary>
         /// Specification: https://en.bitcoin.it/wiki/List_of_address_prefixes
         /// </summary>
-        private static byte GetAddressVersion(BitcoinNetworkKind networkKind)
+        private static byte EncodeAddressVersion(BitcoinNetworkKind networkKind, BitcoinAddressUsage addressUsage)
         {
             if (networkKind == BitcoinNetworkKind.Main)
             {
-                return 0x00;
+                if (addressUsage == BitcoinAddressUsage.PayToPublicKeyHash)
+                {
+                    return 0x00;
+                }
+
+                if (addressUsage == BitcoinAddressUsage.PayToScriptHash)
+                {
+                    return 0x05;
+                }
             }
+
             if (networkKind == BitcoinNetworkKind.Test)
             {
-                return 0x6F;
+                if (addressUsage == BitcoinAddressUsage.PayToPublicKeyHash)
+                {
+                    return 0x6F;
+                }
+
+                if (addressUsage == BitcoinAddressUsage.PayToScriptHash)
+                {
+                    return 0xC4;
+                }
             }
-            throw new ArgumentException($"Unexpected network kind: {networkKind}", nameof(networkKind));
+
+            throw new ArgumentException($"Unexpected network kind / address version: {networkKind} / {addressUsage}.");
+        }
+
+        /// <summary>
+        /// Specification: https://en.bitcoin.it/wiki/List_of_address_prefixes
+        /// </summary>
+        private static bool TryDecodeAddressVersion(byte versionByte, out BitcoinNetworkKind networkKind, out BitcoinAddressUsage addressUsage)
+        {
+            if (versionByte == 0x00)
+            {
+                networkKind = BitcoinNetworkKind.Main;
+                addressUsage = BitcoinAddressUsage.PayToPublicKeyHash;
+                return true;
+            }
+
+            if (versionByte == 0x05)
+            {
+                networkKind = BitcoinNetworkKind.Main;
+                addressUsage = BitcoinAddressUsage.PayToScriptHash;
+                return true;
+            }
+
+            if (versionByte == 0x6F)
+            {
+                networkKind = BitcoinNetworkKind.Test;
+                addressUsage = BitcoinAddressUsage.PayToPublicKeyHash;
+                return true;
+            }
+
+            if (versionByte == 0xC4)
+            {
+                networkKind = BitcoinNetworkKind.Test;
+                addressUsage = BitcoinAddressUsage.PayToScriptHash;
+                return true;
+            }
+
+            networkKind = default(BitcoinNetworkKind);
+            addressUsage = default(BitcoinAddressUsage);
+            return false;
         }
     }
 }
