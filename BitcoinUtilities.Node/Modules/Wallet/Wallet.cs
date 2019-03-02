@@ -13,26 +13,25 @@ namespace BitcoinUtilities.Node.Modules.Wallet
     {
         private readonly object monitor = new object();
 
-        private readonly NetworkParameters networkParameters;
         private readonly IEventDispatcher eventDispatcher;
 
-        private readonly BitcoinNetworkKind networkKind;
-
         // todo: use public key instead of address
-        private readonly Dictionary<string, byte[]> addresses = new Dictionary<string, byte[]>();
+        private readonly List<WalletAddress> addresses = new List<WalletAddress>();
+        private readonly Dictionary<byte[], WalletAddress> addressesByPublicKeyHash = new Dictionary<byte[], WalletAddress>(ByteArrayComparer.Instance);
+        private readonly Dictionary<byte[], byte[]> privateKeys = new Dictionary<byte[], byte[]>(ByteArrayComparer.Instance);
         private readonly OutputSet outputs = new OutputSet();
 
         public Wallet(NetworkParameters networkParameters, IEventDispatcher eventDispatcher)
         {
-            this.networkParameters = networkParameters;
+            NetworkParameters = networkParameters;
             this.eventDispatcher = eventDispatcher;
-            // todo: use real implementation
-            networkKind = networkParameters.Name.Contains("test") ? BitcoinNetworkKind.Test : BitcoinNetworkKind.Main;
         }
 
-        public byte[] GetPrivateKey(string address)
+        public NetworkParameters NetworkParameters { get; }
+
+        public byte[] GetPrivateKey(byte[] publicKeyHash)
         {
-            if (!addresses.TryGetValue(address, out var privateKey))
+            if (!privateKeys.TryGetValue(publicKeyHash, out var privateKey))
             {
                 return null;
             }
@@ -44,20 +43,45 @@ namespace BitcoinUtilities.Node.Modules.Wallet
         {
             lock (monitor)
             {
-                addresses[BitcoinAddress.FromPrivateKey(networkKind, privateKey, false)] = privateKey;
-                addresses[BitcoinAddress.FromPrivateKey(networkKind, privateKey, true)] = privateKey;
+                //todo: move address hashing to utils
+                byte[] primaryPublicKeyHash = CryptoUtils.RipeMd160(CryptoUtils.Sha256(BitcoinPrivateKey.ToEncodedPublicKey(privateKey, true)));
+                byte[] secondaryPublicKeyHash = CryptoUtils.RipeMd160(CryptoUtils.Sha256(BitcoinPrivateKey.ToEncodedPublicKey(privateKey, false)));
+
+                if (addressesByPublicKeyHash.TryGetValue(primaryPublicKeyHash, out var address1))
+                {
+                    addresses.Remove(address1);
+                }
+
+                if (addressesByPublicKeyHash.TryGetValue(secondaryPublicKeyHash, out var address2))
+                {
+                    addresses.Remove(address2);
+                }
+
+                WalletAddress address = new WalletAddress(primaryPublicKeyHash, secondaryPublicKeyHash);
+                addresses.Add(address);
+
+                addressesByPublicKeyHash[primaryPublicKeyHash] = address;
+                addressesByPublicKeyHash[secondaryPublicKeyHash] = address;
+
+                privateKeys[primaryPublicKeyHash] = privateKey;
+                privateKeys[secondaryPublicKeyHash] = privateKey;
 
                 outputs.Clear();
+                foreach (var walletAddress in addresses)
+                {
+                    walletAddress.Balance = 0;
+                }
+
                 eventDispatcher.Raise(new WalletAddressChangedEvent());
                 eventDispatcher.Raise(new WalletBalanceChangedEvent());
             }
         }
 
-        public IReadOnlyList<string> GetAddresses()
+        public IReadOnlyList<WalletAddress> GetAddresses()
         {
             lock (monitor)
             {
-                return new List<string>(addresses.Keys);
+                return new List<WalletAddress>(addresses);
             }
         }
 
@@ -92,17 +116,19 @@ namespace BitcoinUtilities.Node.Modules.Wallet
 
         public void CreateUnspentOutput(byte[] txHash, int outputIndex, ulong value, byte[] pubkeyScript)
         {
-            string address = BitcoinScript.GetAddressFromPubkeyScript(networkKind, pubkeyScript);
-            if (address == null)
+            byte[] publicKeyHash = BitcoinScript.GetPublicKeyHashFromPubkeyScript(pubkeyScript);
+            if (publicKeyHash == null)
             {
                 return;
             }
 
             lock (monitor)
             {
-                if (addresses.ContainsKey(address))
+                if (addressesByPublicKeyHash.TryGetValue(publicKeyHash, out var address))
                 {
-                    outputs.Add(new WalletOutput(address, txHash, outputIndex, value, pubkeyScript));
+                    outputs.Add(new WalletOutput(address, publicKeyHash, txHash, outputIndex, value, pubkeyScript));
+                    // todo: check for overflow
+                    address.Balance += value;
                     eventDispatcher.Raise(new WalletBalanceChangedEvent());
                 }
             }
@@ -112,8 +138,9 @@ namespace BitcoinUtilities.Node.Modules.Wallet
         {
             lock (monitor)
             {
-                if (outputs.Remove(output.OutPoint))
+                if (outputs.TryGetValue(output.OutPoint, out output))
                 {
+                    output.WalletAddress.Balance -= output.Value;
                     eventDispatcher.Raise(new WalletBalanceChangedEvent());
                 }
             }
@@ -197,5 +224,20 @@ namespace BitcoinUtilities.Node.Modules.Wallet
                 return GetEnumerator();
             }
         }
+    }
+
+    public class WalletAddress
+    {
+        // todo: use just one hash instead?
+        public WalletAddress(byte[] primaryPublicKeyHash, byte[] secondaryPublicKeyHash)
+        {
+            PrimaryPublicKeyHash = primaryPublicKeyHash;
+            SecondaryPublicKeyHash = secondaryPublicKeyHash;
+        }
+
+        public byte[] PrimaryPublicKeyHash { get; }
+        public byte[] SecondaryPublicKeyHash { get; }
+
+        public ulong Balance { get; set; }
     }
 }

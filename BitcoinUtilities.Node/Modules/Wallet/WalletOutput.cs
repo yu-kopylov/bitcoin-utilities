@@ -5,15 +5,17 @@ namespace BitcoinUtilities.Node.Modules.Wallet
 {
     public class WalletOutput : ISpendableOutput
     {
-        public WalletOutput(string address, byte[] txHash, int outputIndex, ulong value, byte[] pubkeyScript)
+        public WalletOutput(WalletAddress walletAddress, byte[] publicKeyHash, byte[] txHash, int outputIndex, ulong value, byte[] pubkeyScript)
         {
-            Address = address;
+            WalletAddress = walletAddress;
+            PublicKeyHash = publicKeyHash;
             OutPoint = new TxOutPoint(txHash, outputIndex);
             Value = value;
             PubkeyScript = pubkeyScript;
         }
 
-        public string Address { get; set; }
+        public WalletAddress WalletAddress { get; }
+        public byte[] PublicKeyHash { get; set; }
         public TxOutPoint OutPoint { get; set; }
         public ulong Value { get; set; }
         public byte[] PubkeyScript { get; set; }

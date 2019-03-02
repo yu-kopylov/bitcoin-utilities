@@ -3,13 +3,13 @@
     public class AddWalletAddressViewModel
     {
         private readonly IViewContext viewContext;
-        private readonly BitcoinNetworkKind networkKind;
+        private readonly NetworkParameters networkParameters;
         private readonly WalletViewModel wallet;
 
-        public AddWalletAddressViewModel(IViewContext viewContext, BitcoinNetworkKind networkKind, WalletViewModel wallet)
+        public AddWalletAddressViewModel(IViewContext viewContext, NetworkParameters networkParameters, WalletViewModel wallet)
         {
             this.viewContext = viewContext;
-            this.networkKind = networkKind;
+            this.networkParameters = networkParameters;
             this.wallet = wallet;
         }
 
@@ -17,13 +17,13 @@
 
         public bool AddAddress()
         {
-            // todo: use network parameters
-            if (!BitcoinUtilities.Wif.TryDecode(networkKind, Wif, out var privateKey, out bool _))
+            if (!BitcoinUtilities.Wif.TryDecode(networkParameters.NetworkKind, Wif, out var privateKey, out bool _))
             {
                 viewContext.ShowError("Invalid WIF encoding.");
                 return false;
             }
 
+            // todo: add only one address for the given compression flag?
             wallet.AddPrivateKey(privateKey);
             return true;
         }

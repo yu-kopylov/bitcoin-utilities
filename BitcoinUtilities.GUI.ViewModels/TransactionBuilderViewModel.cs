@@ -31,7 +31,7 @@ namespace BitcoinUtilities.GUI.ViewModels
             var input = new TransactionInputViewModel(outPoint, value, pubkeyScript);
             if (privateKey != null)
             {
-                // todo: use network parameters
+                // todo: remove this column
                 input.Wif = Wif.Encode(networkKind, privateKey, true);
             }
 
@@ -51,7 +51,7 @@ namespace BitcoinUtilities.GUI.ViewModels
                 return;
             }
 
-            // todo: use real implementation
+            // todo: request private key from KeyStore by public key hash / address
             var networkKind = bitcoinNode.NetworkParameters.Name.Contains("test") ? BitcoinNetworkKind.Test : BitcoinNetworkKind.Main;
 
             TransactionBuilder builder = new TransactionBuilder(bitcoinNode.NetworkParameters.Fork);
@@ -68,7 +68,7 @@ namespace BitcoinUtilities.GUI.ViewModels
 
             foreach (var output in Outputs)
             {
-                builder.AddOutput(BitcoinScript.CreatePayToPubkeyHash(output.Address), output.Value);
+                builder.AddOutput(BitcoinScript.CreatePayToPubkeyHash(bitcoinNode.NetworkParameters, output.Address), output.Value);
             }
 
 

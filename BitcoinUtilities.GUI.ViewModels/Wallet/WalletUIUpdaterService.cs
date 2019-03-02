@@ -38,7 +38,7 @@ namespace BitcoinUtilities.GUI.ViewModels.Wallet
             var addresses = wallet.GetAddresses();
             var outputs = wallet.GetAllOutputs();
 
-            viewContext.Invoke(() => viewModel.Update(addresses, outputs));
+            viewContext.Invoke(() => viewModel.Update(wallet.NetworkParameters, addresses, outputs));
 
             updateQueued = false;
             // avoiding to frequent updates of UI 

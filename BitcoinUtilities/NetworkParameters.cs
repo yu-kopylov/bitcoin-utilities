@@ -70,14 +70,27 @@ namespace BitcoinUtilities
         /// <para>It must be a valid file name, because it is used as part of the path to blockchain data.</para>
         /// </param>
         /// <param name="networkMagic">Four defined bytes which start every message in the Bitcoin P2P protocol to allow seeking to the next message.</param>
+        /// <param name="maxDifficultyTarget">Maximum difficulty target for the network. It defines minimum difficulty of the network.</param>
         /// <param name="genesisBlock">The first block of the blockchain.</param>
-        public NetworkParameters(BitcoinFork fork, string name, uint networkMagic, BigInteger maxDifficultyTarget, byte[] genesisBlock)
+        /// <param name="networkKind">Kind of the network.</param>
+        /// <param name="addressConverter">Address converter that defines address format.</param>
+        public NetworkParameters(
+            BitcoinFork fork,
+            string name,
+            uint networkMagic,
+            BigInteger maxDifficultyTarget,
+            byte[] genesisBlock,
+            BitcoinNetworkKind networkKind,
+            IAddressConverter addressConverter
+        )
         {
             Fork = fork;
             Name = name;
             NetworkMagic = networkMagic;
             MaxDifficultyTarget = maxDifficultyTarget;
             GenesisBlock = BitcoinStreamReader.FromBytes(genesisBlock, BlockMessage.Read);
+            NetworkKind = networkKind;
+            AddressConverter = addressConverter;
         }
 
         public static IReadOnlyList<NetworkParameters> KnownNetworks => knownNetworks;
@@ -125,13 +138,32 @@ namespace BitcoinUtilities
         /// </summary>
         public BlockMessage GenesisBlock { get; }
 
+        /// <summary>
+        /// Kind of the network.
+        /// </summary>
+        public BitcoinNetworkKind NetworkKind { get; }
+
+        /// <summary>
+        /// Address converter that defines address format.
+        /// </summary>
+        public IAddressConverter AddressConverter { get; }
+
         [SuppressMessage("ReSharper", "CommentTypo")]
         [SuppressMessage("ReSharper", "StringLiteralTypo")]
         public static NetworkParameters BitcoinCoreMain
         {
             get
             {
-                var parameters = new NetworkParameters(BitcoinFork.Core, "bitcoin-core-main", NetworkMagicCoreMain, MaxDifficultyTargetMain, genesisBlockMain);
+                var parameters = new NetworkParameters
+                (
+                    BitcoinFork.Core,
+                    "bitcoin-core-main",
+                    NetworkMagicCoreMain,
+                    MaxDifficultyTargetMain,
+                    genesisBlockMain,
+                    BitcoinNetworkKind.Main,
+                    new BitcoinCoreAddressConverter(BitcoinNetworkKind.Main)
+                );
 
                 // DNS seeds taken from: https://github.com/bitcoin/bitcoin/blob/master/src/chainparams.cpp
                 parameters.AddDnsSeed("seed.bitcoin.sipa.be"); // Pieter Wuille
@@ -161,7 +193,16 @@ namespace BitcoinUtilities
         {
             get
             {
-                var parameters = new NetworkParameters(BitcoinFork.Core, "bitcoin-core-regtest", NetworkMagicCoreRegTest, MaxDifficultyTargetRegTest, genesisBlockRegTest);
+                var parameters = new NetworkParameters
+                (
+                    BitcoinFork.Core,
+                    "bitcoin-core-regtest",
+                    NetworkMagicCoreRegTest,
+                    MaxDifficultyTargetRegTest,
+                    genesisBlockRegTest,
+                    BitcoinNetworkKind.Test,
+                    new BitcoinCoreAddressConverter(BitcoinNetworkKind.Test)
+                );
                 parameters.DifficultyAdjustmentEnabled = false;
                 return parameters;
             }
@@ -173,7 +214,16 @@ namespace BitcoinUtilities
         {
             get
             {
-                var parameters = new NetworkParameters(BitcoinFork.Cash, "bitcoin-cash-main", NetworkMagicCashMain, MaxDifficultyTargetMain, genesisBlockMain);
+                var parameters = new NetworkParameters
+                (
+                    BitcoinFork.Cash,
+                    "bitcoin-cash-main",
+                    NetworkMagicCashMain,
+                    MaxDifficultyTargetMain,
+                    genesisBlockMain,
+                    BitcoinNetworkKind.Main,
+                    new CashAddrConverter("bitcoincash")
+                );
 
                 // DNS seeds taken from: https://github.com/bitcoinclassic/bitcoinclassic/blob/master/src/chainparams.cpp
                 parameters.AddDnsSeed("cash-seed.bitcoin.thomaszander.se");
@@ -215,7 +265,16 @@ namespace BitcoinUtilities
         {
             get
             {
-                var parameters = new NetworkParameters(BitcoinFork.Cash, "bitcoin-cash-regtest", NetworkMagicCashRegTest, MaxDifficultyTargetRegTest, genesisBlockRegTest);
+                var parameters = new NetworkParameters
+                (
+                    BitcoinFork.Cash,
+                    "bitcoin-cash-regtest",
+                    NetworkMagicCashRegTest,
+                    MaxDifficultyTargetRegTest,
+                    genesisBlockRegTest,
+                    BitcoinNetworkKind.Test,
+                    new CashAddrConverter("bchreg")
+                );
                 parameters.DifficultyAdjustmentEnabled = false;
                 return parameters;
             }

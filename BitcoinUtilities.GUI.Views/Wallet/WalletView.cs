@@ -20,7 +20,8 @@ namespace BitcoinUtilities.GUI.Views.Wallet
                 new PropertyBinding<IEnumerable<object>>(nameof(ViewModel.Addresses), false)
             );
 
-            addressesGrid.Columns.Add(new GridColumn {HeaderText = "Address", DataCell = new TextBoxCell(nameof(WalletOutputViewModel.Address))});
+            addressesGrid.Columns.Add(new GridColumn {HeaderText = "Address", DataCell = new TextBoxCell(nameof(WalletAddressViewModel.Address))});
+            addressesGrid.Columns.Add(new GridColumn {HeaderText = "Balance", DataCell = new TextBoxCell(nameof(WalletAddressViewModel.Balance))});
             addressesGrid.ContextMenu = new ContextMenu(new MenuItem[]
             {
                 new ButtonMenuItem((_, __) => ViewModel?.AddToOutputs(addressesGrid.SelectedItems.Cast<WalletAddressViewModel>())) {Text = "Add to Outputs"}

@@ -30,7 +30,7 @@ namespace BitcoinUtilities.GUI.ViewModels.Wallet
 
             foreach (var output in outputs)
             {
-                node.TransactionBuilder.AddInput(output.OutPoint, output.Value, output.PubkeyScript, wallet.GetPrivateKey(output.Address));
+                node.TransactionBuilder.AddInput(output.OutPoint, output.Value, output.PubkeyScript, wallet.GetPrivateKey(output.PublicKeyHash));
             }
         }
 
@@ -62,23 +62,21 @@ namespace BitcoinUtilities.GUI.ViewModels.Wallet
                 return null;
             }
 
-            //todo: use real address converter
-            var networkKind = bitcoinNode.NetworkParameters.Name.Contains("test") ? BitcoinNetworkKind.Test : BitcoinNetworkKind.Main;
-            return new AddWalletAddressViewModel(viewContext, networkKind, this);
+            return new AddWalletAddressViewModel(viewContext, bitcoinNode.NetworkParameters, this);
         }
 
-        public void Update(IReadOnlyList<string> addresses, IReadOnlyList<WalletOutput> outputs)
+        public void Update(NetworkParameters networkParameters, IReadOnlyList<WalletAddress> addresses, IReadOnlyList<WalletOutput> outputs)
         {
             Addresses.Clear();
             foreach (var address in addresses)
             {
-                Addresses.Add(new WalletAddressViewModel(address));
+                Addresses.Add(new WalletAddressViewModel(networkParameters, address));
             }
 
             Outputs.Clear();
             foreach (var output in outputs)
             {
-                Outputs.Add(new WalletOutputViewModel(output.Address, output.OutPoint.Hash, output.OutPoint.Index, output.Value, output.PubkeyScript));
+                Outputs.Add(new WalletOutputViewModel(networkParameters, output.PublicKeyHash, output.OutPoint.Hash, output.OutPoint.Index, output.Value, output.PubkeyScript));
             }
         }
     }

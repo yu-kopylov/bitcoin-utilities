@@ -83,6 +83,7 @@
     <Compile Include="DifficultyUtils.cs" />
     <Compile Include="ECDSASignature.cs" />
     <Compile Include="HexUtils.cs" />
+    <Compile Include="IAddressConverter.cs" />
     <Compile Include="IpUtils.cs" />
     <Compile Include="MerkleTreeUtils.cs" />
     <Compile Include="NetworkParameters.cs" />

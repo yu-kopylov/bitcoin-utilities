@@ -637,6 +637,7 @@ namespace BitcoinUtilities.Scripts
         /// <returns>An address in the Base58Check encoding if it was extracted successfully; otherwise, null.</returns>
         public static string GetAddressFromPubkeyScript(BitcoinNetworkKind networkKind, byte[] pubkeyScript)
         {
+            // todo: remove this method
             if (pubkeyScript == null)
             {
                 return null;
@@ -655,6 +656,36 @@ namespace BitcoinUtilities.Scripts
             {
                 // todo: use network parameters
                 return BitcoinAddress.FromPublicKey(networkKind, publicKey);
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Extracts a public key hash from the given pubkey script if it has a known format.
+        /// </summary>
+        /// <param name="pubkeyScript">The array of bytes with a pubkey script.</param>
+        /// <returns>A public key hash if it was extracted successfully; otherwise, null.</returns>
+        public static byte[] GetPublicKeyHashFromPubkeyScript(byte[] pubkeyScript)
+        {
+            //todo: add tests
+            if (pubkeyScript == null)
+            {
+                return null;
+            }
+
+            //todo: add and use TryParsePayToPubkeyHash
+            if (IsPayToPubkeyHash(pubkeyScript))
+            {
+                byte[] hash = new byte[20];
+                Array.Copy(pubkeyScript, 3, hash, 0, 20);
+                return hash;
+            }
+
+            if (TryParsePayToPubkey(pubkeyScript, out byte[] publicKey))
+            {
+                // todo: move CryptoUtils.RipeMd160(CryptoUtils.Sha256(...)) to utilities
+                return CryptoUtils.RipeMd160(CryptoUtils.Sha256(publicKey));
             }
 
             return null;
@@ -715,23 +746,28 @@ namespace BitcoinUtilities.Scripts
             return true;
         }
 
-        // todo: add tests and xml-doc
+        // todo: remove this method
         public static byte[] CreatePayToPubkeyHash(string address)
         {
-            if (!Base58Check.TryDecode(address, out var addressBytes))
+            return CreatePayToPubkeyHash(NetworkParameters.BitcoinCoreMain, address);
+        }
+
+        // todo: add tests and xml-doc
+        public static byte[] CreatePayToPubkeyHash(NetworkParameters networkParameters, string address)
+        {
+            if (!networkParameters.AddressConverter.TryGetPublicKeyHash(address, out var publicKeyHash))
             {
                 throw new ArgumentException("Address is not in Base58Check format.", nameof(address));
             }
 
-            byte[] pubkeyScript = new byte[addressBytes.Length + 4];
+            byte[] pubkeyScript = new byte[publicKeyHash.Length + 5];
 
             pubkeyScript[0] = OP_DUP;
             pubkeyScript[1] = OP_HASH160;
-            // First byte in the addressBytes is a version byte.
-            pubkeyScript[2] = (byte) (addressBytes.Length - 1);
-            Array.Copy(addressBytes, 1, pubkeyScript, 3, addressBytes.Length - 1);
-            pubkeyScript[addressBytes.Length + 2] = OP_EQUALVERIFY;
-            pubkeyScript[addressBytes.Length + 3] = OP_CHECKSIG;
+            pubkeyScript[2] = (byte) publicKeyHash.Length;
+            Array.Copy(publicKeyHash, 0, pubkeyScript, 3, publicKeyHash.Length);
+            pubkeyScript[publicKeyHash.Length + 3] = OP_EQUALVERIFY;
+            pubkeyScript[publicKeyHash.Length + 4] = OP_CHECKSIG;
 
             return pubkeyScript;
         }

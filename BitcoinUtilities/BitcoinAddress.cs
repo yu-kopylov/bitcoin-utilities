@@ -43,17 +43,25 @@ namespace BitcoinUtilities
                 return null;
             }
 
-            byte[] addressBytes = new byte[21];
-            addressBytes[0] = EncodeAddressVersion(networkKind, BitcoinAddressUsage.PayToPublicKeyHash);
+            byte[] publicKeyHash;
+
             using (SHA256 sha256Alg = SHA256.Create())
             {
                 using (RIPEMD160 ripemd160Alg = RIPEMD160.Create())
                 {
-                    byte[] ripemd160Hash = ripemd160Alg.ComputeHash(sha256Alg.ComputeHash(publicKey));
-                    Array.Copy(ripemd160Hash, 0, addressBytes, 1, 20);
+                    publicKeyHash = ripemd160Alg.ComputeHash(sha256Alg.ComputeHash(publicKey));
                 }
             }
 
+            return Encode(networkKind, BitcoinAddressUsage.PayToPublicKeyHash, publicKeyHash);
+        }
+
+        public static string Encode(BitcoinNetworkKind networkKind, BitcoinAddressUsage usage, byte[] publicKeyHash)
+        {
+            // todo: validate parameters
+            byte[] addressBytes = new byte[21];
+            addressBytes[0] = EncodeAddressVersion(networkKind, usage);
+            Array.Copy(publicKeyHash, 0, addressBytes, 1, 20);
             return Base58Check.Encode(addressBytes);
         }
 
