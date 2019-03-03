@@ -6,11 +6,11 @@ namespace BitcoinUtilities.GUI.ViewModels
 {
     public class UtxoOutputViewModel
     {
-        public UtxoOutputViewModel(UtxoOutput output)
+        public UtxoOutputViewModel(NetworkParameters networkParameters, UtxoOutput output)
         {
             Output = output;
-            // todo: use network parameters
-            Address = BitcoinScript.GetAddressFromPubkeyScript(BitcoinNetworkKind.Main, output.PubkeyScript);
+            byte[] publicKeyHash = BitcoinScript.GetPublicKeyHashFromPubkeyScript(output.PubkeyScript);
+            Address = publicKeyHash == null ? null : networkParameters.AddressConverter.ToDefaultAddress(publicKeyHash);
             FormattedValue = output.Value.ToString("0,000", CultureInfo.InvariantCulture);
         }
 

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using BitcoinUtilities.P2P.Primitives;
 using BitcoinUtilities.Scripts;
 
@@ -91,15 +92,18 @@ namespace BitcoinUtilities
 
                 // todo: use network parameters or compare public key hashes
                 byte[] publicKey = BitcoinPrivateKey.ToEncodedPublicKey(input.PrivateKey, input.IsCompressedAddress);
-                string privateKeyAddress = BitcoinAddress.FromPublicKey(BitcoinNetworkKind.Main, publicKey);
-                string outputAddress = BitcoinScript.GetAddressFromPubkeyScript(BitcoinNetworkKind.Main, input.PubkeyScript);
-                if (outputAddress != privateKeyAddress)
+                byte[] privateKeyPublicKeyHash = BitcoinPrivateKey.ToEncodedPublicKeyHash(input.PrivateKey, input.IsCompressedAddress);
+                byte[] outputPublicKeyHash = BitcoinScript.GetPublicKeyHashFromPubkeyScript(input.PubkeyScript);
+                if (!outputPublicKeyHash.SequenceEqual(privateKeyPublicKeyHash))
                 {
-                    throw new InvalidOperationException($"Address in PubkeyScript does not match private key address for input #{i}: '{outputAddress}', '{privateKeyAddress}'.");
+                    throw new InvalidOperationException(
+                        $"Public key hash in pubkey script does not match private key for input #{i}: " +
+                        $"'{HexUtils.GetString(outputPublicKeyHash)}', '{HexUtils.GetString(privateKeyPublicKeyHash)}'."
+                    );
                 }
 
                 //todo: separate this signature generation from builder
-                if (BitcoinScript.IsPayToPubkeyHash(input.PubkeyScript))
+                if (BitcoinScript.TryParsePayToPubkeyHash(input.PubkeyScript, out var inputPublicKeyHash))
                 {
                     signatureScript = BitcoinScript.CreatePayToPubkeyHashSignature(hashType, publicKey, signature);
                 }

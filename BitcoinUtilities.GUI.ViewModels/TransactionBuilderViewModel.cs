@@ -25,14 +25,13 @@ namespace BitcoinUtilities.GUI.ViewModels
 
         public void AddInput(TxOutPoint outPoint, ulong value, byte[] pubkeyScript, byte[] privateKey = null)
         {
-            // todo: use real implementation
-            var networkKind = Node.BitcoinNode.NetworkParameters.Name.Contains("test") ? BitcoinNetworkKind.Test : BitcoinNetworkKind.Main;
+            var networkParameters = Node.BitcoinNode.NetworkParameters;
 
-            var input = new TransactionInputViewModel(outPoint, value, pubkeyScript);
+            var input = new TransactionInputViewModel(networkParameters, outPoint, value, pubkeyScript);
             if (privateKey != null)
             {
                 // todo: remove this column
-                input.Wif = Wif.Encode(networkKind, privateKey, true);
+                input.Wif = Wif.Encode(networkParameters.NetworkKind, privateKey, true);
             }
 
             Inputs.Add(input);
@@ -92,7 +91,7 @@ namespace BitcoinUtilities.GUI.ViewModels
     {
         private string wif;
 
-        public TransactionInputViewModel(TxOutPoint outPoint, ulong value, byte[] pubkeyScript)
+        public TransactionInputViewModel(NetworkParameters networkParameters, TxOutPoint outPoint, ulong value, byte[] pubkeyScript)
         {
             OutPoint = outPoint;
             TransactionId = HexUtils.GetReversedString(outPoint.Hash);
@@ -102,8 +101,8 @@ namespace BitcoinUtilities.GUI.ViewModels
             FormattedValue = value.ToString("0,000", CultureInfo.InvariantCulture);
 
             PubkeyScript = pubkeyScript;
-            // todo: use network parameters
-            Address = BitcoinScript.GetAddressFromPubkeyScript(BitcoinNetworkKind.Main, pubkeyScript);
+            byte[] publicKeyHash = BitcoinScript.GetPublicKeyHashFromPubkeyScript(pubkeyScript);
+            Address = publicKeyHash == null ? null : networkParameters.AddressConverter.ToDefaultAddress(publicKeyHash);
         }
 
         public TxOutPoint OutPoint { get; }

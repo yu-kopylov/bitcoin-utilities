@@ -59,7 +59,7 @@ namespace BitcoinUtilities.GUI.ViewModels
             var outputs = bitcoinNode.Resources.Get<UtxoRepository>().GetUnspentOutputs(new HashSet<byte[]>(ByteArrayComparer.Instance) {txHash});
             foreach (var output in outputs)
             {
-                UnspentOutputs.Add(new UtxoOutputViewModel(output));
+                UnspentOutputs.Add(new UtxoOutputViewModel(bitcoinNode.NetworkParameters, output));
             }
         }
 

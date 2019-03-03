@@ -32,8 +32,8 @@ namespace Test.BitcoinUtilities
             Assert.That(tx.Outputs.Length, Is.EqualTo(1));
 
             Assert.That(tx.Outputs[0].Value, Is.EqualTo(0xF123456789012345));
-            Assert.That(BitcoinScript.IsPayToPubkeyHash(tx.Outputs[0].PubkeyScript));
-            Assert.That(BitcoinScript.GetAddressFromPubkeyScript(BitcoinNetworkKind.Main, tx.Outputs[0].PubkeyScript), Is.EqualTo(destAddress));
+            Assert.That(BitcoinScript.TryParsePayToPubkeyHash(tx.Outputs[0].PubkeyScript, out var destPublicKeyHashFromScript));
+            Assert.That(BitcoinAddress.Encode(BitcoinNetworkKind.Main, BitcoinAddressUsage.PayToPublicKeyHash, destPublicKeyHashFromScript), Is.EqualTo(destAddress));
 
             ISigHashCalculator sigHashCalculator = new BitcoinCoreSigHashCalculator(tx);
             sigHashCalculator.InputIndex = 0;
@@ -70,8 +70,8 @@ namespace Test.BitcoinUtilities
             Assert.That(tx.Outputs.Length, Is.EqualTo(1));
 
             Assert.That(tx.Outputs[0].Value, Is.EqualTo(0xF123456789012345));
-            Assert.That(BitcoinScript.IsPayToPubkeyHash(tx.Outputs[0].PubkeyScript));
-            Assert.That(BitcoinScript.GetPublicKeyHashFromPubkeyScript(tx.Outputs[0].PubkeyScript), Is.EqualTo(destPublicKeyHash));
+            Assert.That(BitcoinScript.TryParsePayToPubkeyHash(tx.Outputs[0].PubkeyScript, out var destPublicKeyHashFromScript));
+            Assert.That(destPublicKeyHashFromScript, Is.EqualTo(destPublicKeyHash));
 
             ISigHashCalculator sigHashCalculator = new BitcoinCashSigHashCalculator(tx);
             sigHashCalculator.InputIndex = 0;

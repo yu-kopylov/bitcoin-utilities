@@ -630,38 +630,6 @@ namespace BitcoinUtilities.Scripts
         public const byte OP_INVALIDOPCODE = 0xFF;
 
         /// <summary>
-        /// Extracts an address from the given pubkey script if it has a known format.
-        /// </summary>
-        /// <param name="networkKind">The kind of a network the extracted address will be used for.</param>
-        /// <param name="pubkeyScript">The array of bytes with a pubkey script.</param>
-        /// <returns>An address in the Base58Check encoding if it was extracted successfully; otherwise, null.</returns>
-        public static string GetAddressFromPubkeyScript(BitcoinNetworkKind networkKind, byte[] pubkeyScript)
-        {
-            // todo: remove this method
-            if (pubkeyScript == null)
-            {
-                return null;
-            }
-
-            if (IsPayToPubkeyHash(pubkeyScript))
-            {
-                byte[] address = new byte[21];
-                // todo: use code from network parameters
-                address[0] = (byte) (networkKind == BitcoinNetworkKind.Main ? 0x00 : 0x6F);
-                Array.Copy(pubkeyScript, 3, address, 1, 20);
-                return Base58Check.Encode(address);
-            }
-
-            if (TryParsePayToPubkey(pubkeyScript, out byte[] publicKey))
-            {
-                // todo: use network parameters
-                return BitcoinAddress.FromPublicKey(networkKind, publicKey);
-            }
-
-            return null;
-        }
-
-        /// <summary>
         /// Extracts a public key hash from the given pubkey script if it has a known format.
         /// </summary>
         /// <param name="pubkeyScript">The array of bytes with a pubkey script.</param>
@@ -675,11 +643,9 @@ namespace BitcoinUtilities.Scripts
             }
 
             //todo: add and use TryParsePayToPubkeyHash
-            if (IsPayToPubkeyHash(pubkeyScript))
+            if (TryParsePayToPubkeyHash(pubkeyScript, out byte[] publicKeyHash))
             {
-                byte[] hash = new byte[20];
-                Array.Copy(pubkeyScript, 3, hash, 0, 20);
-                return hash;
+                return publicKeyHash;
             }
 
             if (TryParsePayToPubkey(pubkeyScript, out byte[] publicKey))
@@ -695,20 +661,32 @@ namespace BitcoinUtilities.Scripts
         /// Checks if the given pubkey script is a pay-to-pubkey-hash script.
         /// </summary>
         /// <param name="pubkeyScript">The pubkey script.</param>
+        /// <param name="publicKeyHash">A public key hash if it was extracted successfully; otherwise, null.</param>
         /// <returns>true if the given input is a pay-to-pubkey-hash script; otherwise, false.</returns>
-        public static bool IsPayToPubkeyHash(byte[] pubkeyScript)
+        public static bool TryParsePayToPubkeyHash(byte[] pubkeyScript, out byte[] publicKeyHash)
         {
             if (pubkeyScript == null || pubkeyScript.Length != 25)
             {
+                publicKeyHash = null;
                 return false;
             }
 
-            return
+            bool isPayToPubkey =
                 pubkeyScript[0] == OP_DUP &&
                 pubkeyScript[1] == OP_HASH160 &&
                 pubkeyScript[2] == 20 &&
                 pubkeyScript[23] == OP_EQUALVERIFY &&
                 pubkeyScript[24] == OP_CHECKSIG;
+
+            if (!isPayToPubkey)
+            {
+                publicKeyHash = null;
+                return false;
+            }
+
+            publicKeyHash = new byte[20];
+            Array.Copy(pubkeyScript, 3, publicKeyHash, 0, 20);
+            return true;
         }
 
         /// <summary>
