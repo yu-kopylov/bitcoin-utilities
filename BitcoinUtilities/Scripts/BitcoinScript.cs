@@ -746,18 +746,12 @@ namespace BitcoinUtilities.Scripts
             return true;
         }
 
-        // todo: remove this method
-        public static byte[] CreatePayToPubkeyHash(string address)
-        {
-            return CreatePayToPubkeyHash(NetworkParameters.BitcoinCoreMain, address);
-        }
-
         // todo: add tests and xml-doc
         public static byte[] CreatePayToPubkeyHash(NetworkParameters networkParameters, string address)
         {
             if (!networkParameters.AddressConverter.TryGetPublicKeyHash(address, out var publicKeyHash))
             {
-                throw new ArgumentException("Address is not in Base58Check format.", nameof(address));
+                throw new ArgumentException("Invalid address format.", nameof(address));
             }
 
             byte[] pubkeyScript = new byte[publicKeyHash.Length + 5];

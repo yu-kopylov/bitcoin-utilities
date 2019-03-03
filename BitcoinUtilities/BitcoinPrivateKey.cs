@@ -100,11 +100,20 @@ namespace BitcoinUtilities
         //todo: add XMLDOC, add tests
         public static byte[] ToEncodedPublicKey(byte[] privateKey, bool compressed)
         {
+            // todo: validate parameters
             ECPoint publicKeyPoint = Secp256K1Curve.G.Multiply(new BigInteger(1, privateKey));
 
             // Compressed and uncopressed formats are defined in "SEC 1: Elliptic Curve Cryptography" in section "2.3.3 Elliptic-Curve-Point-to-Octet-String Conversion".
             // see: http://www.secg.org/sec1-v2.pdf
             return publicKeyPoint.GetEncoded(compressed);
+        }
+
+        //todo: add XMLDOC, add tests
+        public static byte[] ToEncodedPublicKeyHash(byte[] privateKey, bool compressed)
+        {
+            // todo: validate parameters
+            byte[] publicKey = ToEncodedPublicKey(privateKey, compressed);
+            return CryptoUtils.RipeMd160(CryptoUtils.Sha256(publicKey));
         }
 
         private static bool IsRandomArray(byte[] privateKey)
