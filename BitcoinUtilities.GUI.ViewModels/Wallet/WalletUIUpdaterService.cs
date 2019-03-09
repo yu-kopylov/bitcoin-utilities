@@ -45,7 +45,7 @@ namespace BitcoinUtilities.GUI.ViewModels.Wallet
             Thread.Sleep(350);
         }
 
-        class WalletUIUpdateRequestedEvent
+        class WalletUIUpdateRequestedEvent : IEvent
         {
         }
     }

@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using BitcoinUtilities.Node.Rules;
 using BitcoinUtilities.P2P.Primitives;
 
@@ -6,6 +7,8 @@ namespace BitcoinUtilities.Node.Modules.Headers
 {
     public class DbHeader : IValidatableHeader
     {
+        public static IComparer<DbHeader> HeightHashComparer { get; } = new HeightHashComparerImpl();
+
         public DbHeader(BlockHeader header, byte[] hash, int height, double totalWork, bool isValid)
         {
             Header = header;
@@ -69,6 +72,37 @@ namespace BitcoinUtilities.Node.Modules.Headers
             }
 
             return r > 0;
+        }
+
+        private class HeightHashComparerImpl : IComparer<DbHeader>
+        {
+            static readonly ByteArrayComparer arrayComparer = ByteArrayComparer.Instance;
+
+            public int Compare(DbHeader x, DbHeader y)
+            {
+                if (x == null && y == null)
+                {
+                    return 0;
+                }
+
+                if (x == null)
+                {
+                    return -1;
+                }
+
+                if (y == null)
+                {
+                    return 1;
+                }
+
+                int r = x.Height.CompareTo(y.Height);
+                if (r == 0)
+                {
+                    r = arrayComparer.Compare(x.Hash, y.Hash);
+                }
+
+                return r;
+            }
         }
     }
 }

@@ -2,6 +2,6 @@
 {
     public interface IEventDispatcher
     {
-        void Raise(object evt);
+        void Raise<T>(T evt) where T : IEvent;
     }
 }

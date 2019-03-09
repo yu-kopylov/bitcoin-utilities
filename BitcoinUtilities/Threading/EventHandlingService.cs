@@ -28,12 +28,14 @@ namespace BitcoinUtilities.Threading
             return null;
         }
 
-        protected void On<T>(Action<T> handler)
+        protected delegate void ServiceEventHandler<in T>(T evt);
+
+        protected void On<T>(ServiceEventHandler<T> handler) where T : IEvent
         {
             handlers.Add(Tuple.Create<Predicate<object>, Action<object>>(evt => evt is T, evt => handler((T) evt)));
         }
 
-        protected void On<T>(Predicate<T> condition, Action<T> handler)
+        protected void On<T>(Predicate<T> condition, ServiceEventHandler<T> handler) where T : IEvent
         {
             handlers.Add(Tuple.Create<Predicate<object>, Action<object>>(evt => evt is T typedEvent && condition(typedEvent), evt => handler((T) evt)));
         }

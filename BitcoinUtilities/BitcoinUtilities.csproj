@@ -100,6 +100,7 @@
     <Compile Include="Node\Rules\TransactionInput.cs" />
     <Compile Include="Node\Rules\TransactionProcessor.cs" />
     <Compile Include="P2P\BitcoinServiceFlags.cs" />
+    <Compile Include="ReferenceEqualityComparer.cs" />
     <Compile Include="Scripts\BitcoinCashSigHashCalculator.cs" />
     <Compile Include="Scripts\ControlStack.cs" />
     <Compile Include="Scripts\ISigHashCalculator.cs" />
@@ -165,6 +166,7 @@
     <Compile Include="Threading\EventHandlingService.cs" />
     <Compile Include="Threading\EventServiceController.cs" />
     <Compile Include="Threading\IConcurrentEnumerator.cs" />
+    <Compile Include="Threading\IEvent.cs" />
     <Compile Include="Threading\IEventDispatcher.cs" />
     <Compile Include="Threading\IEventHandlingService.cs" />
     <Compile Include="TransactionBuilder.cs" />

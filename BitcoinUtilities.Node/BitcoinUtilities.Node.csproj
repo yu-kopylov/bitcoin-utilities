@@ -65,10 +65,11 @@
     <Compile Include="Events\PrefetchBlocksEvent.cs" />
     <Compile Include="Events\BlockDownloadRequestedEvent.cs" />
     <Compile Include="Events\UtxoChangedEvent.cs" />
+    <Compile Include="Modules\Blocks\BlockDownloadRequestRepository.cs" />
     <Compile Include="Modules\Blocks\BlockDownloadService.cs" />
     <Compile Include="Modules\Blocks\BlocksModule.cs" />
     <Compile Include="Modules\Blocks\BlockRepository.cs" />
-    <Compile Include="Modules\Blocks\BlockRequestCollection.cs" />
+    <Compile Include="Modules\Blocks\BlockRequestProcessor.cs" />
     <Compile Include="Modules\Blocks\BlockDownloadService.PerformanceCounters.cs" />
     <Compile Include="Modules\Discovery\NodeDiscoveryModule.cs" />
     <Compile Include="Modules\Headers\Blockchain.cs" />

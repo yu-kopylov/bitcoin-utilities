@@ -1,9 +1,10 @@
 ﻿using BitcoinUtilities.Node.Modules.Headers;
 using BitcoinUtilities.Node.Rules;
+using BitcoinUtilities.Threading;
 
 namespace BitcoinUtilities.Node.Modules.Outputs.Events
 {
-    public class SignatureValidationRequest
+    public class SignatureValidationRequest : IEvent
     {
         public SignatureValidationRequest(DbHeader header, ProcessedTransaction[] transactions)
         {

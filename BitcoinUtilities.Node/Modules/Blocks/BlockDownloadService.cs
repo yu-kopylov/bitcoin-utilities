@@ -9,6 +9,7 @@ using BitcoinUtilities.Node.Rules;
 using BitcoinUtilities.P2P;
 using BitcoinUtilities.P2P.Messages;
 using BitcoinUtilities.P2P.Primitives;
+using BitcoinUtilities.Threading;
 using NLog;
 
 namespace BitcoinUtilities.Node.Modules.Blocks
@@ -19,25 +20,26 @@ namespace BitcoinUtilities.Node.Modules.Blocks
         private static readonly PerformanceCounters performanceCounters = new PerformanceCounters(logger);
 
         private readonly NetworkParameters networkParameters;
-        private readonly BlockRequestCollection requestCollection;
-        private readonly BlockRepository repository;
+        private readonly IEventDispatcher eventDispatcher;
+        private readonly BlockDownloadRequestRepository requestRepository;
+        private readonly BlockRepository blockRepository;
         private readonly BitcoinEndpoint endpoint;
-
-        private readonly Random random = new Random();
 
         private readonly LinkedDictionary<byte[], DateTime> inventory = new LinkedDictionary<byte[], DateTime>(ByteArrayComparer.Instance);
         private readonly LinkedDictionary<byte[], DateTime> sentRequests = new LinkedDictionary<byte[], DateTime>(ByteArrayComparer.Instance);
 
         public BlockDownloadService(
             NetworkParameters networkParameters,
-            BlockRequestCollection requestCollection,
-            BlockRepository repository,
+            IEventDispatcher eventDispatcher,
+            BlockDownloadRequestRepository requestRepository,
+            BlockRepository blockRepository,
             BitcoinEndpoint endpoint
         ) : base(endpoint)
         {
             this.networkParameters = networkParameters;
-            this.requestCollection = requestCollection;
-            this.repository = repository;
+            this.eventDispatcher = eventDispatcher;
+            this.requestRepository = requestRepository;
+            this.blockRepository = blockRepository;
             this.endpoint = endpoint;
 
             On<BlockDownloadRequestedEvent>(e => CheckState());
@@ -57,33 +59,21 @@ namespace BitcoinUtilities.Node.Modules.Blocks
             RemoveOutdatedEntries(inventory);
             RemoveOutdatedEntries(sentRequests);
 
-            var pendingRequests = requestCollection.GetPendingRequests();
+            requestRepository.PickBlocksForDownload(this, DownloadBlocks);
+        }
 
-            int awaitableBlocksCount = pendingRequests.Count(h => sentRequests.ContainsKey(h.Hash));
+        private IEnumerable<byte[]> DownloadBlocks(IReadOnlyCollection<IBlockDownloadState> pendingRequests)
+        {
+            int awaitableBlocksCount = pendingRequests.Count(h => sentRequests.ContainsKey(h.Header.Hash));
             if (awaitableBlocksCount >= 10)
             {
-                return;
+                return new byte[0][];
             }
 
-            List<DbHeader> requestableBlocks = pendingRequests.Where(h => inventory.ContainsKey(h.Hash) && !sentRequests.ContainsKey(h.Hash)).ToList();
+            var lastAttemptThreshold = SystemTime.UtcNow.AddSeconds(-60);
+            var unsentRequests = pendingRequests.Where(b => b.LastDownloadAttemptUtc < lastAttemptThreshold).Select(h => h.Header).ToList();
 
-            List<DbHeader> newRequests = new List<DbHeader>();
-            if (random.Next(4) == 0)
-            {
-                newRequests.AddRange(requestableBlocks.Take(1));
-            }
-            else
-            {
-                newRequests.AddRange(requestableBlocks.Skip(random.Next(10)).Take(1));
-            }
-
-            newRequests.AddRange(requestableBlocks.Skip(10 + random.Next(190)).Take(1));
-            newRequests.AddRange(requestableBlocks.Skip(10 + random.Next(190)).Except(newRequests).Take(1));
-            int extraRequestCount = random.Next(3);
-            for (int i = 0; i < extraRequestCount; i++)
-            {
-                newRequests.AddRange(requestableBlocks.Skip(10 + random.Next(190)).Except(newRequests).Take(1));
-            }
+            List<DbHeader> newRequests = unsentRequests.Where(h => inventory.ContainsKey(h.Hash) && !sentRequests.ContainsKey(h.Hash)).Take(1).ToList();
 
             if (newRequests.Any())
             {
@@ -102,13 +92,15 @@ namespace BitcoinUtilities.Node.Modules.Blocks
 
             if (awaitableBlocksCount == 0)
             {
-                byte[] locator = pendingRequests.FirstOrDefault()?.ParentHash;
+                byte[] locator = unsentRequests.FirstOrDefault()?.ParentHash;
                 if (locator != null)
                 {
                     endpoint.WriteMessage(new GetBlocksMessage(endpoint.ProtocolVersion, new byte[][] {locator}, new byte[32]));
                     inventory.Clear();
                 }
             }
+
+            return newRequests.Select(r => r.Hash);
         }
 
         private void ProcessInvMessage(InvMessage message)
@@ -134,7 +126,12 @@ namespace BitcoinUtilities.Node.Modules.Blocks
                 return;
             }
 
-            bool isNewBlock = repository.AddBlock(hash, blockMessage);
+            bool isNewBlock = blockRepository.AddBlock(hash, blockMessage);
+            if (isNewBlock)
+            {
+                requestRepository.MarkReceived(hash);
+                eventDispatcher.Raise(new BlockDownloadedEvent(hash, blockMessage));
+            }
 
             performanceCounters.BlockReceived(isNewBlock, blockMessage.Transactions.Length);
 

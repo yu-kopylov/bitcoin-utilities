@@ -1,8 +1,9 @@
 ﻿using BitcoinUtilities.Node.Modules.Headers;
+using BitcoinUtilities.Threading;
 
 namespace BitcoinUtilities.Node.Modules.Outputs.Events
 {
-    public class SignatureValidationResponse
+    public class SignatureValidationResponse : IEvent
     {
         public SignatureValidationResponse(DbHeader header, bool valid)
         {

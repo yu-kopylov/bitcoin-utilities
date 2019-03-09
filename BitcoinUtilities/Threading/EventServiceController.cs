@@ -7,7 +7,7 @@ using NLog;
 namespace BitcoinUtilities.Threading
 {
     /// <summary>
-    /// <p>Manages starting and stoping of services that consume events, and distributes events between them.</p>
+    /// <p>Manages starting and stopping of services that consume events, and distributes events between them.</p>
     /// <p>Uses different threads for concurrent processing of events.</p>
     /// <p>Each service can assume that it is called from one thread only, and that events are passed to it in the same order in which they were raised.</p>
     /// </summary>
@@ -101,7 +101,7 @@ namespace BitcoinUtilities.Threading
             serviceThread.Dispose();
         }
 
-        public void Raise(object evt)
+        public void Raise<T>(T evt) where T : IEvent
         {
             lock (monitor)
             {

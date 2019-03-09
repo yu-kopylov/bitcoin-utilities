@@ -1,6 +1,8 @@
-﻿namespace BitcoinUtilities.Node.Modules.Wallet.Events
+﻿using BitcoinUtilities.Threading;
+
+namespace BitcoinUtilities.Node.Modules.Wallet.Events
 {
-    public class WalletAddressChangedEvent
+    public class WalletAddressChangedEvent : IEvent
     {
     }
 }

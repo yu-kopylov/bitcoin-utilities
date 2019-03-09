@@ -1,5 +1,4 @@
-﻿using System;
-using System.Linq;
+﻿using System.Linq;
 using System.Threading;
 using BitcoinUtilities.Threading;
 using NUnit.Framework;
@@ -18,19 +17,19 @@ namespace Test.BitcoinUtilities.Threading
             var messageLog = new MessageLog();
             using (EventServiceController controller = new EventServiceController())
             {
-                controller.AddService(new PrintService<string>("service s1", messageLog));
-                controller.AddService(new PrintService<string>("service s2", messageLog));
-                controller.AddService(new PrintService<string>("service s3", messageLog));
-                controller.AddService(new PrintService<int>("service i1", messageLog));
-                controller.AddService(new PrintService<int>("service i2", messageLog));
-                controller.AddService(new PrintService<int>("service i3", messageLog));
+                controller.AddService(new PrintService<StringEvent>("service s1", messageLog));
+                controller.AddService(new PrintService<StringEvent>("service s2", messageLog));
+                controller.AddService(new PrintService<StringEvent>("service s3", messageLog));
+                controller.AddService(new PrintService<IntEvent>("service i1", messageLog));
+                controller.AddService(new PrintService<IntEvent>("service i2", messageLog));
+                controller.AddService(new PrintService<IntEvent>("service i3", messageLog));
                 controller.Start();
-                controller.Raise("string 1");
-                controller.Raise("string 2");
-                controller.Raise("string 3");
-                controller.Raise(1);
-                controller.Raise(2);
-                controller.Raise(3);
+                controller.Raise(new StringEvent("string 1"));
+                controller.Raise(new StringEvent("string 2"));
+                controller.Raise(new StringEvent("string 3"));
+                controller.Raise(new IntEvent(1));
+                controller.Raise(new IntEvent(2));
+                controller.Raise(new IntEvent(3));
                 Thread.Sleep(100);
                 controller.Stop();
             }
@@ -58,7 +57,37 @@ namespace Test.BitcoinUtilities.Threading
             }
         }
 
-        private class PrintService<T> : EventHandlingService
+        private class StringEvent : IEvent
+        {
+            private readonly string value;
+
+            public StringEvent(string value)
+            {
+                this.value = value;
+            }
+
+            public override string ToString()
+            {
+                return value;
+            }
+        }
+
+        private class IntEvent : IEvent
+        {
+            private readonly int value;
+
+            public IntEvent(int value)
+            {
+                this.value = value;
+            }
+
+            public override string ToString()
+            {
+                return value.ToString();
+            }
+        }
+
+        private class PrintService<T> : EventHandlingService where T : IEvent
         {
             private readonly string name;
             private readonly MessageLog log;
