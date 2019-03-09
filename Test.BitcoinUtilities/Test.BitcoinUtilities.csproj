@@ -99,6 +99,7 @@
     <Compile Include="TestHexUtils.cs" />
     <Compile Include="TestIpUtils.cs" />
     <Compile Include="TestMerkleTreeUtils.cs" />
+    <Compile Include="TestMurmur3x86.cs" />
     <Compile Include="TestReferenceEqualityComparer.cs" />
     <Compile Include="TestSecureRandom.cs" />
     <Compile Include="TestBase58Check.cs" />

@@ -86,6 +86,7 @@
     <Compile Include="IAddressConverter.cs" />
     <Compile Include="IpUtils.cs" />
     <Compile Include="MerkleTreeUtils.cs" />
+    <Compile Include="Murmur3x86.cs" />
     <Compile Include="NetworkParameters.cs" />
     <Compile Include="Node\BitcoinProtocolViolationException.cs" />
     <Compile Include="Node\Rules\ISpendableOutput.cs" />
