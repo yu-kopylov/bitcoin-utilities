@@ -55,6 +55,7 @@
     <Compile Include="Node\Rules\TestBlockHeaderValidator.cs" />
     <Compile Include="Node\TestLimitedNodeAddressDictionary.cs" />
     <Compile Include="Node\TestNodeAddressCollection.cs" />
+    <Compile Include="P2P\Messages\TestFilterLoadMessage.cs" />
     <Compile Include="P2P\Primitives\TestTxOutPoint.cs" />
     <Compile Include="P2P\TestBitcoinConnectionListener.cs" />
     <Compile Include="Scripts\TestBitcoinCoreSigHashCalculator.cs" />

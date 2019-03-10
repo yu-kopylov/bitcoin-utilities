@@ -102,6 +102,8 @@
     <Compile Include="Node\Rules\TransactionInput.cs" />
     <Compile Include="Node\Rules\TransactionProcessor.cs" />
     <Compile Include="P2P\BitcoinServiceFlags.cs" />
+    <Compile Include="P2P\Messages\FilterClearMessage.cs" />
+    <Compile Include="P2P\Messages\FilterLoadMessage.cs" />
     <Compile Include="P2P\Messages\SendHeadersMessage.cs" />
     <Compile Include="ReferenceEqualityComparer.cs" />
     <Compile Include="Scripts\BitcoinCashSigHashCalculator.cs" />
