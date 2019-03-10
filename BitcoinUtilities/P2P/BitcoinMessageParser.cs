@@ -24,6 +24,7 @@ namespace BitcoinUtilities.P2P
             messageReadMethods.Add(PingMessage.Command, PingMessage.Read);
             messageReadMethods.Add(PongMessage.Command, PongMessage.Read);
             messageReadMethods.Add(RejectMessage.Command, RejectMessage.Read);
+            messageReadMethods.Add(SendHeadersMessage.Command, SendHeadersMessage.Read);
             messageReadMethods.Add(VerAckMessage.Command, VerAckMessage.Read);
             messageReadMethods.Add(VersionMessage.Command, VersionMessage.Read);
         }

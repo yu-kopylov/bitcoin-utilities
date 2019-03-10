@@ -33,7 +33,7 @@ namespace BitcoinUtilities.Node.Modules.Outputs
             return new IEventHandlingService[]
             {
                 new UtxoUpdateService(node.EventDispatcher, node.Blockchain, node.Resources.Get<UtxoRepository>()),
-                new SignatureValidationService(node.EventDispatcher)
+                new SignatureValidationService(node.NetworkParameters, node.EventDispatcher)
             };
         }
 

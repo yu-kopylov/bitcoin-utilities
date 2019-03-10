@@ -90,21 +90,8 @@ namespace BitcoinUtilities.Node.Rules
         /// </summary>
         internal static bool IsTimeStampValid(IValidatableHeader header, ISubchain<IValidatableHeader> parentChain)
         {
-            //todo: use network settings
-            const int medianBlockCount = 11;
-
-            List<uint> oldTimestamps = new List<uint>(medianBlockCount);
-
-            for (int i = 0; i < medianBlockCount && i < parentChain.Count; i++)
-            {
-                oldTimestamps.Add(parentChain.GetBlockByOffset(i).Timestamp);
-            }
-
-            oldTimestamps.Sort();
-
-            uint medianTimestamp = oldTimestamps[oldTimestamps.Count / 2];
-
-            return header.Timestamp > medianTimestamp;
+            uint medianTimePast = GetMedianTimePast(parentChain, parentChain.GetBlockByOffset(0).Height);
+            return header.Timestamp > medianTimePast;
         }
 
         /// <summary>
@@ -275,7 +262,7 @@ namespace BitcoinUtilities.Node.Rules
 
         private static uint GetMedianTimePast(ISubchain<IValidatableHeader> chain, int blockHeight)
         {
-            int medianArraySize = Math.Min(11, chain.Count);
+            int medianArraySize = Math.Min(11, blockHeight + 1);
 
             uint[] values = new uint[medianArraySize];
             for (int i = 0; i < medianArraySize; i++)

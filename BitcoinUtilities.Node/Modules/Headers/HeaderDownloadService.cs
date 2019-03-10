@@ -34,6 +34,7 @@ namespace BitcoinUtilities.Node.Modules.Headers
         {
             base.OnStart();
             byte[][] blockLocator = GetLocator(blockchain.GetBestHead());
+            endpoint.WriteMessage(new SendHeadersMessage());
             endpoint.WriteMessage(new GetHeadersMessage(endpoint.ProtocolVersion, blockLocator, new byte[32]));
         }
 

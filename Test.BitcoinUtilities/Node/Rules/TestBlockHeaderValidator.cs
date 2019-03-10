@@ -103,7 +103,7 @@ namespace Test.BitcoinUtilities.Node.Rules
                     (uint) i,
                     0x21100000,
                     0);
-                StoredBlock storedBlock = new StoredBlockBuilder(header).Build();
+                StoredBlock storedBlock = new StoredBlockBuilder(header) {Height = i}.Build();
                 blocks.Add(storedBlock);
                 prevBlock = storedBlock;
             }

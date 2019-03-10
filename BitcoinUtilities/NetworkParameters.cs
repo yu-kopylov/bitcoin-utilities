@@ -5,6 +5,8 @@ using System.Linq;
 using System.Numerics;
 using BitcoinUtilities.P2P;
 using BitcoinUtilities.P2P.Messages;
+using BitcoinUtilities.P2P.Primitives;
+using BitcoinUtilities.Scripts;
 
 namespace BitcoinUtilities
 {
@@ -81,7 +83,8 @@ namespace BitcoinUtilities
             BigInteger maxDifficultyTarget,
             byte[] genesisBlock,
             BitcoinNetworkKind networkKind,
-            IAddressConverter addressConverter
+            IAddressConverter addressConverter,
+            ISigHashCalculatorFactory sigHashCalculatorFactory
         )
         {
             Fork = fork;
@@ -91,6 +94,7 @@ namespace BitcoinUtilities
             GenesisBlock = BitcoinStreamReader.FromBytes(genesisBlock, BlockMessage.Read);
             NetworkKind = networkKind;
             AddressConverter = addressConverter;
+            SigHashCalculatorFactory = sigHashCalculatorFactory;
         }
 
         public static IReadOnlyList<NetworkParameters> KnownNetworks => knownNetworks;
@@ -148,6 +152,11 @@ namespace BitcoinUtilities
         /// </summary>
         public IAddressConverter AddressConverter { get; }
 
+        /// <summary>
+        /// A factory that can create a calculator that can calculate a digest for a spending transaction. 
+        /// </summary>
+        public ISigHashCalculatorFactory SigHashCalculatorFactory { get; }
+
         [SuppressMessage("ReSharper", "CommentTypo")]
         [SuppressMessage("ReSharper", "StringLiteralTypo")]
         public static NetworkParameters BitcoinCoreMain
@@ -162,7 +171,8 @@ namespace BitcoinUtilities
                     MaxDifficultyTargetMain,
                     genesisBlockMain,
                     BitcoinNetworkKind.Main,
-                    new BitcoinCoreAddressConverter(BitcoinNetworkKind.Main)
+                    new BitcoinCoreAddressConverter(BitcoinNetworkKind.Main),
+                    new BitcoinCoreSigHashCalculatorFactory()
                 );
 
                 // DNS seeds taken from: https://github.com/bitcoin/bitcoin/blob/master/src/chainparams.cpp
@@ -201,7 +211,8 @@ namespace BitcoinUtilities
                     MaxDifficultyTargetRegTest,
                     genesisBlockRegTest,
                     BitcoinNetworkKind.Test,
-                    new BitcoinCoreAddressConverter(BitcoinNetworkKind.Test)
+                    new BitcoinCoreAddressConverter(BitcoinNetworkKind.Test),
+                    new BitcoinCoreSigHashCalculatorFactory()
                 );
                 parameters.DifficultyAdjustmentEnabled = false;
                 return parameters;
@@ -222,7 +233,8 @@ namespace BitcoinUtilities
                     MaxDifficultyTargetMain,
                     genesisBlockMain,
                     BitcoinNetworkKind.Main,
-                    new CashAddrConverter("bitcoincash")
+                    new CashAddrConverter("bitcoincash"),
+                    new BitcoinCashSigHashCalculatorFactory()
                 );
 
                 // DNS seeds taken from: https://github.com/bitcoinclassic/bitcoinclassic/blob/master/src/chainparams.cpp
@@ -273,7 +285,8 @@ namespace BitcoinUtilities
                     MaxDifficultyTargetRegTest,
                     genesisBlockRegTest,
                     BitcoinNetworkKind.Test,
-                    new CashAddrConverter("bchreg")
+                    new CashAddrConverter("bchreg"),
+                    new BitcoinCashSigHashCalculatorFactory()
                 );
                 parameters.DifficultyAdjustmentEnabled = false;
                 return parameters;

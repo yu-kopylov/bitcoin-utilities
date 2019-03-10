@@ -51,7 +51,7 @@ namespace Test.BitcoinUtilities.Node.Modules.Outputs
                 MessageLog log = new MessageLog();
                 controller.AddService(new EventLoggingService(log));
                 controller.AddService(utxoUpdateService);
-                controller.AddService(new SignatureValidationService(controller));
+                controller.AddService(new SignatureValidationService(NetworkParameters.BitcoinCoreMain, controller));
                 controller.Start();
                 Thread.Sleep(100);
 

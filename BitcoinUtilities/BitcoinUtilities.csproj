@@ -102,10 +102,14 @@
     <Compile Include="Node\Rules\TransactionInput.cs" />
     <Compile Include="Node\Rules\TransactionProcessor.cs" />
     <Compile Include="P2P\BitcoinServiceFlags.cs" />
+    <Compile Include="P2P\Messages\SendHeadersMessage.cs" />
     <Compile Include="ReferenceEqualityComparer.cs" />
     <Compile Include="Scripts\BitcoinCashSigHashCalculator.cs" />
+    <Compile Include="Scripts\BitcoinCashSigHashCalculatorFactory.cs" />
+    <Compile Include="Scripts\BitcoinCoreSigHashCalculatorFactory.cs" />
     <Compile Include="Scripts\ControlStack.cs" />
     <Compile Include="Scripts\ISigHashCalculator.cs" />
+    <Compile Include="Scripts\ISigHashCalculatorFactory.cs" />
     <Compile Include="Scripts\ScriptCommand.cs" />
     <Compile Include="Scripts\ScriptParser.cs" />
     <Compile Include="Scripts\ScriptProcessor.cs" />

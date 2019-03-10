@@ -7,10 +7,12 @@ namespace BitcoinUtilities.Node.Modules.Outputs
 {
     public class SignatureValidationService : EventHandlingService
     {
+        private readonly NetworkParameters networkParameters;
         private readonly IEventDispatcher eventDispatcher;
 
-        public SignatureValidationService(IEventDispatcher eventDispatcher)
+        public SignatureValidationService(NetworkParameters networkParameters, IEventDispatcher eventDispatcher)
         {
+            this.networkParameters = networkParameters;
             this.eventDispatcher = eventDispatcher;
 
             On<SignatureValidationRequest>(ValidateSignatures);
@@ -19,13 +21,13 @@ namespace BitcoinUtilities.Node.Modules.Outputs
         private void ValidateSignatures(SignatureValidationRequest request)
         {
             var enumerator = new ConcurrentEnumerator<ProcessedTransaction>(request.Transactions);
-            enumerator.ProcessWith(new object[4], (_, en) => VerifySignatures(request.Header.Hash, en));
+            enumerator.ProcessWith(new object[4], (_, en) => VerifySignatures(request.Header.Hash, request.Header.Timestamp, en));
 
             // if we are here, then no exceptions were thrown during validation and transactions are valid
             eventDispatcher.Raise(new SignatureValidationResponse(request.Header, true));
         }
 
-        private object VerifySignatures(byte[] blockHash, IConcurrentEnumerator<ProcessedTransaction> processedTransactions)
+        private object VerifySignatures(byte[] blockHash, uint timestamp, IConcurrentEnumerator<ProcessedTransaction> processedTransactions)
         {
             ScriptProcessor scriptProcessor = new ScriptProcessor();
             while (processedTransactions.GetNext(out var transaction))
@@ -35,7 +37,7 @@ namespace BitcoinUtilities.Node.Modules.Outputs
                 {
                     for (int inputIndex = 0; inputIndex < transaction.Inputs.Length; inputIndex++)
                     {
-                        if (!VerifySignature(scriptProcessor, transaction, inputIndex))
+                        if (!VerifySignature(scriptProcessor, timestamp, transaction, inputIndex))
                         {
                             throw new BitcoinProtocolViolationException(
                                 $"The transaction '{HexUtils.GetString(transaction.Transaction.Hash)}'" +
@@ -49,12 +51,13 @@ namespace BitcoinUtilities.Node.Modules.Outputs
             return null;
         }
 
-        private bool VerifySignature(ScriptProcessor scriptProcessor, ProcessedTransaction transaction, int inputIndex)
+        private bool VerifySignature(ScriptProcessor scriptProcessor, uint timestamp, ProcessedTransaction transaction, int inputIndex)
         {
             scriptProcessor.Reset();
 
             ISigHashCalculator sigHashCalculator = new BitcoinCoreSigHashCalculator(transaction.Transaction);
-            scriptProcessor.SigHashCalculator = sigHashCalculator;
+            // todo: create hash calculator with scriptProcessor?
+            scriptProcessor.SigHashCalculator = networkParameters.SigHashCalculatorFactory.CreateCalculator(timestamp, transaction.Transaction);
 
             sigHashCalculator.InputIndex = inputIndex;
             sigHashCalculator.Amount = transaction.Inputs[inputIndex].Value;
