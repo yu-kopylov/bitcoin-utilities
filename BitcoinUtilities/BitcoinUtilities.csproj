@@ -78,6 +78,7 @@
     <Compile Include="BitcoinAddressUsage.cs" />
     <Compile Include="BitcoinFork.cs" />
     <Compile Include="BitcoinNetworkKind.cs" />
+    <Compile Include="BloomFilter.cs" />
     <Compile Include="CashAddr.cs" />
     <Compile Include="Collections\CollectionUtils.cs" />
     <Compile Include="DifficultyUtils.cs" />
